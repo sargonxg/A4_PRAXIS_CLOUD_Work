@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
   CapsuleQualityReviewProposalListSchema,
   CapsuleQualityReviewProposalSchema,
+  capsuleQualityReviewCardInput,
 } from '@/lib/agent-runtime/capsule-quality-review';
+import { getModelIdForTask } from '@/lib/ai/model-matrix';
 
 describe('capsule quality review proposal schema', () => {
   it('accepts bounded review-card proposals', () => {
@@ -38,5 +40,28 @@ describe('capsule quality review proposal schema', () => {
     }));
 
     expect(() => CapsuleQualityReviewProposalListSchema.parse(nine)).toThrow();
+  });
+
+  it('stamps quality-review proposals with model generatedBy metadata', () => {
+    const input = capsuleQualityReviewCardInput({
+      id: 'run-quality-1',
+      createdAt: '2026-06-12T12:00:00.000Z',
+      metadata: {},
+    }, {
+      kind: 'sourcing',
+      title: 'Attach official source receipts',
+      rationale: 'The capsule has unsupported claims and no official source spine.',
+      suggestedChange: 'Add current official receipts for each unsupported claim before drafting.',
+      confidence: 'high',
+    }, 0);
+
+    const qualityReview = (input.proposedEnvelopePatch?.sourcePosture as Record<string, unknown>).qualityReview as Record<string, unknown>;
+
+    expect(qualityReview.generatedBy).toEqual({
+      actorType: 'model',
+      actorId: getModelIdForTask('complex_reasoning'),
+      at: '2026-06-12T12:00:00.000Z',
+      activity: 'quality_review',
+    });
   });
 });

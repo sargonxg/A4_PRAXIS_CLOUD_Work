@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
 import { z } from 'zod';
 import type { AgentRun } from '@/lib/agent-runtime/types';
+import { getModelIdForTask } from '@/lib/ai/model-matrix';
 import {
   deriveCapsuleQuality,
   deriveCapsuleReadinessSummary,
@@ -85,13 +86,14 @@ export function capsuleQualityReviewOutputHref(run: Pick<AgentRun, 'capsuleId'>)
 }
 
 export function capsuleQualityReviewCardInput(
-  run: Pick<AgentRun, 'id'>,
+  run: Pick<AgentRun, 'id' | 'createdAt' | 'metadata'>,
   proposal: CapsuleQualityReviewProposal,
   index: number,
 ): CreateCapsuleReviewCardInput {
   const marker = {
     source: ACTIVE_REVIEW_SOURCE,
     generatedByRunId: run.id,
+    generatedBy: capsuleQualityReviewGeneratedBy(run),
     proposalKind: proposal.kind,
     title: proposal.title,
     rationale: proposal.rationale,
@@ -112,6 +114,18 @@ export function capsuleQualityReviewCardInput(
       sourceType: ACTIVE_REVIEW_SOURCE,
     }],
     proposedEnvelopePatch: patchForProposal(proposal, marker),
+  };
+}
+
+function capsuleQualityReviewGeneratedBy(run: Pick<AgentRun, 'createdAt' | 'metadata'>) {
+  const selectedModelId = typeof run.metadata.selectedModelId === 'string' && run.metadata.selectedModelId.trim()
+    ? run.metadata.selectedModelId.trim()
+    : null;
+  return {
+    actorType: 'model' as const,
+    actorId: selectedModelId ?? getModelIdForTask('complex_reasoning'),
+    at: run.createdAt,
+    activity: 'quality_review' as const,
   };
 }
 

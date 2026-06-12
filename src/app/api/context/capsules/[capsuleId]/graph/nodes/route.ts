@@ -13,14 +13,26 @@ export const dynamic = 'force-dynamic';
 
 type RouteContext = { params: Promise<{ capsuleId: string }> };
 
+const GeneratedBySchema = z.object({
+  actorType: z.enum(['model', 'human']),
+  actorId: z.string().min(1).max(240),
+  at: z.string().min(1).max(80),
+  activity: z.enum(['extraction', 'proposal', 'review_decision', 'import', 'quality_review']),
+}).strict();
+
 const NodePayloadSchema = z.object({
   id: z.string().min(1).max(160).optional(),
   label: z.string().min(1).max(240).optional(),
   entityType: z.string().min(1).max(80).optional(),
   provenance: z.string().max(500).optional(),
   confidence: z.number().min(0).max(1).optional(),
+  confidenceKind: z.enum(['EXTRACTED', 'INFERRED', 'ASSESSED']).optional(),
   sourceReceiptIds: z.array(z.string().min(1).max(240)).max(25).optional(),
   reviewState: z.string().max(80).optional(),
+  recordedAt: z.string().max(80).optional(),
+  rationale: z.string().max(1200).optional(),
+  derivedFrom: z.array(z.string().min(1).max(240)).max(80).optional(),
+  generatedBy: GeneratedBySchema.optional(),
 });
 
 const NodeActionSchema = z.discriminatedUnion('operation', [
@@ -30,6 +42,11 @@ const NodeActionSchema = z.discriminatedUnion('operation', [
     node: NodePayloadSchema.optional(),
     sourceReceiptIds: z.array(z.string().min(1).max(240)).max(25).optional(),
     reason: z.string().max(500).optional(),
+    rationale: z.string().max(1200).optional(),
+    derivedFrom: z.array(z.string().min(1).max(240)).max(80).optional(),
+    supersedesElementId: z.string().min(1).max(160).optional(),
+    supersededBy: z.string().min(1).max(160).optional(),
+    invalidationReason: z.enum(['CONTRADICTED', 'SOURCE_RETRACTED', 'TEMPORAL_EXPIRY', 'HUMAN_OVERRIDE']).optional(),
   }),
   z.object({
     operation: z.literal('approve'),

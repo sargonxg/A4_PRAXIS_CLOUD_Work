@@ -125,6 +125,27 @@ export interface CapsuleCausality {
   causalLinks: CapsuleCausalLink[];
 }
 
+export type CapsuleGraphInvalidationReason = 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+export type CapsuleGraphConfidenceKind = 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+
+export interface CapsuleGraphGeneratedBy {
+  actorType: 'model' | 'human';
+  actorId: string;
+  at: string;
+  activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+}
+
+export interface CapsuleGraphElementProvenance {
+  recordedAt?: string;
+  invalidatedAt?: string;
+  supersededBy?: string;
+  invalidationReason?: CapsuleGraphInvalidationReason;
+  rationale?: string;
+  derivedFrom?: string[];
+  confidenceKind?: CapsuleGraphConfidenceKind;
+  generatedBy?: CapsuleGraphGeneratedBy;
+}
+
 export interface CapsuleOntologyBinding {
   domainId: DomainKey;
   taxonomyPath: string[];
@@ -133,7 +154,7 @@ export interface CapsuleOntologyBinding {
   bindingRationale: string;
 }
 
-export interface CapsuleEmbeddedGraphNode {
+export interface CapsuleEmbeddedGraphNode extends CapsuleGraphElementProvenance {
   id: string;
   label: string;
   entityType: string;
@@ -142,12 +163,13 @@ export interface CapsuleEmbeddedGraphNode {
   sourceReceiptIds?: string[];
 }
 
-export interface CapsuleEmbeddedGraphEdge {
+export interface CapsuleEmbeddedGraphEdge extends CapsuleGraphElementProvenance {
   id: string;
   source: string;
   target: string;
   label: string;
   relationshipType?: string;
+  judgeRationale?: string;
   reviewState?: 'canonical' | 'proposed' | 'missing' | 'advisory' | 'reviewed';
   confidence?: number;
   sourceReceiptIds?: string[];

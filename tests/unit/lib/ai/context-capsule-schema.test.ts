@@ -44,6 +44,63 @@ describe('ADR 0050 capsule/v2 Zod schema', () => {
 
     expect(result.success).toBe(false);
   });
+
+  it('parses legacy and enriched embedded graph payloads', () => {
+    const legacy = ContextCapsuleSchema.parse(makeCapsule());
+    expect(legacy.embeddedGraph.nodes[0]).not.toHaveProperty('recordedAt');
+
+    const enrichedInput = makeCapsule();
+    const enrichedGraph = enrichedInput.embeddedGraph as {
+      nodes: Array<Record<string, unknown>>;
+      edges: Array<Record<string, unknown>>;
+    };
+    enrichedGraph.nodes[0] = {
+      ...(enrichedGraph.nodes[0] ?? {}),
+      recordedAt: '2026-06-12T12:00:00.000Z',
+      rationale: 'The source claim explicitly identifies the actor responsible for the review.',
+      derivedFrom: ['claim-1'],
+      confidenceKind: 'INFERRED',
+      generatedBy: {
+        actorType: 'model',
+        actorId: 'model-matrix:test',
+        at: '2026-06-12T12:00:00.000Z',
+        activity: 'extraction',
+      },
+    };
+    enrichedGraph.edges = [{
+      id: 'edge-1',
+      source: 'claim-1',
+      target: 'claim-2',
+      label: 'contradicts',
+      relationshipType: 'CONTRADICTS',
+      judgeRationale: 'The two claim records make mutually exclusive timing assertions.',
+      recordedAt: '2026-06-12T12:00:00.000Z',
+      invalidatedAt: '2026-06-13T12:00:00.000Z',
+      invalidationReason: 'CONTRADICTED',
+      supersededBy: 'edge-2',
+      confidenceKind: 'ASSESSED',
+      rationale: 'The contradiction was asserted from a quality review comparison.',
+      derivedFrom: ['claim-1', 'claim-2'],
+    }];
+
+    const enriched = ContextCapsuleSchema.parse(enrichedInput);
+
+    expect(enriched.embeddedGraph.nodes[0]).toMatchObject({
+      recordedAt: '2026-06-12T12:00:00.000Z',
+      confidenceKind: 'INFERRED',
+      derivedFrom: ['claim-1'],
+      generatedBy: {
+        actorType: 'model',
+        activity: 'extraction',
+      },
+    });
+    expect(enriched.embeddedGraph.edges[0]).toMatchObject({
+      relationshipType: 'CONTRADICTS',
+      judgeRationale: 'The two claim records make mutually exclusive timing assertions.',
+      invalidationReason: 'CONTRADICTED',
+      supersededBy: 'edge-2',
+    });
+  });
 });
 
 function makeCapsule() {

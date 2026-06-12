@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { z } from 'zod';
+import { getModelIdForTask } from '@/lib/ai/model-matrix';
 import type { CreateCapsuleInput } from '@/lib/context/capsule-service';
 import type {
   ContextCapsuleClaim,
@@ -21,6 +22,13 @@ export const DIALECTICA_KNOWN_LAYERS = [
 ] as const;
 
 const KNOWN_LAYER_SET = new Set<string>(DIALECTICA_KNOWN_LAYERS);
+
+type DialecticaGraphGeneratedBy = {
+  actorType: 'model';
+  actorId: string;
+  at: string;
+  activity: 'import';
+};
 
 export interface DialecticaFieldError {
   field: string;
@@ -339,7 +347,7 @@ export function buildDialecticaCapsuleImportPlan(
   const importNotes = [...pkg.importNotes];
   const temporality = mapEpisodes(pkg.episodes, importNotes);
   const ontologyBinding = mapOntologyBinding(pkg);
-  const embeddedGraph = mapGraphJsonLd(pkg.graphJsonld, pkg.manifest.capsule_id, importNotes);
+  const embeddedGraph = mapGraphJsonLd(pkg.graphJsonld, pkg.manifest.capsule_id, importNotes, options.importedAt);
   const sourceCoreIds = sourceRefs.map((source) => source.sourceId);
   const capsuleId = dialecticaCapsuleId(pkg.manifest.capsule_id, pkg.manifest.version);
   const summary = `DIALECTICA spec ${pkg.manifest.spec_version} ${pkg.manifest.type} package imported with ${claimLedger.length} claim${claimLedger.length === 1 ? '' : 's'} and ${sourceRefs.length} source${sourceRefs.length === 1 ? '' : 's'}. Signature verification is out of scope for this import.`;
@@ -583,12 +591,23 @@ function mapOntologyBinding(pkg: DialecticaParsedCapsulePackage): Record<string,
   };
 }
 
-function mapGraphJsonLd(graphJsonld: unknown, capsuleId: string, importNotes: string[]): Record<string, unknown> | undefined {
+function mapGraphJsonLd(
+  graphJsonld: unknown,
+  capsuleId: string,
+  importNotes: string[],
+  importedAt: string,
+): Record<string, unknown> | undefined {
   if (!graphJsonld) {
     importNotes.push('graph.jsonld missing; embedded graph projection was not mapped.');
     return undefined;
   }
-  const nodes = extractJsonLdNodes(graphJsonld);
+  const generatedBy: DialecticaGraphGeneratedBy = {
+    actorType: 'model',
+    actorId: getModelIdForTask('balanced'),
+    at: importedAt,
+    activity: 'import',
+  };
+  const nodes = extractJsonLdNodes(graphJsonld, generatedBy, importedAt);
   return {
     provider: 'graphlite',
     projectionId: `dialectica-${capsuleId}-jsonld`,
@@ -603,7 +622,11 @@ function mapGraphJsonLd(graphJsonld: unknown, capsuleId: string, importNotes: st
   };
 }
 
-function extractJsonLdNodes(input: unknown): Record<string, unknown>[] {
+function extractJsonLdNodes(
+  input: unknown,
+  generatedBy: DialecticaGraphGeneratedBy,
+  recordedAt: string,
+): Record<string, unknown>[] {
   const nodes: Record<string, unknown>[] = [];
   const visit = (value: unknown) => {
     if (Array.isArray(value)) {
@@ -622,6 +645,9 @@ function extractJsonLdNodes(input: unknown): Record<string, unknown>[] {
         label: stringOrNull(value['dialectica:title']) ?? stringOrNull(value.label) ?? id,
         entityType: stringOrNull(value['@type'])?.replace(/^.*[:/#]/, '') ?? 'JsonLdNode',
         jsonldId: id,
+        confidenceKind: 'EXTRACTED',
+        recordedAt,
+        generatedBy,
       });
     }
   };

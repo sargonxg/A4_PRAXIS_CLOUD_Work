@@ -15,9 +15,22 @@ export type CapsuleGraphViewerNode = {
   entityType?: string;
   provenance?: string;
   confidence?: number | null;
+  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
   sourceReceiptIds?: string[];
   linkedClaimIds?: string[];
   version?: number | null;
+  recordedAt?: string;
+  invalidatedAt?: string;
+  supersededBy?: string;
+  invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+  rationale?: string;
+  derivedFrom?: string[];
+  generatedBy?: {
+    actorType: 'model' | 'human';
+    actorId: string;
+    at: string;
+    activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+  };
 };
 
 export type CapsuleGraphViewerEdge = {
@@ -27,8 +40,22 @@ export type CapsuleGraphViewerEdge = {
   label: string;
   reviewState: string;
   relationshipType?: string;
+  judgeRationale?: string;
   confidence?: number | null;
+  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
   sourceReceiptIds?: string[];
+  recordedAt?: string;
+  invalidatedAt?: string;
+  supersededBy?: string;
+  invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+  rationale?: string;
+  derivedFrom?: string[];
+  generatedBy?: {
+    actorType: 'model' | 'human';
+    actorId: string;
+    at: string;
+    activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+  };
 };
 
 export type CapsuleGraphProposalIntent = 'open' | 'refine' | 'background';

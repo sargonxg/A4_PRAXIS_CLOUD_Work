@@ -24,6 +24,7 @@ import {
   promoteCapsuleSourceGaps,
   promoteCapsuleOntologyExtensionToGlobalAco,
   proposeCogneeSeedReviewCards,
+  proposeCapsuleGraphEdgeChange,
   proposeCapsuleGraphNodeChange,
   rateCapsule,
   recordCapsuleReadReceiptUsage,
@@ -1595,6 +1596,191 @@ describe('capsule service', () => {
       nodeCount: 1,
       entityTypeCounts: { Actor: 1 },
     });
+  });
+
+  it('invalidates reviewed graph elements for approved replacements and human override deletes', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', {
+      capsuleId: 'cap-graph-invalidation',
+      label: 'Graph invalidation capsule',
+      embeddedGraph: {
+        provider: 'graphlite',
+        projectionId: 'cap-graph-invalidation-projection',
+        status: 'reviewed',
+        namedGraph: 'capsule_cap_graph_invalidation',
+        advisoryOnly: true,
+        canonicalStore: 'Firestore ContextCapsules',
+        promotionGate: 'Human review-card approval required before canonical graph promotion.',
+        nodes: [
+          {
+            id: 'claim-old',
+            label: 'Old claim',
+            entityType: 'Claim',
+            reviewState: 'reviewed',
+            confidence: 0.82,
+            confidenceKind: 'ASSESSED',
+            recordedAt: '2026-05-01T00:00:00.000Z',
+          },
+          {
+            id: 'claim-human',
+            label: 'Human-reviewed claim',
+            entityType: 'Claim',
+            reviewState: 'reviewed',
+            confidence: 0.7,
+            confidenceKind: 'INFERRED',
+            recordedAt: '2026-05-02T00:00:00.000Z',
+          },
+        ],
+        edges: [],
+      },
+    } as Parameters<typeof createCapsule>[1], deps(db));
+
+    const replacementCard = await proposeCapsuleGraphNodeChange('u1', capsule.capsuleId, {
+      operation: 'create',
+      node: {
+        id: 'claim-new',
+        label: 'New claim',
+        entityType: 'Claim',
+        confidence: 0.9,
+        confidenceKind: 'ASSESSED',
+        sourceReceiptIds: ['claim-new-source'],
+      },
+      supersedesElementId: 'claim-old',
+      invalidationReason: 'CONTRADICTED',
+      derivedFrom: ['claim-new-source'],
+      rationale: 'The new reviewed source contradicts the prior claim.',
+      reason: 'Replace the contradicted claim after review.',
+    } as Parameters<typeof proposeCapsuleGraphNodeChange>[2], deps(db));
+
+    const replaced = await applyCapsuleReviewCard('u1', capsule.capsuleId, replacementCard.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      diffHash: 'diff:graph:replacement',
+      confirmationReason: 'Owner selected the replacement claim after reviewing the contradiction.',
+    }, deps(db));
+    const replacedGraph = replaced?.capsule.embeddedGraph as { nodes?: Array<Record<string, unknown>> } | undefined;
+    const replacedNodes = replacedGraph?.nodes ?? [];
+    expect(replacedNodes.find((node) => node.id === 'claim-old')).toMatchObject({
+      id: 'claim-old',
+      invalidatedAt: '2026-05-14T00:00:00.000Z',
+      invalidationReason: 'CONTRADICTED',
+      supersededBy: 'claim-new',
+    });
+    expect(replacedNodes.find((node) => node.id === 'claim-new')).toMatchObject({
+      id: 'claim-new',
+      recordedAt: '2026-05-14T00:00:00.000Z',
+      rationale: 'The new reviewed source contradicts the prior claim.',
+      derivedFrom: ['claim-new-source'],
+    });
+
+    const deleteCard = await proposeCapsuleGraphNodeChange('u1', capsule.capsuleId, {
+      operation: 'delete',
+      nodeId: 'claim-human',
+      node: { id: 'claim-human', entityType: 'Claim' },
+      reason: 'Human reviewer rejected the approved claim.',
+    } as Parameters<typeof proposeCapsuleGraphNodeChange>[2], deps(db));
+    const deleted = await applyCapsuleReviewCard('u1', capsule.capsuleId, deleteCard.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      diffHash: 'diff:graph:human-override',
+      confirmationReason: 'Owner rejected this approved graph element.',
+    }, deps(db));
+    const deletedGraph = deleted?.capsule.embeddedGraph as { nodes?: Array<Record<string, unknown>> } | undefined;
+    const deletedNode = (deletedGraph?.nodes ?? []).find((node) => node.id === 'claim-human');
+    expect(deletedNode).toMatchObject({
+      id: 'claim-human',
+      invalidatedAt: '2026-05-14T00:00:00.000Z',
+      invalidationReason: 'HUMAN_OVERRIDE',
+    });
+
+    const secondDeleteCard = await proposeCapsuleGraphNodeChange('u1', capsule.capsuleId, {
+      operation: 'delete',
+      nodeId: 'claim-human',
+      node: { id: 'claim-human', entityType: 'Claim' },
+      invalidationReason: 'SOURCE_RETRACTED',
+      reason: 'Second invalidation attempt should keep the first reason.',
+    } as Parameters<typeof proposeCapsuleGraphNodeChange>[2], deps(db));
+    const secondDeleted = await applyCapsuleReviewCard('u1', capsule.capsuleId, secondDeleteCard.reviewCardId, {
+      reviewerUid: 'reviewer-1',
+      diffHash: 'diff:graph:second-human-override',
+      confirmationReason: 'Second invalidation attempt.',
+    }, deps(db));
+    const secondDeletedGraph = secondDeleted?.capsule.embeddedGraph as { nodes?: Array<Record<string, unknown>> } | undefined;
+    const secondDeletedNode = (secondDeletedGraph?.nodes ?? []).find((node) => node.id === 'claim-human');
+    expect(secondDeletedNode).toMatchObject({
+      id: 'claim-human',
+      invalidatedAt: '2026-05-14T00:00:00.000Z',
+      invalidationReason: 'HUMAN_OVERRIDE',
+    });
+  });
+
+  it('files contradiction review cards for inferred AI graph proposals and leaves both elements live until decision', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', {
+      capsuleId: 'cap-graph-contradiction',
+      label: 'Graph contradiction capsule',
+      embeddedGraph: {
+        provider: 'graphlite',
+        projectionId: 'cap-graph-contradiction-projection',
+        status: 'reviewed',
+        namedGraph: 'capsule_cap_graph_contradiction',
+        advisoryOnly: true,
+        canonicalStore: 'Firestore ContextCapsules',
+        promotionGate: 'Human review-card approval required before canonical graph promotion.',
+        nodes: [{
+          id: 'claim-existing',
+          label: 'Existing claim',
+          entityType: 'Claim',
+          reviewState: 'reviewed',
+          confidence: 0.76,
+          confidenceKind: 'INFERRED',
+          recordedAt: '2026-05-01T00:00:00.000Z',
+        }],
+        edges: [],
+      },
+    } as Parameters<typeof createCapsule>[1], deps(db));
+
+    const contradictionCard = await proposeCapsuleGraphEdgeChange('u1', capsule.capsuleId, {
+      operation: 'create',
+      edge: {
+        id: 'edge-contradiction-1',
+        source: 'claim-new',
+        target: 'claim-existing',
+        label: 'contradicts',
+        relationshipType: 'CONTRADICTS',
+        confidence: 0.81,
+        confidenceKind: 'INFERRED',
+        judgeRationale: 'The proposed claim and existing claim cannot both be true for the same period.',
+        sourceReceiptIds: ['claim-new-source'],
+        generatedBy: {
+          actorType: 'model',
+          actorId: 'model-matrix:test',
+          at: '2026-05-14T00:00:00.000Z',
+          activity: 'proposal',
+        },
+      },
+      derivedFrom: ['claim-new-source'],
+      rationale: 'AI contradiction pass found mutually exclusive claim wording.',
+      reason: 'Queue human contradiction review.',
+    } as Parameters<typeof proposeCapsuleGraphEdgeChange>[2], deps(db));
+
+    expect(contradictionCard.title).toMatch(/contradiction/i);
+    const graphProposals = ((contradictionCard.proposedEnvelopePatch.memoryPosture as Record<string, unknown>).graphProposals ?? []) as Array<Record<string, unknown>>;
+    expect(graphProposals.at(-1)).toMatchObject({
+      kind: 'edge',
+      contradictionReviewRequired: true,
+      payload: expect.objectContaining({
+        relationshipType: 'CONTRADICTS',
+        judgeRationale: 'The proposed claim and existing claim cannot both be true for the same period.',
+        rationale: 'AI contradiction pass found mutually exclusive claim wording.',
+        derivedFrom: ['claim-new-source'],
+      }),
+    });
+    const persisted = await getCapsule('u1', capsule.capsuleId, deps(db));
+    const persistedGraph = persisted?.embeddedGraph as {
+      nodes?: Array<Record<string, unknown>>;
+      edges?: Array<Record<string, unknown>>;
+    } | undefined;
+    expect((persistedGraph?.nodes ?? []).find((node) => node.id === 'claim-existing')).not.toHaveProperty('invalidatedAt');
+    expect(persistedGraph?.edges ?? []).toEqual([]);
   });
 
   it('gates capsule-local ontology extension promotion behind ADMIN_ALLOWLIST and writes a version snapshot', async () => {

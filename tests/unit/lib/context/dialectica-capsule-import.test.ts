@@ -7,6 +7,7 @@ import {
   parseDialecticaCapsulePackageFromParts,
   parseDialecticaManifest,
 } from '@/lib/context/dialectica-capsule-import';
+import { getModelIdForTask } from '@/lib/ai/model-matrix';
 
 const fixtureRoot = join(process.cwd(), 'tests/fixtures/dialectica-capsule');
 
@@ -111,6 +112,13 @@ describe('DIALECTICA spec-3.0 capsule import', () => {
     expect(plan.capsuleInput.embeddedGraph).toMatchObject({
       provider: 'graphlite',
       source: 'dialectica:graph.jsonld',
+    });
+    const embeddedGraph = plan.capsuleInput.embeddedGraph as { nodes?: Array<Record<string, unknown>> } | undefined;
+    expect(embeddedGraph?.nodes?.[0]?.generatedBy).toEqual({
+      actorType: 'model',
+      actorId: getModelIdForTask('balanced'),
+      at: '2026-06-12T12:00:00.000Z',
+      activity: 'import',
     });
     expect(plan.importNotes.join('\n')).toMatch(/graph\/ladybug\/\*/);
     expect(plan.importNotes.join('\n')).toMatch(/fixture_owner/);

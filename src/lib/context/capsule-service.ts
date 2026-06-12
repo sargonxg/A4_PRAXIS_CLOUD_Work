@@ -202,6 +202,24 @@ export interface CapsuleReviewApplyMetadata {
   targetVersion: number;
   diffHash: string;
   confirmationReason: string;
+  generatedBy?: CapsuleGraphGeneratedBy;
+}
+
+export type CapsuleGraphInvalidationReason = 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+export type CapsuleGraphConfidenceKind = 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+
+export interface CapsuleGraphGeneratedBy {
+  actorType: 'model' | 'human';
+  actorId: string;
+  at: string;
+  activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+}
+
+export interface CapsuleReviewRejectionMetadata {
+  reviewerUid: string;
+  rejectedAt: string;
+  confirmationReason: string;
+  generatedBy?: CapsuleGraphGeneratedBy;
 }
 
 export interface CapsuleReviewCard {
@@ -215,6 +233,7 @@ export interface CapsuleReviewCard {
   evidence: CapsuleReviewEvidence[];
   proposedEnvelopePatch: CapsuleEnvelopePatch;
   applyMetadata: CapsuleReviewApplyMetadata | null;
+  rejectionMetadata?: CapsuleReviewRejectionMetadata;
   createdAt: string;
   updatedAt: string;
 }
@@ -239,11 +258,21 @@ export interface CapsuleGraphNodeProposalInput {
     entityType?: string;
     provenance?: string;
     confidence?: number;
+    confidenceKind?: CapsuleGraphConfidenceKind;
     sourceReceiptIds?: string[];
     reviewState?: string;
+    recordedAt?: string;
+    rationale?: string;
+    derivedFrom?: string[];
+    generatedBy?: CapsuleGraphGeneratedBy;
   };
   sourceReceiptIds?: string[];
   reason?: string;
+  rationale?: string;
+  derivedFrom?: string[];
+  supersedesElementId?: string;
+  supersededBy?: string;
+  invalidationReason?: CapsuleGraphInvalidationReason;
 }
 
 export interface CapsuleGraphEdgeProposalInput {
@@ -255,12 +284,23 @@ export interface CapsuleGraphEdgeProposalInput {
     target?: string;
     label?: string;
     relationshipType?: string;
+    judgeRationale?: string;
     confidence?: number;
+    confidenceKind?: CapsuleGraphConfidenceKind;
     sourceReceiptIds?: string[];
     reviewState?: string;
+    recordedAt?: string;
+    rationale?: string;
+    derivedFrom?: string[];
+    generatedBy?: CapsuleGraphGeneratedBy;
   };
   sourceReceiptIds?: string[];
   reason?: string;
+  rationale?: string;
+  derivedFrom?: string[];
+  supersedesElementId?: string;
+  supersededBy?: string;
+  invalidationReason?: CapsuleGraphInvalidationReason;
 }
 
 export interface AdvisoryMemoryReviewCandidateInput {
@@ -1457,7 +1497,15 @@ export async function proposeCapsuleGraphNodeChange(
   if (!ontologyCheck.known) {
     return createCapsuleOntologyExtensionCandidateReviewCard(uid, capsule, ontologyCheck.extension, deps);
   }
-  const proposalId = `graph-node-${stableId(`${uid}:${capsule.capsuleId}:${operation}:${nodeId}:${nowIso(deps)}`)}`;
+  const timestamp = nowIso(deps);
+  const confidenceKind = normalizeGraphConfidenceKind(input.node?.confidenceKind);
+  const generatedBy = normalizeGraphGeneratedBy(input.node?.generatedBy) ?? graphGeneratedBy(uid, timestamp, 'proposal');
+  const rationale = cleanText(input.node?.rationale ?? input.rationale ?? input.reason, 1200);
+  const derivedFrom = uniqueStrings([...(input.derivedFrom ?? []), ...(input.node?.derivedFrom ?? [])].map((item) => cleanText(item, 160)).filter(Boolean));
+  if (operation !== 'delete') {
+    assertAiGraphRationale({ generatedBy, confidenceKind, rationale, derivedFrom });
+  }
+  const proposalId = `graph-node-${stableId(`${uid}:${capsule.capsuleId}:${operation}:${nodeId}:${timestamp}`)}`;
   return createCapsuleReviewCard(uid, capsule.capsuleId, {
     title: `Graph node proposal: ${operation} ${label}`,
     sourceType: 'graph',
@@ -1475,7 +1523,15 @@ export async function proposeCapsuleGraphNodeChange(
           entityType,
           provenance: cleanText(input.node?.provenance, 240) || 'Capsule Studio graph proposal',
           confidence: normalizeConfidence(input.node?.confidence),
+          confidenceKind,
           sourceReceiptIds,
+          recordedAt: cleanText(input.node?.recordedAt, 80) || timestamp,
+          rationale,
+          derivedFrom,
+          generatedBy,
+          supersedesElementId: cleanText(input.supersedesElementId, 160),
+          supersededBy: cleanText(input.supersededBy, 160),
+          invalidationReason: normalizeGraphInvalidationReason(input.invalidationReason),
           reason: cleanText(input.reason, 500),
         },
       }),
@@ -1497,9 +1553,26 @@ export async function proposeCapsuleGraphEdgeChange(
   const edgeId = cleanId(input.edge?.id ?? input.edgeId ?? `graph-edge-${stableId(`${source}:${target}:${input.edge?.relationshipType ?? input.edge?.label ?? 'related'}`)}`, 'graph-edge');
   const relationshipType = cleanText(input.edge?.relationshipType, 80) || cleanText(input.edge?.label, 80) || 'related_to';
   const sourceReceiptIds = uniqueStrings([...(input.sourceReceiptIds ?? []), ...(input.edge?.sourceReceiptIds ?? [])].map((item) => cleanText(item, 160)));
-  const proposalId = `graph-edge-${stableId(`${uid}:${capsule.capsuleId}:${operation}:${edgeId}:${nowIso(deps)}`)}`;
+  const timestamp = nowIso(deps);
+  const confidenceKind = normalizeGraphConfidenceKind(input.edge?.confidenceKind);
+  const generatedBy = normalizeGraphGeneratedBy(input.edge?.generatedBy) ?? graphGeneratedBy(uid, timestamp, 'proposal');
+  const rationale = cleanText(input.edge?.rationale ?? input.rationale ?? input.reason, 1200);
+  const derivedFrom = uniqueStrings([...(input.derivedFrom ?? []), ...(input.edge?.derivedFrom ?? [])].map((item) => cleanText(item, 160)).filter(Boolean));
+  if (operation !== 'delete') {
+    assertAiGraphRationale({ generatedBy, confidenceKind, rationale, derivedFrom });
+  }
+  const contradictionReviewRequired = shouldFileContradictionReview(capsule, {
+    relationshipType,
+    source,
+    target,
+    confidenceKind,
+    generatedBy,
+  });
+  const proposalId = `graph-edge-${stableId(`${uid}:${capsule.capsuleId}:${operation}:${edgeId}:${timestamp}`)}`;
   return createCapsuleReviewCard(uid, capsule.capsuleId, {
-    title: `Graph edge proposal: ${operation} ${relationshipType}`,
+    title: contradictionReviewRequired
+      ? `Graph contradiction review: ${source || 'new element'} contradicts ${target || 'existing element'}`
+      : `Graph edge proposal: ${operation} ${relationshipType}`,
     sourceType: 'graph',
     target: 'graphProposal',
     evidence: sourceReceiptIds.map((id) => ({ id, label: cleanText(id, 160) || 'Source receipt', advisory: false, sourceType: 'source' })),
@@ -1509,14 +1582,24 @@ export async function proposeCapsuleGraphEdgeChange(
         proposalId,
         kind: 'edge',
         operation,
+        contradictionReviewRequired,
         payload: {
           id: edgeId,
           source,
           target,
           label: cleanText(input.edge?.label, 160) || relationshipType,
           relationshipType,
+          judgeRationale: cleanText(input.edge?.judgeRationale, 1200),
           confidence: normalizeConfidence(input.edge?.confidence),
+          confidenceKind,
           sourceReceiptIds,
+          recordedAt: cleanText(input.edge?.recordedAt, 80) || timestamp,
+          rationale,
+          derivedFrom,
+          generatedBy,
+          supersedesElementId: cleanText(input.supersedesElementId, 160),
+          supersededBy: cleanText(input.supersededBy, 160),
+          invalidationReason: normalizeGraphInvalidationReason(input.invalidationReason),
           reason: cleanText(input.reason, 500),
         },
       }),
@@ -1734,10 +1817,18 @@ export async function rejectCapsuleReviewCard(
   if (!cardSnap.exists) return null;
   const card = normalizeReviewCard(cardSnap.data(), capsule, cardRef.id);
   const timestamp = stringOrNull(metadata.rejectedAt) ?? nowIso(deps);
+  const reviewerUid = cleanText(metadata.reviewerUid, 160) || uid;
+  const rejectionMetadata: CapsuleReviewRejectionMetadata = {
+    reviewerUid,
+    rejectedAt: timestamp,
+    confirmationReason: cleanText(metadata.confirmationReason, 600) || 'Rejected without applying the graph proposal.',
+    generatedBy: graphGeneratedBy(reviewerUid, timestamp, 'review_decision'),
+  };
   const rejectedCard: CapsuleReviewCard = {
     ...card,
     state: 'rejected',
     applyMetadata: null,
+    rejectionMetadata,
     updatedAt: timestamp,
   };
   const updatedCapsule = sanitizeCapsule({
@@ -1752,14 +1843,7 @@ export async function rejectCapsuleReviewCard(
   });
   const batch = db.batch();
   batch.set(ref, updatedCapsule, { merge: true });
-  batch.set(cardRef, {
-    ...rejectedCard,
-    rejectionMetadata: {
-      reviewerUid: cleanText(metadata.reviewerUid, 160) || uid,
-      rejectedAt: timestamp,
-      confirmationReason: cleanText(metadata.confirmationReason, 600) || 'Rejected without applying the graph proposal.',
-    },
-  }, { merge: true });
+  batch.set(cardRef, rejectedCard, { merge: true });
   await batch.commit();
   return { capsule: updatedCapsule, card: rejectedCard };
 }
@@ -3246,6 +3330,7 @@ function normalizeReviewCard(input: unknown, capsule: PraxisCapsule, fallbackId:
     evidence: normalizeReviewEvidence(Array.isArray(body.evidence) ? body.evidence : []),
     proposedEnvelopePatch: normalizeReviewEnvelopePatch(isRecord(body.proposedEnvelopePatch) ? body.proposedEnvelopePatch : {}),
     applyMetadata: normalizeExistingApplyMetadata(body.applyMetadata),
+    rejectionMetadata: normalizeExistingRejectionMetadata(body.rejectionMetadata) ?? undefined,
     createdAt: stringOrNull(body.createdAt) ?? capsule.updatedAt,
     updatedAt: stringOrNull(body.updatedAt) ?? capsule.updatedAt,
   };
@@ -3396,6 +3481,7 @@ function buildGraphProposalMemoryPosturePatch(
     kind: 'node' | 'edge';
     operation: 'create' | 'edit' | 'delete';
     payload: Record<string, unknown>;
+    contradictionReviewRequired?: boolean;
   },
 ): Record<string, unknown> {
   const existing = isRecord(capsule.v3?.memoryPosture)
@@ -3413,6 +3499,7 @@ function buildGraphProposalMemoryPosturePatch(
       kind: proposal.kind,
       operation: proposal.operation,
       payload: cloneSerializable(proposal.payload),
+      ...(proposal.contradictionReviewRequired ? { contradictionReviewRequired: true } : {}),
       reviewState: 'reviewed',
       promotedByReviewCard: true,
     },
@@ -3431,6 +3518,90 @@ function normalizeGraphOperation(value: unknown): 'create' | 'edit' | 'delete' {
 function normalizeConfidence(value: unknown): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value)) return null;
   return Math.round(Math.max(0, Math.min(value > 1 ? value / 100 : value, 1)) * 1000) / 1000;
+}
+
+function normalizeGraphConfidenceKind(value: unknown): CapsuleGraphConfidenceKind | undefined {
+  return value === 'EXTRACTED' || value === 'INFERRED' || value === 'ASSESSED' ? value : undefined;
+}
+
+function normalizeGraphInvalidationReason(value: unknown): CapsuleGraphInvalidationReason | undefined {
+  return value === 'CONTRADICTED' ||
+    value === 'SOURCE_RETRACTED' ||
+    value === 'TEMPORAL_EXPIRY' ||
+    value === 'HUMAN_OVERRIDE'
+    ? value
+    : undefined;
+}
+
+function graphGeneratedBy(actorId: string, at: string, activity: CapsuleGraphGeneratedBy['activity']): CapsuleGraphGeneratedBy {
+  return {
+    actorType: 'human',
+    actorId: cleanText(actorId, 160) || 'unknown-human',
+    at,
+    activity,
+  };
+}
+
+function normalizeGraphGeneratedBy(value: unknown): CapsuleGraphGeneratedBy | undefined {
+  if (!isRecord(value)) return undefined;
+  const actorType = value.actorType === 'model' ? 'model' : value.actorType === 'human' ? 'human' : null;
+  const actorId = cleanText(value.actorId, 240);
+  const at = cleanText(value.at, 80);
+  const activity = graphGeneratedByActivity(value.activity);
+  if (!actorType || !actorId || !at || !activity) return undefined;
+  return { actorType, actorId, at, activity };
+}
+
+function graphGeneratedByActivity(value: unknown): CapsuleGraphGeneratedBy['activity'] | undefined {
+  return value === 'extraction' ||
+    value === 'proposal' ||
+    value === 'review_decision' ||
+    value === 'import' ||
+    value === 'quality_review'
+    ? value
+    : undefined;
+}
+
+function assertAiGraphRationale(input: {
+  generatedBy: CapsuleGraphGeneratedBy;
+  confidenceKind?: CapsuleGraphConfidenceKind;
+  rationale: string;
+  derivedFrom: string[];
+}) {
+  if (input.generatedBy.actorType !== 'model' || !graphConfidenceAtLeastInferred(input.confidenceKind)) return;
+  if (!input.rationale || !input.derivedFrom.length) {
+    throw new Error('AI graph elements at INFERRED or ASSESSED confidence require rationale and derivedFrom claim ids.');
+  }
+}
+
+function graphConfidenceAtLeastInferred(value: unknown): boolean {
+  return value === 'INFERRED' || value === 'ASSESSED';
+}
+
+function shouldFileContradictionReview(
+  capsule: PraxisCapsule,
+  input: {
+    relationshipType: string;
+    source: string;
+    target: string;
+    confidenceKind?: CapsuleGraphConfidenceKind;
+    generatedBy: CapsuleGraphGeneratedBy;
+  },
+): boolean {
+  if (input.relationshipType !== 'CONTRADICTS') return false;
+  if (input.generatedBy.actorType !== 'model') return false;
+  if (!graphConfidenceAtLeastInferred(input.confidenceKind)) return false;
+  const source = findEmbeddedGraphElement(capsule, input.source);
+  const target = findEmbeddedGraphElement(capsule, input.target);
+  return [source, target].some((element) => graphConfidenceAtLeastInferred(element?.confidenceKind));
+}
+
+function findEmbeddedGraphElement(capsule: PraxisCapsule, elementId: string): Record<string, unknown> | null {
+  const id = cleanText(elementId, 160);
+  if (!id) return null;
+  const graph = normalizeEmbeddedGraphProjectionForApply(capsule);
+  const records = [...graphProjectionRecords(graph.nodes), ...graphProjectionRecords(graph.edges)];
+  return records.find((record) => cleanText(record.id, 160) === id) ?? null;
 }
 
 function formatAdvisoryMemoryCandidate(candidate: AdvisoryMemoryReviewCandidateInput): string {
@@ -3524,9 +3695,9 @@ function buildAppliedGraphProjectionPatch(
   const nodes = graphProjectionRecords(projection.nodes);
   const edges = graphProjectionRecords(projection.edges);
   if (proposal.kind === 'node') {
-    applyGraphNodeProposal(nodes, edges, proposal);
+    applyGraphNodeProposal(nodes, edges, proposal, applyMetadata);
   } else {
-    applyGraphEdgeProposal(edges, proposal);
+    applyGraphEdgeProposal(nodes, edges, proposal, applyMetadata);
   }
   const projectionId = cleanText(projection.projectionId, 160)
     || `capsule-${capsule.capsuleId}-embedded-graph`;
@@ -3614,13 +3785,33 @@ function applyGraphNodeProposal(
   nodes: Record<string, unknown>[],
   edges: Record<string, unknown>[],
   proposal: AppliedGraphProposal,
+  applyMetadata: CapsuleReviewApplyMetadata,
 ) {
   const payload = proposal.payload;
   const nodeId = cleanId(cleanText(payload.id, 160) || proposal.proposalId, 'graph-node');
   if (proposal.operation === 'delete') {
-    removeRecordById(nodes, nodeId);
-    removeEdgesForNode(edges, nodeId);
+    const supersededBy = cleanText(payload.supersededBy, 160) || undefined;
+    removeOrInvalidateRecordById(nodes, nodeId, {
+      invalidatedAt: applyMetadata.appliedAt,
+      reason: normalizeGraphInvalidationReason(payload.invalidationReason) ?? 'HUMAN_OVERRIDE',
+      supersededBy,
+    });
+    removeOrInvalidateEdgesForNode(edges, nodeId, {
+      invalidatedAt: applyMetadata.appliedAt,
+      reason: normalizeGraphInvalidationReason(payload.invalidationReason) ?? 'HUMAN_OVERRIDE',
+      supersededBy,
+    });
     return;
+  }
+  const supersedesElementId = cleanText(payload.supersedesElementId, 160);
+  if (supersedesElementId) {
+    const invalidation = {
+      invalidatedAt: applyMetadata.appliedAt,
+      reason: normalizeGraphInvalidationReason(payload.invalidationReason) ?? 'HUMAN_OVERRIDE',
+      supersededBy: nodeId,
+    };
+    removeOrInvalidateRecordById(nodes, supersedesElementId, invalidation);
+    removeOrInvalidateRecordById(edges, supersedesElementId, invalidation);
   }
   upsertRecordById(nodes, nodeId, {
     id: nodeId,
@@ -3629,13 +3820,16 @@ function applyGraphNodeProposal(
     reviewState: 'reviewed',
     provenance: cleanText(payload.provenance, 240) || 'Capsule Studio graph proposal',
     confidence: normalizeConfidence(payload.confidence),
+    ...graphElementApplyMetadata(payload, applyMetadata),
     sourceReceiptIds: cleanStringArray(payload.sourceReceiptIds),
   });
 }
 
 function applyGraphEdgeProposal(
+  nodes: Record<string, unknown>[],
   edges: Record<string, unknown>[],
   proposal: AppliedGraphProposal,
+  applyMetadata: CapsuleReviewApplyMetadata,
 ) {
   const payload = proposal.payload;
   const source = cleanText(payload.source, 160);
@@ -3643,20 +3837,56 @@ function applyGraphEdgeProposal(
   const relationshipType = cleanText(payload.relationshipType, 80) || cleanText(payload.label, 80) || 'related_to';
   const edgeId = cleanId(cleanText(payload.id, 160) || `graph-edge-${stableId(`${source}:${target}:${relationshipType}`)}`, 'graph-edge');
   if (proposal.operation === 'delete') {
-    removeRecordById(edges, edgeId);
+    removeOrInvalidateRecordById(edges, edgeId, {
+      invalidatedAt: applyMetadata.appliedAt,
+      reason: normalizeGraphInvalidationReason(payload.invalidationReason) ?? 'HUMAN_OVERRIDE',
+      supersededBy: cleanText(payload.supersededBy, 160) || undefined,
+    });
     return;
   }
   if (!source || !target) return;
+  const supersedesElementId = cleanText(payload.supersedesElementId, 160);
+  if (supersedesElementId) {
+    const invalidation = {
+      invalidatedAt: applyMetadata.appliedAt,
+      reason: normalizeGraphInvalidationReason(payload.invalidationReason) ?? 'HUMAN_OVERRIDE',
+      supersededBy: edgeId,
+    };
+    removeOrInvalidateRecordById(edges, supersedesElementId, invalidation);
+    removeOrInvalidateRecordById(nodes, supersedesElementId, invalidation);
+  }
   upsertRecordById(edges, edgeId, {
     id: edgeId,
     source,
     target,
     label: cleanText(payload.label, 160) || relationshipType,
     relationshipType,
+    ...(relationshipType === 'CONTRADICTS' && cleanText(payload.judgeRationale, 600)
+      ? { judgeRationale: cleanText(payload.judgeRationale, 600) }
+      : {}),
     reviewState: 'reviewed',
     confidence: normalizeConfidence(payload.confidence),
+    ...graphElementApplyMetadata(payload, applyMetadata),
     sourceReceiptIds: cleanStringArray(payload.sourceReceiptIds),
   });
+}
+
+function graphElementApplyMetadata(
+  payload: Record<string, unknown>,
+  applyMetadata: CapsuleReviewApplyMetadata,
+): Record<string, unknown> {
+  const confidenceKind = normalizeGraphConfidenceKind(payload.confidenceKind);
+  const recordedAt = stringOrNull(payload.recordedAt) ?? applyMetadata.appliedAt;
+  const rationale = cleanText(payload.rationale, 600);
+  const derivedFrom = cleanStringArray(payload.derivedFrom);
+  const generatedBy = normalizeGraphGeneratedBy(payload.generatedBy) ?? applyMetadata.generatedBy;
+  return {
+    recordedAt,
+    ...(confidenceKind ? { confidenceKind } : {}),
+    ...(rationale ? { rationale } : {}),
+    ...(derivedFrom.length ? { derivedFrom } : {}),
+    ...(generatedBy ? { generatedBy } : {}),
+  };
 }
 
 function upsertRecordById(records: Record<string, unknown>[], id: string, next: Record<string, unknown>) {
@@ -3671,18 +3901,63 @@ function upsertRecordById(records: Record<string, unknown>[], id: string, next: 
   }
 }
 
-function removeRecordById(records: Record<string, unknown>[], id: string) {
+function removeOrInvalidateRecordById(
+  records: Record<string, unknown>[],
+  id: string,
+  invalidation: { invalidatedAt: string; reason: CapsuleGraphInvalidationReason; supersededBy?: string },
+) {
   const index = records.findIndex((record) => cleanText(record.id, 160) === id);
-  if (index >= 0) records.splice(index, 1);
+  if (index < 0) return;
+  if (!graphRecordIsReviewed(records[index])) {
+    records.splice(index, 1);
+    return;
+  }
+  records[index] = invalidateGraphRecord(records[index], invalidation);
 }
 
-function removeEdgesForNode(edges: Record<string, unknown>[], nodeId: string) {
+function removeOrInvalidateEdgesForNode(
+  edges: Record<string, unknown>[],
+  nodeId: string,
+  invalidation: { invalidatedAt: string; reason: CapsuleGraphInvalidationReason; supersededBy?: string },
+) {
   for (let index = edges.length - 1; index >= 0; index -= 1) {
     const edge = edges[index];
     if (cleanText(edge?.source, 160) === nodeId || cleanText(edge?.target, 160) === nodeId) {
-      edges.splice(index, 1);
+      if (graphRecordIsReviewed(edge)) {
+        edges[index] = invalidateGraphRecord(edge, invalidation);
+      } else {
+        edges.splice(index, 1);
+      }
     }
   }
+}
+
+function graphRecordIsReviewed(record: Record<string, unknown>): boolean {
+  const reviewState = cleanText(record.reviewState, 80).toLowerCase();
+  const status = cleanText(record.status, 80).toLowerCase();
+  return reviewState === 'reviewed' ||
+    reviewState === 'approved' ||
+    reviewState === 'accepted' ||
+    reviewState === 'applied' ||
+    reviewState === 'canonical' ||
+    status === 'reviewed' ||
+    status === 'approved' ||
+    status === 'canonical';
+}
+
+function invalidateGraphRecord(
+  record: Record<string, unknown>,
+  invalidation: { invalidatedAt: string; reason: CapsuleGraphInvalidationReason; supersededBy?: string },
+): Record<string, unknown> {
+  if (stringOrNull(record.invalidatedAt) || normalizeGraphInvalidationReason(record.invalidationReason)) {
+    return record;
+  }
+  return {
+    ...record,
+    invalidatedAt: invalidation.invalidatedAt,
+    invalidationReason: invalidation.reason,
+    ...(invalidation.supersededBy ? { supersededBy: invalidation.supersededBy } : {}),
+  };
 }
 
 async function writeDependencyInvalidationNotes(
@@ -3766,6 +4041,7 @@ function normalizeApplyMetadata(
   const reviewerUid = cleanText(input.reviewerUid, 160);
   const diffHash = cleanText(input.diffHash, 240);
   const confirmationReason = cleanText(input.confirmationReason, 600);
+  const appliedAt = stringOrNull(input.appliedAt) ?? fallbackAppliedAt;
   const targetVersion = typeof input.targetVersion === 'number' && Number.isInteger(input.targetVersion) && input.targetVersion > 0
     ? input.targetVersion
     : fallbackVersion;
@@ -3774,10 +4050,11 @@ function normalizeApplyMetadata(
   if (!confirmationReason) throw new Error('Capsule review apply requires a confirmation reason.');
   return {
     reviewerUid,
-    appliedAt: stringOrNull(input.appliedAt) ?? fallbackAppliedAt,
+    appliedAt,
     targetVersion,
     diffHash,
     confirmationReason,
+    generatedBy: normalizeGraphGeneratedBy(input.generatedBy) ?? graphGeneratedBy(reviewerUid, appliedAt, 'review_decision'),
   };
 }
 
@@ -3789,7 +4066,30 @@ function normalizeExistingApplyMetadata(input: unknown): CapsuleReviewApplyMetad
   const appliedAt = stringOrNull(input.appliedAt);
   const targetVersion = nonnegativeInt(input.targetVersion);
   if (!reviewerUid || !diffHash || !confirmationReason || !appliedAt || !targetVersion) return null;
-  return { reviewerUid, appliedAt, targetVersion, diffHash, confirmationReason };
+  const generatedBy = normalizeGraphGeneratedBy(input.generatedBy);
+  return {
+    reviewerUid,
+    appliedAt,
+    targetVersion,
+    diffHash,
+    confirmationReason,
+    ...(generatedBy ? { generatedBy } : {}),
+  };
+}
+
+function normalizeExistingRejectionMetadata(input: unknown): CapsuleReviewRejectionMetadata | null {
+  if (!isRecord(input)) return null;
+  const reviewerUid = cleanText(input.reviewerUid, 160);
+  const rejectedAt = stringOrNull(input.rejectedAt);
+  const confirmationReason = cleanText(input.confirmationReason, 600);
+  if (!reviewerUid || !rejectedAt || !confirmationReason) return null;
+  const generatedBy = normalizeGraphGeneratedBy(input.generatedBy);
+  return {
+    reviewerUid,
+    rejectedAt,
+    confirmationReason,
+    ...(generatedBy ? { generatedBy } : {}),
+  };
 }
 
 function normalizeReviewState(value: unknown): CapsuleReviewState {

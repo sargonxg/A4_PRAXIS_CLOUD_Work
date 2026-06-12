@@ -263,7 +263,28 @@ export interface ContextCapsuleOntologyBindingV3 {
   bindingRationale: string;
 }
 
-export interface ContextCapsuleGraphLiteNodeV3 {
+export type ContextCapsuleGraphInvalidationReasonV3 = 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+export type ContextCapsuleGraphConfidenceKindV3 = 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+
+export interface ContextCapsuleGraphGeneratedByV3 {
+  actorType: 'model' | 'human';
+  actorId: string;
+  at: string;
+  activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+}
+
+export interface ContextCapsuleGraphElementProvenanceV3 {
+  recordedAt?: string;
+  invalidatedAt?: string;
+  supersededBy?: string;
+  invalidationReason?: ContextCapsuleGraphInvalidationReasonV3;
+  rationale?: string;
+  derivedFrom?: string[];
+  confidenceKind?: ContextCapsuleGraphConfidenceKindV3;
+  generatedBy?: ContextCapsuleGraphGeneratedByV3;
+}
+
+export interface ContextCapsuleGraphLiteNodeV3 extends ContextCapsuleGraphElementProvenanceV3 {
   id: string;
   label: string;
   entityType: string;
@@ -272,12 +293,13 @@ export interface ContextCapsuleGraphLiteNodeV3 {
   sourceReceiptIds: string[];
 }
 
-export interface ContextCapsuleGraphLiteEdgeV3 {
+export interface ContextCapsuleGraphLiteEdgeV3 extends ContextCapsuleGraphElementProvenanceV3 {
   id: string;
   source: string;
   target: string;
   label: string;
   relationshipType: string | null;
+  judgeRationale?: string;
   reviewState: 'canonical' | 'proposed' | 'missing' | 'advisory' | 'reviewed';
   confidence: number | null;
   sourceReceiptIds: string[];
@@ -1162,6 +1184,7 @@ function normalizeGraphLiteNodes(value: unknown): ContextCapsuleGraphLiteNodeV3[
       reviewState: reviewStateFromUnknown(record.reviewState),
       confidence: confidenceFromUnknown(record.confidence),
       sourceReceiptIds: cleanStringArray(record.sourceReceiptIds),
+      ...graphElementProvenanceFromRecord(record),
     }];
   });
 }
@@ -1179,11 +1202,67 @@ function normalizeGraphLiteEdges(value: unknown): ContextCapsuleGraphLiteEdgeV3[
       target,
       label: cleanString(record.label) || cleanString(record.relationshipType) || 'related to',
       relationshipType: cleanString(record.relationshipType) || null,
+      ...(cleanString(record.judgeRationale) ? { judgeRationale: cleanString(record.judgeRationale) } : {}),
       reviewState: reviewStateFromUnknown(record.reviewState),
       confidence: confidenceFromUnknown(record.confidence),
       sourceReceiptIds: cleanStringArray(record.sourceReceiptIds),
+      ...graphElementProvenanceFromRecord(record),
     }];
   });
+}
+
+function graphElementProvenanceFromRecord(record: Record<string, unknown>): ContextCapsuleGraphElementProvenanceV3 {
+  const recordedAt = cleanString(record.recordedAt);
+  const invalidatedAt = cleanString(record.invalidatedAt);
+  const supersededBy = cleanString(record.supersededBy);
+  const invalidationReason = graphInvalidationReasonFromUnknown(record.invalidationReason);
+  const rationale = cleanString(record.rationale);
+  const derivedFrom = cleanStringArray(record.derivedFrom);
+  const confidenceKind = graphConfidenceKindFromUnknown(record.confidenceKind);
+  const generatedBy = graphGeneratedByFromUnknown(record.generatedBy);
+  return {
+    ...(recordedAt ? { recordedAt } : {}),
+    ...(invalidatedAt ? { invalidatedAt } : {}),
+    ...(supersededBy ? { supersededBy } : {}),
+    ...(invalidationReason ? { invalidationReason } : {}),
+    ...(rationale ? { rationale } : {}),
+    ...(derivedFrom.length ? { derivedFrom } : {}),
+    ...(confidenceKind ? { confidenceKind } : {}),
+    ...(generatedBy ? { generatedBy } : {}),
+  };
+}
+
+function graphGeneratedByFromUnknown(value: unknown): ContextCapsuleGraphGeneratedByV3 | undefined {
+  if (!isRecord(value)) return undefined;
+  const actorType = value.actorType === 'human' ? 'human' : value.actorType === 'model' ? 'model' : null;
+  const activity = graphGeneratedByActivityFromUnknown(value.activity);
+  const actorId = cleanString(value.actorId);
+  const at = cleanString(value.at);
+  if (!actorType || !activity || !actorId || !at) return undefined;
+  return { actorType, actorId, at, activity };
+}
+
+function graphGeneratedByActivityFromUnknown(value: unknown): ContextCapsuleGraphGeneratedByV3['activity'] | null {
+  return value === 'extraction' ||
+    value === 'proposal' ||
+    value === 'review_decision' ||
+    value === 'import' ||
+    value === 'quality_review'
+    ? value
+    : null;
+}
+
+function graphInvalidationReasonFromUnknown(value: unknown): ContextCapsuleGraphInvalidationReasonV3 | undefined {
+  return value === 'CONTRADICTED' ||
+    value === 'SOURCE_RETRACTED' ||
+    value === 'TEMPORAL_EXPIRY' ||
+    value === 'HUMAN_OVERRIDE'
+    ? value
+    : undefined;
+}
+
+function graphConfidenceKindFromUnknown(value: unknown): ContextCapsuleGraphConfidenceKindV3 | undefined {
+  return value === 'EXTRACTED' || value === 'INFERRED' || value === 'ASSESSED' ? value : undefined;
 }
 
 function inferContextCaptureOntologyIds(v2: ContextCapsuleV2): OntologyId[] {

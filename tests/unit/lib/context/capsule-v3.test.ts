@@ -203,6 +203,76 @@ describe('ContextCapsule v3 contract', () => {
     ]));
   });
 
+  it('preserves enriched bi-temporal rationale fields on GraphLite grounding elements', () => {
+    const capsule = normalizeContextCapsuleV3({
+      ...makeCapsule(),
+      grounding: {
+        embeddedGraph: {
+          provider: 'graphlite',
+          projectionId: 'enriched-graphlite-projection',
+          status: 'reviewed',
+          namedGraph: 'capsule_enriched',
+          advisoryOnly: true,
+          canonicalStore: 'Firestore ContextCapsules',
+          promotionGate: 'Human review-card approval required before canonical graph promotion.',
+          nodes: [{
+            id: 'claim-1',
+            label: 'Claim one',
+            entityType: 'Claim',
+            reviewState: 'reviewed',
+            confidence: 0.72,
+            confidenceKind: 'INFERRED',
+            recordedAt: '2026-06-12T12:00:00.000Z',
+            rationale: 'The claim was extracted from a dated source receipt.',
+            derivedFrom: ['source-claim-1'],
+            generatedBy: {
+              actorType: 'model',
+              actorId: 'model-matrix:test',
+              at: '2026-06-12T12:00:00.000Z',
+              activity: 'extraction',
+            },
+          }],
+          edges: [{
+            id: 'edge-contradicts',
+            source: 'claim-1',
+            target: 'claim-2',
+            label: 'contradicts',
+            relationshipType: 'CONTRADICTS',
+            reviewState: 'reviewed',
+            confidence: 0.77,
+            confidenceKind: 'ASSESSED',
+            judgeRationale: 'The claims make mutually exclusive assertions.',
+            recordedAt: '2026-06-12T12:05:00.000Z',
+            invalidatedAt: '2026-06-13T12:05:00.000Z',
+            invalidationReason: 'CONTRADICTED',
+            supersededBy: 'edge-replacement',
+            rationale: 'A contradiction judge compared the two claims.',
+            derivedFrom: ['claim-1', 'claim-2'],
+          }],
+        },
+      },
+    });
+
+    expect(capsule.grounding.embeddedGraph.nodes[0]).toMatchObject({
+      id: 'claim-1',
+      confidenceKind: 'INFERRED',
+      recordedAt: '2026-06-12T12:00:00.000Z',
+      derivedFrom: ['source-claim-1'],
+      generatedBy: {
+        actorType: 'model',
+        activity: 'extraction',
+      },
+    });
+    expect(capsule.grounding.embeddedGraph.edges[0]).toMatchObject({
+      id: 'edge-contradicts',
+      relationshipType: 'CONTRADICTS',
+      confidenceKind: 'ASSESSED',
+      invalidationReason: 'CONTRADICTED',
+      supersededBy: 'edge-replacement',
+      judgeRationale: 'The claims make mutually exclusive assertions.',
+    });
+  });
+
   it('computes claim support from receipts, preserves validity, and marks contradicting receipts disputed', () => {
     const capsule = normalizeContextCapsuleV3(makeCapsule({
       claimLedger: [{

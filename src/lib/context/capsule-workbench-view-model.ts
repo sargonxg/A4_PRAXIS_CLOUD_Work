@@ -200,9 +200,22 @@ export interface CapsuleGraphNodeDisplay {
   entityType?: string;
   provenance?: string;
   confidence?: number | null;
+  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
   sourceReceiptIds?: string[];
   linkedClaimIds?: string[];
   version?: number | null;
+  recordedAt?: string;
+  invalidatedAt?: string;
+  supersededBy?: string;
+  invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+  rationale?: string;
+  derivedFrom?: string[];
+  generatedBy?: {
+    actorType: 'model' | 'human';
+    actorId: string;
+    at: string;
+    activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+  };
 }
 
 export interface CapsuleGraphEdgeDisplay {
@@ -212,8 +225,22 @@ export interface CapsuleGraphEdgeDisplay {
   label: string;
   reviewState: CapsuleWorkbenchReviewState;
   relationshipType?: string;
+  judgeRationale?: string;
   confidence?: number | null;
+  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
   sourceReceiptIds?: string[];
+  recordedAt?: string;
+  invalidatedAt?: string;
+  supersededBy?: string;
+  invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+  rationale?: string;
+  derivedFrom?: string[];
+  generatedBy?: {
+    actorType: 'model' | 'human';
+    actorId: string;
+    at: string;
+    activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+  };
 }
 
 export interface CapsuleGraphDisplay {
@@ -1251,7 +1278,15 @@ function buildGraph(input: {
         entityType: proposal.payload.entityType,
         provenance: proposal.payload.provenance || 'approved graph proposal',
         confidence: proposal.payload.confidence,
+        confidenceKind: proposal.payload.confidenceKind,
         sourceReceiptIds: proposal.payload.sourceReceiptIds,
+        recordedAt: proposal.payload.recordedAt,
+        invalidatedAt: proposal.payload.invalidatedAt,
+        supersededBy: proposal.payload.supersededBy,
+        invalidationReason: proposal.payload.invalidationReason,
+        rationale: proposal.payload.rationale,
+        derivedFrom: proposal.payload.derivedFrom,
+        generatedBy: proposal.payload.generatedBy,
       });
       addEdge({
         id: `${proposal.proposalId}-capsule`,
@@ -1261,7 +1296,15 @@ function buildGraph(input: {
         reviewState: 'reviewed',
         relationshipType: 'member_of',
         confidence: proposal.payload.confidence,
+        confidenceKind: proposal.payload.confidenceKind,
         sourceReceiptIds: proposal.payload.sourceReceiptIds,
+        recordedAt: proposal.payload.recordedAt,
+        invalidatedAt: proposal.payload.invalidatedAt,
+        supersededBy: proposal.payload.supersededBy,
+        invalidationReason: proposal.payload.invalidationReason,
+        rationale: proposal.payload.rationale,
+        derivedFrom: proposal.payload.derivedFrom,
+        generatedBy: proposal.payload.generatedBy,
       });
     }
     if (proposal.kind === 'edge' && proposal.operation !== 'delete') {
@@ -1280,8 +1323,17 @@ function buildGraph(input: {
         label: proposal.payload.label || proposal.payload.relationshipType || 'related to',
         reviewState: 'reviewed',
         relationshipType: proposal.payload.relationshipType,
+        judgeRationale: proposal.payload.judgeRationale,
         confidence: proposal.payload.confidence,
+        confidenceKind: proposal.payload.confidenceKind,
         sourceReceiptIds: proposal.payload.sourceReceiptIds,
+        recordedAt: proposal.payload.recordedAt,
+        invalidatedAt: proposal.payload.invalidatedAt,
+        supersededBy: proposal.payload.supersededBy,
+        invalidationReason: proposal.payload.invalidationReason,
+        rationale: proposal.payload.rationale,
+        derivedFrom: proposal.payload.derivedFrom,
+        generatedBy: proposal.payload.generatedBy,
       });
     }
   }
@@ -1399,7 +1451,21 @@ interface CapsuleGraphProposalItem {
     provenance?: string;
     reason?: string;
     confidence?: number | null;
+    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
     sourceReceiptIds?: string[];
+    recordedAt?: string;
+    invalidatedAt?: string;
+    supersededBy?: string;
+    invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+    rationale?: string;
+    derivedFrom?: string[];
+    judgeRationale?: string;
+    generatedBy?: {
+      actorType: 'model' | 'human';
+      actorId: string;
+      at: string;
+      activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+    };
   };
 }
 
@@ -1419,7 +1485,20 @@ interface GraphLiteProjectionItem {
     entityType: string;
     reviewState: CapsuleWorkbenchReviewState;
     confidence: number | null;
+    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
     sourceReceiptIds: string[];
+    recordedAt?: string;
+    invalidatedAt?: string;
+    supersededBy?: string;
+    invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+    rationale?: string;
+    derivedFrom?: string[];
+    generatedBy?: {
+      actorType: 'model' | 'human';
+      actorId: string;
+      at: string;
+      activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+    };
   }>;
   edges: Array<{
     id: string;
@@ -1427,9 +1506,23 @@ interface GraphLiteProjectionItem {
     target: string;
     label: string;
     relationshipType?: string;
+    judgeRationale?: string;
     reviewState: CapsuleWorkbenchReviewState;
     confidence: number | null;
+    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
     sourceReceiptIds: string[];
+    recordedAt?: string;
+    invalidatedAt?: string;
+    supersededBy?: string;
+    invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+    rationale?: string;
+    derivedFrom?: string[];
+    generatedBy?: {
+      actorType: 'model' | 'human';
+      actorId: string;
+      at: string;
+      activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+    };
   }>;
 }
 
@@ -1765,7 +1858,16 @@ function graphProposalsFromUnknown(value: unknown): CapsuleGraphProposalItem[] {
         provenance: cleanText(payload.provenance) || undefined,
         reason: cleanText(payload.reason) || undefined,
         confidence: confidenceFromUnknown(payload.confidence),
+        confidenceKind: graphConfidenceKindFromUnknown(payload.confidenceKind),
         sourceReceiptIds: cleanStrings(payload.sourceReceiptIds),
+        recordedAt: cleanText(payload.recordedAt) || undefined,
+        invalidatedAt: cleanText(payload.invalidatedAt) || undefined,
+        supersededBy: cleanText(payload.supersededBy) || undefined,
+        invalidationReason: graphInvalidationReasonFromUnknown(payload.invalidationReason),
+        rationale: cleanText(payload.rationale) || undefined,
+        derivedFrom: cleanStrings(payload.derivedFrom),
+        judgeRationale: cleanText(payload.judgeRationale) || undefined,
+        generatedBy: graphGeneratedByFromUnknown(payload.generatedBy),
       },
     }];
   });
@@ -1810,7 +1912,15 @@ function addGraphLiteProjection(
       entityType: node.entityType,
       provenance: 'GraphLite advisory projection',
       confidence: node.confidence,
+      confidenceKind: node.confidenceKind,
       sourceReceiptIds: node.sourceReceiptIds,
+      recordedAt: node.recordedAt,
+      invalidatedAt: node.invalidatedAt,
+      supersededBy: node.supersededBy,
+      invalidationReason: node.invalidationReason,
+      rationale: node.rationale,
+      derivedFrom: node.derivedFrom,
+      generatedBy: node.generatedBy,
     });
     addEdge({
       id: `graphlite-node:${projection.projectionId}:${node.id}`,
@@ -1820,7 +1930,15 @@ function addGraphLiteProjection(
       reviewState: 'advisory',
       relationshipType: 'projects',
       confidence: node.confidence,
+      confidenceKind: node.confidenceKind,
       sourceReceiptIds: node.sourceReceiptIds,
+      recordedAt: node.recordedAt,
+      invalidatedAt: node.invalidatedAt,
+      supersededBy: node.supersededBy,
+      invalidationReason: node.invalidationReason,
+      rationale: node.rationale,
+      derivedFrom: node.derivedFrom,
+      generatedBy: node.generatedBy,
     });
   }
 
@@ -1832,8 +1950,17 @@ function addGraphLiteProjection(
       label: edge.label,
       reviewState: 'advisory',
       relationshipType: edge.relationshipType,
+      judgeRationale: edge.judgeRationale,
       confidence: edge.confidence,
+      confidenceKind: edge.confidenceKind,
       sourceReceiptIds: edge.sourceReceiptIds,
+      recordedAt: edge.recordedAt,
+      invalidatedAt: edge.invalidatedAt,
+      supersededBy: edge.supersededBy,
+      invalidationReason: edge.invalidationReason,
+      rationale: edge.rationale,
+      derivedFrom: edge.derivedFrom,
+      generatedBy: edge.generatedBy,
     });
   }
 }
@@ -1877,7 +2004,9 @@ function graphLiteNodesFromUnknown(value: unknown): GraphLiteProjectionItem['nod
       entityType: cleanText(record?.entityType) || 'Policy',
       reviewState: reviewStateFrom(record?.reviewState ?? 'advisory'),
       confidence: confidenceFromUnknown(record?.confidence),
+      confidenceKind: graphConfidenceKindFromUnknown(record?.confidenceKind),
       sourceReceiptIds: cleanStrings(record?.sourceReceiptIds),
+      ...graphElementDisplayMetadataFromRecord(record),
     }];
   });
 }
@@ -1895,11 +2024,67 @@ function graphLiteEdgesFromUnknown(value: unknown): GraphLiteProjectionItem['edg
       target,
       label: cleanText(record?.label) || cleanText(record?.relationshipType) || 'related to',
       relationshipType: cleanText(record?.relationshipType) || undefined,
+      judgeRationale: cleanText(record?.judgeRationale) || undefined,
       reviewState: reviewStateFrom(record?.reviewState ?? 'advisory'),
       confidence: confidenceFromUnknown(record?.confidence),
+      confidenceKind: graphConfidenceKindFromUnknown(record?.confidenceKind),
       sourceReceiptIds: cleanStrings(record?.sourceReceiptIds),
+      ...graphElementDisplayMetadataFromRecord(record),
     }];
   });
+}
+
+function graphElementDisplayMetadataFromRecord(record: Record<string, unknown> | null | undefined) {
+  if (!record) return {};
+  const recordedAt = cleanText(record.recordedAt);
+  const invalidatedAt = cleanText(record.invalidatedAt);
+  const supersededBy = cleanText(record.supersededBy);
+  const invalidationReason = graphInvalidationReasonFromUnknown(record.invalidationReason);
+  const rationale = cleanText(record.rationale);
+  const derivedFrom = cleanStrings(record.derivedFrom);
+  const generatedBy = graphGeneratedByFromUnknown(record.generatedBy);
+  return {
+    ...(recordedAt ? { recordedAt } : {}),
+    ...(invalidatedAt ? { invalidatedAt } : {}),
+    ...(supersededBy ? { supersededBy } : {}),
+    ...(invalidationReason ? { invalidationReason } : {}),
+    ...(rationale ? { rationale } : {}),
+    ...(derivedFrom.length ? { derivedFrom } : {}),
+    ...(generatedBy ? { generatedBy } : {}),
+  };
+}
+
+function graphInvalidationReasonFromUnknown(value: unknown): 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE' | undefined {
+  return value === 'CONTRADICTED' ||
+    value === 'SOURCE_RETRACTED' ||
+    value === 'TEMPORAL_EXPIRY' ||
+    value === 'HUMAN_OVERRIDE'
+    ? value
+    : undefined;
+}
+
+function graphConfidenceKindFromUnknown(value: unknown): 'EXTRACTED' | 'INFERRED' | 'ASSESSED' | undefined {
+  return value === 'EXTRACTED' || value === 'INFERRED' || value === 'ASSESSED' ? value : undefined;
+}
+
+function graphGeneratedByFromUnknown(value: unknown): CapsuleGraphNodeDisplay['generatedBy'] {
+  const record = asRecord(value);
+  if (!record) return undefined;
+  const actorType = record.actorType === 'model' ? 'model' : record.actorType === 'human' ? 'human' : null;
+  const actorId = cleanText(record.actorId);
+  const at = cleanText(record.at);
+  const activity = graphGeneratedByActivityFromUnknown(record.activity);
+  return actorType && actorId && at && activity ? { actorType, actorId, at, activity } : undefined;
+}
+
+function graphGeneratedByActivityFromUnknown(value: unknown): NonNullable<CapsuleGraphNodeDisplay['generatedBy']>['activity'] | undefined {
+  return value === 'extraction' ||
+    value === 'proposal' ||
+    value === 'review_decision' ||
+    value === 'import' ||
+    value === 'quality_review'
+    ? value
+    : undefined;
 }
 
 function firstRecord(...values: unknown[]): Record<string, unknown> | null {

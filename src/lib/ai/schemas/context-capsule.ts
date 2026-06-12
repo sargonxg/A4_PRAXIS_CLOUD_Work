@@ -97,6 +97,25 @@ export const CapsuleOntologyBindingSchema = z.object({
 });
 
 const CapsuleEmbeddedGraphReviewStateSchema = z.enum(['canonical', 'proposed', 'missing', 'advisory', 'reviewed']);
+const CapsuleGraphInvalidationReasonSchema = z.enum(['CONTRADICTED', 'SOURCE_RETRACTED', 'TEMPORAL_EXPIRY', 'HUMAN_OVERRIDE']);
+const CapsuleGraphConfidenceKindSchema = z.enum(['EXTRACTED', 'INFERRED', 'ASSESSED']);
+const CapsuleGraphGeneratedBySchema = z.object({
+  actorType: z.enum(['model', 'human']),
+  actorId: z.string().min(1).max(240),
+  at: z.string().min(1).max(80),
+  activity: z.enum(['extraction', 'proposal', 'review_decision', 'import', 'quality_review']),
+}).strict();
+
+const CapsuleGraphElementMetadataSchema = {
+  recordedAt: z.string().min(1).max(80).optional(),
+  invalidatedAt: z.string().min(1).max(80).optional(),
+  supersededBy: z.string().min(1).max(220).optional(),
+  invalidationReason: CapsuleGraphInvalidationReasonSchema.optional(),
+  rationale: z.string().min(1).max(1200).optional(),
+  derivedFrom: z.array(z.string().min(1).max(220)).max(120).optional(),
+  confidenceKind: CapsuleGraphConfidenceKindSchema.optional(),
+  generatedBy: CapsuleGraphGeneratedBySchema.optional(),
+};
 
 export const CapsuleEmbeddedGraphProjectionSchema = z.object({
   provider: z.literal('graphlite'),
@@ -115,6 +134,7 @@ export const CapsuleEmbeddedGraphProjectionSchema = z.object({
     reviewState: CapsuleEmbeddedGraphReviewStateSchema.optional(),
     confidence: z.number().min(0).max(1).optional(),
     sourceReceiptIds: z.array(z.string().min(1).max(180)).max(80).optional(),
+    ...CapsuleGraphElementMetadataSchema,
   })).max(1000).default([]),
   edges: z.array(z.object({
     id: z.string().min(1).max(220),
@@ -122,9 +142,11 @@ export const CapsuleEmbeddedGraphProjectionSchema = z.object({
     target: z.string().min(1).max(220),
     label: z.string().min(1).max(240),
     relationshipType: z.string().min(1).max(160).optional(),
+    judgeRationale: z.string().min(1).max(1200).optional(),
     reviewState: CapsuleEmbeddedGraphReviewStateSchema.optional(),
     confidence: z.number().min(0).max(1).optional(),
     sourceReceiptIds: z.array(z.string().min(1).max(180)).max(80).optional(),
+    ...CapsuleGraphElementMetadataSchema,
   })).max(2000).default([]),
 });
 
