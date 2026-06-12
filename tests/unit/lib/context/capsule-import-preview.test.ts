@@ -1,11 +1,20 @@
 import JSZip from 'jszip';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   buildCapsuleImportReviewHref,
   buildCapsulePlusImportPreview,
+  buildDialecticaPackageImportPreview,
   buildDialecticaImportPreview,
 } from '@/lib/context/capsule-import-preview';
 import { DIALECTICA_PRAXIS_CONTEXT_CONTRACT_VERSION } from '@/lib/context/dialectica-context-contract';
+
+const dialecticaFixtureRoot = join(process.cwd(), 'tests/fixtures/dialectica-capsule');
+
+function fixtureText(path: string): string {
+  return readFileSync(join(dialecticaFixtureRoot, path), 'utf8');
+}
 
 describe('capsule import preview mapping', () => {
   it('summarizes a DIALECTICA export before import without applying claims', () => {
@@ -35,6 +44,32 @@ describe('capsule import preview mapping', () => {
     expect(preview.sourceReceiptCount).toBe(2);
     expect(preview.reviewGatedSummary).toContain('review-gated');
     expect(preview.sourceReceipts.map((receipt) => receipt.id)).toEqual(['src-1', 'src-2']);
+  });
+
+  it('summarizes a DIALECTICA spec-3.0 capsule bundle before import', async () => {
+    const zip = new JSZip();
+    zip.file('mimetype', fixtureText('mimetype'));
+    zip.file('manifest.json', fixtureText('manifest.json'));
+    zip.file('claims.jsonl', fixtureText('claims.jsonl'));
+    zip.file('evidence/sources.jsonl', fixtureText('evidence/sources.jsonl'));
+    zip.file('episodes.json', fixtureText('episodes.json'));
+    zip.file('runtime.json', fixtureText('runtime.json'));
+    zip.file('graph.jsonld', fixtureText('graph.jsonld'));
+    zip.file('agent_context.md', fixtureText('agent_context.md'));
+    zip.file('operations.md', fixtureText('operations.md'));
+    zip.file('graph/ladybug/manifest.json', JSON.stringify({ projection: 'ladybug' }));
+
+    const preview = await buildDialecticaPackageImportPreview(await zip.generateAsync({ type: 'uint8array' }));
+
+    expect(preview.kind).toBe('dialectica');
+    expect(preview.title).toBe('Synthetic Border-Region Conflict Situation');
+    expect(preview.specVersion).toBe('3.0');
+    expect(preview.claimCount).toBe(1);
+    expect(preview.sourceCount).toBe(1);
+    expect(preview.signaturePresent).toBe(true);
+    expect(preview.layersPresent).toEqual(expect.arrayContaining(['claims', 'evidence', 'runtime']));
+    expect(preview.layersSkipped).toEqual(expect.arrayContaining(['graph/ladybug/*']));
+    expect(preview.importNotes?.join('\n')).toMatch(/graph\/ladybug\/\*/);
   });
 
   it('summarizes a Capsule+ bundle from zip metadata and graph rows', async () => {

@@ -11,10 +11,13 @@ describe('CapsuleImportButton preview contract', () => {
     const source = readFileSync(componentPath, 'utf8');
 
     expect(source).toContain('buildDialecticaImportPreview');
+    expect(source).toContain('buildDialecticaPackageImportPreview');
     expect(source).toContain('buildCapsulePlusImportPreview');
     expect(source).toContain('data-testid="capsule-import-preview-dialog"');
     expect(source).toContain('Confirm import');
     expect(source).toContain('Cancel');
+    expect(source).toContain('Validation report');
+    expect(source).toContain('Layers skipped');
     expect(source).toContain('What stays review-gated');
     expect(source).toContain('Review now');
     expect(source).toContain('buildCapsuleImportReviewHref');

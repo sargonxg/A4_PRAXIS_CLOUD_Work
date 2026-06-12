@@ -363,6 +363,16 @@ export interface PraxisCapsule {
   ontologyBinding?: unknown;
   embeddedGraph?: unknown;
   graphStats?: CapsuleGraphStats;
+  importSource?: string;
+  originalCapsuleId?: string;
+  packageVersion?: number;
+  provenance_root_hash?: string;
+  signature?: unknown;
+  importedAt?: string;
+  importNotes?: string[];
+  importContentHash?: string;
+  dialecticaManifestOwnerUid?: string;
+  dialecticaSpecVersion?: string;
   activeOntologyStackId?: string;
   activeReadContractId?: string;
   readinessSummary?: CapsuleReadinessSummary;
@@ -395,6 +405,34 @@ export interface CreateCapsuleInput {
   latestGateState?: CapsuleGateState;
   embeddedGraph?: unknown;
   graphStats?: Partial<CapsuleGraphStats>;
+  sourceRefs?: unknown[];
+  claimLedger?: unknown[];
+  outputContracts?: unknown[];
+  sourcePosture?: unknown;
+  agentPermissions?: unknown;
+  memoryPosture?: unknown;
+  humanTacitKnowledge?: unknown;
+  temporality?: unknown;
+  causality?: unknown;
+  ontologyBinding?: unknown;
+  importSource?: string;
+  originalCapsuleId?: string;
+  packageVersion?: number;
+  provenance_root_hash?: string;
+  signature?: unknown;
+  importedAt?: string;
+  importNotes?: string[];
+  importContentHash?: string;
+  dialecticaManifestOwnerUid?: string;
+  dialecticaSpecVersion?: string;
+}
+
+export interface UpsertImportedCapsuleResult {
+  capsule: PraxisCapsule;
+  created: boolean;
+  updated: boolean;
+  versionBumped: boolean;
+  importNotes: string[];
 }
 
 export interface CapsuleCombineConflict {
@@ -617,9 +655,145 @@ export async function createCapsule(
     latestGateState: input.latestGateState,
     embeddedGraph: input.embeddedGraph,
     graphStats: input.graphStats,
+    ...(Array.isArray(input.sourceRefs) ? { sourceRefs: input.sourceRefs } : {}),
+    ...(Array.isArray(input.claimLedger) ? { claimLedger: input.claimLedger } : {}),
+    ...(Array.isArray(input.outputContracts) ? { outputContracts: input.outputContracts } : {}),
+    ...(Object.prototype.hasOwnProperty.call(input, 'sourcePosture') && input.sourcePosture !== undefined ? { sourcePosture: input.sourcePosture } : {}),
+    ...(isRecord(input.agentPermissions) ? { agentPermissions: input.agentPermissions } : {}),
+    ...(isRecord(input.memoryPosture) ? { memoryPosture: input.memoryPosture } : {}),
+    ...(isRecord(input.humanTacitKnowledge) ? { humanTacitKnowledge: input.humanTacitKnowledge } : {}),
+    ...(isRecord(input.temporality) ? { temporality: input.temporality } : {}),
+    ...(isRecord(input.causality) ? { causality: input.causality } : {}),
+    ...(isRecord(input.ontologyBinding) ? { ontologyBinding: input.ontologyBinding } : {}),
+    ...(stringOrNull(input.importSource) ? { importSource: input.importSource } : {}),
+    ...(stringOrNull(input.originalCapsuleId) ? { originalCapsuleId: input.originalCapsuleId } : {}),
+    ...(typeof input.packageVersion === 'number' ? { packageVersion: input.packageVersion } : {}),
+    ...(stringOrNull(input.provenance_root_hash) ? { provenance_root_hash: input.provenance_root_hash } : {}),
+    ...(Object.prototype.hasOwnProperty.call(input, 'signature') && input.signature !== undefined ? { signature: input.signature } : {}),
+    ...(stringOrNull(input.importedAt) ? { importedAt: input.importedAt } : {}),
+    ...(Array.isArray(input.importNotes) ? { importNotes: input.importNotes } : {}),
+    ...(stringOrNull(input.importContentHash) ? { importContentHash: input.importContentHash } : {}),
+    ...(stringOrNull(input.dialecticaManifestOwnerUid) ? { dialecticaManifestOwnerUid: input.dialecticaManifestOwnerUid } : {}),
+    ...(stringOrNull(input.dialecticaSpecVersion) ? { dialecticaSpecVersion: input.dialecticaSpecVersion } : {}),
   });
   await ref.set(capsule, { merge: true });
   return capsule;
+}
+
+export async function upsertImportedCapsule(
+  uid: string,
+  input: CreateCapsuleInput & {
+    capsuleId: string;
+    importSource: string;
+    originalCapsuleId: string;
+    packageVersion: number;
+    importContentHash: string;
+  },
+  deps?: CapsuleServiceDeps,
+): Promise<UpsertImportedCapsuleResult> {
+  const capsuleId = cleanId(input.capsuleId, DEFAULT_CONTEXT_STACK_ID);
+  const ref = capsulesCollection(uid, deps).doc(capsuleId);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    const capsule = await createCapsule(uid, { ...input, capsuleId }, deps);
+    return {
+      capsule,
+      created: true,
+      updated: false,
+      versionBumped: false,
+      importNotes: cleanStringArray(input.importNotes),
+    };
+  }
+
+  const current = sanitizeCapsule({ ...snap.data(), capsuleId });
+  const samePackageKey =
+    current.importSource === input.importSource &&
+    current.originalCapsuleId === input.originalCapsuleId &&
+    current.packageVersion === input.packageVersion;
+  const contentChanged = samePackageKey &&
+    Boolean(current.importContentHash) &&
+    current.importContentHash !== input.importContentHash;
+  const timestamp = nowIso(deps);
+  const importNotes = uniqueStrings([
+    ...cleanStringArray(input.importNotes),
+    ...(contentChanged ? [
+      `Content changed for DIALECTICA capsule ${input.originalCapsuleId} at package version ${input.packageVersion}; PRAXIS capsule version bumped.`,
+    ] : []),
+  ]);
+  const updated = sanitizeCapsule({
+    ...current,
+    ...importedCapsuleInputPatch(input),
+    capsuleId: current.capsuleId,
+    ownerUid: uid,
+    createdAt: current.createdAt,
+    updatedAt: timestamp,
+    version: contentChanged ? current.version + 1 : current.version,
+    importNotes,
+    importedAt: input.importedAt ?? timestamp,
+  });
+
+  if (contentChanged) {
+    const batch = dbOf(deps).batch();
+    batch.set(ref.collection('versions').doc(`v${current.version}`), current, { merge: true });
+    batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+    batch.set(ref, updated, { merge: true });
+    await batch.commit();
+  } else {
+    await ref.set(updated, { merge: true });
+  }
+  await mirrorActiveContextStack(uid, updated, deps);
+  return {
+    capsule: updated,
+    created: false,
+    updated: true,
+    versionBumped: contentChanged,
+    importNotes,
+  };
+}
+
+function importedCapsuleInputPatch(input: CreateCapsuleInput): Record<string, unknown> {
+  const patch: Record<string, unknown> = {
+    label: input.label,
+    summary: input.summary,
+    scope: input.scope,
+    associatedCapsuleIds: cleanStringArray(input.associatedCapsuleIds),
+    coreRefs: normalizeCoreRefs(input.coreRefs),
+    retrievalPolicy: input.retrievalPolicy,
+    activeForSituationIds: cleanStringArray(input.activeForSituationIds),
+    provenance: input.provenance,
+    access: input.access,
+    community: input.community,
+    starterSnapshot: input.starterSnapshot ?? null,
+    activeOntologyStackId: input.activeOntologyStackId,
+    activeReadContractId: input.activeReadContractId,
+    readinessSummary: input.readinessSummary,
+    latestGateState: input.latestGateState,
+    embeddedGraph: input.embeddedGraph,
+    graphStats: input.graphStats,
+    sourceRefs: input.sourceRefs,
+    claimLedger: input.claimLedger,
+    outputContracts: input.outputContracts,
+    sourcePosture: input.sourcePosture,
+    agentPermissions: input.agentPermissions,
+    memoryPosture: input.memoryPosture,
+    humanTacitKnowledge: input.humanTacitKnowledge,
+    temporality: input.temporality,
+    causality: input.causality,
+    ontologyBinding: input.ontologyBinding,
+    importSource: input.importSource,
+    originalCapsuleId: input.originalCapsuleId,
+    packageVersion: input.packageVersion,
+    provenance_root_hash: input.provenance_root_hash,
+    signature: input.signature,
+    importedAt: input.importedAt,
+    importContentHash: input.importContentHash,
+    dialecticaManifestOwnerUid: input.dialecticaManifestOwnerUid,
+    dialecticaSpecVersion: input.dialecticaSpecVersion,
+  };
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === undefined) delete patch[key];
+  }
+  return patch;
 }
 
 export async function getCapsule(uid: string, capsuleId: string, deps?: CapsuleServiceDeps): Promise<PraxisCapsule | null> {
@@ -2148,6 +2322,16 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     ...(isRecord(body.ontologyBinding) ? { ontologyBinding: cloneSerializable(body.ontologyBinding) } : {}),
     ...(isRecord(body.embeddedGraph) ? { embeddedGraph: cloneSerializable(body.embeddedGraph) } : {}),
     graphStats,
+    ...(stringOrNull(body.importSource) ? { importSource: stringOrNull(body.importSource)! } : {}),
+    ...(stringOrNull(body.originalCapsuleId) ? { originalCapsuleId: stringOrNull(body.originalCapsuleId)! } : {}),
+    ...(typeof body.packageVersion === 'number' && Number.isFinite(body.packageVersion) ? { packageVersion: Math.max(1, Math.floor(body.packageVersion)) } : {}),
+    ...(stringOrNull(body.provenance_root_hash) ? { provenance_root_hash: stringOrNull(body.provenance_root_hash)! } : {}),
+    ...(Object.prototype.hasOwnProperty.call(body, 'signature') && body.signature !== undefined ? { signature: cloneSerializable(body.signature) } : {}),
+    ...(stringOrNull(body.importedAt) ? { importedAt: stringOrNull(body.importedAt)! } : {}),
+    ...(cleanStringArray(body.importNotes).length ? { importNotes: cleanStringArray(body.importNotes).slice(0, 50) } : {}),
+    ...(stringOrNull(body.importContentHash) ? { importContentHash: stringOrNull(body.importContentHash)! } : {}),
+    ...(stringOrNull(body.dialecticaManifestOwnerUid) ? { dialecticaManifestOwnerUid: stringOrNull(body.dialecticaManifestOwnerUid)! } : {}),
+    ...(stringOrNull(body.dialecticaSpecVersion) ? { dialecticaSpecVersion: stringOrNull(body.dialecticaSpecVersion)! } : {}),
   };
   const result: PraxisCapsule = {
     ...capsule,

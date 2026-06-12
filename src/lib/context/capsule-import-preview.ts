@@ -4,6 +4,10 @@ import {
   parseDialecticaContextExport,
   type DialecticaSourceReceipt,
 } from '@/lib/context/dialectica-context-contract';
+import {
+  buildDialecticaCapsuleImportPreview,
+  parseDialecticaCapsuleZip,
+} from '@/lib/context/dialectica-capsule-import';
 
 export type CapsuleImportPreviewKind = 'dialectica' | 'capsule-plus';
 
@@ -17,6 +21,16 @@ export interface CapsuleImportPreview {
   sourceReceiptCount: number;
   sourceReceipts: DialecticaSourceReceipt[];
   reviewGatedSummary: string;
+  specVersion?: string;
+  layersPresent?: string[];
+  layersMissing?: string[];
+  layersSkipped?: string[];
+  unknownLayers?: string[];
+  claimCount?: number;
+  sourceCount?: number;
+  signaturePresent?: boolean;
+  importNotes?: string[];
+  fieldErrors?: Array<{ field: string; message: string }>;
 }
 
 export function buildDialecticaImportPreview(input: unknown): CapsuleImportPreview {
@@ -34,6 +48,10 @@ export function buildDialecticaImportPreview(input: unknown): CapsuleImportPrevi
     sourceReceipts: preview.sourceReceipts,
     reviewGatedSummary: 'Facts, conflicting claims, gaps, and source receipts stay review-gated until a human approves the import review card.',
   };
+}
+
+export async function buildDialecticaPackageImportPreview(buffer: Buffer | ArrayBuffer | Uint8Array): Promise<CapsuleImportPreview> {
+  return buildDialecticaCapsuleImportPreview(await parseDialecticaCapsuleZip(buffer));
 }
 
 export async function buildCapsulePlusImportPreview(buffer: Buffer | ArrayBuffer | Uint8Array): Promise<CapsuleImportPreview> {

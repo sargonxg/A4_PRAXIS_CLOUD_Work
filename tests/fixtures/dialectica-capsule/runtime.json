@@ -1,0 +1,12 @@
+{
+  "verbs": ["seek", "understand", "connect", "critique", "improve", "apply_device", "diff", "compose"],
+  "citation_style": "claim_id_inline",
+  "trust_rules": {
+    "T1": "assert",
+    "T2": "attribute",
+    "T3": "hedge"
+  },
+  "must_surface_disputed": true,
+  "must_cite": true,
+  "graph_policy": "Use graph.jsonld for the semantic source graph and graph/ladybug/capsule.lbug for read-only embedded Cypher traversal. Rebuild the Ladybug projection from graph.jsonld when the manifest digest changes."
+}

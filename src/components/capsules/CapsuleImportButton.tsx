@@ -5,9 +5,11 @@ import { Loader2, Upload } from 'lucide-react';
 import {
   buildCapsuleImportReviewHref,
   buildCapsulePlusImportPreview,
+  buildDialecticaPackageImportPreview,
   buildDialecticaImportPreview,
   type CapsuleImportPreview,
 } from '@/lib/context/capsule-import-preview';
+import { DIALECTICA_CAPSULE_MIMETYPE } from '@/lib/context/dialectica-capsule-import';
 import { cn } from '@/lib/utils/cn';
 
 type ImportPhase = 'idle' | 'previewing' | 'uploading' | 'done' | 'error';
@@ -15,10 +17,12 @@ type ImportPhase = 'idle' | 'previewing' | 'uploading' | 'done' | 'error';
 type PendingImport = {
   endpoint: string;
   body: string | ArrayBuffer;
-  contentType: 'application/json' | 'application/zip';
+  contentType: 'application/json' | 'application/zip' | typeof DIALECTICA_CAPSULE_MIMETYPE;
   kind: CapsuleImportResult['kind'];
   preview: CapsuleImportPreview;
 };
+
+type FieldError = { field: string; message: string };
 
 export interface CapsuleImportResult {
   capsuleId: string;
@@ -28,7 +32,7 @@ export interface CapsuleImportResult {
 }
 
 /**
- * Uploads a DIALECTICA verified-context package (.json) or a Capsule+ bundle
+ * Uploads a DIALECTICA verified-context package (.json/.zip) or a Capsule+ bundle
  * (.zip) into the capsule repository. Imported claims, sources, and graph rows
  * stay review-gated until a human approves them.
  */
@@ -46,32 +50,64 @@ export function CapsuleImportButton({
   const [message, setMessage] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<PendingImport | null>(null);
   const [reviewHref, setReviewHref] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
 
   async function handleFile(file: File) {
     setPhase('previewing');
     setMessage(null);
     setReviewHref(null);
     setPendingImport(null);
+    setFieldErrors([]);
     try {
       const isJson = file.name.toLowerCase().endsWith('.json') || file.type === 'application/json';
-      const endpoint = isJson
-        ? '/api/context/capsules/import/dialectica'
-        : '/api/context/capsules/capsule-plus/import';
-      const body = isJson ? await file.text() : await file.arrayBuffer();
-      const preview = isJson
-        ? buildDialecticaImportPreview(JSON.parse(body as string))
-        : await buildCapsulePlusImportPreview(body as ArrayBuffer);
-      setPendingImport({
-        endpoint,
-        body,
-        contentType: isJson ? 'application/json' : 'application/zip',
-        kind: isJson ? 'dialectica' : 'capsule-plus',
-        preview,
-      });
+      if (isJson) {
+        const body = await file.text();
+        const preview = buildDialecticaImportPreview(JSON.parse(body));
+        setPendingImport({
+          endpoint: '/api/context/capsules/import/dialectica',
+          body,
+          contentType: 'application/json',
+          kind: 'dialectica',
+          preview,
+        });
+      } else {
+        const body = await file.arrayBuffer();
+        try {
+          const preview = await buildDialecticaPackageImportPreview(body);
+          setPendingImport({
+            endpoint: '/api/context/capsules/import/dialectica',
+            body,
+            contentType: DIALECTICA_CAPSULE_MIMETYPE,
+            kind: 'dialectica',
+            preview,
+          });
+        } catch (dialecticaError) {
+          const dialecticaFieldErrors = dialecticaError instanceof Error && 'fieldErrors' in dialecticaError
+            ? (dialecticaError as { fieldErrors?: FieldError[] }).fieldErrors ?? []
+            : [];
+          let preview: CapsuleImportPreview;
+          try {
+            preview = await buildCapsulePlusImportPreview(body);
+          } catch {
+            if (dialecticaFieldErrors.length) setFieldErrors(dialecticaFieldErrors);
+            throw dialecticaError;
+          }
+          setPendingImport({
+            endpoint: '/api/context/capsules/capsule-plus/import',
+            body,
+            contentType: 'application/zip',
+            kind: 'capsule-plus',
+            preview,
+          });
+        }
+      }
       setPhase('idle');
     } catch (err) {
       setPhase('error');
       setMessage(err instanceof Error ? err.message : 'Import preview failed.');
+      if (err instanceof Error && 'fieldErrors' in err) {
+        setFieldErrors((err as { fieldErrors?: FieldError[] }).fieldErrors ?? []);
+      }
     }
   }
 
@@ -90,8 +126,10 @@ export function CapsuleImportButton({
         capsule?: { capsuleId: string; label: string };
         proposedRowsRetainedForReview?: number;
         error?: string;
+        fieldErrors?: FieldError[];
       } | null;
       if (!response.ok || !payload?.capsule) {
+        setFieldErrors(payload?.fieldErrors ?? []);
         throw new Error(payload?.error ?? `Import failed (${response.status})`);
       }
       const reviewGatedRows = payload.proposedRowsRetainedForReview ?? 0;
@@ -99,6 +137,7 @@ export function CapsuleImportButton({
       setPhase('done');
       setMessage(`Imported "${payload.capsule.label}". ${reviewGatedRows} row${reviewGatedRows === 1 ? '' : 's'} await review.`);
       setReviewHref(nextReviewHref);
+      setFieldErrors([]);
       setPendingImport(null);
       window.dispatchEvent(new CustomEvent('capsule-mutated', { detail: { capsuleId: payload.capsule.capsuleId } }));
       onImported?.({
@@ -121,7 +160,7 @@ export function CapsuleImportButton({
       <input
         ref={inputRef}
         type="file"
-        accept=".json,.zip,application/json,application/zip"
+        accept={`.json,.zip,application/json,application/zip,${DIALECTICA_CAPSULE_MIMETYPE}`}
         className="hidden"
         onChange={(event) => {
           const file = event.target.files?.[0];
@@ -133,7 +172,7 @@ export function CapsuleImportButton({
         type="button"
         disabled={disabled}
         onClick={() => inputRef.current?.click()}
-        title="Import a DIALECTICA package (.json) or Capsule+ bundle (.zip)"
+        title="Import a DIALECTICA package (.json/.zip) or Capsule+ bundle (.zip)"
         className={cn(
           'inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold transition disabled:opacity-60',
           dark
@@ -164,6 +203,7 @@ export function CapsuleImportButton({
               Review now
             </a>
           ) : null}
+          <FieldErrorList errors={fieldErrors} dark={dark} />
         </div>
       ) : null}
       {pendingImport ? (
@@ -177,10 +217,35 @@ export function CapsuleImportButton({
               </div>
             </div>
             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-              <PreviewCount label="Facts" value={pendingImport.preview.factCount} />
+              <PreviewCount label={pendingImport.preview.kind === 'dialectica' ? 'Claims' : 'Facts'} value={pendingImport.preview.claimCount ?? pendingImport.preview.factCount} />
               <PreviewCount label="Conflicts" value={pendingImport.preview.conflictingCount} />
-              <PreviewCount label="Gaps" value={pendingImport.preview.evidenceGapCount} />
+              <PreviewCount label={pendingImport.preview.kind === 'dialectica' ? 'Sources' : 'Gaps'} value={pendingImport.preview.sourceCount ?? pendingImport.preview.evidenceGapCount} />
             </div>
+            {pendingImport.preview.kind === 'dialectica' ? (
+              <div className="mt-4 rounded-md border border-slate-200 p-3">
+                <p className="text-xs font-semibold text-slate-900">Validation report</p>
+                <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs leading-5 text-slate-600">
+                  <dt className="font-semibold text-slate-800">Spec version</dt>
+                  <dd>{pendingImport.preview.specVersion ?? 'unknown'}</dd>
+                  <dt className="font-semibold text-slate-800">Signature</dt>
+                  <dd>{pendingImport.preview.signaturePresent ? 'present' : 'missing'}</dd>
+                  <dt className="font-semibold text-slate-800">Layers present</dt>
+                  <dd>{formatList(pendingImport.preview.layersPresent)}</dd>
+                  <dt className="font-semibold text-slate-800">Layers missing</dt>
+                  <dd>{formatList(pendingImport.preview.layersMissing)}</dd>
+                  <dt className="font-semibold text-slate-800">Layers skipped</dt>
+                  <dd>{formatList(pendingImport.preview.layersSkipped)}</dd>
+                </dl>
+                {pendingImport.preview.importNotes?.length ? (
+                  <ul className="mt-2 max-h-20 space-y-1 overflow-y-auto text-[11px] leading-4 text-slate-500">
+                    {pendingImport.preview.importNotes.slice(0, 5).map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                ) : null}
+                <FieldErrorList errors={fieldErrors} dark={false} />
+              </div>
+            ) : null}
             <div className="mt-4 rounded-md border border-slate-200 p-3">
               <p className="text-xs font-semibold text-slate-900">Source receipts</p>
               <div className="mt-2 max-h-28 space-y-2 overflow-y-auto">
@@ -237,4 +302,21 @@ function PreviewCount({ label, value }: { label: string; value: number }) {
       <span className="block text-[11px] font-semibold text-slate-500">{label}</span>
     </span>
   );
+}
+
+function FieldErrorList({ errors, dark }: { errors: FieldError[]; dark: boolean }) {
+  if (!errors.length) return null;
+  return (
+    <ul className={cn('mt-2 space-y-1 text-[11px] leading-4', dark ? 'text-red-200' : 'text-red-700')}>
+      {errors.map((error) => (
+        <li key={`${error.field}:${error.message}`}>
+          <span className="font-semibold">{error.field}</span>: {error.message}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function formatList(values: string[] | undefined): string {
+  return values?.length ? values.join(', ') : 'none';
 }

@@ -1,0 +1,26 @@
+{
+  "capsule_id": "cap_conflict_situation_fixture_v3",
+  "spec_version": "3.0",
+  "version": 1,
+  "type": "situation",
+  "category": "conflict_analysis",
+  "title": "Synthetic Border-Region Conflict Situation",
+  "owner_uid": "fixture_owner",
+  "situation_id": "sit_border_region_fixture",
+  "cores": ["aco", "conflict_analysis"],
+  "created_at": "2026-06-08T00:00:00Z",
+  "updated_at": "2026-06-08T00:00:00Z",
+  "provenance_root_hash": "sha256:fixture-root-hash",
+  "signature": "fixture-signature",
+  "depends_on": [],
+  "layers_present": [
+    "evidence",
+    "claims",
+    "situation",
+    "temporal",
+    "ontology",
+    "reasoning",
+    "governance",
+    "runtime"
+  ]
+}

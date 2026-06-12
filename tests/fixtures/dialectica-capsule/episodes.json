@@ -1,0 +1,17 @@
+[
+  {
+    "id": "ep_certification_dispute",
+    "type": "regime_phase",
+    "label": "Certification dispute",
+    "t_start": "2026-05-12",
+    "t_end": null,
+    "boundary_event": "evt_public_rejection",
+    "fuzzy": false,
+    "participants": ["ent_regional_army_command", "ent_election_commission"],
+    "member_claims": ["clm_army_rejects_certification"],
+    "state_before": "Election certification process was proceeding under civilian institutional authority.",
+    "state_after": "Security actor publicly challenges institutional certification.",
+    "causes": [],
+    "leads_to": []
+  }
+]

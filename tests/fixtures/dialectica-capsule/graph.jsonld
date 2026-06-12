@@ -1,0 +1,94 @@
+{
+  "@context": {
+    "dialectica": "https://tacitus.me/dialectica#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "g": "urn:praxis:graph:"
+  },
+  "@id": "urn:praxis:capsule:cap_conflict_situation_fixture_v3",
+  "@type": "dialectica:SituationCapsule",
+  "@graph": [
+    {
+      "@id": "g:evidence",
+      "@graph": [
+        {
+          "@id": "src_commission_statement",
+          "@type": "prov:Entity",
+          "dialectica:title": "Election Commission Certification Statement"
+        }
+      ]
+    },
+    {
+      "@id": "g:claims",
+      "@graph": [
+        {
+          "@id": "clm_army_rejects_certification",
+          "@type": "dialectica:Claim",
+          "dialectica:trustLayer": "T2",
+          "dialectica:source": "src_commission_statement"
+        }
+      ]
+    },
+    {
+      "@id": "g:situation",
+      "@graph": [
+        {
+          "@id": "ent_regional_army_command",
+          "@type": "dialectica:Actor",
+          "dialectica:contendsWith": "ent_election_commission"
+        },
+        {
+          "@id": "ent_election_commission",
+          "@type": "dialectica:Institution"
+        }
+      ]
+    },
+    {
+      "@id": "g:temporal",
+      "@graph": [
+        {
+          "@id": "ep_certification_dispute",
+          "@type": "dialectica:Episode",
+          "dialectica:start": "2026-05-12"
+        }
+      ]
+    },
+    {
+      "@id": "g:ontology",
+      "@graph": [
+        {
+          "@id": "core:conflict_analysis",
+          "@type": "dialectica:OntologyCore"
+        }
+      ]
+    },
+    {
+      "@id": "g:reasoning",
+      "@graph": [
+        {
+          "@id": "heu_deadline_rejection",
+          "@type": "dialectica:Heuristic",
+          "dialectica:target": "clm_army_rejects_certification"
+        }
+      ]
+    },
+    {
+      "@id": "g:governance",
+      "@graph": [
+        {
+          "@id": "review_fixture",
+          "@type": "dialectica:ReviewAction",
+          "dialectica:decision": "approved_with_caveats"
+        }
+      ]
+    },
+    {
+      "@id": "g:runtime",
+      "@graph": [
+        {
+          "@id": "runtime_fixture",
+          "@type": "dialectica:RuntimeContract"
+        }
+      ]
+    }
+  ]
+}
