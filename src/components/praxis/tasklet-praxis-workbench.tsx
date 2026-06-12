@@ -68,6 +68,7 @@ import { useActiveContextStack } from '@/components/app/use-active-context-stack
 import { CapsuleWorkbenchPanel } from '@/components/capsules/CapsuleWorkbenchPanel';
 import { CapsuleImportButton } from '@/components/capsules/CapsuleImportButton';
 import { CapsuleMiniGraph } from '@/components/capsules/CapsuleMiniGraph';
+import { CapsuleReadinessBadge } from '@/components/capsules/CapsuleReadinessBadge';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel, queuedAgentRunFromEnvelope } from '@/components/ask/AskQueuedAgentRunPanel';
@@ -131,7 +132,7 @@ import {
 import { rankAskCapsuleSuggestions, type AskCapsuleSuggestion } from '@/lib/context/capsule-suggestions';
 import type { CapsuleWorkbenchTacitMemoryInput } from '@/lib/context/capsule-workbench-view-model';
 import type { CapsuleInventorySummary } from '@/lib/context/capsule-service';
-import { deriveCapsuleQuality, type CapsuleQualityResult } from '@/lib/context/capsule-quality';
+import { deriveCapsuleQuality, deriveCapsuleReadinessSummary, type CapsuleQualityResult, type CapsuleReadinessSummaryTier } from '@/lib/context/capsule-quality';
 import { buildCapsuleImproveProposals, normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/capsule-v2';
 import { CAPSULE_V3_AGENT_ROLES, canPublishCapsuleV3, deriveCapsuleV3QualityAudit, normalizeContextCapsuleV3 } from '@/lib/context/capsule-v3';
 import { deriveContextChainHealth } from '@/lib/context/context-chain-health';
@@ -191,6 +192,8 @@ import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 
 type CapsuleFactoryLaneId = 'library' | 'create' | 'inspect' | 'improve' | 'sources';
+type CapsuleReadinessFilterId = 'all' | CapsuleReadinessSummaryTier;
+type CapsuleReadinessSortId = 'ready-first' | 'blocked-first';
 
 type TaskletPraxisWorkbenchProps = {
   mode: HomeSurfaceMode | 'app';
@@ -924,6 +927,8 @@ export function TaskletPraxisWorkbench({
   const [capsuleTypeFilter, setCapsuleTypeFilter] = useState('all');
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
   const [capsulePolicyTeamFilter, setCapsulePolicyTeamFilter] = useState('all');
+  const [capsuleReadinessFilter, setCapsuleReadinessFilter] = useState<CapsuleReadinessFilterId>('all');
+  const [capsuleReadinessSort, setCapsuleReadinessSort] = useState<CapsuleReadinessSortId>('ready-first');
   const [factoryLane] = useState<CapsuleFactoryLaneId>(resolvedInitialFactoryLane);
   const isRepositoryLane = isCapsuleRepositoryPage && resolvedInitialFactoryLane === 'sources';
   const [factoryReviewDiffs, setFactoryReviewDiffs] = useState<CapsuleFactoryReviewDiff[]>([]);
@@ -1060,11 +1065,17 @@ export function TaskletPraxisWorkbench({
     filteredStarterCapsules,
     selectedCapsuleTypeFilter: capsuleTypeFilter,
   });
+  const capsuleReadinessCounts = buildCapsuleReadinessCounts(visibleCapsuleCards);
+  const readinessControlledCapsuleCards = applyCapsuleReadinessControls(
+    visibleCapsuleCards,
+    capsuleReadinessFilter,
+    capsuleReadinessSort,
+  );
   const isHomepageCapsuleShelf = !initialPanel && !isRepositoryPage && !isCapsuleRepositoryPage;
   const isPublicHomepageCapsuleShelf = isHomepageCapsuleShelf && !isAuthenticated;
   const visibleHomepageCapsuleCards = isPublicHomepageCapsuleShelf
     ? filteredFeaturedCapsuleCards.slice(0, PUBLIC_FLAGSHIP_CAPSULE_LIMIT)
-    : visibleCapsuleCards;
+    : readinessControlledCapsuleCards;
   const humanGatedExampleCapsules = starterCapsuleSummaries.filter(isHumanGatedPolicyJudgmentCapsule);
   const visibleHomepageThinkingDevices = isPublicHomepageCapsuleShelf
     ? filteredIntellectualDeviceCards.slice(0, PUBLIC_THINKING_DEVICE_LIMIT)
@@ -1072,7 +1083,7 @@ export function TaskletPraxisWorkbench({
   const visibleFeaturedCapsuleCards = isPublicHomepageCapsuleShelf
     ? visibleHomepageCapsuleCards
     : filteredFeaturedCapsuleCards;
-  const displayedCapsuleCards = isPublicHomepageCapsuleShelf ? visibleHomepageCapsuleCards : visibleCapsuleCards;
+  const displayedCapsuleCards = isPublicHomepageCapsuleShelf ? visibleHomepageCapsuleCards : readinessControlledCapsuleCards;
   const activeCapsuleTaxonomyStats = isAuthenticated && !showingStarterFallback
     ? userCapsuleTaxonomyStats
     : publicCapsuleTaxonomyStats;
@@ -4370,15 +4381,22 @@ export function TaskletPraxisWorkbench({
                 typeId={capsuleTypeFilter}
                 domainId={capsuleDomainFilter}
                 policyTeamId={capsulePolicyTeamFilter}
+                readinessTierId={capsuleReadinessFilter}
+                readinessCounts={capsuleReadinessCounts}
+                readinessSort={capsuleReadinessSort}
                 onType={setCapsuleTypeFilter}
                 onDomain={setCapsuleDomainFilter}
                 onPolicyTeam={setCapsulePolicyTeamFilter}
+                onReadinessTier={setCapsuleReadinessFilter}
+                onReadinessSort={setCapsuleReadinessSort}
                 showRepairStates={isRepositoryPage}
                 onClear={() => {
                   setCapsuleSearch('');
                   setCapsuleTypeFilter('all');
                   setCapsuleDomainFilter('all');
                   setCapsulePolicyTeamFilter('all');
+                  setCapsuleReadinessFilter('all');
+                  setCapsuleReadinessSort('ready-first');
                 }}
               />
 
@@ -5580,6 +5598,7 @@ function CapsuleBrowserDialog({
             {capsules.map((capsule) => {
               const meta = capsuleCategoryMeta(capsule);
               const role = capsuleDefaultRole(capsule);
+              const readiness = deriveCapsuleReadinessSummary(capsule, { now: STARTER_CAPSULE_UPDATED_AT });
               return (
                 <button
                   key={capsule.capsuleId}
@@ -5595,6 +5614,7 @@ function CapsuleBrowserDialog({
                     <span className={cn('shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>
                       {capsuleRoleLabel(role)}
                     </span>
+                    <CapsuleReadinessBadge size="sm" {...readiness} />
                   </span>
                 </button>
               );
@@ -5684,6 +5704,7 @@ function CapsuleRepositoryTile({
   const domainAccent = capsuleDomainAccent(meta.starterDefinition?.domain ?? meta.taxonomy.domains[0]?.id ?? 'other');
   const v2Capsule = capsuleV2ForSummary(capsule);
   const v2Quality = deriveCapsuleQuality(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+  const readiness = deriveCapsuleReadinessSummary(capsule, { now: STARTER_CAPSULE_UPDATED_AT });
   const humanGateStatus = deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
   const unsupportedClaims = capsuleUnsupportedClaimCount(capsule);
   const categories = [
@@ -5715,6 +5736,7 @@ function CapsuleRepositoryTile({
         <span className={cn('shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>
           {capsuleRoleLabel(role)}
         </span>
+        <CapsuleReadinessBadge size="sm" {...readiness} />
       </span>
       <span className="mt-3 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Categories</span>
       <span className="mt-2 flex flex-wrap gap-1.5">
@@ -6742,6 +6764,43 @@ function filterStarterCapsules(query: string, typeFilter: string, domainFilter: 
   return filterUserCapsules(starterCapsuleSummaries, query, typeFilter, domainFilter, policyTeamFilter);
 }
 
+function applyCapsuleReadinessControls(
+  capsules: PraxisCapsuleSummary[],
+  readinessFilter: CapsuleReadinessFilterId,
+  readinessSort: CapsuleReadinessSortId,
+): PraxisCapsuleSummary[] {
+  return sortCapsulesByReadiness(
+    readinessFilter === 'all'
+      ? capsules
+      : capsules.filter((capsule) => deriveCapsuleReadinessSummary(capsule, { now: STARTER_CAPSULE_UPDATED_AT }).tier === readinessFilter),
+    readinessSort,
+  );
+}
+
+function sortCapsulesByReadiness(capsules: PraxisCapsuleSummary[], sort: CapsuleReadinessSortId): PraxisCapsuleSummary[] {
+  const tierOrder: Record<CapsuleReadinessSummaryTier, number> = sort === 'ready-first'
+    ? { ready: 0, near: 1, blocked: 2 }
+    : { blocked: 0, near: 1, ready: 2 };
+  return [...capsules].sort((a, b) => {
+    const aReadiness = deriveCapsuleReadinessSummary(a, { now: STARTER_CAPSULE_UPDATED_AT });
+    const bReadiness = deriveCapsuleReadinessSummary(b, { now: STARTER_CAPSULE_UPDATED_AT });
+    const tierDelta = tierOrder[aReadiness.tier] - tierOrder[bReadiness.tier];
+    if (tierDelta !== 0) return tierDelta;
+    const aScore = Number.isFinite(aReadiness.score) ? aReadiness.score : -1;
+    const bScore = Number.isFinite(bReadiness.score) ? bReadiness.score : -1;
+    return sort === 'ready-first'
+      ? bScore - aScore || Date.parse(b.updatedAt) - Date.parse(a.updatedAt)
+      : aScore - bScore || Date.parse(b.updatedAt) - Date.parse(a.updatedAt);
+  });
+}
+
+function buildCapsuleReadinessCounts(capsules: PraxisCapsuleSummary[]): Record<CapsuleReadinessSummaryTier, number> {
+  return capsules.reduce<Record<CapsuleReadinessSummaryTier, number>>((counts, capsule) => {
+    counts[deriveCapsuleReadinessSummary(capsule, { now: STARTER_CAPSULE_UPDATED_AT }).tier] += 1;
+    return counts;
+  }, { ready: 0, near: 0, blocked: 0 });
+}
+
 function capsuleSummarySearchItem(capsule: PraxisCapsuleSummary): AppSearchItemInput {
   const starter = starterDefinitionForCapsule(capsule);
   if (starter) return buildCapsuleSearchItem(starter);
@@ -7238,9 +7297,14 @@ function CapsuleTaxonomyFilterBar({
   typeId,
   domainId,
   policyTeamId,
+  readinessTierId,
+  readinessCounts,
+  readinessSort,
   onType,
   onDomain,
   onPolicyTeam,
+  onReadinessTier,
+  onReadinessSort,
   showRepairStates,
   onClear,
 }: {
@@ -7250,9 +7314,14 @@ function CapsuleTaxonomyFilterBar({
   typeId: string;
   domainId: string;
   policyTeamId: string;
+  readinessTierId?: CapsuleReadinessFilterId;
+  readinessCounts?: Record<CapsuleReadinessSummaryTier, number>;
+  readinessSort?: CapsuleReadinessSortId;
   onType: (id: string) => void;
   onDomain: (id: string) => void;
   onPolicyTeam: (id: string) => void;
+  onReadinessTier?: (id: CapsuleReadinessFilterId) => void;
+  onReadinessSort?: (id: CapsuleReadinessSortId) => void;
   showRepairStates: boolean;
   onClear?: () => void;
 }) {
@@ -7261,6 +7330,7 @@ function CapsuleTaxonomyFilterBar({
     typeId !== 'all' ? `type:${typeId}` : null,
     domainId !== 'all' ? `domain:${domainId}` : null,
     policyTeamId !== 'all' ? `team:${policyTeamId}` : null,
+    readinessTierId && readinessTierId !== 'all' ? `readiness:${readinessTierId}` : null,
   ].filter((label): label is string => Boolean(label));
 
   return (
@@ -7297,6 +7367,52 @@ function CapsuleTaxonomyFilterBar({
           {activeFilterLabels.length ? activeFilterLabels.join(' / ') : 'all capsules'} / {stats.visibleCapsules} shown
         </span>
       </div>
+      {onReadinessTier || onReadinessSort ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+          {onReadinessTier ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Readiness</span>
+              {(['ready', 'near', 'blocked'] as const).map((tier) => (
+                <button
+                  key={tier}
+                  type="button"
+                  onClick={() => onReadinessTier(tier)}
+                  className={cn(
+                    'inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-semibold capitalize',
+                    readinessTierId === tier ? 'bg-slate-950 text-white' : 'bg-white text-slate-600 hover:bg-slate-100',
+                  )}
+                >
+                  {tier}
+                  <span className={cn('font-mono text-[10px]', readinessTierId === tier ? 'text-white/70' : 'text-slate-400')}>
+                    {readinessCounts?.[tier] ?? 0}
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {onReadinessSort ? (
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="mr-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">Sort</span>
+              {([
+                { id: 'ready-first', label: 'Ready first' },
+                { id: 'blocked-first', label: 'Blocked first' },
+              ] as const).map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onReadinessSort(item.id)}
+                  className={cn(
+                    'rounded-md px-2 py-1 text-[11px] font-semibold',
+                    readinessSort === item.id ? 'bg-slate-950 text-white' : 'bg-white text-slate-600 hover:bg-slate-100',
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
       <div className="grid gap-3 md:grid-cols-3" data-testid="capsule-taxonomy-surface">
         <CategoryAxisPanel
           label="Types"
@@ -8514,6 +8630,7 @@ function CapsuleCard({
   const humanReview = meta.starterDefinition?.humanReview;
   const v2Capsule = capsuleV2ForSummary(capsule);
   const v2Quality = deriveCapsuleQuality(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+  const readiness = deriveCapsuleReadinessSummary(capsule, { now: STARTER_CAPSULE_UPDATED_AT });
   const humanGateStatus = deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
   const unsupportedClaims = capsuleUnsupportedClaimCount(capsule);
   const purposeLine = richProfile?.purpose ?? meta.summary;
@@ -8571,6 +8688,7 @@ function CapsuleCard({
               </span>
             ) : null}
             <span className={cn('rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>{capsuleRoleLabel(defaultRole)}</span>
+            <CapsuleReadinessBadge size="sm" {...readiness} />
           </span>
         </span>
         <span className="mt-2 flex flex-wrap items-center gap-1.5" aria-label={`${capsule.label} categories`}>

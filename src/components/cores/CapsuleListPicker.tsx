@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown, Plus } from 'lucide-react';
+import { CapsuleReadinessBadge } from '@/components/capsules/CapsuleReadinessBadge';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import { deriveCapsuleReadinessSummary } from '@/lib/context/capsule-quality';
 import type { CapsuleDockSlotKind } from '@/lib/context/active-context-stack';
 import { cn } from '@/lib/utils/cn';
 
@@ -83,35 +85,39 @@ export function CapsuleListPicker({ activeCapsuleId, onSelect, onCreate, refresh
       {open ? (
         <div className="absolute left-0 z-40 mt-1 w-72 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg">
           <ul role="listbox" className="max-h-64 overflow-y-auto">
-            {ordered.map((c, index) => (
-              <li key={c.capsuleId}>
-                {slotKind && matchingCount > 0 && matchingCount < ordered.length && index === matchingCount ? (
-                  <p className="border-t border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
-                    Other capsules
-                  </p>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelect(c.capsuleId);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs hover:bg-slate-50',
-                    c.capsuleId === activeCapsuleId && 'bg-emerald-50/60',
-                  )}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold text-navy-950">{c.label}</span>
-                    <span className="block truncate text-[10px] text-slate-500">
-                      v{c.version} · {c.scope}
-                      {c.archivedAt ? ' · archived' : ''}
+            {ordered.map((c, index) => {
+              const readiness = deriveCapsuleReadinessSummary(c);
+              return (
+                <li key={c.capsuleId}>
+                  {slotKind && matchingCount > 0 && matchingCount < ordered.length && index === matchingCount ? (
+                    <p className="border-t border-slate-200 bg-slate-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">
+                      Other capsules
+                    </p>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelect(c.capsuleId);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      'flex w-full items-center justify-between gap-2 px-3 py-2 text-left text-xs hover:bg-slate-50',
+                      c.capsuleId === activeCapsuleId && 'bg-emerald-50/60',
+                    )}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold text-navy-950">{c.label}</span>
+                      <span className="block truncate text-[10px] text-slate-500">
+                        v{c.version} · {c.scope}
+                        {c.archivedAt ? ' · archived' : ''}
+                      </span>
                     </span>
-                  </span>
-                  {c.capsuleId === activeCapsuleId ? <Check className="h-3 w-3 text-emerald-600" /> : null}
-                </button>
-              </li>
-            ))}
+                    <CapsuleReadinessBadge size="sm" {...readiness} />
+                    {c.capsuleId === activeCapsuleId ? <Check className="h-3 w-3 text-emerald-600" /> : null}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
           <button
             type="button"

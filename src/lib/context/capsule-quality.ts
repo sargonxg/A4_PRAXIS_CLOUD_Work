@@ -55,6 +55,8 @@ export interface CapsuleQualityResult {
   diagnostics: CapsuleQualityDiagnostic[];
 }
 
+export type CapsuleReadinessSummaryTier = 'ready' | 'near' | 'blocked';
+
 interface V3EvaluationHints {
   tacitKnowledgeScore?: number;
   sourceSpineScore?: number;
@@ -107,6 +109,41 @@ export function deriveCapsuleQuality(input: ContextCapsuleV2 | unknown, options:
     score: breakdown.reduce((sum, item) => sum + item.score, 0),
     breakdown,
     diagnostics,
+  };
+}
+
+export function deriveCapsuleReadinessSummary(
+  input: unknown,
+  options: ContextCapsuleNormalizeOptions = {},
+): { score: number; tier: CapsuleReadinessSummaryTier; topBlocker: string | null } {
+  const body = isRecord(input) ? input : {};
+  const readiness = firstRecord(body.readiness);
+  const health = firstRecord(body.health);
+  const trust = firstRecord(body.trust);
+  const explicitScore = firstFiniteNumber(readiness?.score, health?.score, trust?.score);
+  const explicitBlocker = firstDiagnosticMessage(readiness?.diagnostics) ??
+    firstStringFromList(health?.blockers) ??
+    firstStringFromList(trust?.blockers);
+
+  if (typeof explicitScore === 'number') {
+    const score = clampReadinessScore(explicitScore);
+    return { score, tier: readinessTierForScore(score), topBlocker: explicitBlocker };
+  }
+
+  if (!hasDerivableReadinessData(body)) {
+    return {
+      score: Number.NaN,
+      tier: explicitTier(readiness?.tier ?? health?.semaphore ?? trust?.level) ?? 'near',
+      topBlocker: explicitBlocker,
+    };
+  }
+
+  const quality = deriveCapsuleQuality(input, options);
+  const score = clampReadinessScore(quality.score);
+  return {
+    score,
+    tier: readinessTierForScore(score),
+    topBlocker: explicitBlocker ?? quality.diagnostics[0]?.message ?? null,
   };
 }
 
@@ -342,6 +379,70 @@ function readQuality2Signals(input: unknown, capsule: ContextCapsuleV2, v3Evalua
 function scoreRatio(value: number | undefined): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return Number.NaN;
   return Math.max(0, Math.min(1, value / 100));
+}
+
+function clampReadinessScore(score: number): number {
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function readinessTierForScore(score: number): CapsuleReadinessSummaryTier {
+  if (score >= 75) return 'ready';
+  if (score >= 45) return 'near';
+  return 'blocked';
+}
+
+function explicitTier(value: unknown): CapsuleReadinessSummaryTier | null {
+  if (value === 'ready' || value === 'green') return 'ready';
+  if (value === 'near' || value === 'amber' || value === 'usable') return 'near';
+  if (value === 'blocked' || value === 'red') return 'blocked';
+  return null;
+}
+
+function hasDerivableReadinessData(body: Record<string, unknown>): boolean {
+  return [
+    body.coreRefs,
+    body.health,
+    body.trust,
+    body.readiness,
+    body.purpose,
+    body.audience,
+    body.sourcePosture,
+    body.sourceRefs,
+    body.claimLedger,
+    body.outputContracts,
+    body.bestNextAction,
+    body.decisionHorizon,
+    body.expiry,
+    body.reviewState,
+    body.humanGate,
+    body.agentPermissions,
+    body.temporality,
+    body.causality,
+    body.ontologyBinding,
+    body.evaluation,
+    body.v3,
+    body.grounding,
+    body.starterSnapshot,
+  ].some((value) => value !== undefined && value !== null);
+}
+
+function firstFiniteNumber(...values: unknown[]): number | undefined {
+  return values.find((value): value is number => typeof value === 'number' && Number.isFinite(value));
+}
+
+function firstStringFromList(value: unknown): string | null {
+  return Array.isArray(value)
+    ? value.find((item): item is string => typeof item === 'string' && item.trim().length > 0)?.trim() ?? null
+    : null;
+}
+
+function firstDiagnosticMessage(value: unknown): string | null {
+  if (!Array.isArray(value)) return null;
+  for (const item of value) {
+    if (typeof item === 'string' && item.trim()) return item.trim();
+    if (isRecord(item) && typeof item.message === 'string' && item.message.trim()) return item.message.trim();
+  }
+  return null;
 }
 
 function readV3EvaluationHints(input: unknown): V3EvaluationHints {

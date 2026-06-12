@@ -1075,6 +1075,15 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('onOpen={(capsule) => openRepositoryCapsuleModal(capsule)}');
   });
 
+  it('surfaces compact capsule readiness in the catalog lane without adding a new surface', () => {
+    expect(workbenchSource).toContain("import { CapsuleReadinessBadge } from '@/components/capsules/CapsuleReadinessBadge'");
+    expect(workbenchSource).toContain('deriveCapsuleReadinessSummary');
+    expect(source).toContain('<CapsuleReadinessBadge');
+    expect(source).toContain('capsuleReadinessFilter');
+    expect(source).toContain('sortCapsulesByReadiness');
+    expect(source).not.toContain('/app/readiness');
+  });
+
   it('keeps repository inspection extensive inside the capsule inspector sheet', () => {
     for (const expected of [
       'Purpose',
