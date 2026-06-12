@@ -1003,6 +1003,9 @@ function mergeWorkingTimeline(
   const base = events?.length ? events : initialAskWorkingTimeline();
   const receipt = envelope?.orchestrationReceipt;
   if (!receipt) return base;
+  const queuedRun = receipt.supervisor.queuedRun ?? null;
+  const queuedRunAvailable = Boolean(queuedRun?.runId && queuedRun.runId !== 'unavailable');
+  const queuedRunDispatchFailed = queuedRun?.status === 'dispatch_failed';
   const timeline = events?.length ? base : [
     {
       type: 'orchestrationStatus' as const,
@@ -1050,13 +1053,14 @@ function mergeWorkingTimeline(
       type: 'orchestrationStatus' as const,
       id: 'worker' as const,
       label: 'Producing output',
-      status: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
-      detail: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Agent runtime unavailable - answered directly.' : 'No durable run needed for this answer.',
-      runId: receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable' ? receipt.supervisor.queuedRun.runId : null,
-      outputHref: receipt.supervisor.queuedRun?.outputHref ?? null,
-      canOpen: Boolean(receipt.supervisor.queuedRun?.runId && receipt.supervisor.queuedRun.runId !== 'unavailable'),
-      canRetry: receipt.supervisor.queuedRun?.status === 'dispatch_failed',
-      canCancel: receipt.supervisor.queuedRun?.status === 'queued' || receipt.supervisor.queuedRun?.status === 'dispatch_enqueued',
+      status: queuedRunDispatchFailed ? 'warn' as const : queuedRunAvailable ? 'queued' as const : receipt.supervisor.action === 'queue_agent_run' ? 'warn' as const : 'skipped' as const,
+      detail: queuedRunDispatchFailed ? 'Agent dispatch failed - run was created but not started.' : queuedRunAvailable ? 'Durable agent run queued for deeper work.' : receipt.supervisor.action === 'queue_agent_run' ? 'Agent runtime unavailable - answered directly.' : 'No durable run needed for this answer.',
+      runId: queuedRunAvailable ? queuedRun?.runId ?? null : null,
+      outputHref: queuedRun?.outputHref ?? null,
+      canOpen: queuedRunAvailable,
+      canRetry: queuedRunDispatchFailed,
+      canCancel: queuedRun?.status === 'queued' || queuedRun?.status === 'dispatch_enqueued',
+      fallbackPosture: queuedRun?.status,
     },
     {
       type: 'orchestrationStatus' as const,
@@ -1116,6 +1120,21 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
   const receipt = envelope?.orchestrationReceipt;
   if (!receipt) return null;
   const queuedRun = receipt.supervisor.queuedRun;
+  const contextHealthDegradations = Array.isArray(receipt.contextHealth?.degradations)
+    ? receipt.contextHealth.degradations
+    : [];
+  const contextHealth = {
+    status: receipt.contextHealth?.status === 'degraded' && contextHealthDegradations.length ? 'degraded' as const : 'full' as const,
+    degradations: contextHealthDegradations,
+  };
+  const contextHealthTooltip = contextHealth.degradations
+    .map((degradation) => `${degradation.stage}: ${degradation.detail}`)
+    .join('\n');
+  const queuedRunLabel = queuedRun?.status === 'dispatch_failed'
+    ? `dispatch failed ${queuedRun.runId}`
+    : queuedRun?.runId === 'unavailable'
+      ? queuedRun.status.replace(/_/g, ' ')
+      : queuedRun?.runId;
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-2">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1136,6 +1155,14 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
         <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
           Capsule: {receipt.capsule.contextHealth}
         </span>
+        {contextHealth.status === 'degraded' ? (
+          <span
+            className="rounded-md border border-gold-200 bg-gold-50 px-1.5 py-0.5 font-semibold text-gold-900"
+            title={contextHealthTooltip}
+          >
+            Context degraded
+          </span>
+        ) : null}
         <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
           Tool router: {receipt.toolRouting.selectedToolIds.length}
         </span>
@@ -1148,8 +1175,13 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
           </span>
         ) : null}
         {queuedRun ? (
-          <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-semibold text-emerald-900">
-            Agent run: {queuedRun.runId === 'unavailable' ? queuedRun.status.replace(/_/g, ' ') : queuedRun.runId}
+          <span className={cn(
+            'rounded-md border px-1.5 py-0.5 font-semibold',
+            queuedRun.status === 'dispatch_failed' || queuedRun.status === 'ledger_failed'
+              ? 'border-red-200 bg-red-50 text-red-900'
+              : 'border-emerald-200 bg-emerald-50 text-emerald-900',
+          )}>
+            Agent run: {queuedRunLabel}
           </span>
         ) : null}
         {receipt.workflowPlan ? (

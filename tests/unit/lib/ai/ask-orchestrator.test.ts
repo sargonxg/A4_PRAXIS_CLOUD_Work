@@ -15,6 +15,10 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       activeGapCount: 0,
     });
 
+    expect(receipt.contextHealth).toEqual({
+      status: 'full',
+      degradations: [],
+    });
     expect(receipt.triage.agenticMode).toBe('direct_with_receipts');
     expect(receipt.supervisor.action).toBe('direct_answer');
     expect(receipt.toolRouting.selectedToolIds).toEqual([
@@ -155,6 +159,27 @@ describe('Ask PRAXIS conversation orchestrator', () => {
       'unsupported-claims',
       'caveats',
     ]));
+  });
+
+  it('marks context health degraded when the turn records a degradation', () => {
+    const degradation = {
+      stage: 'evidence_pack' as const,
+      detail: 'evidence pack build failed; continuing without supplemental evidence pack',
+      occurredAt: '2026-06-11T12:00:00.000Z',
+    };
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'What should I look at next?',
+      intent: 'normal_answer',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 4 }),
+      sourcePreviewCount: 2,
+      activeGapCount: 0,
+      contextHealthDegradations: [degradation],
+    });
+
+    expect(receipt.contextHealth).toEqual({
+      status: 'degraded',
+      degradations: [degradation],
+    });
   });
 
   it('honors the deep research composer lane by forcing a reviewable research memo run', () => {

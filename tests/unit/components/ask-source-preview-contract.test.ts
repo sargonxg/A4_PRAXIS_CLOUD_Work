@@ -32,6 +32,12 @@ describe('Ask source preview panel contract', () => {
     expect(source).toContain('Tool router');
   });
 
+  it('renders one compact warning chip when context health is degraded', () => {
+    expect(source).toContain('contextHealth.status ===');
+    expect(source).toContain('Context degraded');
+    expect(source).toContain("join('\\n')");
+  });
+
   it('renders the Ask turn plan as a simple in-thread plan before detailed receipts', () => {
     expect(source).toContain("import { AskTurnPlanPanel }");
     expect(source).toContain('AskTurnPlanPanel');

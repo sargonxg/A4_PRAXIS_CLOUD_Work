@@ -28,9 +28,28 @@ export interface AskQueuedAgentRunReceipt {
   error?: string;
 }
 
+export type AskContextHealthDegradationStage =
+  | 'capsule_resolution'
+  | 'evidence_pack'
+  | 'corpus_retrieval'
+  | 'graph_snapshot'
+  | 'agent_dispatch';
+
+export interface AskContextHealthDegradation {
+  stage: AskContextHealthDegradationStage;
+  detail: string;
+  occurredAt: string;
+}
+
+export interface AskContextHealthReceipt {
+  status: 'full' | 'degraded';
+  degradations: AskContextHealthDegradation[];
+}
+
 export interface AskConversationOrchestrationReceipt {
   version: 1;
   traceId: string | null;
+  contextHealth: AskContextHealthReceipt;
   triage: {
     intent: AskIntent;
     workIntent: WorkIntentPlan;
@@ -159,6 +178,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
   requestedOutputType?: string | null;
   explicitWorkMode?: WorkIntentMode | null;
   activeCapsules?: WorkIntentCapsuleInput[];
+  contextHealthDegradations?: AskContextHealthDegradation[];
 }): AskConversationOrchestrationReceipt {
   const workIntent = buildWorkIntentPlan({
     prompt: input.prompt,
@@ -266,6 +286,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
   return {
     version: 1,
     traceId: input.contextReceipt.traceId,
+    contextHealth: buildAskContextHealthReceipt(input.contextHealthDegradations),
     triage: {
       intent: input.intent,
       workIntent,
@@ -353,6 +374,17 @@ export function buildAskConversationOrchestrationReceipt(input: {
         detail: 'Answer drafting can begin after routing receipts are attached.',
       },
     ],
+  };
+}
+
+export function buildAskContextHealthReceipt(degradations: AskContextHealthDegradation[] | undefined): AskContextHealthReceipt {
+  const normalized = (degradations ?? []).map((degradation) => ({
+    ...degradation,
+    detail: safeStatusDetail(degradation.detail).replace(/\s+/g, ' ').trim().slice(0, 240),
+  })).filter((degradation) => degradation.detail.length > 0);
+  return {
+    status: normalized.length > 0 ? 'degraded' : 'full',
+    degradations: normalized,
   };
 }
 

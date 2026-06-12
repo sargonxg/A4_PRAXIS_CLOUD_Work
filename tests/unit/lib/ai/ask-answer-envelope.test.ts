@@ -386,6 +386,34 @@ describe('ask answer envelope', () => {
     expect(envelope.traceabilitySummary.bestNextAction).toBeTruthy();
   });
 
+  it('carries orchestration context health through the answer envelope', () => {
+    const degradation = {
+      stage: 'corpus_retrieval' as const,
+      detail: 'situation corpus retrieval failed; continuing without corpus snippets',
+      occurredAt: '2026-06-11T12:00:00.000Z',
+    };
+    const orchestrationReceipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'What does the active context say?',
+      intent: 'normal_answer',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 4 }),
+      sourcePreviewCount: 1,
+      activeGapCount: 0,
+      contextHealthDegradations: [degradation],
+    });
+    const envelope = buildAskAnswerEnvelope({
+      prompt: 'What does the active context say?',
+      answer: 'The active context supports a short operational answer.',
+      intent: 'normal_answer',
+      sourceCards: buildSourcePreviewCards({ evidencePack: evidencePack() }).slice(0, 1),
+      orchestrationReceipt,
+    });
+
+    expect(envelope.orchestrationReceipt?.contextHealth).toEqual({
+      status: 'degraded',
+      degradations: [degradation],
+    });
+  });
+
   it('derives a compact answer-quality summary and context repair actions for weak context', () => {
     const envelope = buildAskAnswerEnvelope({
       prompt: 'What is the latest state of the ceasefire? Please be current.',

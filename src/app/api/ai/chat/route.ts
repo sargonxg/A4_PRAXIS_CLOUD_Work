@@ -56,9 +56,11 @@ import { buildAskAnswerEnvelope, buildResearchGraphSourcePreviewCards, buildSour
 import { buildAskChatFinishPayloads } from '@/lib/ai/ask-chat-stream-payload';
 import {
   buildAskConversationOrchestrationReceipt,
+  buildAskContextHealthReceipt,
   buildAskOrchestrationStatusEvents,
   markAskOrchestrationRunQueued,
   type AskConversationOrchestrationReceipt,
+  type AskContextHealthDegradation,
 } from '@/lib/ai/ask-orchestrator';
 import { appendAgentRunEvent, createAgentRun, updateAgentRunMetadata } from '@/lib/agent-runtime/postgres';
 import { makeAgentRunEvent } from '@/lib/agent-runtime/state';
@@ -206,6 +208,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
     let retrievedSourceIds: string[] = [];
     let evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null = null;
     let answerEvidencePack: Awaited<ReturnType<typeof buildCapsuleEvidencePack>> | null = null;
+    const contextHealthDegradations: AskContextHealthDegradation[] = [];
     const toolInvocations: AskToolInvocationReceipt[] = [];
     const requestedResearchGraphExtra = aiSettings?.researchGraphExtra === true;
     const researchGraphServerEnabled = isResearchGraphServerEnabled();
@@ -256,6 +259,11 @@ export const POST = withCalibration('chat', 'ai_chat', {
           query: prompt,
         }).catch((err) => {
           console.warn('[chat] full capsule resolution failed; using thin fallback context:', err);
+          recordContextHealthDegradation(
+            contextHealthDegradations,
+            'capsule_resolution',
+            'enriched capsule resolution failed; using thin fallback context',
+          );
           return buildThinCapsuleFallback({
             uid: _user.uid,
             capsuleId,
@@ -289,6 +297,11 @@ export const POST = withCalibration('chat', 'ai_chat', {
           maxParagraphs: 6,
         }).catch((err) => {
           console.warn('[chat] evidence pack build failed (non-fatal):', err);
+          recordContextHealthDegradation(
+            contextHealthDegradations,
+            'evidence_pack',
+            'evidence pack build failed; continuing without supplemental evidence pack',
+          );
           return null;
         });
         if (evidencePack) {
@@ -449,6 +462,11 @@ You have access to the user's active situation data. When answering questions:
         }
       } catch (ragErr) {
         console.error('[chat] corpus retrieval failed (non-fatal):', ragErr);
+        recordContextHealthDegradation(
+          contextHealthDegradations,
+          'corpus_retrieval',
+          'situation corpus retrieval failed; continuing without corpus snippets',
+        );
         // Continue without RAG — non-fatal
       }
     }
@@ -489,6 +507,11 @@ You have access to the user's active situation data. When answering questions:
             situationCtx.narrativesSummary = byType('narrative');
           }
         } catch {
+          recordContextHealthDegradation(
+            contextHealthDegradations,
+            'graph_snapshot',
+            'conflict graph snapshot failed; continuing without graph context',
+          );
           // Non-fatal — tools will degrade gracefully without graph data
         }
       }
@@ -577,6 +600,7 @@ You have access to the user's active situation data. When answering questions:
         label: capsule.label,
         tags: [capsule.role],
       })),
+      contextHealthDegradations,
     });
     runtimeReceipt = {
       ...runtimeReceipt,
@@ -595,7 +619,12 @@ You have access to the user's active situation data. When answering questions:
       runtime: runtimeReceipt,
       evidencePackReceipt,
       orchestrationReceipt,
+      contextHealthDegradations,
     });
+    orchestrationReceipt = {
+      ...orchestrationReceipt,
+      contextHealth: buildAskContextHealthReceipt(contextHealthDegradations),
+    };
     runtimeReceipt.orchestrationReceipt = orchestrationReceipt;
     runtimeReceipt.routeDecision = buildAskRouteDecisionReceipt(orchestrationReceipt);
     systemPrompt += '\n\n' + formatWorkIntentPromptBlock(orchestrationReceipt.triage.workIntent);
@@ -1216,6 +1245,7 @@ async function maybeQueueAskAgentRun(input: {
   runtime: AskRuntimeReceipt;
   evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null;
   orchestrationReceipt: AskConversationOrchestrationReceipt;
+  contextHealthDegradations: AskContextHealthDegradation[];
 }): Promise<AskConversationOrchestrationReceipt> {
   const receipt = input.orchestrationReceipt;
   if (!input.uid || !input.capsule || receipt.supervisor.action !== 'queue_agent_run' || !receipt.supervisor.policyAgentId) {
@@ -1343,6 +1373,35 @@ async function maybeQueueAskAgentRun(input: {
 
     try {
       const dispatch = await enqueueAgentRunDispatch({ ownerUid: input.uid, runId: run.id });
+      const reportedDispatchStatus = stringValue((dispatch as { dispatchEnqueueStatus?: unknown }).dispatchEnqueueStatus);
+      if (reportedDispatchStatus === 'dispatch_failed') {
+        const dispatchError = stringValue((dispatch as { error?: unknown; dispatchError?: unknown }).error)
+          ?? stringValue((dispatch as { dispatchError?: unknown }).dispatchError)
+          ?? 'dispatch enqueue reported failure';
+        recordContextHealthDegradation(
+          input.contextHealthDegradations,
+          'agent_dispatch',
+          `Agent dispatch failed for run ${run.id}; run was created but not started`,
+        );
+        await updateAgentRunMetadata({
+          ownerUid: input.uid,
+          runId: run.id,
+          metadata: {
+            dispatchEnqueueStatus: 'dispatch_failed',
+            dispatchError,
+            dispatchLastAttemptAt: new Date().toISOString(),
+          },
+          message: 'AgentRun dispatch enqueue failed from Ask PRAXIS.',
+        }).catch((metadataErr) => console.warn('[chat] Ask orchestration dispatch failure metadata update failed:', metadataErr));
+        queued = markAskOrchestrationRunQueued(queued, {
+          runId: run.id,
+          status: 'dispatch_failed',
+          outputHref: receipt.supervisor.outputDestination ? destinationHref(receipt.supervisor.outputDestination) : null,
+          error: dispatchError,
+        });
+        console.warn('[chat] Ask orchestration dispatch failed; run remains queued:', dispatchError);
+        return queued;
+      }
       await updateAgentRunMetadata({
         ownerUid: input.uid,
         runId: run.id,
@@ -1361,6 +1420,11 @@ async function maybeQueueAskAgentRun(input: {
       });
     } catch (err) {
       const dispatchError = err instanceof Error ? err.message : String(err);
+      recordContextHealthDegradation(
+        input.contextHealthDegradations,
+        'agent_dispatch',
+        `Agent dispatch failed for run ${run.id}; run was created but not started`,
+      );
       await updateAgentRunMetadata({
         ownerUid: input.uid,
         runId: run.id,
@@ -1838,6 +1902,32 @@ function previewJson(value: unknown): string {
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean))).slice(0, 50);
+}
+
+function recordContextHealthDegradation(
+  degradations: AskContextHealthDegradation[],
+  stage: AskContextHealthDegradation['stage'],
+  detail: string,
+) {
+  degradations.push({
+    stage,
+    detail: sanitizeContextHealthDetail(detail),
+    occurredAt: new Date().toISOString(),
+  });
+}
+
+function sanitizeContextHealthDetail(value: string): string {
+  const cleaned = value
+    .replace(/https?:\/\/[^\s"')]+/gi, '[redacted-url]')
+    .replace(/[A-Z0-9_]*(SECRET|TOKEN|KEY|PASSWORD|DATABASE_URL|SERVICE_ACCOUNT)[A-Z0-9_]*/gi, '[redacted-env]')
+    .replace(/[A-Z0-9._%+-]+@[A-Z0-9.-]*gserviceaccount\.com/gi, '[redacted-service-account]')
+    .replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/gi, '[redacted-secret]')
+    .replace(/\b(stack\s+trace|traceback|exception)\b/gi, '[redacted-runtime-detail]')
+    .replace(/\b[a-z0-9-]+\.run\.app\b/gi, '[redacted-url]')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 240);
+  return cleaned || 'context stage degraded';
 }
 
 function stringValue(value: unknown): string | null {

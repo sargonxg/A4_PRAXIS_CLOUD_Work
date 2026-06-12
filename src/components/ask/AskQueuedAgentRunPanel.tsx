@@ -53,7 +53,7 @@ export function queuedAgentRunFromEnvelope(envelope?: AskAnswerEnvelope): AskOrc
   const detail = queuedRun.status === 'ledger_failed'
     ? 'Agent runtime unavailable - answered directly.'
     : queuedRun.status === 'dispatch_failed'
-      ? 'Durable run was created, but dispatch needs retry.'
+      ? 'Agent dispatch failed - run was created but not started.'
       : 'Durable agent run queued for deeper work.';
 
   return {
@@ -190,10 +190,11 @@ export function AskQueuedAgentRunPanel({
   const snapshotRun = snapshotState.run;
   const visibleRun = snapshotRun ?? run;
   const status = visibleRun?.status ?? actionStatus ?? queuedRun.status;
+  const dispatchFailed = status === 'dispatch_failed' || queuedRun.fallbackPosture === 'dispatch_failed';
   const visibleEvents = snapshotState.events.length ? snapshotState.events : eventState.events;
   const recentEvents = expanded ? visibleEvents.slice(-4).reverse() : [];
-  const canCancel = Boolean(runId) && canCancelAgentRunStatus(status);
-  const canRetry = Boolean(runId) && canRetryAgentRunStatus(status);
+  const canCancel = Boolean(runId) && !dispatchFailed && canCancelAgentRunStatus(status);
+  const canRetry = Boolean(runId) && (dispatchFailed || canRetryAgentRunStatus(status));
   const lifecycle = agentRunLifecycleSteps(status);
   const pendingApprovals = approvals.filter((approval) => approval.status === 'pending');
   const selectedTools = visibleRun?.selectedTools ?? queuedRun.selectedToolIds ?? [];
@@ -206,22 +207,36 @@ export function AskQueuedAgentRunPanel({
   const degradedReason = visibleRun?.degradedReason ?? queuedRun.degradedReason ?? null;
   const sourceReceiptCount = visibleRun?.sourceReceiptIds?.length ?? sourceCount;
   const searchTools = selectedTools.filter((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent');
-  const stateLabel = degradedReason
+  const stateLabel = dispatchFailed
+    ? 'Dispatch failed'
+    : degradedReason
     ? 'Search degraded'
     : sourceReceiptCount > 0
       ? 'Source receipts saved'
       : runId
         ? 'Search queued'
         : 'Grounding unavailable';
+  const panelClassName = dispatchFailed
+    ? 'mt-3 rounded-md border border-red-200 bg-red-50 p-2'
+    : 'mt-3 rounded-md border border-diplomatic-blue/20 bg-blue-50 p-2';
+  const headingClassName = dispatchFailed
+    ? 'text-[11px] font-bold uppercase tracking-[0.14em] text-red-800'
+    : 'text-[11px] font-bold uppercase tracking-[0.14em] text-diplomatic-blue';
+  const statusLine = dispatchFailed
+    ? `Agent dispatch failed - run was created but not started${runId ? ` (${runId})` : ''}.`
+    : runId ? `${runId} / ${status.replace(/_/g, ' ')}` : queuedRun.detail;
+  const visibleDegradedReason = dispatchFailed
+    ? degradedReason ?? 'Retry dispatch to start the existing run.'
+    : degradedReason;
 
   return (
-    <section className="mt-3 rounded-md border border-diplomatic-blue/20 bg-blue-50 p-2" data-testid="ask-agent-run-panel">
+    <section className={panelClassName} data-testid="ask-agent-run-panel">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-diplomatic-blue">Deep work queue</p>
-          <p className="truncate text-xs text-slate-700">{runId ? `${runId} / ${status.replace(/_/g, ' ')}` : queuedRun.detail}</p>
+          <p className={headingClassName}>{dispatchFailed ? 'Agent dispatch failed' : 'Deep work queue'}</p>
+          <p className="truncate text-xs text-slate-700">{statusLine}</p>
           <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-slate-600">
-            <span className="font-semibold text-diplomatic-blue">{stateLabel}</span>
+            <span className={dispatchFailed ? 'font-semibold text-red-800' : 'font-semibold text-diplomatic-blue'}>{stateLabel}</span>
             <span>{agentLabel}</span>
             <span>{selectedTools.length} tools</span>
             {searchTools.length ? <span>{searchTools.join(', ')}</span> : null}
@@ -230,7 +245,7 @@ export function AskQueuedAgentRunPanel({
             {outputTarget ? <span>{outputTarget}</span> : null}
             <span>{groundingPosture}</span>
           </div>
-          {degradedReason ? <p className="mt-1 text-[11px] leading-4 text-gold-900">{degradedReason}</p> : null}
+          {visibleDegradedReason ? <p className={dispatchFailed ? 'mt-1 text-[11px] leading-4 text-red-800' : 'mt-1 text-[11px] leading-4 text-gold-900'}>{visibleDegradedReason}</p> : null}
         </div>
         <div className="flex flex-wrap gap-1.5">
           {runId ? (
