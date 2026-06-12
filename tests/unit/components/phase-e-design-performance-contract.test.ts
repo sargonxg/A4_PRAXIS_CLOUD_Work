@@ -63,7 +63,7 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     for (const path of [
       'src/components/app/praxis-chat.tsx',
       'src/components/praxis/tasklet-praxis-workbench.tsx',
-      'src/components/capsules/CapsuleWorkbenchPanel.tsx',
+      'src/components/capsules/workbench/CapsuleTimelineSection.tsx',
       'src/components/memo/memo-desk.tsx',
       'src/components/boardroom/boardroom-workspace.tsx',
       'src/components/settings/account-settings-page.tsx',
@@ -115,6 +115,10 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
     const monaco = read('src/components/capsules/CapsuleJsonMonacoEditor.tsx');
     const capsuleWorkbench = read('src/components/capsules/CapsuleWorkbenchPanel.tsx');
+    const capsuleGraphSection = read('src/components/capsules/workbench/CapsuleGraphSection.tsx');
+    const capsuleTimelineSection = read('src/components/capsules/workbench/CapsuleTimelineSection.tsx');
+    const capsuleGraphViewer = read('src/components/capsules/viewers/CapsuleGraphViewer.tsx');
+    const capsuleTemporalViewer = read('src/components/capsules/viewers/CapsuleTemporalViewer.tsx');
     const lazyMemo = read('src/components/memo/lazy-memo-desk.tsx');
 
     expect(packageJson).toContain('"@next/bundle-analyzer"');
@@ -133,8 +137,12 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     expect(chatShell).toContain("import('@/components/app/praxis-chat')");
     expect(chatShell).toContain('PraxisChatLoadingSkeleton');
     expect(monaco).toContain("dynamic(() => import('@monaco-editor/react')");
-    expect(capsuleWorkbench).toContain("dynamic(() => import('react-force-graph-2d')");
-    expect(capsuleWorkbench).toContain("import('vis-timeline/standalone')");
+    expect(capsuleWorkbench).toContain('CapsuleGraphSection');
+    expect(capsuleWorkbench).toContain('CapsuleTimelineSection');
+    expect(capsuleGraphSection).toContain("import('@/components/capsules/viewers/CapsuleGraphViewer')");
+    expect(capsuleTimelineSection).toContain("import('@/components/capsules/viewers/CapsuleTemporalViewer')");
+    expect(capsuleGraphViewer).toContain("dynamic(() => import('react-force-graph-2d')");
+    expect(capsuleTemporalViewer).toContain("import('vis-timeline/standalone')");
     expect(lazyMemo).toContain('dynamic(');
     expect(lazyMemo).toContain("import('@/components/memo/memo-desk')");
   });

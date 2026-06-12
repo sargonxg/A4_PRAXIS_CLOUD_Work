@@ -4,6 +4,26 @@ import { describe, expect, it } from 'vitest';
 
 const componentPath = join(process.cwd(), 'src/components/capsules/CapsuleWorkbenchPanel.tsx');
 const componentSource = existsSync(componentPath) ? readFileSync(componentPath, 'utf8') : '';
+const sectionSource = [
+  'src/components/capsules/workbench/CapsuleStudioOverviewSection.tsx',
+  'src/components/capsules/workbench/CapsuleSourceabilityGatesSection.tsx',
+  'src/components/capsules/workbench/CapsuleHistorySection.tsx',
+  'src/components/capsules/workbench/CapsulePillarsSection.tsx',
+  'src/components/capsules/workbench/CapsuleTimelineSection.tsx',
+  'src/components/capsules/workbench/CapsuleCausalChainSection.tsx',
+  'src/components/capsules/workbench/CapsuleQualitySection.tsx',
+  'src/components/capsules/workbench/CapsuleClaimReceiptsSection.tsx',
+  'src/components/capsules/workbench/CapsuleAnatomySection.tsx',
+  'src/components/capsules/workbench/CapsuleGraphSection.tsx',
+  'src/components/capsules/workbench/CapsuleTacitKnowledgeSection.tsx',
+  'src/components/capsules/workbench/CapsuleAgentWorkflowSection.tsx',
+  'src/components/capsules/workbench/CapsuleOutputsSection.tsx',
+  'src/components/capsules/workbench/CapsuleReviewQueueSection.tsx',
+  'src/components/capsules/workbench/CapsuleWorkbenchSections.tsx',
+  'src/components/capsules/viewers/CapsuleGraphViewer.tsx',
+  'src/components/capsules/viewers/CapsuleTemporalViewer.tsx',
+].map((path) => readFileSync(join(process.cwd(), path), 'utf8')).join('\n');
+const capsuleWorkbenchSource = `${componentSource}\n${sectionSource}`;
 const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 
 describe('Capsule workbench UI contract', () => {
@@ -22,28 +42,28 @@ describe('Capsule workbench UI contract', () => {
       'Fix this',
       'Reliability tier',
     ]) {
-      expect(componentSource).toContain(expected);
+      expect(capsuleWorkbenchSource).toContain(expected);
     }
-    expect(componentSource).toContain('data-testid="capsule-knowledge-graph"');
-    expect(componentSource).toContain('data-testid="capsule-timeline-scrubber"');
-    expect(componentSource).toContain('data-testid="capsule-causal-chain-view"');
-    expect(componentSource).toContain('data-testid="capsule-quality-meter"');
-    expect(componentSource).toContain('data-testid="capsule-claim-receipts"');
-    expect(componentSource).toContain('data-testid="capsule-history-section"');
-    expect(componentSource).toContain('data-testid="capsule-version-diff"');
-    expect(componentSource).toContain('/history?limit=8');
-    expect(componentSource).toContain('/diff?from=v');
-    expect(componentSource).toContain('Claim ledger');
-    expect(componentSource).toContain('Source refs');
-    expect(componentSource).toContain("dynamic(async () => import('vis-timeline/standalone')");
-    expect(componentSource).toContain('CapsulePillarPanel');
-    expect(componentSource).toContain('CapsuleTimelineScrubber');
-    expect(componentSource).toContain('CapsuleCausalChainView');
-    expect(componentSource).toContain('CapsuleQualityMeter');
-    expect(componentSource).toContain('ClaimReceiptDisclosure');
-    expect(componentSource).toContain('proposals stay review-gated');
-    expect(componentSource).toContain('Advisory memory');
-    expect(componentSource).toContain('No source receipts attached yet.');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-knowledge-graph"');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-timeline-scrubber"');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-causal-chain-view"');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-quality-meter"');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-claim-receipts"');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-history-section"');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-version-diff"');
+    expect(capsuleWorkbenchSource).toContain('/history?limit=8');
+    expect(capsuleWorkbenchSource).toContain('/diff?from=v');
+    expect(capsuleWorkbenchSource).toContain('Claim ledger');
+    expect(capsuleWorkbenchSource).toContain('Source refs');
+    expect(capsuleWorkbenchSource).toContain("import('vis-timeline/standalone')");
+    expect(componentSource).toContain('CapsulePillarsSection');
+    expect(componentSource).toContain('CapsuleTimelineSection');
+    expect(componentSource).toContain('CapsuleCausalChainSection');
+    expect(componentSource).toContain('CapsuleQualitySection');
+    expect(componentSource).toContain('CapsuleClaimReceiptsSection');
+    expect(capsuleWorkbenchSource).toContain('proposals stay review-gated');
+    expect(capsuleWorkbenchSource).toContain('Advisory memory');
+    expect(capsuleWorkbenchSource).toContain('No source receipts attached yet.');
   });
 
   it('wires the shared workbench into both detail and inspector click paths', () => {

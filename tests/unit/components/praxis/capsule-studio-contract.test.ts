@@ -3,10 +3,16 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('Capsule Studio living graph UI contract', () => {
-  const source = readFileSync(join(process.cwd(), 'src/components/capsules/CapsuleWorkbenchPanel.tsx'), 'utf8');
+  const source = [
+    'src/components/capsules/CapsuleWorkbenchPanel.tsx',
+    'src/components/capsules/workbench/CapsuleStudioOverviewSection.tsx',
+    'src/components/capsules/workbench/CapsuleGraphSection.tsx',
+    'src/components/capsules/viewers/CapsuleGraphViewer.tsx',
+  ].map((path) => readFileSync(join(process.cwd(), path), 'utf8')).join('\n');
 
   it('lazy-loads React Force Graph and removes the static preview caps', () => {
     expect(source).toContain("dynamic(() => import('react-force-graph-2d')");
+    expect(source).toContain("import('@/components/capsules/viewers/CapsuleGraphViewer')");
     expect(source).toContain('ssr: false');
     expect(source).toContain('nodeCanvasObject');
     expect(source).toContain('nodePointerAreaPaint');
