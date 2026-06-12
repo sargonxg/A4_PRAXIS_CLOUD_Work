@@ -7,7 +7,8 @@ import { CompactList, StatePill, WorkbenchSection } from '@/components/capsules/
 
 export const CapsuleReviewQueueSection = memo(function CapsuleReviewQueueSection({ reviewQueue }: { reviewQueue: CapsuleWorkbenchViewModel['reviewQueue'] }) {
   return (
-    <WorkbenchSection title="Review Queue" icon={AlertTriangle}>
+    <div id="capsule-review-queue">
+      <WorkbenchSection title="Review Queue" icon={AlertTriangle}>
       <div className="mb-2">
         <StatePill state="proposed" label="proposals stay review-gated" />
       </div>
@@ -15,6 +16,7 @@ export const CapsuleReviewQueueSection = memo(function CapsuleReviewQueueSection
         items={reviewQueue.map((item) => `${item.target}: ${item.title}`)}
         empty="No review cards are open."
       />
-    </WorkbenchSection>
+      </WorkbenchSection>
+    </div>
   );
 });

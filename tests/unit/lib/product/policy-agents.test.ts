@@ -16,6 +16,7 @@ describe('PRAXIS policy agent registry', () => {
       'capsule-factory',
       'research-memo',
       'source-gap-scout',
+      'capsule-quality-review',
       'boardroom-discussion',
       'output-formatter',
       'daily-brief',
@@ -79,6 +80,7 @@ describe('PRAXIS policy agent registry', () => {
     expect(gate.status).toBe('required');
     expect(policyAgentRunIntent('research-memo')).toBe('research_memo');
     expect(policyAgentRunIntent('source-gap-scout')).toBe('source_gap_scout');
+    expect(policyAgentRunIntent('capsule-quality-review')).toBe('capsule_quality_review');
     expect(policyAgentRunIntent('daily-brief')).toBe('daily_brief');
     expect(policyAgentRunIntent('boardroom-discussion')).toBe('boardroom_discussion');
     expect(policyAgentRunIntent('capsule-factory')).toBe('capsule_factory');

@@ -160,7 +160,12 @@ function classifyWorkflowKind(input: {
   selectedToolIds: string[];
 }): AgentWorkflowKind {
   const text = input.prompt?.toLowerCase() ?? '';
-  if (input.runIntent === 'capsule_factory' || input.policyAgentId === 'capsule-factory') return 'capsule_governance';
+  if (
+    input.runIntent === 'capsule_factory' ||
+    input.runIntent === 'capsule_quality_review' ||
+    input.policyAgentId === 'capsule-factory' ||
+    input.policyAgentId === 'capsule-quality-review'
+  ) return 'capsule_governance';
   if (input.runIntent === 'handover' || input.policyAgentId === 'handover-builder') return 'handover';
   if (input.runIntent === 'research_memo' || input.selectedToolIds.some((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent')) return 'current_research_brief';
   if (input.runIntent === 'format_output' || /\b(pdf|docx|memo|briefing pack|report|export|formatted)\b/.test(text)) return 'pdf_memo_output';

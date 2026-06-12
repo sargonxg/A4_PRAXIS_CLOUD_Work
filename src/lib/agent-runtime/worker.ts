@@ -47,7 +47,17 @@ import {
 } from '@/lib/agent-runtime/mirror';
 import { buildAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
-import { createCapsuleReviewCard, type CreateCapsuleReviewCardInput, type CapsuleReviewCard } from '@/lib/context/capsule-service';
+import { createCapsuleReviewCard, getCapsule, type CreateCapsuleReviewCardInput, type CapsuleReviewCard } from '@/lib/context/capsule-service';
+import {
+  buildCapsuleQualityReviewAnalysis,
+  capsuleQualityReviewCardInput,
+  capsuleQualityReviewOutputHref,
+  countCapsuleQualityReviewProposalKinds,
+  parseCapsuleQualityReviewProposalsFromText,
+  summarizeCapsuleQualityReviewRun,
+  type CapsuleQualityReviewAnalysis,
+  type CapsuleQualityReviewProposal,
+} from '@/lib/agent-runtime/capsule-quality-review';
 import { boardroomParticipantLabel, type BoardroomOutput } from '@/lib/boardroom/schema';
 import {
   BOARDROOM_MODEL_POLICY_ID,
@@ -76,6 +86,7 @@ export type AgentRunExecutionMode =
   | 'capsule-factory'
   | 'research-memo'
   | 'source-gap-scout'
+  | 'capsule-quality-review'
   | 'daily-brief'
   | 'multi-agent-supervisor'
   | 'boardroom-discussion'
@@ -115,6 +126,7 @@ type WorkerDeps = {
   saveMemoDraft?: (uid: string, input: SaveMemoDraftInput) => Promise<{ memo: { id: string } }>;
   saveOutputCapsule?: (uid: string, input: SaveOutputCapsuleInput) => Promise<{ id: string } | null>;
   buildEvidencePack?: typeof buildCapsuleEvidencePack;
+  getCapsule?: typeof getCapsule;
   runBoardroomDiscussion?: (input: LiveBoardroomRunnerInput) => Promise<BoardroomOutput>;
   appendToolCall?: typeof appendAgentToolCall;
   appendApproval?: typeof appendAgentApproval;
@@ -203,6 +215,9 @@ export async function executeAgentRun(
   }
   if (policyAgent?.id === 'source-gap-scout') {
     return executeSourceGapScoutAgentRun(payload, { ...deps, getRun: async () => run });
+  }
+  if (policyAgent?.id === 'capsule-quality-review') {
+    return executeCapsuleQualityReviewAgentRun(payload, { ...deps, getRun: async () => run });
   }
   if (policyAgent?.id === 'daily-brief') {
     return executeDailyBriefAgentRun(payload, { ...deps, getRun: async () => run });
@@ -1036,6 +1051,204 @@ async function executeSourceGapScoutAgentRun(
       executionMode: 'source-gap-scout',
       failedPhase: executionStage,
       message: 'Source-Gap Scout failed before creating review-gated source candidates.',
+      err,
+      deps,
+    });
+  }
+}
+
+async function executeCapsuleQualityReviewAgentRun(
+  payload: ExecuteAgentRunPayload,
+  deps: WorkerDeps = {},
+): Promise<ExecuteAgentRunResult> {
+  const getRun = deps.getRun ?? getAgentRun;
+  const updateStatus = deps.updateStatus ?? updateAgentRunStatus;
+  const readCapsule = deps.getCapsule ?? getCapsule;
+  const persistToolCall = deps.appendToolCall ?? appendAgentToolCall;
+  const persistReviewCard = deps.createReviewCard ?? createCapsuleReviewCard;
+  const run = await getRun(payload.ownerUid, payload.runId);
+  if (!run) {
+    throw new AgentWorkerError('Agent run not found', 404);
+  }
+  if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
+    throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
+  }
+  const outputHref = capsuleQualityReviewOutputHref(run);
+  if (run.status === 'succeeded') {
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
+    return {
+      runId: run.id,
+      status: run.status,
+      executionMode: 'capsule-quality-review',
+      traceId: run.traceId,
+      outputHref,
+      idempotent: true,
+    };
+  }
+  if (run.status !== 'queued' && run.status !== 'running') {
+    throw new AgentWorkerError(`Agent run cannot be executed from ${run.status}`, 409);
+  }
+
+  let running = run;
+  let executionStage = 'starting';
+  try {
+    if (run.status !== 'running') {
+      const next = await updateStatus({
+        ownerUid: run.ownerUid,
+        runId: run.id,
+        toStatus: 'running',
+        message: 'Capsule quality review accepted the queued capsule run.',
+        data: {
+          dispatchId: payload.dispatchId,
+          attempt: payload.attempt,
+          requestedAt: payload.requestedAt,
+        },
+      });
+      if (!next) throw new AgentWorkerError('Agent run disappeared before execution', 404);
+      running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
+    }
+
+    executionStage = 'context-build';
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'context_resolved',
+      message: 'Capsule quality review resolved the active ContextCapsule.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        workerContext: buildCapsuleWorkerContext(running),
+        executionMode: 'capsule-quality-review',
+      },
+    }, deps);
+    const initialWorkflowProof = await emitCapsuleReadAndWorkflowPlan(running, deps);
+
+    executionStage = 'capsule-load';
+    const capsule = await readCapsule(running.ownerUid, running.capsuleId);
+    if (!capsule || capsule.archivedAt) {
+      throw new Error('Active capsule not found for capsule quality review.');
+    }
+
+    executionStage = 'deterministic-quality-pass';
+    const analysis = buildCapsuleQualityReviewAnalysis(capsule);
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'capsule_quality_review.deficits_created',
+      message: 'Capsule quality review completed deterministic capsule quality checks.',
+      data: {
+        readinessBefore: Number.isFinite(analysis.readiness.score) ? analysis.readiness.score : null,
+        qualityScore: analysis.quality.score,
+        deficitCount: analysis.deficits.length,
+        deficits: analysis.deficits.slice(0, 12),
+        capsuleReadReceipt: initialWorkflowProof.capsuleReadReceipt,
+        workflowPlan: initialWorkflowProof.workflowPlan,
+      },
+    }, deps);
+
+    executionStage = 'llm-review';
+    const llmResult = await generateCapsuleQualityReviewProposals(running, analysis, deps);
+    const proposals = (llmResult.proposals.length ? llmResult.proposals : analysis.deterministicProposals).slice(0, 8);
+
+    executionStage = 'review-card-persist';
+    const reviewCards: CapsuleReviewCard[] = [];
+    for (const [index, proposal] of proposals.entries()) {
+      const card = await persistReviewCard(
+        running.ownerUid,
+        running.capsuleId,
+        capsuleQualityReviewCardInput(running, proposal, index),
+      );
+      reviewCards.push(card);
+    }
+
+    const kindCounts = countCapsuleQualityReviewProposalKinds(proposals);
+    const readinessScoreBefore = Number.isFinite(analysis.readiness.score) ? analysis.readiness.score : null;
+    const summary = summarizeCapsuleQualityReviewRun(readinessScoreBefore ?? Number.NaN, proposals);
+    await persistToolCall(makeAgentToolCall({
+      runId: running.id,
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      toolId: 'capsule-quality-review',
+      risk: getAgentToolDefinition('capsule-quality-review').risk,
+      status: 'succeeded',
+      input: {
+        objective: running.objective,
+        readinessScoreBefore,
+        deficitCount: analysis.deficits.length,
+      },
+      output: {
+        summary,
+        readinessScoreBefore,
+        deficitCount: analysis.deficits.length,
+        proposalsCreated: reviewCards.length,
+        reviewCardIds: reviewCards.map((card) => card.reviewCardId),
+        kindCounts,
+        llmUsed: llmResult.used,
+        deterministicFallback: !llmResult.used,
+      },
+      startedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+    }));
+    await mirrorWorkerEvent(running, {
+      substrate: 'praxis',
+      phase: 'capsule_quality_review.review_cards_created',
+      message: 'Capsule quality review saved improvement proposals as review-gated cards.',
+      data: {
+        summary,
+        readinessScoreBefore,
+        proposalsCreated: reviewCards.length,
+        reviewCardIds: reviewCards.map((card) => card.reviewCardId),
+        kindCounts,
+        llmUsed: llmResult.used,
+        reviewOnly: true,
+      },
+    }, deps);
+
+    executionStage = 'succeeded-transition';
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'capsule-quality-review',
+      message: 'Capsule quality review completed review-gated improvement proposals.',
+      data: {
+        dispatchId: payload.dispatchId,
+        attempt: payload.attempt,
+        executionMode: 'capsule-quality-review',
+        outputHref,
+        summary,
+        readinessScoreBefore,
+        proposalsCreated: reviewCards.length,
+        reviewCardIds: reviewCards.map((card) => card.reviewCardId),
+        kindCounts,
+      },
+      metadata: {
+        outputHref,
+        proposalsCreated: reviewCards.length,
+        capsuleQualityReview: {
+          readinessScoreBefore,
+          kindCounts,
+          llmUsed: llmResult.used,
+        },
+      },
+      outputHref,
+      deps,
+    });
+
+    return {
+      runId: succeeded?.id ?? running.id,
+      status: succeeded?.status ?? 'succeeded',
+      executionMode: 'capsule-quality-review',
+      traceId: running.traceId,
+      outputHref,
+    };
+  } catch (err) {
+    if (err instanceof AgentWorkerError) throw err;
+    return failAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'capsule-quality-review',
+      failedPhase: executionStage,
+      message: 'Capsule quality review failed before creating review-gated improvement proposals.',
       err,
       deps,
     });
@@ -3506,6 +3719,55 @@ function sourceGapReviewCardTitle(text: string): string {
 
 function sourceGapScoutOutputHref(run: AgentRun): string {
   return `/app/capsules?capsuleId=${encodeURIComponent(run.capsuleId)}&review=source-gaps`;
+}
+
+async function generateCapsuleQualityReviewProposals(
+  running: AgentRun,
+  analysis: CapsuleQualityReviewAnalysis,
+  deps: Pick<WorkerDeps, 'generateText' | 'appendEvent'>,
+): Promise<{ proposals: CapsuleQualityReviewProposal[]; used: boolean }> {
+  let lastParseError: unknown = null;
+  for (let attempt = 1; attempt <= 2; attempt += 1) {
+    try {
+      const result = await generateAgentText(deps, {
+        modelPurpose: 'pro',
+        system: [
+          'You are the PRAXIS capsule reviewer.',
+          'Inspect the active ContextCapsule and propose concrete improvements only as review-card candidates.',
+          'Never claim that any proposal has been applied. Never mutate canonical capsule state.',
+          'Return only JSON: an array of at most 8 objects with kind, title, rationale, suggestedChange, confidence.',
+          'Allowed kind values: sourcing, temporal, causal, ontology, guardrail, output.',
+        ].join(' '),
+        prompt: [
+          'Active capsule digest:',
+          analysis.digest,
+          '',
+          'Deterministic deficits:',
+          JSON.stringify(analysis.deficits.slice(0, 12)),
+          '',
+          'Return a JSON array of max 8 improvement proposals. Each suggestedChange must be concrete enough for a human reviewer to accept, reject, or edit.',
+        ].join('\n'),
+        temperature: 0,
+      });
+      return {
+        proposals: parseCapsuleQualityReviewProposalsFromText(result.text).slice(0, 8),
+        used: true,
+      };
+    } catch (err) {
+      lastParseError = err;
+      if (attempt === 1) continue;
+    }
+  }
+  await mirrorWorkerEvent(running, {
+    substrate: 'praxis',
+    phase: 'capsule_quality_review.llm_fallback_used',
+    message: 'Capsule quality review used deterministic fallback proposals after model output did not match the proposal schema.',
+    data: {
+      error: sanitizeWorkerErrorMessage(lastParseError),
+      fallbackProposalCount: analysis.deterministicProposals.length,
+    },
+  }, deps);
+  return { proposals: analysis.deterministicProposals.slice(0, 8), used: false };
 }
 
 function dailyBriefTitle(run: AgentRun): string {

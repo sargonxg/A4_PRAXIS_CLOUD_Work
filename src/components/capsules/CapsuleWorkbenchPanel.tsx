@@ -85,7 +85,12 @@ export function CapsuleWorkbenchPanel({
         <CapsuleCausalChainSection causalChains={model.causalChains} />
       </div>
       <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1fr)]')}>
-        <CapsuleQualitySection quality={model.quality} />
+        <CapsuleQualitySection
+          quality={model.quality}
+          capsuleId={model.capsuleId}
+          capsuleVersion={model.capsuleVersion}
+          agentRuns={agentRuns}
+        />
         <CapsuleClaimReceiptsSection claims={model.claims} />
       </div>
       <CapsuleAnatomySection

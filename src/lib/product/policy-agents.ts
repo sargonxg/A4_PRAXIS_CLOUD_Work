@@ -25,6 +25,7 @@ export type PolicyAgentRunIntent =
   | 'capsule_factory'
   | 'research_memo'
   | 'source_gap_scout'
+  | 'capsule_quality_review'
   | 'daily_brief'
   | 'boardroom_discussion'
   | 'sourceability_review'
@@ -124,6 +125,21 @@ export const PRAXIS_POLICY_AGENTS: PolicyAgentDefinition[] = [
     allowedTools: ['context-resolve', 'capsule-evidence-pack', 'grounded-search', 'sourceability-reviewer', 'source-gap-scout'],
     capsuleSlots: ['situation', 'sources', 'documents', 'outputs'],
     actionLabel: 'Find sources',
+  },
+  {
+    id: 'capsule-quality-review',
+    label: 'Capsule quality review',
+    category: 'review',
+    description: 'Reviews the active capsule and files improvement proposals for your approval.',
+    requiredCores: ['Situation Core', 'Source Core', 'Output Core'],
+    inputTypes: ['active capsule', 'quality deficits', 'review queue'],
+    outputDestination: 'library',
+    approvalLevel: 'none',
+    readiness: 'live',
+    riskLevel: 'low',
+    allowedTools: ['context-resolve', 'capsule-evidence-pack', 'sourceability-reviewer', 'capsule-quality-review'],
+    capsuleSlots: ['situation', 'sources', 'documents', 'tools', 'outputs'],
+    actionLabel: 'Review quality',
   },
   {
     id: 'boardroom-discussion',
@@ -253,6 +269,8 @@ export function policyAgentRunIntent(agentId: string | null | undefined): Policy
       return 'research_memo';
     case 'source-gap-scout':
       return 'source_gap_scout';
+    case 'capsule-quality-review':
+      return 'capsule_quality_review';
     case 'daily-brief':
       return 'daily_brief';
     case 'boardroom-discussion':

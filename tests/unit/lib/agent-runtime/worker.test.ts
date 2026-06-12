@@ -109,6 +109,51 @@ function makeEvidencePack(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function makeQualityCapsule(overrides: Record<string, unknown> = {}) {
+  return {
+    capsuleId: payload.capsuleId,
+    ownerUid: payload.ownerUid,
+    schemaVersion: 2,
+    version: 3,
+    label: 'Quality review capsule',
+    summary: 'A capsule for quality review tests.',
+    purpose: 'Assess access constraints.',
+    audience: ['Policy team'],
+    sourcePosture: {
+      posture: 'needs_sources',
+      requiredSourceTypes: ['official'],
+      freshnessWindowDays: 30,
+    },
+    decisionHorizon: 'Next 30 days',
+    sourceRefs: [{
+      sourceId: 'src-stale',
+      label: 'Old source',
+      date: '2025-01-01',
+      stale: true,
+    }],
+    claimLedger: [{
+      claimId: 'claim-1',
+      text: 'Access restrictions remain unresolved.',
+      support: 'needs_source',
+      sourceRefIds: [],
+    }],
+    humanGate: {
+      required: true,
+      gateStatus: 'needs_review',
+    },
+    outputContracts: [],
+    agentPermissions: {
+      canSuggest: true,
+      canSource: true,
+      canFork: false,
+      canDraft: true,
+      canPublish: false,
+    },
+    bestNextAction: '',
+    ...overrides,
+  };
+}
+
 describe('agent runtime no-op worker', () => {
   it('posts a succeeded run result to the originating Ask thread with a deterministic turn id', async () => {
     const turns = new Map<string, { prompt: string; output: string; runtime?: Record<string, unknown> }>();
@@ -928,6 +973,175 @@ describe('agent runtime no-op worker', () => {
       'grounding.live_retrieval_started',
       'source_gap_scout.review_cards_created',
     ]));
+  });
+
+  it('routes capsule quality review runs into review-gated improvement cards and returns to the Ask thread', async () => {
+    const reviewCards: Array<{ title: string; target: string; sourceType: string; evidence: unknown[]; patch: Record<string, unknown> | undefined }> = [];
+    const toolCalls: Array<{ toolId: string; status: string; output: Record<string, unknown> | null }> = [];
+    const mirrored: string[] = [];
+    const transitions: Array<{ toStatus: AgentRun['status']; data?: Record<string, unknown>; metadata?: Record<string, unknown> }> = [];
+    const turns = new Map<string, { runtime?: Record<string, unknown>; output: string }>();
+    let generateCalls = 0;
+
+    const llmProposal = (index: number) => ({
+      kind: ['sourcing', 'temporal', 'causal', 'ontology', 'guardrail', 'output', 'sourcing', 'temporal'][index % 8],
+      title: `Review improvement ${index + 1}`,
+      rationale: 'The capsule has a quality deficit that should remain review-gated.',
+      suggestedChange: `Create review-only improvement ${index + 1}.`,
+      confidence: index % 2 === 0 ? 'high' : 'medium',
+    });
+
+    const result = await executeAgentRun({
+      ...payload,
+      askThreadRef: { threadId: 'ask-thread-1', capsuleId: 'cap-1', originTurnId: 'turn-1' },
+    }, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'capsule-quality-review',
+        outputDestination: 'library',
+        selectedToolIds: ['context-resolve', 'capsule-quality-review'],
+      }),
+      updateStatus: async (input) => {
+        transitions.push({
+          toStatus: input.toStatus,
+          data: input.data,
+          metadata: input.metadata,
+        });
+        return makeRun(input.toStatus, {
+          policyAgentId: 'capsule-quality-review',
+          outputDestination: 'library',
+          ...(input.metadata ?? {}),
+        });
+      },
+      getCapsule: async () => makeQualityCapsule() as never,
+      generateText: async () => {
+        generateCalls += 1;
+        return {
+          text: JSON.stringify(Array.from({ length: generateCalls === 1 ? 9 : 8 }, (_, index) => llmProposal(index))),
+        };
+      },
+      appendToolCall: async (toolCall) => {
+        toolCalls.push({ toolId: toolCall.toolId, status: toolCall.status, output: toolCall.output });
+        return toolCall;
+      },
+      appendEvent: async (event) => {
+        mirrored.push(String(event.data.phase ?? event.eventType));
+        return event;
+      },
+      createReviewCard: async (_uid, _capsuleId, input) => {
+        reviewCards.push({
+          title: input.title,
+          target: input.target,
+          sourceType: input.sourceType,
+          evidence: input.evidence ?? [],
+          patch: input.proposedEnvelopePatch,
+        });
+        return { reviewCardId: input.reviewCardId ?? `quality-card-${reviewCards.length}` } as never;
+      },
+      persistAskThreadTurn: async (input: { turnId?: string | null; runtime?: Record<string, unknown>; output: string }) => {
+        turns.set(String(input.turnId), input);
+        return null;
+      },
+      isAskThreadSqlConfigured: () => false,
+    });
+
+    expect(generateCalls).toBe(2);
+    expect(result).toMatchObject({
+      status: 'succeeded',
+      executionMode: 'capsule-quality-review',
+      outputHref: '/app/capsules?capsuleId=cap-1#capsule-review-queue',
+    });
+    expect(reviewCards).toHaveLength(8);
+    expect(reviewCards.every((card) => card.sourceType === 'quality-audit')).toBe(true);
+    expect(reviewCards.every((card) => card.patch?.latestGateState === 'proposed')).toBe(true);
+    expect(reviewCards[0]?.evidence).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceType: 'capsule-quality-review-agent',
+        advisory: true,
+      }),
+    ]));
+    expect(toolCalls).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        toolId: 'capsule-quality-review',
+        status: 'succeeded',
+        output: expect.objectContaining({
+          proposalsCreated: 8,
+          llmUsed: true,
+        }),
+      }),
+    ]));
+    expect(transitions.at(-1)).toMatchObject({
+      toStatus: 'succeeded',
+      data: expect.objectContaining({
+        summary: expect.stringContaining('Readiness before'),
+        proposalsCreated: 8,
+      }),
+      metadata: expect.objectContaining({
+        proposalsCreated: 8,
+      }),
+    });
+    expect(turns.get('agent-result-run-1')?.runtime).toMatchObject({
+      source: 'agent_run',
+      runId: 'run-1',
+      policyAgentId: 'capsule-quality-review',
+      outputHref: '/app/capsules?capsuleId=cap-1#capsule-review-queue',
+    });
+    expect(mirrored).toEqual(expect.arrayContaining([
+      'capsule_quality_review.deficits_created',
+      'capsule_quality_review.review_cards_created',
+    ]));
+  });
+
+  it('falls back to deterministic capsule quality proposals when the model output is invalid', async () => {
+    const reviewCards: Array<{ title: string; target: string; sourceType: string; patch: Record<string, unknown> | undefined }> = [];
+    let generateCalls = 0;
+
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', {
+        policyAgentId: 'capsule-quality-review',
+        outputDestination: 'library',
+      }),
+      updateStatus: async (input) => makeRun(input.toStatus, {
+        policyAgentId: 'capsule-quality-review',
+        outputDestination: 'library',
+        ...(input.metadata ?? {}),
+      }),
+      getCapsule: async () => makeQualityCapsule({
+        sourceRefs: [],
+        claimLedger: [],
+        sourcePosture: null,
+        decisionHorizon: null,
+        purpose: '',
+        audience: [],
+      }) as never,
+      generateText: async () => {
+        generateCalls += 1;
+        return { text: '{"not":"an array"}' };
+      },
+      appendToolCall: async (toolCall) => toolCall,
+      appendEvent: async (event) => event,
+      createReviewCard: async (_uid, _capsuleId, input) => {
+        reviewCards.push({
+          title: input.title,
+          target: input.target,
+          sourceType: input.sourceType,
+          patch: input.proposedEnvelopePatch,
+        });
+        return { reviewCardId: input.reviewCardId ?? `quality-card-${reviewCards.length}` } as never;
+      },
+    });
+
+    expect(generateCalls).toBe(2);
+    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'capsule-quality-review' });
+    expect(reviewCards.length).toBeGreaterThan(0);
+    expect(reviewCards.length).toBeLessThanOrEqual(8);
+    expect(reviewCards).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        sourceType: 'quality-audit',
+        target: 'sourceGap',
+        title: expect.stringMatching(/source/i),
+      }),
+    ]));
+    expect(reviewCards.every((card) => card.patch?.latestGateState === 'proposed')).toBe(true);
   });
 
   it('routes scheduled daily brief runs into review-gated memo drafts and notifications', async () => {

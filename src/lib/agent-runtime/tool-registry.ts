@@ -87,6 +87,19 @@ const SourceGapScoutOutputSchema = z.object({
   reviewCardIds: ReceiptListSchema,
 }).strict();
 
+const CapsuleQualityReviewInputSchema = z.object({
+  ...ToolRunShape,
+  readinessScoreBefore: z.number().min(0).max(100).nullable().optional(),
+  deficitCount: z.number().int().nonnegative().optional(),
+}).strict();
+const CapsuleQualityReviewOutputSchema = z.object({
+  readinessScoreBefore: z.number().min(0).max(100).nullable().optional(),
+  deficitCount: z.number().int().nonnegative().optional(),
+  proposalsCreated: z.number().int().nonnegative().optional(),
+  reviewCardIds: ReceiptListSchema,
+  llmUsed: z.boolean().optional(),
+}).strict();
+
 const DailyBriefInputSchema = z.object({
   ...ToolRunShape,
   since: z.string().max(120).nullable().optional(),
@@ -292,6 +305,17 @@ export const AGENT_TOOL_REGISTRY = {
     outputSchema: SourceGapScoutOutputSchema,
     risk: 'low',
     requiredCores: ['sourceCoreIds'],
+    persistenceTarget: 'run_event',
+    approvalPolicy: 'auto',
+  }),
+  'capsule-quality-review': tool({
+    id: 'capsule-quality-review',
+    label: 'Review capsule quality',
+    description: 'Inspects active capsule quality and writes review-gated improvement cards for human approval.',
+    inputSchema: CapsuleQualityReviewInputSchema,
+    outputSchema: CapsuleQualityReviewOutputSchema,
+    risk: 'low',
+    requiredCores: ['situationCoreId'],
     persistenceTarget: 'run_event',
     approvalPolicy: 'auto',
   }),
