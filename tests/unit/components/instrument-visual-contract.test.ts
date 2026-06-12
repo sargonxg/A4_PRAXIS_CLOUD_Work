@@ -6,7 +6,6 @@ const root = process.cwd();
 const instrument = readFileSync(join(root, 'src/components/ui/instrument.tsx'), 'utf8');
 const globals = readFileSync(join(root, 'src/app/globals.css'), 'utf8');
 const button = readFileSync(join(root, 'src/components/ui/button.tsx'), 'utf8');
-const contextStrip = readFileSync(join(root, 'src/components/app/core-context-strip.tsx'), 'utf8');
 const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 const appShell = readFileSync(join(root, 'src/components/app/app-shell.tsx'), 'utf8');
 const publicShell = readFileSync(join(root, 'src/components/app/public-shell.tsx'), 'utf8');
@@ -86,7 +85,6 @@ describe('Civic Atelier visual contract', () => {
   });
 
   it('uses the Living Context Rail on public/login/onboarding/settings while the app home embeds context in the composer', () => {
-    expect(contextStrip).toContain('LivingContextRail');
     expect(instrument).toContain('data-testid="living-context-rail"');
     expect(workbench).toContain('data-testid="capsule-context-composer"');
     expect(workbench).toContain('Context Chain');

@@ -9,6 +9,7 @@ const marketingHome = readFileSync(join(root, 'src/components/marketing/praxis-m
 const chatShell = readFileSync(join(root, 'src/components/app/praxis-chat-first-shell.tsx'), 'utf8');
 const praxisChat = readFileSync(join(root, 'src/components/app/praxis-chat.tsx'), 'utf8');
 const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const primaryNav = readFileSync(join(root, 'src/lib/navigation/primary-nav.ts'), 'utf8');
 const sitemap = readFileSync(join(root, 'src/app/sitemap.ts'), 'utf8');
 const ogImage = readFileSync(join(root, 'src/app/opengraph-image.tsx'), 'utf8');
 
@@ -68,11 +69,12 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
   });
 
   it('keeps the public homepage as a simple chat surface without feature-preview clutter', () => {
-    expect(chatShell).toContain('HOME_DESTINATIONS');
-    expect(chatShell).toContain("label: 'Ask'");
-    expect(chatShell).toContain("label: 'Saved context'");
-    expect(chatShell).toContain("label: 'Boardroom'");
-    expect(chatShell).toContain("label: 'Drafts'");
+    expect(chatShell).toContain('HOME_SIDEBAR_DESTINATIONS');
+    expect(primaryNav).toContain('HOME_SIDEBAR_DESTINATIONS');
+    expect(primaryNav).toContain("label: 'Ask'");
+    expect(primaryNav).toContain("label: 'Saved context'");
+    expect(primaryNav).toContain("label: 'Boardroom'");
+    expect(primaryNav).toContain("label: 'Drafts'");
     expect(praxisChat).toContain('data-testid="simple-home-chat"');
     expect(praxisChat).toContain('data-testid="marketing-hero-prompt"');
     expect(praxisChat).toContain('data-testid="marketing-primary-cta"');

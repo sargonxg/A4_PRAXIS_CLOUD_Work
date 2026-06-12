@@ -7,11 +7,11 @@ const publicHomePath = join(root, 'src/app/page.tsx');
 const legacyLandingPath = join(root, 'src/app/(landing)/page.tsx');
 const appHomePath = join(root, 'src/app/app/page.tsx');
 const marketingHomePath = join(root, 'src/components/marketing/praxis-marketing-home.tsx');
-const appLaunchpadPath = join(root, 'src/components/app/praxis-app-launchpad.tsx');
 const chatShellPath = join(root, 'src/components/app/praxis-chat-first-shell.tsx');
 const praxisChatPath = join(root, 'src/components/app/praxis-chat.tsx');
 const floatingPraxisPath = join(root, 'src/components/app/floating-praxis.tsx');
 const publicShellPath = join(root, 'src/components/app/public-shell.tsx');
+const primaryNavPath = join(root, 'src/lib/navigation/primary-nav.ts');
 
 describe('EPIC 1.9 public and signed-in home contracts', () => {
   it('serves / from the shared chat-first shell while keeping SEO in page.tsx', () => {
@@ -30,21 +30,21 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
 
   it('reconciles public and signed-in home into one simple chat surface', () => {
     expect(existsSync(marketingHomePath)).toBe(true);
-    expect(existsSync(appLaunchpadPath)).toBe(true);
     expect(existsSync(chatShellPath)).toBe(true);
     expect(existsSync(praxisChatPath)).toBe(true);
     const marketingSource = readFileSync(marketingHomePath, 'utf8');
-    const launchpadSource = readFileSync(appLaunchpadPath, 'utf8');
+    const appHomeSource = readFileSync(appHomePath, 'utf8');
     const shellSource = readFileSync(chatShellPath, 'utf8');
     const chatSource = readFileSync(praxisChatPath, 'utf8');
     const floatingSource = readFileSync(floatingPraxisPath, 'utf8');
     const publicShellSource = readFileSync(publicShellPath, 'utf8');
-    const homeSource = `${shellSource}\n${chatSource}\n${publicShellSource}`;
+    const primaryNavSource = readFileSync(primaryNavPath, 'utf8');
+    const homeSource = `${shellSource}\n${chatSource}\n${publicShellSource}\n${primaryNavSource}`;
 
     expect(marketingSource).toContain('PraxisChatFirstShell');
     expect(marketingSource).toContain('mode="public"');
-    expect(launchpadSource).toContain('PraxisChatFirstShell');
-    expect(launchpadSource).toContain('mode="authenticated"');
+    expect(appHomeSource).toContain('PraxisChatFirstShell');
+    expect(appHomeSource).toContain('mode="authenticated"');
     expect(shellSource).toContain('PraxisChat');
     expect(floatingSource).toContain('PraxisChat');
     expect(chatSource).toContain('mode: \'public\' | \'authenticated\'');
@@ -93,11 +93,10 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
 
   it('rebuilds signed-in /app as a calm launchpad instead of the full cockpit default', () => {
     const source = readFileSync(appHomePath, 'utf8');
-    const launchpadSource = existsSync(appLaunchpadPath) ? readFileSync(appLaunchpadPath, 'utf8') : '';
-    expect(source).toContain('PraxisAppLaunchpad');
+    expect(source).toContain('PraxisChatFirstShell');
+    expect(source).toContain('mode="authenticated"');
     const shellSource = readFileSync(chatShellPath, 'utf8');
     const chatSource = readFileSync(praxisChatPath, 'utf8');
-    expect(launchpadSource).toContain('PraxisChatFirstShell');
     expect(shellSource).toContain('app-launchpad');
     expect(shellSource).toContain('data-testid="launchpad-capsule-chip"');
     expect(chatSource).toContain('data-testid="simple-home-chat"');
@@ -113,7 +112,6 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).toContain('Build context');
     expect(shellSource).toContain('Ask PRAXIS');
     expect(shellSource).not.toContain('PRAXIS sample artifacts');
-    expect(launchpadSource).not.toContain('Start research run');
     expect(source).not.toContain('AskPraxisHome');
     expect(source).not.toContain('TaskletPraxisWorkbench');
     expect(source).not.toContain('listExampleCases');

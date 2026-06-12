@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentType } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   CheckCircle2,
@@ -11,7 +11,6 @@ import {
   FileText,
   FolderKanban,
   Library,
-  LogIn,
   MessageSquareText,
   MoreHorizontal,
   PlusCircle,
@@ -27,6 +26,7 @@ import {
   detachCapsuleRef,
   swapCapsuleRef,
 } from '@/lib/context/active-context-stack';
+import { HOME_SIDEBAR_DESTINATIONS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 
 const CapsuleListPicker = dynamic(
   () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
@@ -65,14 +65,12 @@ const PUBLIC_TOP_LINKS = [
   { label: 'Release notes', href: '/release-notes' },
 ] as const;
 
-// One destination list for both modes keeps / and /app visually identical;
-// public links route through signup with the destination preserved.
-const HOME_DESTINATIONS = [
-  { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: MessageSquareText },
-  { id: 'context', label: 'Saved context', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: FolderKanban },
-  { id: 'boardroom', label: 'Boardroom', href: '/app/boardroom', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fboardroom', icon: ShieldCheck },
-  { id: 'drafts', label: 'Drafts', href: '/app?panel=memo', publicHref: '/login?mode=signup&redirect=%2Fapp%3Fpanel%3Dmemo', icon: FileText },
-] as const;
+const HOME_DESTINATION_ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ className?: string }>>> = {
+  MessageSquareText,
+  FolderKanban,
+  ShieldCheck,
+  FileText,
+};
 
 export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated' }) {
   const isPublic = mode === 'public';
@@ -217,7 +215,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                 onMakePrimaryCapsule={(capsuleId) => void makePrimaryCapsule(capsuleId)}
               />
             ) : null}
-            <PolicyAgentStrip isPublic={isPublic} />
+            {isPublic ? <PolicyAgentStrip isPublic /> : null}
           </section>
         </div>
       </div>
@@ -266,7 +264,7 @@ interface RecentConversationSummary {
 }
 
 function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: string }) {
-  const destinations = HOME_DESTINATIONS;
+  const destinations = HOME_SIDEBAR_DESTINATIONS;
   const [recents, setRecents] = useState<RecentConversationSummary[]>([]);
 
   useEffect(() => {
@@ -289,7 +287,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
       <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isPublic ? 'Start here' : 'Workspace'}</p>
       <nav className="mt-3 grid gap-1">
         {destinations.map((item) => {
-          const Icon = item.icon;
+          const Icon = HOME_DESTINATION_ICONS[item.icon] ?? MessageSquareText;
           const href = isPublic ? item.publicHref : item.href;
           const active = !isPublic && (pathname === item.href || (item.id === 'ask' && pathname === '/app'));
           return (
@@ -385,9 +383,15 @@ function ContextDrawer({
               Attach capsules, import DIALECTICA verified-context packages, and reuse the stack across briefs.
             </p>
           </div>
-          <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules" className="praxis-button-primary min-h-10 px-4 text-sm">
-            Save context
-          </Link>
+          <p className="text-xs leading-5 text-slate-500">
+            <Link
+              href="/login?mode=signup&redirect=%2Fapp%2Fcapsules"
+              className="font-semibold text-emerald-700 underline-offset-2 hover:underline"
+            >
+              Sign in
+            </Link>{' '}
+            to save context for future briefs.
+          </p>
         </div>
       </section>
     );
@@ -526,9 +530,8 @@ function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext:
             <Link
               href="/login?mode=signup&redirect=%2Fapp"
               data-testid="public-context-sign-in-affordance"
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] bg-emerald-700 px-2.5 text-xs font-semibold text-white hover:bg-emerald-600"
+              className="text-xs font-semibold text-emerald-700 underline-offset-2 hover:underline"
             >
-              <LogIn className="h-3.5 w-3.5" />
               Sign in to save context
             </Link>
             <button
@@ -573,9 +576,8 @@ function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext:
                   href="/login?mode=signup&redirect=%2Fapp"
                   role="menuitem"
                   data-testid="public-context-sign-in-affordance"
-                  className="inline-flex min-h-8 w-full items-center justify-start gap-1.5 rounded-[var(--radius-md)] bg-emerald-700 px-2.5 text-xs font-semibold text-white hover:bg-emerald-600"
+                  className="px-2.5 py-1 text-xs font-semibold text-emerald-700 underline-offset-2 hover:underline"
                 >
-                  <LogIn className="h-3.5 w-3.5" />
                   Sign in to save context
                 </Link>
               </div>

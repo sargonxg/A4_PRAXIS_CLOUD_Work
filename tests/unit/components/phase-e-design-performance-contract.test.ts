@@ -121,7 +121,7 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     expect(nextConfig).toContain('@next/bundle-analyzer');
     expect(nextConfig).toContain("process.env.ANALYZE === 'true'");
     expect(nextConfig).toContain('withBundleAnalyzer(nextConfig)');
-    expect(appPage).toContain("import('@/components/app/praxis-app-launchpad')");
+    expect(appPage).toContain("import('@/components/app/praxis-chat-first-shell')");
     expect(appPage).toContain('AppLaunchpadLoadingSkeleton');
     expect(boardroomPage).toContain('dynamic(');
     expect(boardroomPage).toContain('BoardroomWorkspace');

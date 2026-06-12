@@ -71,7 +71,7 @@ export function CapsuleRadar({ size = 'full', capsuleId, onAxisActivate, classNa
     };
   }, [capsuleId]);
 
-  // Local fallback computation — same heuristics as LiveContextReadinessCard.
+  // Local fallback computation mirrors the context readiness surface heuristics.
   const localAxes = useMemo<Record<RadarAxis, number>>(() => {
     const sourceCount =
       (activeSituation?.sourceUrls?.length ?? 0) +

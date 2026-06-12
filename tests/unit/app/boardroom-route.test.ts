@@ -67,7 +67,6 @@ describe('/app/boardroom workspace contract', () => {
     expect(primaryNavSource).toContain("id: 'boardroom'");
     expect(appShellSource).toContain('AppSidebar');
     expect(appShellSource).toContain('Header');
-    expect(appShellSource).toContain('CoreContextStrip');
   });
 
   it('keeps Home and Capsules launch compatibility for the side workspace', () => {

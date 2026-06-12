@@ -78,6 +78,17 @@ export const PRIMARY_NAV: readonly PrimaryNavItem[] = NAV_GROUPS.flatMap((g) => 
 
 export type PrimaryNavId = PrimaryNavItem['id'];
 
+export interface HomeSidebarDestination extends Pick<PrimaryNavItem, 'id' | 'label' | 'href' | 'icon'> {
+  publicHref: string;
+}
+
+export const HOME_SIDEBAR_DESTINATIONS = [
+  { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: 'MessageSquareText' },
+  { id: 'context', label: 'Saved context', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: 'FolderKanban' },
+  { id: 'boardroom', label: 'Boardroom', href: '/app/boardroom', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fboardroom', icon: 'ShieldCheck' },
+  { id: 'drafts', label: 'Drafts', href: '/app?panel=memo', publicHref: '/login?mode=signup&redirect=%2Fapp%3Fpanel%3Dmemo', icon: 'FileText' },
+] as const satisfies readonly HomeSidebarDestination[];
+
 export const PUBLIC_NAV_ITEMS = [
   { id: 'home', label: 'Home', href: '/' },
   { id: 'pricing', label: 'Pricing', href: '/pricing' },

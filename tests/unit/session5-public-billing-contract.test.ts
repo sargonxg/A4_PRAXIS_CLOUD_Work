@@ -18,7 +18,7 @@ const REQUIRED_MISSIONS = [
 describe('Session 5 public surface and billing contract', () => {
   it('uses the same concrete policy missions on public and signed-in home shells', () => {
     const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
-    const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
+    const appHome = read('src/app/app/page.tsx');
     const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
     const missionSource = read('src/lib/product/policy-missions.ts');
     const praxisChat = read('src/components/app/praxis-chat.tsx');
@@ -27,19 +27,19 @@ describe('Session 5 public surface and billing contract', () => {
       expect(missionSource).toContain(mission);
     }
     expect(marketingHome).toContain('PraxisChatFirstShell');
-    expect(appLaunchpad).toContain('PraxisChatFirstShell');
+    expect(appHome).toContain('PraxisChatFirstShell');
     expect(chatShell).toContain('PraxisChat');
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
   });
 
   it('routes hero prompts directly into capsule creation through capsulePrompt', () => {
     const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
-    const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
+    const appHome = read('src/app/app/page.tsx');
     const praxisChat = read('src/components/app/praxis-chat.tsx');
     const builder = read('src/components/capsules/CapsuleBuilderWizard.tsx');
 
     expect(marketingHome).toContain('mode="public"');
-    expect(appLaunchpad).toContain('mode="authenticated"');
+    expect(appHome).toContain('mode="authenticated"');
     expect(praxisChat).toContain('name="capsulePrompt"');
     expect(praxisChat).toContain('fetch(\'/api/ai/chat\'');
     expect(praxisChat).toContain('params.set(\'prompt\'');

@@ -2,15 +2,15 @@ import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const PraxisAppLaunchpad = dynamic(
-  () => import('@/components/app/praxis-app-launchpad').then((module) => module.PraxisAppLaunchpad),
+const PraxisChatFirstShell = dynamic(
+  () => import('@/components/app/praxis-chat-first-shell').then((module) => module.PraxisChatFirstShell),
   { loading: () => <AppLaunchpadLoadingSkeleton /> },
 );
 
 export default function AppIndexPage() {
   return (
     <Suspense fallback={null}>
-      <PraxisAppLaunchpad />
+      <PraxisChatFirstShell mode="authenticated" />
     </Suspense>
   );
 }
