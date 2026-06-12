@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AgentWorkerError, executeAgentRun, executeNoopAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
+import {
+  AgentWorkerError,
+  executeAgentRun,
+  executeNoopAgentRun,
+  postAgentRunThreadReturn,
+  type ExecuteAgentRunPayload,
+} from '@/lib/agent-runtime/worker';
 import type { AgentApproval, AgentRun, AgentRunEvent, AgentToolCall } from '@/lib/agent-runtime/types';
 
 const payload: ExecuteAgentRunPayload = {
@@ -104,6 +110,147 @@ function makeEvidencePack(overrides: Record<string, unknown> = {}) {
 }
 
 describe('agent runtime no-op worker', () => {
+  it('posts a succeeded run result to the originating Ask thread with a deterministic turn id', async () => {
+    const turns = new Map<string, { prompt: string; output: string; runtime?: Record<string, unknown> }>();
+    const events: AgentRunEvent[] = [];
+    const run = makeRun('succeeded', {
+      policyAgentId: 'research-memo',
+      askThreadRef: { threadId: 'ask-thread-1', capsuleId: 'cap-1', originTurnId: 'turn-origin-1' },
+    });
+
+    const deps = {
+      persistAskThreadTurn: async (input: { turnId?: string | null; prompt: string; output: string; runtime?: Record<string, unknown> }) => {
+        turns.set(String(input.turnId), input);
+        return null;
+      },
+      persistAskThreadTurnSql: async (input: { turnId?: string | null; prompt: string; output: string; runtime?: Record<string, unknown> }) => {
+        turns.set(String(input.turnId), input);
+        return null;
+      },
+      isAskThreadSqlConfigured: () => true,
+      appendEvent: async (event: AgentRunEvent) => {
+        events.push(event);
+        return event;
+      },
+    };
+
+    await postAgentRunThreadReturn({
+      run,
+      payload,
+      status: 'succeeded',
+      outputHref: '/app?panel=memo&memoId=memo-1',
+      deps,
+    });
+    await postAgentRunThreadReturn({
+      run,
+      payload,
+      status: 'succeeded',
+      outputHref: '/app?panel=memo&memoId=memo-1',
+      deps,
+    });
+
+    expect([...turns.keys()]).toEqual(['agent-result-run-1']);
+    expect(turns.get('agent-result-run-1')).toMatchObject({
+      prompt: '[agent-run-result]',
+      runtime: {
+        source: 'agent_run',
+        runId: 'run-1',
+        policyAgentId: 'research-memo',
+        outputHref: '/app?panel=memo&memoId=memo-1',
+      },
+    });
+    expect(turns.get('agent-result-run-1')?.output).toContain('No-op run');
+    expect(turns.get('agent-result-run-1')?.output).toContain('/app?panel=memo&memoId=memo-1');
+    expect(events.map((event) => event.eventType)).toContain('thread_return_posted');
+  });
+
+  it('posts a failed run result without stack traces', async () => {
+    const turns = new Map<string, { output: string; runtime?: Record<string, unknown> }>();
+    const events: AgentRunEvent[] = [];
+    const run = makeRun('failed', {
+      policyAgentId: 'research-memo',
+      askThreadRef: { threadId: 'ask-thread-1', capsuleId: 'cap-1' },
+    });
+
+    await postAgentRunThreadReturn({
+      run,
+      payload,
+      status: 'failed',
+      failureMessage: 'Error: detailed stack\n    at secret frame',
+      deps: {
+        persistAskThreadTurn: async (input: { turnId?: string | null; output: string; runtime?: Record<string, unknown> }) => {
+          turns.set(String(input.turnId), input);
+          return null;
+        },
+        isAskThreadSqlConfigured: () => false,
+        appendEvent: async (event: AgentRunEvent) => {
+          events.push(event);
+          return event;
+        },
+      },
+    });
+
+    expect(turns.get('agent-result-run-1')?.output).toContain('Agent run failed');
+    expect(turns.get('agent-result-run-1')?.output).not.toContain('secret frame');
+    expect(turns.get('agent-result-run-1')?.runtime).toMatchObject({
+      source: 'agent_run',
+      runId: 'run-1',
+      policyAgentId: 'research-memo',
+      outputHref: null,
+    });
+    expect(events.map((event) => event.eventType)).toContain('thread_return_posted');
+  });
+
+  it('skips cancelled runs and runs without Ask thread refs', async () => {
+    const persistAskThreadTurn = async () => {
+      throw new Error('should not persist');
+    };
+
+    await expect(postAgentRunThreadReturn({
+      run: makeRun('cancelled', {
+        askThreadRef: { threadId: 'ask-thread-1', capsuleId: 'cap-1' },
+      }),
+      payload,
+      status: 'cancelled',
+      deps: { persistAskThreadTurn },
+    })).resolves.toBeUndefined();
+
+    await expect(postAgentRunThreadReturn({
+      run: makeRun('succeeded'),
+      payload,
+      status: 'succeeded',
+      outputHref: '/app?panel=memo',
+      deps: { persistAskThreadTurn },
+    })).resolves.toBeUndefined();
+  });
+
+  it('keeps the terminal run result unchanged when thread return persistence fails', async () => {
+    const events: AgentRunEvent[] = [];
+    const run = makeRun('succeeded', {
+      policyAgentId: 'research-memo',
+      askThreadRef: { threadId: 'deleted-thread', capsuleId: 'cap-1' },
+    });
+
+    await expect(postAgentRunThreadReturn({
+      run,
+      payload,
+      status: 'succeeded',
+      outputHref: '/app?panel=memo',
+      deps: {
+        persistAskThreadTurn: async () => {
+          throw new Error('thread deleted');
+        },
+        appendEvent: async (event: AgentRunEvent) => {
+          events.push(event);
+          return event;
+        },
+      },
+    })).resolves.toBeUndefined();
+
+    expect(run.status).toBe('succeeded');
+    expect(events.map((event) => event.eventType)).toContain('thread_return_failed');
+  });
+
   it('runs queued dispatch through running and succeeded', async () => {
     const transitions: AgentRun['status'][] = [];
     const result = await executeNoopAgentRun(payload, {

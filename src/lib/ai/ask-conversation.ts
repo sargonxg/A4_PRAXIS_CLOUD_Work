@@ -169,15 +169,8 @@ export function buildAskContextReceipt(input: BuildAskContextReceiptInput): AskC
 }
 
 export function buildAskTimelineMessages(turns: AskThreadTurnRecord[]): AskTimelineMessage[] {
-  return turns.flatMap((turn) => [
-    {
-      id: `${turn.id}-user`,
-      role: 'user' as const,
-      content: turn.prompt,
-      turnId: turn.id,
-      createdAt: turn.createdAt,
-    },
-    {
+  return turns.flatMap((turn) => {
+    const assistantMessage: AskTimelineMessage = {
       id: `${turn.id}-assistant`,
       role: 'assistant' as const,
       content: turn.output,
@@ -193,8 +186,19 @@ export function buildAskTimelineMessages(turns: AskThreadTurnRecord[]): AskTimel
         toolInvocations: turn.toolInvocations,
       },
       answerEnvelope: isRecord(turn.runtime?.answerEnvelope) ? turn.runtime.answerEnvelope as unknown as AskAnswerEnvelope : undefined,
-    },
-  ]);
+    };
+    if (turn.runtime?.source === 'agent_run') return [assistantMessage];
+    return [
+      {
+        id: `${turn.id}-user`,
+        role: 'user' as const,
+        content: turn.prompt,
+        turnId: turn.id,
+        createdAt: turn.createdAt,
+      },
+      assistantMessage,
+    ];
+  });
 }
 
 export function buildAskConversationMessages(

@@ -10,11 +10,14 @@ import type {
 import { buildCapsuleReadReceiptFromEvidencePack, buildCapsuleReadReceiptFromRun, type CapsuleReadReceipt } from '@/lib/agent-runtime/capsule-read-receipt';
 import {
   appendAgentApproval,
+  appendAgentRunEvent,
   appendAgentToolCall,
   getAgentRun,
   listAgentApprovals,
   updateAgentRunStatus,
 } from '@/lib/agent-runtime/postgres';
+import { isAskThreadSqlConfigured, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
+import { persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
 import { searchWeb, type WebSearchResult } from '@/lib/ai/grounded-research';
 import { getDeepThinkModel, getProModel, hasServerAiProvider } from '@/lib/ai/providers';
@@ -28,7 +31,7 @@ import {
   type SourceabilityClaim,
   type SourceabilityLedger,
 } from '@/lib/agent-runtime/sourceability-ledger';
-import { makeAgentApproval, makeAgentToolCall } from '@/lib/agent-runtime/state';
+import { makeAgentApproval, makeAgentRunEvent, makeAgentToolCall } from '@/lib/agent-runtime/state';
 import { getAgentToolDefinition } from '@/lib/agent-runtime/tool-registry';
 import {
   normalizeAgentApprovalThreshold,
@@ -61,6 +64,11 @@ export type ExecuteAgentRunPayload = {
   dispatchId: string;
   attempt: number;
   requestedAt: string;
+  askThreadRef?: {
+    threadId: string;
+    capsuleId: string;
+    originTurnId?: string;
+  };
 };
 
 export type AgentRunExecutionMode =
@@ -115,6 +123,9 @@ type WorkerDeps = {
   generateText?: AgentTextGenerator;
   createReviewCard?: (uid: string, capsuleId: string, input: CreateCapsuleReviewCardInput) => Promise<CapsuleReviewCard>;
   emitNotification?: typeof emitNotification;
+  persistAskThreadTurn?: typeof persistAskThreadTurn;
+  persistAskThreadTurnSql?: typeof persistAskThreadTurnSql;
+  isAskThreadSqlConfigured?: typeof isAskThreadSqlConfigured;
 } & AgentRuntimeMirrorDeps & CapsuleFactoryDeps;
 
 type AgentTextGenerator = (input: {
@@ -222,6 +233,7 @@ export async function executeNoopAgentRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', deps });
     return {
       runId: run.id,
       status: run.status,
@@ -282,16 +294,18 @@ export async function executeNoopAgentRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'noop',
       message: 'No-op agent worker completed without model or tool execution.',
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,
         executionMode: 'noop',
       },
+      deps,
     });
 
     return {
@@ -310,6 +324,7 @@ export async function executeNoopAgentRun(
       failedPhase: executionStage,
       message: 'No-op agent worker failed before completion.',
       err,
+      deps,
     });
   }
 }
@@ -328,12 +343,14 @@ async function executeCapsuleFactoryAgentRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    const outputHref = outputHrefFromMetadata(run.metadata, '/app/capsules');
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
       executionMode: 'capsule-factory',
       traceId: run.traceId,
-      outputHref: outputHrefFromMetadata(run.metadata, '/app/capsules'),
+      outputHref,
       idempotent: true,
     };
   }
@@ -379,10 +396,11 @@ async function executeCapsuleFactoryAgentRun(
     const outputHref = '/app/capsules';
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'capsule-factory',
       message: 'Capsule AI completed reviewable draft capsule proposals.',
       data: {
         dispatchId: payload.dispatchId,
@@ -391,6 +409,8 @@ async function executeCapsuleFactoryAgentRun(
         outputHref,
         draftOutput,
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -410,6 +430,7 @@ async function executeCapsuleFactoryAgentRun(
       failedPhase: executionStage,
       message: 'Capsule AI failed before draft capsule persistence.',
       err,
+      deps,
     });
   }
 }
@@ -433,12 +454,14 @@ async function executeResearchMemoAgentRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    const outputHref = outputHrefFromMetadata(run.metadata, '/app?panel=memo');
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
       executionMode: 'research-memo',
       traceId: run.traceId,
-      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
+      outputHref,
       idempotent: true,
     };
   }
@@ -780,10 +803,11 @@ async function executeResearchMemoAgentRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'research-memo',
       message: 'Research Memo Agent completed the capsule-aware memo draft.',
       data: {
         dispatchId: payload.dispatchId,
@@ -799,6 +823,8 @@ async function executeResearchMemoAgentRun(
         groundingPosture: workflowPlan.groundingPosture,
         outputTarget: workflowPlan.outputTarget,
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -820,6 +846,7 @@ async function executeResearchMemoAgentRun(
       failedPhase: executionStage,
       message: 'Research Memo Agent failed before creating a memo draft.',
       err,
+      deps,
     });
   }
 }
@@ -842,6 +869,7 @@ async function executeSourceGapScoutAgentRun(
   }
   const outputHref = sourceGapScoutOutputHref(run);
   if (run.status === 'succeeded') {
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
@@ -973,10 +1001,11 @@ async function executeSourceGapScoutAgentRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'source-gap-scout',
       message: 'Source-Gap Scout completed review-gated source-pack candidates.',
       data: {
         dispatchId: payload.dispatchId,
@@ -987,6 +1016,8 @@ async function executeSourceGapScoutAgentRun(
         candidateReceiptCount: liveSearchEvidence.sourceReceiptIds.length,
         selectedTools: selectedSearchToolIds(scoutSearchRun),
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -1006,6 +1037,7 @@ async function executeSourceGapScoutAgentRun(
       failedPhase: executionStage,
       message: 'Source-Gap Scout failed before creating review-gated source candidates.',
       err,
+      deps,
     });
   }
 }
@@ -1029,12 +1061,14 @@ async function executeDailyBriefAgentRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    const outputHref = outputHrefFromMetadata(run.metadata, '/app?panel=memo');
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
       executionMode: 'daily-brief',
       traceId: run.traceId,
-      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
+      outputHref,
       idempotent: true,
     };
   }
@@ -1236,10 +1270,11 @@ async function executeDailyBriefAgentRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'daily-brief',
       message: 'Daily Brief Agent completed the review-gated memo draft.',
       data: {
         dispatchId: payload.dispatchId,
@@ -1253,6 +1288,8 @@ async function executeDailyBriefAgentRun(
         sourceReceiptIds: combinedSourceReceiptIds,
         reviewOnly: true,
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -1274,6 +1311,7 @@ async function executeDailyBriefAgentRun(
       failedPhase: executionStage,
       message: 'Daily Brief Agent failed before creating a review-gated memo draft.',
       err,
+      deps,
     });
   }
 }
@@ -1297,12 +1335,14 @@ async function executeMultiAgentSupervisorRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    const outputHref = outputHrefFromMetadata(run.metadata, '/app?panel=memo');
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
       executionMode: 'multi-agent-supervisor',
       traceId: run.traceId,
-      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
+      outputHref,
       idempotent: true,
     };
   }
@@ -1595,10 +1635,11 @@ async function executeMultiAgentSupervisorRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'multi-agent-supervisor',
       message: 'Multi-agent supervisor completed research, drafting, red-team, and revision.',
       data: {
         dispatchId: payload.dispatchId,
@@ -1614,6 +1655,8 @@ async function executeMultiAgentSupervisorRun(
         groundingPosture: workflowPlan.groundingPosture,
         redTeamFindings,
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -1635,6 +1678,7 @@ async function executeMultiAgentSupervisorRun(
       failedPhase: executionStage,
       message: 'Multi-agent supervisor failed before creating the revised memo.',
       err,
+      deps,
     });
   }
 }
@@ -1658,12 +1702,14 @@ async function executeBoardroomAgentRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    const outputHref = outputHrefFromMetadata(run.metadata, `/app/boardroom?runId=${encodeURIComponent(run.id)}`);
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
       executionMode: 'boardroom-discussion',
       traceId: run.traceId,
-      outputHref: outputHrefFromMetadata(run.metadata, `/app/boardroom?runId=${encodeURIComponent(run.id)}`),
+      outputHref,
       idempotent: true,
     };
   }
@@ -2019,10 +2065,11 @@ async function executeBoardroomAgentRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'boardroom-discussion',
       message: 'Boardroom Discussion completed the capsule-grounded board pack.',
       data: {
         dispatchId: payload.dispatchId,
@@ -2042,6 +2089,8 @@ async function executeBoardroomAgentRun(
         latencyMs: boardroomLatencyMs,
         artifactIds: [memoRecord.memo.id, outputCapsule?.id].filter((item): item is string => Boolean(item)),
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -2063,6 +2112,7 @@ async function executeBoardroomAgentRun(
       failedPhase: executionStage,
       message: 'Boardroom Discussion failed before creating the board pack.',
       err,
+      deps,
     });
   }
 }
@@ -2084,12 +2134,14 @@ async function executeOutputFormatterAgentRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    const outputHref = outputHrefFromMetadata(run.metadata, '/app?panel=memo');
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
       executionMode: 'output-formatter',
       traceId: run.traceId,
-      outputHref: outputHrefFromMetadata(run.metadata, '/app?panel=memo'),
+      outputHref,
       idempotent: true,
     };
   }
@@ -2241,10 +2293,11 @@ async function executeOutputFormatterAgentRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode: 'output-formatter',
       message: 'Output Formatter completed the capsule-aware formatted work product.',
       data: {
         dispatchId: payload.dispatchId,
@@ -2256,6 +2309,8 @@ async function executeOutputFormatterAgentRun(
         workflowPlan,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -2276,6 +2331,7 @@ async function executeOutputFormatterAgentRun(
       failedPhase: executionStage,
       message: 'Output Formatter failed before creating a formatted work product.',
       err,
+      deps,
     });
   }
 }
@@ -2297,12 +2353,14 @@ async function executeReviewAgentRun(
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
   if (run.status === 'succeeded') {
+    const outputHref = outputHrefFromMetadata(run.metadata, executionMode === 'handover-builder' ? '/app?panel=handover' : '/app?panel=memo');
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
       status: run.status,
       executionMode,
       traceId: run.traceId,
-      outputHref: outputHrefFromMetadata(run.metadata, executionMode === 'handover-builder' ? '/app?panel=handover' : '/app?panel=memo'),
+      outputHref,
       idempotent: true,
     };
   }
@@ -2427,10 +2485,11 @@ async function executeReviewAgentRun(
     }, deps);
 
     executionStage = 'succeeded-transition';
-    const succeeded = await updateStatus({
-      ownerUid: running.ownerUid,
-      runId: running.id,
-      toStatus: 'succeeded',
+    const succeeded = await completeAgentRunExecution({
+      updateStatus,
+      running,
+      payload,
+      executionMode,
       message: `${reviewAgentLabel(executionMode)} completed the capsule-aware receipt.`,
       data: {
         dispatchId: payload.dispatchId,
@@ -2442,6 +2501,8 @@ async function executeReviewAgentRun(
         workflowPlan,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
+      outputHref,
+      deps,
     });
 
     return {
@@ -2462,6 +2523,7 @@ async function executeReviewAgentRun(
       failedPhase: executionStage,
       message: `${reviewAgentLabel(executionMode)} failed before creating a receipt.`,
       err,
+      deps,
     });
   }
 }
@@ -2666,6 +2728,15 @@ async function pauseForApprovalGate(input: {
         risk: input.risk,
       },
     });
+    if (failed) {
+      await postAgentRunThreadReturn({
+        run: mergeTerminalRun(input.running, failed, 'failed', {}),
+        payload: input.payload,
+        status: 'failed',
+        failureMessage: 'Agent run stopped because a persisted approval was rejected.',
+        deps: input.deps,
+      });
+    }
     return {
       state: 'failed',
       result: {
@@ -2804,6 +2875,128 @@ function stableApprovalId(run: AgentRun, key: string, toolId: string): string {
   return `approval:${stableShortId(`${run.id}:${key}:${toolId}`)}`;
 }
 
+async function completeAgentRunExecution(input: {
+  updateStatus: typeof updateAgentRunStatus;
+  running: AgentRun;
+  payload: ExecuteAgentRunPayload;
+  executionMode: AgentRunExecutionMode;
+  message: string;
+  data: Record<string, unknown>;
+  outputHref?: string | null;
+  metadata?: Record<string, unknown>;
+  deps: WorkerDeps;
+}): Promise<AgentRun | null> {
+  const outputHref = cleanOutputHref(input.outputHref);
+  const succeeded = await input.updateStatus({
+    ownerUid: input.running.ownerUid,
+    runId: input.running.id,
+    toStatus: 'succeeded',
+    message: input.message,
+    data: input.data,
+    metadata: {
+      ...(input.metadata ?? {}),
+      ...(outputHref ? { outputHref } : {}),
+    },
+  });
+  const terminalRun = mergeTerminalRun(input.running, succeeded, 'succeeded', {
+    ...(input.metadata ?? {}),
+    ...(outputHref ? { outputHref } : {}),
+  });
+  await postAgentRunThreadReturn({
+    run: terminalRun,
+    payload: input.payload,
+    status: 'succeeded',
+    outputHref,
+    deps: input.deps,
+  });
+  return succeeded;
+}
+
+export async function postAgentRunThreadReturn(input: {
+  run: AgentRun;
+  payload: ExecuteAgentRunPayload;
+  status: AgentRun['status'];
+  outputHref?: string | null;
+  failureMessage?: string | null;
+  deps?: WorkerDeps;
+}): Promise<void> {
+  if (input.status !== 'succeeded' && input.status !== 'failed') return;
+  const askThreadRef = normalizeAskThreadRef(input.payload.askThreadRef) ?? normalizeAskThreadRef(input.run.metadata.askThreadRef);
+  if (!askThreadRef) return;
+
+  const deps = input.deps ?? {};
+  const persistFirestore = deps.persistAskThreadTurn ?? persistAskThreadTurn;
+  const persistSql = deps.persistAskThreadTurnSql ?? persistAskThreadTurnSql;
+  const sqlConfigured = deps.isAskThreadSqlConfigured ?? isAskThreadSqlConfigured;
+  const appendEvent = deps.appendEvent ?? appendAgentRunEvent;
+  const outputHref = cleanOutputHref(input.outputHref) ?? cleanOutputHref(input.run.metadata.outputHref);
+  const policyAgentId = typeof input.run.metadata.policyAgentId === 'string' ? input.run.metadata.policyAgentId : null;
+  const turnId = `agent-result-${input.run.id}`;
+  const turnInput = {
+    uid: input.run.ownerUid,
+    capsuleId: askThreadRef.capsuleId,
+    threadId: askThreadRef.threadId,
+    situationId: input.run.selectedCoreIds.situationCoreId ?? null,
+    prompt: '[agent-run-result]',
+    output: input.status === 'succeeded'
+      ? buildAgentRunSuccessThreadOutput(input.run, outputHref)
+      : buildAgentRunFailureThreadOutput(input.run),
+    runtime: {
+      source: 'agent_run',
+      runId: input.run.id,
+      policyAgentId,
+      outputHref: outputHref ?? null,
+    },
+    frameworkSteps: [],
+    toolInvocations: [],
+    turnId,
+  };
+
+  try {
+    await persistFirestore(turnInput);
+    if (sqlConfigured()) {
+      await persistSql(turnInput);
+    }
+    await appendEvent(makeAgentRunEvent({
+      runId: input.run.id,
+      ownerUid: input.run.ownerUid,
+      capsuleId: input.run.capsuleId,
+      eventType: 'thread_return_posted',
+      message: 'Agent run result returned to the originating Ask thread.',
+      data: {
+        threadId: askThreadRef.threadId,
+        capsuleId: askThreadRef.capsuleId,
+        originTurnId: askThreadRef.originTurnId ?? null,
+        turnId,
+        status: input.status,
+        policyAgentId,
+        outputHref: outputHref ?? null,
+      },
+      traceId: input.run.traceId,
+    })).catch((eventErr) => console.warn('[agent-runtime] thread_return_posted event append failed:', eventErr));
+  } catch (err) {
+    console.warn('[agent-runtime] Ask thread return failed:', err);
+    await appendEvent(makeAgentRunEvent({
+      runId: input.run.id,
+      ownerUid: input.run.ownerUid,
+      capsuleId: input.run.capsuleId,
+      eventType: 'thread_return_failed',
+      message: 'Agent run result could not be returned to the originating Ask thread.',
+      data: {
+        threadId: askThreadRef.threadId,
+        capsuleId: askThreadRef.capsuleId,
+        originTurnId: askThreadRef.originTurnId ?? null,
+        turnId,
+        status: input.status,
+        policyAgentId,
+        outputHref: outputHref ?? null,
+        error: sanitizeWorkerErrorMessage(err),
+      },
+      traceId: input.run.traceId,
+    })).catch((eventErr) => console.warn('[agent-runtime] thread_return_failed event append failed:', eventErr));
+  }
+}
+
 async function failAgentRunExecution(input: {
   updateStatus: typeof updateAgentRunStatus;
   running: AgentRun;
@@ -2813,6 +3006,7 @@ async function failAgentRunExecution(input: {
   message: string;
   err: unknown;
   data?: Record<string, unknown>;
+  deps: WorkerDeps;
 }): Promise<never> {
   const failure = buildAgentWorkerFailureDiagnostic({
     run: input.running,
@@ -2827,7 +3021,7 @@ async function failAgentRunExecution(input: {
     createdAt: new Date().toISOString(),
   });
 
-  await input.updateStatus({
+  const failed = await input.updateStatus({
     ownerUid: input.running.ownerUid,
     runId: input.running.id,
     toStatus: 'failed',
@@ -2846,6 +3040,15 @@ async function failAgentRunExecution(input: {
       failureSummary,
     },
   }).catch(() => null);
+  if (failed) {
+    await postAgentRunThreadReturn({
+      run: mergeTerminalRun(input.running, failed, 'failed', { failureSummary }),
+      payload: input.payload,
+      status: 'failed',
+      failureMessage: failureSummary.sanitizedError,
+      deps: input.deps,
+    });
+  }
 
   throw new AgentWorkerError('Agent run execution failed', 500, failure);
 }
@@ -2892,6 +3095,72 @@ function sanitizeWorkerErrorMessage(err: unknown): string {
     .replace(/\bAIza[0-9A-Za-z_-]+/g, '[REDACTED]')
     .replace(/-----BEGIN [^-]+-----[\s\S]*?-----END [^-]+-----/g, '[REDACTED]')
     .slice(0, 500);
+}
+
+function normalizeAskThreadRef(value: unknown): ExecuteAgentRunPayload['askThreadRef'] | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const threadId = cleanThreadRefPart(record.threadId);
+  const capsuleId = cleanThreadRefPart(record.capsuleId);
+  if (!threadId || !capsuleId) return null;
+  const originTurnId = cleanThreadRefPart(record.originTurnId);
+  return {
+    threadId,
+    capsuleId,
+    ...(originTurnId ? { originTurnId } : {}),
+  };
+}
+
+function cleanThreadRefPart(value: unknown): string | null {
+  return typeof value === 'string'
+    ? value.trim().replace(/[^\w:./-]/g, '-').replace(/\/+/g, '/').slice(0, 240) || null
+    : null;
+}
+
+function cleanOutputHref(value: unknown): string | null {
+  return typeof value === 'string' && value.startsWith('/app') ? value : null;
+}
+
+function mergeTerminalRun(
+  running: AgentRun,
+  terminal: AgentRun | null,
+  status: AgentRun['status'],
+  metadataPatch: Record<string, unknown>,
+): AgentRun {
+  if (terminal) {
+    return {
+      ...terminal,
+      metadata: {
+        ...running.metadata,
+        ...terminal.metadata,
+        ...metadataPatch,
+      },
+    };
+  }
+  return {
+    ...running,
+    status,
+    metadata: {
+      ...running.metadata,
+      ...metadataPatch,
+    },
+  };
+}
+
+function buildAgentRunSuccessThreadOutput(run: AgentRun, outputHref: string | null): string {
+  const policyAgentId = typeof run.metadata.policyAgentId === 'string' ? run.metadata.policyAgentId : 'policy agent';
+  const objective = compactLine(run.objective, 240);
+  const output = outputHref ?? 'No artifact link was recorded.';
+  return `Agent run completed for "${objective}". Outcome: ${policyAgentId} saved its result. Output: ${output}`;
+}
+
+function buildAgentRunFailureThreadOutput(run: AgentRun): string {
+  return `Agent run failed for "${compactLine(run.objective, 240)}". No artifact was produced.`;
+}
+
+function compactLine(value: string, maxLength: number): string {
+  const compact = value.replace(/\s+/g, ' ').trim();
+  return compact.length > maxLength ? `${compact.slice(0, Math.max(0, maxLength - 3))}...` : compact;
 }
 
 function outputHrefFromMetadata(metadata: Record<string, unknown>, fallback: string): string {

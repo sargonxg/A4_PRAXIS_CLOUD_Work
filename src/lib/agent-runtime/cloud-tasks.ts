@@ -17,6 +17,11 @@ export type AgentRunDispatchPayload = {
   dispatchId: string;
   attempt: number;
   requestedAt: string;
+  askThreadRef?: {
+    threadId: string;
+    capsuleId: string;
+    originTurnId?: string;
+  };
 };
 
 export type AgentRunDispatchResult = {
@@ -35,7 +40,9 @@ export function makeAgentRunDispatchPayload(input: {
   dispatchId?: string;
   attempt?: number;
   requestedAt?: Date;
+  askThreadRef?: AgentRunDispatchPayload['askThreadRef'] | null;
 }): AgentRunDispatchPayload {
+  const askThreadRef = normalizeAskThreadRef(input.askThreadRef);
   return {
     runId: normalizePointer(input.runId, 'run'),
     ownerUid: input.ownerUid.trim(),
@@ -44,6 +51,7 @@ export function makeAgentRunDispatchPayload(input: {
     dispatchId: input.dispatchId?.trim() || makeDeterministicDispatchId(input.runId, input.traceId, input.attempt),
     attempt: Math.max(1, Math.floor(input.attempt ?? 1)),
     requestedAt: (input.requestedAt ?? new Date()).toISOString(),
+    ...(askThreadRef ? { askThreadRef } : {}),
   };
 }
 
@@ -119,6 +127,7 @@ export async function enqueueAgentRunDispatch(input: {
   ownerUid: string;
   runId: string;
   attempt?: number;
+  askThreadRef?: AgentRunDispatchPayload['askThreadRef'] | null;
 }): Promise<AgentRunDispatchResult> {
   const run = await getAgentRun(input.ownerUid, input.runId);
   if (!run) {
@@ -134,6 +143,7 @@ export async function enqueueAgentRunDispatch(input: {
     capsuleId: run.capsuleId,
     traceId: run.traceId,
     attempt: input.attempt,
+    askThreadRef: input.askThreadRef ?? normalizeAskThreadRef(run.metadata.askThreadRef),
   });
   const claim = await claimAgentRunDispatch({
     ownerUid: run.ownerUid,
@@ -233,6 +243,20 @@ export async function enqueueAgentRunDispatch(input: {
     taskName: created.name ?? taskName,
     targetUrl,
     payload,
+  };
+}
+
+function normalizeAskThreadRef(value: unknown): AgentRunDispatchPayload['askThreadRef'] | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const threadId = typeof record.threadId === 'string' ? normalizePointer(record.threadId, '') : '';
+  const capsuleId = typeof record.capsuleId === 'string' ? normalizePointer(record.capsuleId, '') : '';
+  if (!threadId || !capsuleId) return undefined;
+  const originTurnId = typeof record.originTurnId === 'string' ? normalizePointer(record.originTurnId, '') : '';
+  return {
+    threadId,
+    capsuleId,
+    ...(originTurnId ? { originTurnId } : {}),
   };
 }
 

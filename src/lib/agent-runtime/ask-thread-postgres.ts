@@ -89,12 +89,18 @@ export async function persistAskThreadTurnSql(input: PersistAskThreadTurnInput):
   await ensureSchema();
   const threadId = cleanId(input.threadId, 'default');
   const now = input.now ?? new Date();
-  const createdAt = now.toISOString();
-  const turnId = `turn-${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const requestedTurnId = cleanId(input.turnId, '');
+  const turnId = requestedTurnId || `turn-${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const nowIso = now.toISOString();
 
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
+    const existingTurnResult = requestedTurnId
+      ? await client.query('SELECT created_at FROM ask_thread_turns WHERE id = $1 LIMIT 1', [turnId])
+      : { rows: [] };
+    const turnAlreadyExists = existingTurnResult.rows.length > 0;
+    const createdAt = turnAlreadyExists ? iso(existingTurnResult.rows[0].created_at) : nowIso;
     await client.query(
       `
         INSERT INTO ask_threads (
@@ -108,7 +114,7 @@ export async function persistAskThreadTurnSql(input: PersistAskThreadTurnInput):
           capsule_version = COALESCE(EXCLUDED.capsule_version, ask_threads.capsule_version),
           last_prompt = EXCLUDED.last_prompt,
           last_output_preview = EXCLUDED.last_output_preview,
-          turn_count = ask_threads.turn_count + 1,
+          turn_count = ask_threads.turn_count + $9,
           updated_at = EXCLUDED.updated_at
       `,
       [
@@ -119,7 +125,8 @@ export async function persistAskThreadTurnSql(input: PersistAskThreadTurnInput):
         input.capsuleVersion ?? null,
         input.prompt.slice(0, 1600),
         input.output.slice(0, 1600),
-        createdAt,
+        nowIso,
+        turnAlreadyExists ? 0 : 1,
       ],
     );
     const turnResult = await client.query(
@@ -130,6 +137,14 @@ export async function persistAskThreadTurnSql(input: PersistAskThreadTurnInput):
           tool_invocations, created_at
         )
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+        ON CONFLICT (id)
+        DO UPDATE SET
+          output = EXCLUDED.output,
+          runtime = EXCLUDED.runtime,
+          path_id = EXCLUDED.path_id,
+          path_version = EXCLUDED.path_version,
+          framework_steps = EXCLUDED.framework_steps,
+          tool_invocations = EXCLUDED.tool_invocations
         RETURNING *
       `,
       [

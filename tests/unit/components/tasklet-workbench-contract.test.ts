@@ -207,6 +207,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(askQueuedAgentRunPanelSource).toContain('run was created but not started');
     expect(askQueuedAgentRunPanelSource).toContain('/approvals/${encodeURIComponent(approvalId)}');
     expect(askQueuedAgentRunPanelSource).toContain('data-testid="ask-agent-approval-tray"');
+    expect(askQueuedAgentRunPanelSource).toContain('onRunTerminal');
+    expect(askQueuedAgentRunPanelSource).toContain("status !== 'succeeded' && status !== 'failed'");
+    expect(askStreamPanelSource).toContain('onRunTerminal={() => void loadHistory()}');
+    expect(askStreamPanelSource).toContain('Agent result');
+    expect(askStreamPanelSource).toContain("runtime.source === 'agent_run'");
+    expect(askStreamPanelSource).toContain('runtime.outputHref');
   });
 
   it('surfaces focused AgentRun failure forensics with the existing retry route affordance', () => {

@@ -85,6 +85,10 @@ type AskThreadTurn = {
   frameworkSteps?: unknown[];
   toolInvocations?: unknown[];
   runtime?: {
+    source?: string;
+    runId?: string;
+    policyAgentId?: string | null;
+    outputHref?: string | null;
     provider?: string;
     model?: string;
     intent?: string;
@@ -693,6 +697,7 @@ export function AskStreamPanel({
                   newestActive={idx === timelineMessages.length - 1}
                   onDraftPack={draftDocumentPack}
                   onFollowUp={(followUp) => setPrompt(followUp)}
+                  onRunTerminal={() => void loadHistory()}
                   onQueueSourceGapScout={(unsupportedClaims) => queueSourceGapScout(message, unsupportedClaims)}
                   packSaving={packSavingId === message.id}
                 />
@@ -897,6 +902,7 @@ function AskMessageBubble({
   newestActive,
   onDraftPack,
   onFollowUp,
+  onRunTerminal,
   onQueueSourceGapScout,
   packSaving,
 }: {
@@ -905,6 +911,7 @@ function AskMessageBubble({
   newestActive: boolean;
   onDraftPack: (message: AskPanelMessage, selectedPack?: ConversationDocumentPack) => void;
   onFollowUp: (followUp: string) => void;
+  onRunTerminal: () => void;
   onQueueSourceGapScout: (unsupportedClaims: string[]) => void;
   packSaving: boolean;
 }) {
@@ -928,6 +935,7 @@ function AskMessageBubble({
     <div className="flex justify-start">
       <article className="max-w-[88%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm">
         <div className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-navy-950 prose-a:text-diplomatic-blue prose-strong:text-navy-950">
+          <AgentResultTurnHeader runtime={message.receipt?.runtime} />
           {message.content ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {message.content}
@@ -950,7 +958,7 @@ function AskMessageBubble({
         <TimelineMessageReceipt message={message} />
         <AskWorkingTimeline events={workingTimeline} />
         <AskTurnPlanPanel turnPlan={message.answerEnvelope?.orchestrationReceipt?.turnPlan} onFollowUp={onFollowUp} />
-        <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} newestActive={newestActive} />
+        <AskQueuedAgentRunPanel queuedRun={message.queuedRun ?? workingTimeline.find((event) => event.id === 'worker' && Boolean(event.runId)) ?? null} newestActive={newestActive} onRunTerminal={onRunTerminal} />
         <AnswerQualityStrip envelope={message.answerEnvelope} onAction={onFollowUp} onQueueSourceGapScout={onQueueSourceGapScout} />
         {proofSummary ? <ProofSummaryPanel summary={proofSummary} /> : null}
         <OrchestrationReceiptPanel envelope={message.answerEnvelope} />
@@ -1702,7 +1710,10 @@ function RecentAskTurnsPanel({
           <article key={turn.id} className="px-3 py-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-navy-950">{turn.prompt}</p>
+                <AgentResultTurnHeader runtime={turn.runtime} />
+                <p className="truncate text-sm font-semibold text-navy-950">
+                  {turn.runtime?.source === 'agent_run' ? 'Agent run output returned to this thread' : turn.prompt}
+                </p>
                 <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-600">{turn.output}</p>
               </div>
               <button
@@ -1719,6 +1730,24 @@ function RecentAskTurnsPanel({
         ))}
       </div>
     </section>
+  );
+}
+
+function AgentResultTurnHeader({ runtime }: { runtime?: Record<string, unknown> | null }) {
+  if (!runtime || !(runtime.source === 'agent_run')) return null;
+  const policyAgentId = stringValue(runtime.policyAgentId) ?? 'policy agent';
+  const outputHref = stringValue(runtime.outputHref);
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+      <span className="rounded-md border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 font-bold uppercase tracking-[0.12em] text-emerald-900">
+        Agent result · {policyAgentId}
+      </span>
+      {outputHref ? (
+        <Link href={outputHref} className="rounded-md border border-blue-100 bg-blue-50 px-1.5 py-0.5 font-semibold text-diplomatic-blue hover:bg-blue-100">
+          Open artifact
+        </Link>
+      ) : null}
+    </div>
   );
 }
 

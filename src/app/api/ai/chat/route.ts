@@ -1253,6 +1253,12 @@ async function maybeQueueAskAgentRun(input: {
   }
 
   try {
+    const askThreadRef = input.threadId
+      ? {
+        threadId: input.threadId,
+        capsuleId: input.capsule.capsuleId,
+      }
+      : undefined;
     const groundingPlan = resolveGroundingPlan({
       selectedToolIds: receipt.toolRouting.selectedToolIds,
       documentCount: input.turnCapsule?.retrievalPlan.repository.documentIds.length
@@ -1311,6 +1317,7 @@ async function maybeQueueAskAgentRun(input: {
         sourceAskThreadId: input.threadId ?? null,
         conversationThreadId: input.threadId ?? null,
         sourceAskTurnId: null,
+        askThreadRef,
         orchestrationTraceId: receipt.traceId,
         capsuleAgentExecutionContext: buildCapsuleAgentExecutionContext({
           prompt: input.prompt,
@@ -1372,7 +1379,7 @@ async function maybeQueueAskAgentRun(input: {
     });
 
     try {
-      const dispatch = await enqueueAgentRunDispatch({ ownerUid: input.uid, runId: run.id });
+      const dispatch = await enqueueAgentRunDispatch({ ownerUid: input.uid, runId: run.id, askThreadRef });
       const reportedDispatchStatus = stringValue((dispatch as { dispatchEnqueueStatus?: unknown }).dispatchEnqueueStatus);
       if (reportedDispatchStatus === 'dispatch_failed') {
         const dispatchError = stringValue((dispatch as { error?: unknown; dispatchError?: unknown }).error)

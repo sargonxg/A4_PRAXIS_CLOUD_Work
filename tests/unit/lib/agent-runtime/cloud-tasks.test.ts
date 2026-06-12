@@ -17,6 +17,11 @@ describe('agent runtime Cloud Tasks dispatch', () => {
       dispatchId: 'dispatch-1',
       attempt: 0,
       requestedAt: new Date('2026-05-15T12:00:00.000Z'),
+      askThreadRef: {
+        threadId: ' ask/thread?one ',
+        capsuleId: 'cap?one',
+        originTurnId: ' turn?one ',
+      },
     });
 
     expect(payload).toEqual({
@@ -27,6 +32,11 @@ describe('agent runtime Cloud Tasks dispatch', () => {
       dispatchId: 'dispatch-1',
       attempt: 1,
       requestedAt: '2026-05-15T12:00:00.000Z',
+      askThreadRef: {
+        threadId: 'ask/thread-one',
+        capsuleId: 'cap-one',
+        originTurnId: 'turn-one',
+      },
     });
   });
 

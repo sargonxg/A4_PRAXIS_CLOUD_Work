@@ -45,6 +45,7 @@ export interface PersistAskThreadTurnInput {
   frameworkSteps?: unknown[];
   toolInvocations?: unknown[];
   now?: Date;
+  turnId?: string | null;
 }
 
 export async function persistAskThreadTurn(input: PersistAskThreadTurnInput): Promise<AskThreadTurnRecord | null> {
@@ -53,17 +54,23 @@ export async function persistAskThreadTurn(input: PersistAskThreadTurnInput): Pr
 
   const threadId = cleanDocId(input.threadId, 'default');
   const now = input.now ?? new Date();
-  const createdAt = now.toISOString();
-  const turnId = `turn-${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const requestedTurnId = cleanDocId(input.turnId, '');
+  const turnId = requestedTurnId || `turn-${now.getTime().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   const db = getAdminDbOrThrow();
   const threadRef = db
     .collection('users').doc(input.uid)
     .collection('capsules').doc(capsuleId)
     .collection('askThreads').doc(threadId);
   const turnRef = threadRef.collection('turns').doc(turnId);
-  const threadSnap = await threadRef.get();
+  const [threadSnap, turnSnap] = await Promise.all([
+    threadRef.get(),
+    requestedTurnId ? turnRef.get() : Promise.resolve(null),
+  ]);
   const existing = threadSnap.exists ? threadSnap.data() : null;
+  const existingTurn = turnSnap?.exists ? turnSnap.data() : null;
   const previousTurnCount = typeof existing?.turnCount === 'number' ? existing.turnCount : 0;
+  const createdAt = typeof existingTurn?.createdAt === 'string' ? existingTurn.createdAt : now.toISOString();
+  const nextTurnCount = existingTurn ? previousTurnCount : previousTurnCount + 1;
 
   const turn: AskThreadTurnRecord = {
     id: turnId,
@@ -91,11 +98,11 @@ export async function persistAskThreadTurn(input: PersistAskThreadTurnInput): Pr
       capsuleVersion: input.capsuleVersion ?? existing?.capsuleVersion ?? null,
       lastPrompt: input.prompt.slice(0, 1600),
       lastOutputPreview: input.output.slice(0, 1600),
-      turnCount: previousTurnCount + 1,
+      turnCount: nextTurnCount,
       createdAt: typeof existing?.createdAt === 'string' ? existing.createdAt : createdAt,
-      updatedAt: createdAt,
+      updatedAt: now.toISOString(),
     } satisfies AskThreadRecord, { merge: true })
-    .set(turnRef, turn)
+    .set(turnRef, turn, { merge: true })
     .commit();
 
   return turn;

@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 import type { AskOrchestrationStatusEvent } from '@/lib/ai/ask-orchestrator';
 import { useAgentRunSnapshots } from '@/hooks/useAgentRunSnapshots';
@@ -82,9 +82,11 @@ export function queuedAgentRunFromEnvelope(envelope?: AskAnswerEnvelope): AskOrc
 export function AskQueuedAgentRunPanel({
   queuedRun,
   newestActive = true,
+  onRunTerminal,
 }: {
   queuedRun: AskOrchestrationStatusEvent | null;
   newestActive?: boolean;
+  onRunTerminal?: (run: { runId: string; status: 'succeeded' | 'failed'; outputHref?: string | null }) => void;
 }) {
   const [overrideRunId, setOverrideRunId] = useState<string | null>(null);
   const runId = overrideRunId ?? queuedRun?.runId ?? null;
@@ -93,6 +95,7 @@ export function AskQueuedAgentRunPanel({
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const terminalNotifiedRef = useRef<string | null>(null);
   const actionStatus = run?.status ?? queuedRun?.fallbackPosture ?? queuedRun?.status ?? null;
   const streamEnabled = Boolean(runId) && shouldStreamAgentRunStatus(actionStatus, { expanded, newestActive });
   const snapshotState = useAgentRunSnapshots(runId, {
@@ -109,6 +112,7 @@ export function AskQueuedAgentRunPanel({
     setOverrideRunId(null);
     setRun(null);
     setApprovals([]);
+    terminalNotifiedRef.current = null;
   }, [queuedRun?.runId]);
 
   const refresh = useCallback(async () => {
@@ -185,11 +189,25 @@ export function AskQueuedAgentRunPanel({
     }
   }, [refresh, run, runId]);
 
-  if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
-
   const snapshotRun = snapshotState.run;
   const visibleRun = snapshotRun ?? run;
-  const status = visibleRun?.status ?? actionStatus ?? queuedRun.status;
+  const status = visibleRun?.status ?? actionStatus ?? queuedRun?.status ?? 'queued';
+
+  useEffect(() => {
+    if (!runId || !onRunTerminal) return;
+    if (status !== 'succeeded' && status !== 'failed') return;
+    const key = `${runId}:${status}`;
+    if (terminalNotifiedRef.current === key) return;
+    terminalNotifiedRef.current = key;
+    onRunTerminal({
+      runId,
+      status,
+      outputHref: visibleRun?.outputHref ?? queuedRun?.outputHref ?? null,
+    });
+  }, [onRunTerminal, queuedRun?.outputHref, runId, status, visibleRun?.outputHref]);
+
+  if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
+
   const dispatchFailed = status === 'dispatch_failed' || queuedRun.fallbackPosture === 'dispatch_failed';
   const visibleEvents = snapshotState.events.length ? snapshotState.events : eventState.events;
   const recentEvents = expanded ? visibleEvents.slice(-4).reverse() : [];
