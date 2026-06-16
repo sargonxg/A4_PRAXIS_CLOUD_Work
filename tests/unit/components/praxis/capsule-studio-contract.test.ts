@@ -1,8 +1,12 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('Capsule Studio living graph UI contract', () => {
+  const whyPanelPath = join(process.cwd(), 'src/components/capsules/viewers/CapsuleGraphWhyPanel.tsx');
+  const whyPanelSource = existsSync(whyPanelPath) ? readFileSync(whyPanelPath, 'utf8') : '';
+  const viewerSource = readFileSync(join(process.cwd(), 'src/components/capsules/viewers/CapsuleGraphViewer.tsx'), 'utf8');
+  const sectionSource = readFileSync(join(process.cwd(), 'src/components/capsules/workbench/CapsuleGraphSection.tsx'), 'utf8');
   const source = [
     'src/components/capsules/CapsuleWorkbenchPanel.tsx',
     'src/components/capsules/workbench/CapsuleStudioOverviewSection.tsx',
@@ -42,5 +46,49 @@ describe('Capsule Studio living graph UI contract', () => {
     ]) {
       expect(source).toContain(expected);
     }
+  });
+
+  it('surfaces F2 graph lenses, bi-temporal scrubber, and invalidated history controls', () => {
+    for (const expected of [
+      'data-testid="capsule-graph-lens-bar"',
+      'RELATIONSHIP_LENS_OPTIONS',
+      'RELATIONSHIP_CATEGORIES',
+      'data-testid={`capsule-graph-lens-${category}`}',
+      'data-testid="capsule-graph-invalidated-toggle"',
+      'const [showInvalidated, setShowInvalidated] = useState(false)',
+      'data-testid="capsule-graph-temporal-scrubber"',
+      'As it was',
+      'As we knew it',
+      'type="range"',
+      'opacity: 0.12',
+    ]) {
+      expect(source).toContain(expected);
+    }
+  });
+
+  it('renders a reusable graph why panel with rationale, provenance, and contradiction history', () => {
+    expect(viewerSource).toContain('CapsuleGraphWhyPanel,');
+    expect(viewerSource).toContain("from '@/components/capsules/viewers/CapsuleGraphWhyPanel'");
+    expect(whyPanelSource).toContain('data-testid="capsule-graph-why-panel"');
+    for (const expected of [
+      'Why this exists',
+      'No recorded rationale (extracted directly from source)',
+      'derivedFrom',
+      'onOpenClaim',
+      'generatedBy',
+      'supersededBy',
+      'judgeRationale',
+      'CONTRADICTS',
+      'confidenceKind',
+      'AMBIGUOUS',
+    ]) {
+      expect(whyPanelSource).toContain(expected);
+    }
+  });
+
+  it('keeps the graph viewer generic while wiring claim chips from the section', () => {
+    expect(viewerSource).not.toContain("from '@/lib/context/capsule-workbench-view-model'");
+    expect(sectionSource).toContain('onOpenClaim={handleOpenClaim}');
+    expect(sectionSource).toContain('querySelector(\'[data-testid="capsule-claim-receipts"]\')');
   });
 });

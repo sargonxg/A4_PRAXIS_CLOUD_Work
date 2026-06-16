@@ -18,6 +18,7 @@ import {
   CAPSULE_STARTER_PROMPT_MAX_CHARS,
   CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS,
   CAPSULE_STARTER_SOURCE_REGISTRY,
+  MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS,
   CAPSULE_WOW_DEMO_STARTER_IDS,
   CAPSULE_TAXONOMY_AXES,
   CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS,
@@ -184,7 +185,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(205);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(211);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -192,7 +193,7 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 85, tool: 72, output: 35, user: 13 });
+    expect(categoryCounts).toEqual({ situation: 86, tool: 75, output: 36, user: 14 });
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -281,6 +282,67 @@ describe('context capsule product contract', () => {
     }
   });
 
+  it('defines the sanitized multilateral Syria public flagship bundle with deep graph seeds', () => {
+    expect(MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS).toEqual([
+      'starter-user-us-based-multilateral-desk-officer',
+      'starter-situation-syria-political-security-humanitarian-watch',
+      'starter-tool-multilateral-source-trust-ledger',
+      'starter-tool-media-source-prioritization-docket',
+      'starter-tool-briefing-synthesis-sourceability-protocol',
+      'starter-output-two-page-syria-media-roundup',
+    ]);
+
+    for (const starterId of MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS) {
+      const starter = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === starterId);
+      expect(starter, `${starterId} missing`).toBeTruthy();
+      if (!starter) continue;
+
+      const visibleText = [
+        starter.label,
+        starter.summary,
+        starter.detail,
+        starter.tags.join(' '),
+        starter.sourcePack.map((source) => `${source.id} ${source.label} ${source.publisher} ${source.relevance}`).join(' '),
+        starter.excerpts.map((excerpt) => excerpt.text).join(' '),
+        starter.suggestedQuestions.join(' '),
+        starter.suggestedNextActions.join(' '),
+        starter.agentWorkflow.outputGoal,
+        starter.agentWorkflow.approvalNotes,
+        starter.aiUseGuidance,
+        starter.richProfile.purpose,
+        starter.researchDossier.humanJob,
+        starter.researchDossier.realWorldScenario,
+        starter.researchDossier.howHumanUsesCapsule,
+        starter.curationProfile.humanInspectionSummary,
+        starter.curationProfile.agentUseSummary,
+      ].join('\n');
+
+      expect(visibleText, `${starterId} visible anonymization`).not.toMatch(/\bUN\b|United Nations|DPPA/i);
+      expect(starter.tags, `${starterId} tags`).toEqual(expect.arrayContaining([
+        'multilateral-orgs',
+        'syria',
+        'public-flagship',
+        'strict-sanitized',
+        'sourceability',
+      ]));
+      expect(starter.sourcePack.length, `${starterId} source pack`).toBeGreaterThanOrEqual(4);
+      expect(starter.ontologyOverlay?.graphSeed.nodeTemplates.length, `${starterId} deep graph nodes`).toBeGreaterThanOrEqual(110);
+      expect(starter.ontologyOverlay?.graphSeed.edgeTemplates.length, `${starterId} deep graph edges`).toBeGreaterThanOrEqual(110);
+      expect(starter.graphLiteProjection.nodeCount, `${starterId} GraphLite nodes`).toBe(starter.ontologyOverlay?.graphSeed.nodeTemplates.length);
+      expect(starter.graphLiteProjection.edgeCount, `${starterId} GraphLite edges`).toBe(starter.ontologyOverlay?.graphSeed.edgeTemplates.length);
+      expect(starter.ontologyOverlay?.graphSeed.proposalLabel, `${starterId} graph label`).toMatch(/multilateral Syria ACO graph/i);
+      expect(starter.contextCaptureProfile.embeddedGraph.proposalOnly, `${starterId} capture policy`).toBe(true);
+      expect(buildCapsuleStarterPromptBlock(starterId), `${starterId} prompt`).toEqual(expect.stringContaining('embedded_graph_seed_counts: nodes='));
+      expect(buildCapsuleStarterPromptBlock(starterId), `${starterId} workflow prompt`).toEqual(expect.stringContaining('agent_workflow:'));
+    }
+
+    const roundup = CAPSULE_STARTER_DEFINITIONS.find((item) => item.starterId === 'starter-output-two-page-syria-media-roundup');
+    expect(roundup?.detail).toMatch(/Political Developments/i);
+    expect(roundup?.detail).toMatch(/Situation on the Ground/i);
+    expect(roundup?.detail).toMatch(/Humanitarian and Human Rights/i);
+    expect(roundup?.outputProductIds).toEqual(expect.arrayContaining(['two-page-media-roundup']));
+  });
+
   it('features Human-Gated Policy Judgment Capsules as sourceable flagship seeds', () => {
     expect(HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY).toMatchObject({
       id: 'human-gated-policy-judgment',
@@ -365,7 +427,7 @@ describe('context capsule product contract', () => {
     const externalSourceCount = (starter: (typeof CAPSULE_STARTER_DEFINITIONS)[number]) =>
       starter.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog' && !source.url.includes('praxis.tacitus.me')).length;
 
-    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/graphlite-advisory-projection.*v17/);
+    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/graphlite-advisory-projection.*v18/);
     expect(Object.keys(CAPSULE_STARTER_SOURCE_REGISTRY).length).toBeGreaterThanOrEqual(10);
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
@@ -706,17 +768,33 @@ describe('context capsule product contract', () => {
     }
   });
 
-  it('keeps every starter ontology graph at 50 unique points and 50 unique edges', () => {
+  it('keeps every starter ontology graph deep, varied, and explicit about structure plus delimitation', () => {
+    const nodeCounts = new Set<number>();
+    const edgeCounts = new Set<number>();
+    let sameNodeEdgeCount = 0;
+
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       const graphSeed = starter.ontologyOverlay?.graphSeed;
+      const nodeCount = graphSeed?.nodeTemplates.length ?? 0;
+      const edgeCount = graphSeed?.edgeTemplates.length ?? 0;
 
-      expect(graphSeed?.nodeTemplates.length, `${starter.starterId} node templates`).toBeGreaterThanOrEqual(64);
-      expect(graphSeed?.edgeTemplates.length, `${starter.starterId} edge templates`).toBeGreaterThanOrEqual(64);
+      nodeCounts.add(nodeCount);
+      edgeCounts.add(edgeCount);
+      if (nodeCount === edgeCount) sameNodeEdgeCount += 1;
+
+      expect(nodeCount, `${starter.starterId} node templates`).toBeGreaterThanOrEqual(84);
+      expect(edgeCount, `${starter.starterId} edge templates`).toBeGreaterThanOrEqual(84);
       expect(new Set(graphSeed?.nodeTemplates).size, `${starter.starterId} unique nodes`).toBe(graphSeed?.nodeTemplates.length);
       expect(new Set(graphSeed?.edgeTemplates).size, `${starter.starterId} unique edges`).toBe(graphSeed?.edgeTemplates.length);
       expect(graphSeed?.nodeTemplates.join(' '), `${starter.starterId} abstract and real graph points`).toMatch(/AbstractConcept|RealInfo|ReasoningMove|ToolAction|EvidenceNeed/);
+      expect(graphSeed?.nodeTemplates.join(' '), `${starter.starterId} structure and delimitation graph points`).toMatch(/KnowledgeBoundary|DelimitationRule|ContextFrame|ConfidencePosture|ReviewQuestion/);
       expect(graphSeed?.edgeTemplates.join(' '), `${starter.starterId} typed graph edges`).toMatch(/SUPPORTED_BY|CONSTRAINS|DEPENDS_ON|TRIGGERS_REVIEW|CITED_BY/);
+      expect(graphSeed?.edgeTemplates.join(' '), `${starter.starterId} boundary graph edges`).toMatch(/DELIMITS|STRUCTURES|BOUNDS_CONFIDENCE|REQUIRES_SOURCE_REFRESH/);
     }
+
+    expect(nodeCounts.size, 'catalog node count variation').toBeGreaterThanOrEqual(24);
+    expect(edgeCounts.size, 'catalog edge count variation').toBeGreaterThanOrEqual(24);
+    expect(sameNodeEdgeCount, 'node/edge count equality should not dominate the catalog').toBeLessThan(CAPSULE_STARTER_DEFINITIONS.length / 3);
   });
 
   it('defines the v3 human-gated context product sections, shelves, and trust badges', () => {

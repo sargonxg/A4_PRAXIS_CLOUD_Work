@@ -106,6 +106,7 @@ import {
   CONTEXT_CAPSULE_V3_TRUST_BADGES,
   HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY,
   HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
+  MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS,
   POLICY_TEAM_CATEGORIES,
   buildCapsuleTaxonomyStats,
   categoryTagsForPolicyTeam,
@@ -718,6 +719,7 @@ const starterCapsuleSummaries = CAPSULE_STARTER_DEFINITIONS.map(starterDefinitio
 const PUBLIC_FLAGSHIP_CAPSULE_LIMIT = 6;
 const PUBLIC_THINKING_DEVICE_LIMIT = 3;
 const FEATURED_EXPERT_PICK_CAPSULE_IDS = [
+  ...MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS,
   'starter-situation-us-fy2027-budget-sequestration-watch',
   'starter-situation-eu-ai-act-2026-implementation-simplification',
   'starter-situation-data-center-grid-load-interconnection',

@@ -200,10 +200,13 @@ export interface CapsuleGraphNodeDisplay {
   entityType?: string;
   provenance?: string;
   confidence?: number | null;
-  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
   sourceReceiptIds?: string[];
   linkedClaimIds?: string[];
   version?: number | null;
+  validFrom?: string;
+  validUntil?: string;
+  asOf?: string;
   recordedAt?: string;
   invalidatedAt?: string;
   supersededBy?: string;
@@ -227,8 +230,11 @@ export interface CapsuleGraphEdgeDisplay {
   relationshipType?: string;
   judgeRationale?: string;
   confidence?: number | null;
-  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
   sourceReceiptIds?: string[];
+  validFrom?: string;
+  validUntil?: string;
+  asOf?: string;
   recordedAt?: string;
   invalidatedAt?: string;
   supersededBy?: string;
@@ -1451,7 +1457,7 @@ interface CapsuleGraphProposalItem {
     provenance?: string;
     reason?: string;
     confidence?: number | null;
-    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
     sourceReceiptIds?: string[];
     recordedAt?: string;
     invalidatedAt?: string;
@@ -1485,7 +1491,7 @@ interface GraphLiteProjectionItem {
     entityType: string;
     reviewState: CapsuleWorkbenchReviewState;
     confidence: number | null;
-    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
     sourceReceiptIds: string[];
     recordedAt?: string;
     invalidatedAt?: string;
@@ -1509,7 +1515,7 @@ interface GraphLiteProjectionItem {
     judgeRationale?: string;
     reviewState: CapsuleWorkbenchReviewState;
     confidence: number | null;
-    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+    confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
     sourceReceiptIds: string[];
     recordedAt?: string;
     invalidatedAt?: string;
@@ -2063,8 +2069,8 @@ function graphInvalidationReasonFromUnknown(value: unknown): 'CONTRADICTED' | 'S
     : undefined;
 }
 
-function graphConfidenceKindFromUnknown(value: unknown): 'EXTRACTED' | 'INFERRED' | 'ASSESSED' | undefined {
-  return value === 'EXTRACTED' || value === 'INFERRED' || value === 'ASSESSED' ? value : undefined;
+function graphConfidenceKindFromUnknown(value: unknown): 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED' | undefined {
+  return value === 'EXTRACTED' || value === 'INFERRED' || value === 'AMBIGUOUS' || value === 'ASSESSED' ? value : undefined;
 }
 
 function graphGeneratedByFromUnknown(value: unknown): CapsuleGraphNodeDisplay['generatedBy'] {

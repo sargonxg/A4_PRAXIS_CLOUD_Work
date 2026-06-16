@@ -47,6 +47,7 @@ describe('OutputCapsules', () => {
       'country-risk-card',
       'actor-dossier',
       'media-roundup',
+      'two-page-media-roundup',
       'narrative-monitor',
       'humanitarian-one-pager',
       'risk-monitor-card',

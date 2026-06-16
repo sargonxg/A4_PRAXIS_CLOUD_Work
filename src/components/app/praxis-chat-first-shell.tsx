@@ -27,6 +27,10 @@ import {
   swapCapsuleRef,
 } from '@/lib/context/active-context-stack';
 import { HOME_SIDEBAR_DESTINATIONS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
+import {
+  CAPSULE_STARTER_DEFINITIONS,
+  MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS,
+} from '@/lib/product/context-capsules-client';
 
 const CapsuleListPicker = dynamic(
   () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
@@ -71,6 +75,10 @@ const HOME_DESTINATION_ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ cla
   ShieldCheck,
   FileText,
 };
+
+const PUBLIC_FLAGSHIP_CAPSULES = MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS
+  .map((starterId) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === starterId))
+  .filter((starter): starter is NonNullable<typeof starter> => Boolean(starter));
 
 export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated' }) {
   const isPublic = mode === 'public';
@@ -216,6 +224,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
               />
             ) : null}
             {isPublic ? <PolicyAgentStrip isPublic /> : null}
+            {isPublic ? <PublicFlagshipCapsuleStrip /> : null}
           </section>
         </div>
       </div>
@@ -252,6 +261,46 @@ function HomeTopBar({ isPublic }: { isPublic: boolean }) {
         ) : null}
       </nav>
     </header>
+  );
+}
+
+function PublicFlagshipCapsuleStrip() {
+  return (
+    <section className="mt-5" data-testid="public-flagship-capsule-strip" aria-label="Public flagship capsules">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Flagship capsules</p>
+          <h2 className="mt-1 text-lg font-semibold text-slate-950">Multilateral Syria desk workflow</h2>
+        </div>
+        <Link
+          href="/login?mode=signup&redirect=%2Fapp%2Fcapsules"
+          className="inline-flex min-h-9 items-center rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-[var(--shadow-card)] hover:bg-slate-50"
+        >
+          Add to workspace
+        </Link>
+      </div>
+      <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {PUBLIC_FLAGSHIP_CAPSULES.map((capsule) => (
+          <Link
+            key={capsule.starterId}
+            href={`/login?mode=signup&redirect=%2Fapp%2Fcapsules&capsuleId=${encodeURIComponent(capsule.starterId)}`}
+            className="min-w-0 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3 shadow-[var(--shadow-card)] transition hover:border-emerald-200 hover:bg-emerald-50/40"
+            data-testid={`public-flagship-capsule-${capsule.starterId}`}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="rounded-[var(--radius-sm)] bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
+                {capsule.category}
+              </span>
+              <span className="font-mono text-[10px] font-semibold text-emerald-700">
+                {capsule.ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0}+ nodes
+              </span>
+            </div>
+            <h3 className="mt-2 line-clamp-2 text-sm font-semibold leading-5 text-slate-950">{capsule.label}</h3>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{capsule.summary}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

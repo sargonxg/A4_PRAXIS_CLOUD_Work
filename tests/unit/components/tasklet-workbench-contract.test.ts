@@ -1009,6 +1009,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('keeps expert picks available outside the simplified capsule repository lane', () => {
     expect(source).toContain('FEATURED_EXPERT_PICK_CAPSULE_IDS');
+    expect(source).toContain('MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS');
+    expect(source).toContain('...MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS');
     for (const expectedId of [
       'starter-situation-ai-governance-procurement',
       'starter-situation-humanitarian-rights-access',

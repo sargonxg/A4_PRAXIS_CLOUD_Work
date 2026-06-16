@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { memo, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Network } from 'lucide-react';
 import type { CapsuleWorkbenchViewModel } from '@/lib/context/capsule-workbench-view-model';
 import type { CapsuleGraphProposalIntent, CapsuleGraphViewerNode, CapsuleGraphViewerProps } from '@/components/capsules/viewers/CapsuleGraphViewer';
@@ -35,6 +35,12 @@ export const CapsuleGraphSection = memo(function CapsuleGraphSection({
   const [proposalEntityType, setProposalEntityType] = useState('Actor');
   const [status, setStatus] = useState<string | null>(null);
   const graphCards = reviewQueue.filter((card) => card.target === 'graphProposal');
+
+  const handleOpenClaim = useCallback((claimId: string) => {
+    document.querySelector('[data-testid="capsule-claim-receipts"]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#capsule-claim-receipts`);
+    setStatus(`Opened claim receipt ${claimId}.`);
+  }, []);
 
   const handleProposalIntent = (node: CapsuleGraphViewerNode | null, intent: CapsuleGraphProposalIntent) => {
     setSelectedNode(node);
@@ -99,6 +105,7 @@ export const CapsuleGraphSection = memo(function CapsuleGraphSection({
           canonicalNodeCount={graph.canonicalNodeCount}
           proposedNodeCount={graph.proposedNodeCount}
           onProposalIntent={handleProposalIntent}
+          onOpenClaim={handleOpenClaim}
           onBuildFromSources={() => setStatus('Graph build queued from attached source receipts.')}
           proposalForm={proposalOpen ? (
             <div className="border-t border-slate-100 bg-white p-3">

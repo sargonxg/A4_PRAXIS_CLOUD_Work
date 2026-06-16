@@ -24,6 +24,7 @@ const DROPPED_AUDIT_LEAVES = [
 
 GROUPS.capsules = [
   { label: 'Capsule depth', script: 'audit:capsule-depth' },
+  { label: 'Capsule database', script: 'audit:capsule-database' },
   { label: 'Capsule consolidation', script: 'audit:capsule-consolidation' },
   { label: 'Capsule contract', script: 'audit:capsule-contract' },
   { label: 'Capsule memory contract', script: 'audit:capsule-memory-contract' },

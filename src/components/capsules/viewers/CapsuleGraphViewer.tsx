@@ -1,10 +1,43 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { memo, useMemo, useRef, useState, type ForwardRefExoticComponent, type ReactNode, type RefAttributes } from 'react';
+import { memo, useCallback, useMemo, useRef, useState, type ForwardRefExoticComponent, type ReactNode, type RefAttributes } from 'react';
 import { Maximize2, Plus, Search } from 'lucide-react';
-import { getACOColor, getACOBorderColor, getRelationshipCategory, RELATIONSHIP_CATEGORY_COLORS } from '@/lib/constants/aco-colors';
-import { CompactList, formatConfidence, InfoLine } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+import {
+  getACOBorderColor,
+  getACOColor,
+  getRelationshipCategory,
+  RELATIONSHIP_CATEGORIES,
+  RELATIONSHIP_CATEGORY_COLORS,
+  type RelationshipCategory,
+} from '@/lib/constants/aco-colors';
+import { cn } from '@/lib/utils/cn';
+import { formatConfidence } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+import {
+  CapsuleGraphWhyPanel,
+  type CapsuleGraphWhyPanelContradiction,
+  type CapsuleGraphWhyPanelSelection,
+} from '@/components/capsules/viewers/CapsuleGraphWhyPanel';
+
+type CapsuleGraphConfidenceKind = 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
+type CapsuleGraphInvalidationReason = 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+type CapsuleGraphGeneratedBy = {
+  actorType: 'model' | 'human';
+  actorId: string;
+  at: string;
+  activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
+};
+
+type TemporalGraphElement = {
+  validFrom?: string;
+  validUntil?: string;
+  asOf?: string;
+  recordedAt?: string;
+  invalidatedAt?: string;
+  supersededBy?: string;
+  invalidationReason?: string;
+  generatedBy?: Pick<CapsuleGraphGeneratedBy, 'at'>;
+};
 
 export type CapsuleGraphViewerNode = {
   id: string;
@@ -15,22 +48,20 @@ export type CapsuleGraphViewerNode = {
   entityType?: string;
   provenance?: string;
   confidence?: number | null;
-  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+  confidenceKind?: CapsuleGraphConfidenceKind;
   sourceReceiptIds?: string[];
   linkedClaimIds?: string[];
   version?: number | null;
+  validFrom?: string;
+  validUntil?: string;
+  asOf?: string;
   recordedAt?: string;
   invalidatedAt?: string;
   supersededBy?: string;
-  invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+  invalidationReason?: CapsuleGraphInvalidationReason;
   rationale?: string;
   derivedFrom?: string[];
-  generatedBy?: {
-    actorType: 'model' | 'human';
-    actorId: string;
-    at: string;
-    activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
-  };
+  generatedBy?: CapsuleGraphGeneratedBy;
 };
 
 export type CapsuleGraphViewerEdge = {
@@ -42,20 +73,18 @@ export type CapsuleGraphViewerEdge = {
   relationshipType?: string;
   judgeRationale?: string;
   confidence?: number | null;
-  confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'ASSESSED';
+  confidenceKind?: CapsuleGraphConfidenceKind;
   sourceReceiptIds?: string[];
+  validFrom?: string;
+  validUntil?: string;
+  asOf?: string;
   recordedAt?: string;
   invalidatedAt?: string;
   supersededBy?: string;
-  invalidationReason?: 'CONTRADICTED' | 'SOURCE_RETRACTED' | 'TEMPORAL_EXPIRY' | 'HUMAN_OVERRIDE';
+  invalidationReason?: CapsuleGraphInvalidationReason;
   rationale?: string;
   derivedFrom?: string[];
-  generatedBy?: {
-    actorType: 'model' | 'human';
-    actorId: string;
-    at: string;
-    activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
-  };
+  generatedBy?: CapsuleGraphGeneratedBy;
 };
 
 export type CapsuleGraphProposalIntent = 'open' | 'refine' | 'background';
@@ -64,6 +93,7 @@ export type CapsuleGraphViewerProps = {
   nodes: CapsuleGraphViewerNode[];
   edges: CapsuleGraphViewerEdge[];
   onSelect?: (node: CapsuleGraphViewerNode | null) => void;
+  onOpenClaim?: (claimId: string) => void;
   editable?: boolean;
   height?: number;
   canonicalNodeCount?: number;
@@ -79,6 +109,10 @@ type ForceGraphNode = CapsuleGraphViewerNode & {
   y?: number;
   __cluster?: boolean;
   __count?: number;
+  __opacity?: number;
+  __invalidated?: boolean;
+  __visibleInvalidated?: boolean;
+  __selected?: boolean;
 };
 
 type ForceGraphLink = Omit<CapsuleGraphViewerEdge, 'source' | 'target'> & {
@@ -86,7 +120,19 @@ type ForceGraphLink = Omit<CapsuleGraphViewerEdge, 'source' | 'target'> & {
   target: string | ForceGraphNode;
   __sourceId: string;
   __targetId: string;
+  __opacity?: number;
+  __invalidated?: boolean;
+  __visibleInvalidated?: boolean;
+  __selected?: boolean;
+  __category?: RelationshipCategory | null;
 };
+
+type GraphSelection =
+  | { kind: 'node'; item: ForceGraphNode }
+  | { kind: 'edge'; item: ForceGraphLink }
+  | null;
+
+type TemporalMode = 'event' | 'transaction';
 
 type ForceGraphHandle = {
   centerAt?: (x: number, y: number, ms?: number) => void;
@@ -102,11 +148,14 @@ type ForceGraphProps = {
   cooldownTicks?: number;
   nodeCanvasObject?: (node: ForceGraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => void;
   nodePointerAreaPaint?: (node: ForceGraphNode, color: string, ctx: CanvasRenderingContext2D) => void;
+  linkCanvasObject?: (link: ForceGraphLink, ctx: CanvasRenderingContext2D, globalScale: number) => void;
+  linkCanvasObjectMode?: (link: ForceGraphLink) => 'replace' | 'before' | 'after';
   linkColor?: (link: ForceGraphLink) => string;
   linkWidth?: (link: ForceGraphLink) => number;
   linkLabel?: (link: ForceGraphLink) => string;
   onNodeClick?: (node: ForceGraphNode) => void;
   onNodeRightClick?: (node: ForceGraphNode, event: MouseEvent) => void;
+  onLinkClick?: (link: ForceGraphLink) => void;
   onLinkHover?: (link: ForceGraphLink | null, previousLink?: ForceGraphLink | null) => void;
   onBackgroundRightClick?: () => void;
 };
@@ -116,10 +165,21 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), {
   loading: () => <div className="flex h-[420px] items-center justify-center text-xs font-semibold text-slate-500">Loading living graph...</div>,
 }) as unknown as ForwardRefExoticComponent<ForceGraphProps & RefAttributes<ForceGraphHandle>>;
 
+const DIMMED_ELEMENT_STYLE = { opacity: 0.12 };
+const DIMMED_OPACITY = DIMMED_ELEMENT_STYLE.opacity;
+const INVALIDATED_VISIBLE_OPACITY = 0.35;
+const INVALIDATED_HIDDEN_OPACITY = 0.04;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const RELATIONSHIP_LENS_OPTIONS: Array<{ category: RelationshipCategory; label: string }> = (
+  Object.keys(RELATIONSHIP_CATEGORIES) as RelationshipCategory[]
+).map((category) => ({ category, label: categoryLabel(category) ?? category }));
+
 function CapsuleGraphViewerComponent({
   nodes,
   edges,
   onSelect,
+  onOpenClaim,
   editable = true,
   height = 420,
   canonicalNodeCount = 0,
@@ -131,23 +191,80 @@ function CapsuleGraphViewerComponent({
 }: CapsuleGraphViewerProps) {
   const graphRef = useRef<ForceGraphHandle | null>(null);
   const [query, setQuery] = useState('');
-  const [selectedNode, setSelectedNode] = useState<ForceGraphNode | null>(nodes[0] ?? null);
+  const [selectedElement, setSelectedElement] = useState<GraphSelection>(() => (
+    nodes[0] ? { kind: 'node', item: nodes[0] as ForceGraphNode } : null
+  ));
   const [hoveredEdge, setHoveredEdge] = useState<ForceGraphLink | null>(null);
+  const [activeCategories, setActiveCategories] = useState<Set<RelationshipCategory>>(() => new Set());
+  const [showInvalidated, setShowInvalidated] = useState(false);
+  const [temporalMode, setTemporalMode] = useState<TemporalMode>('transaction');
+  const [scrubberValue, setScrubberValue] = useState<number | null>(null);
+  const [referenceTimeMs] = useState(() => Date.now());
+
   const graphData = useMemo(() => buildForceGraphData({ nodes, edges }, query), [nodes, edges, query]);
   const graphIsEmpty = nodes.length <= 1 && edges.length === 0;
+  const temporalBounds = useMemo(() => buildTemporalBounds(nodes, edges, referenceTimeMs), [edges, nodes, referenceTimeMs]);
+  const nowPosition = positionForTime(referenceTimeMs, temporalBounds);
+  const scrubberPosition = scrubberValue ?? nowPosition;
+  const selectedTimeMs = timeForPosition(scrubberPosition, temporalBounds);
+  const selectedNode = selectedElement?.kind === 'node' ? selectedElement.item : null;
+  const nodeLabelById = useMemo(() => buildNodeLabelMap(nodes, graphData.nodes), [nodes, graphData.nodes]);
 
-  const focusSearch = () => {
+  const styledGraphData = useMemo(() => applyGraphStyling({
+    graphData,
+    activeCategories,
+    temporalMode,
+    selectedTimeMs,
+    showInvalidated,
+    selectedElement,
+  }), [activeCategories, graphData, selectedElement, selectedTimeMs, showInvalidated, temporalMode]);
+
+  const panelSelection = useMemo(
+    () => panelSelectionFrom(selectedElement, nodeLabelById),
+    [nodeLabelById, selectedElement],
+  );
+  const contradictions = useMemo(
+    () => contradictionsForSelection(selectedElement, graphData.links, nodeLabelById),
+    [graphData.links, nodeLabelById, selectedElement],
+  );
+
+  const focusSearch = useCallback(() => {
     const term = query.trim().toLowerCase();
     const match = term ? graphData.nodes.find((node) => `${node.label} ${node.detail ?? ''} ${node.entityType ?? ''}`.toLowerCase().includes(term)) : graphData.nodes[0];
     if (match) {
-      setSelectedNode(match);
+      setSelectedElement({ kind: 'node', item: match });
       onSelect?.(match);
       graphRef.current?.centerAt?.(match.x ?? 0, match.y ?? 0, 500);
       graphRef.current?.zoom?.(2.1, 500);
     } else {
       graphRef.current?.zoomToFit?.(500, 48);
     }
-  };
+  }, [graphData.nodes, onSelect, query]);
+
+  const selectElementById = useCallback((elementId: string) => {
+    const node = graphData.nodes.find((candidate) => candidate.id === elementId);
+    if (node) {
+      setSelectedElement({ kind: 'node', item: node });
+      onSelect?.(node);
+      graphRef.current?.centerAt?.(node.x ?? 0, node.y ?? 0, 500);
+      graphRef.current?.zoom?.(2.1, 500);
+      return;
+    }
+    const link = graphData.links.find((candidate) => candidate.id === elementId);
+    if (link) {
+      setSelectedElement({ kind: 'edge', item: link });
+      onSelect?.(null);
+    }
+  }, [graphData.links, graphData.nodes, onSelect]);
+
+  const toggleCategory = useCallback((category: RelationshipCategory) => {
+    setActiveCategories((current) => {
+      const next = new Set(current);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }, []);
 
   return (
     <>
@@ -180,6 +297,41 @@ function CapsuleGraphViewerComponent({
           </button>
         ) : null}
       </div>
+
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-2 py-2" data-testid="capsule-graph-lens-bar">
+        <span className="mr-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">ACO lenses</span>
+        {RELATIONSHIP_LENS_OPTIONS.map(({ category, label }) => {
+          const active = activeCategories.has(category);
+          return (
+            <button
+              key={category}
+              type="button"
+              data-testid={`capsule-graph-lens-${category}`}
+              aria-pressed={active}
+              onClick={() => toggleCategory(category)}
+              className={cn(
+                'rounded-md border px-2 py-1 text-[11px] font-semibold',
+                active ? 'border-emerald-300 bg-emerald-50 text-emerald-900' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
+              )}
+            >
+              {label}
+            </button>
+          );
+        })}
+        <button
+          type="button"
+          data-testid="capsule-graph-invalidated-toggle"
+          aria-pressed={showInvalidated}
+          onClick={() => setShowInvalidated((value) => !value)}
+          className={cn(
+            'rounded-md border px-2 py-1 text-[11px] font-semibold',
+            showInvalidated ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300',
+          )}
+        >
+          Invalidated
+        </button>
+      </div>
+
       {graphIsEmpty ? (
         <div className="flex h-[420px] flex-col items-center justify-center gap-3 p-6 text-center">
           <p className="text-sm font-semibold text-slate-800">No graph projection is attached yet.</p>
@@ -188,57 +340,82 @@ function CapsuleGraphViewerComponent({
           </button>
         </div>
       ) : (
-        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_17rem]">
+        <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_19rem]">
           <div className="min-w-0 bg-white">
             <ForceGraph2D
               ref={graphRef}
-              graphData={graphData}
+              graphData={styledGraphData}
               height={height}
               backgroundColor="#ffffff"
               cooldownTicks={80}
               nodeCanvasObject={paintGraphNode}
               nodePointerAreaPaint={paintNodePointerArea}
+              linkCanvasObject={paintGraphLink}
+              linkCanvasObjectMode={() => 'replace'}
               linkColor={edgeColor}
-              linkWidth={(link) => (hoveredEdge?.id === link.id ? 2.4 : 1.2)}
+              linkWidth={(link) => (hoveredEdge?.id === link.id ? 2.4 : Math.max(0.35, 1.2 * (link.__opacity ?? 1)))}
               linkLabel={(link) => `${link.relationshipType ?? link.label}: ${formatConfidence(link.confidence)}`}
               onNodeClick={(node) => {
-                setSelectedNode(node);
+                setSelectedElement({ kind: 'node', item: node });
                 onSelect?.(node);
               }}
               onNodeRightClick={(node, event) => {
                 event.preventDefault();
-                setSelectedNode(node);
+                setSelectedElement({ kind: 'node', item: node });
                 onSelect?.(node);
                 onProposalIntent?.(node, 'refine');
+              }}
+              onLinkClick={(link) => {
+                setSelectedElement({ kind: 'edge', item: link });
+                onSelect?.(null);
               }}
               onLinkHover={(link) => setHoveredEdge(link)}
               onBackgroundRightClick={() => onProposalIntent?.(selectedNode, 'background')}
             />
           </div>
-          <aside className="border-t border-slate-100 bg-slate-50 p-3 lg:border-l lg:border-t-0" data-testid="capsule-graph-detail-panel">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Graph detail</p>
-            {selectedNode ? (
-              <div className="mt-2 space-y-2 text-xs leading-5 text-slate-600">
-                <p className="text-sm font-semibold text-slate-900">{selectedNode.label}</p>
-                <InfoLine label="Entity type" value={selectedNode.entityType ?? selectedNode.type} />
-                <InfoLine label="Review" value={selectedNode.reviewState} />
-                <InfoLine label="Provenance" value={selectedNode.provenance ?? 'capsule graph'} />
-                <InfoLine label="Confidence" value={formatConfidence(selectedNode.confidence)} />
-                <CompactList items={selectedNode.sourceReceiptIds?.map((id) => `receipt: ${id}`) ?? []} empty="No source receipts attached yet." />
-              </div>
-            ) : (
-              <p className="mt-2 text-xs text-slate-500">Click a node to inspect its evidence, review state, and provenance.</p>
-            )}
-            {hoveredEdge ? (
-              <div className="mt-3 rounded-md border border-slate-200 bg-white p-2 text-xs leading-5 text-slate-600">
-                <p className="font-semibold text-slate-900">{hoveredEdge.relationshipType ?? hoveredEdge.label}</p>
-                <p>{hoveredEdge.__sourceId} {'->'} {hoveredEdge.__targetId}</p>
-                <p>{formatConfidence(hoveredEdge.confidence)}</p>
-              </div>
-            ) : null}
+          <aside data-testid="capsule-graph-detail-panel">
+            <CapsuleGraphWhyPanel
+              selection={panelSelection}
+              contradictions={contradictions}
+              onOpenClaim={onOpenClaim}
+              onSelectElement={selectElementById}
+            />
           </aside>
         </div>
       )}
+
+      <div className="border-t border-slate-100 bg-white px-3 py-2" data-testid="capsule-graph-temporal-scrubber">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Bi-temporal</span>
+          <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5">
+            <button
+              type="button"
+              onClick={() => setTemporalMode('event')}
+              className={cn('rounded px-2 py-1 text-[11px] font-semibold', temporalMode === 'event' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500')}
+            >
+              As it was
+            </button>
+            <button
+              type="button"
+              onClick={() => setTemporalMode('transaction')}
+              className={cn('rounded px-2 py-1 text-[11px] font-semibold', temporalMode === 'transaction' ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500')}
+            >
+              As we knew it
+            </button>
+          </span>
+          <input
+            type="range"
+            min={0}
+            max={100}
+            value={Math.round(scrubberPosition)}
+            onChange={(event) => setScrubberValue(Number(event.target.value))}
+            aria-label="Capsule graph bi-temporal position"
+            className="h-2 min-w-[12rem] flex-1 accent-emerald-700"
+          />
+          <span className="font-mono text-[10px] font-semibold text-slate-500">{new Date(selectedTimeMs).toISOString().slice(0, 10)}</span>
+        </div>
+      </div>
+
       {proposalForm}
       <div className="border-t border-slate-100 bg-white px-3 py-2">
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
@@ -316,21 +493,91 @@ function buildForceGraphData(graph: { nodes: CapsuleGraphViewerNode[]; edges: Ca
   });
   const uniqueLinks = new Map<string, ForceGraphLink>();
   for (const link of links) {
-    const key = `${link.source}:${link.target}:${link.relationshipType ?? link.label}`;
+    const key = `${String(link.source)}:${String(link.target)}:${link.relationshipType ?? link.label}`;
     if (!uniqueLinks.has(key)) uniqueLinks.set(key, link);
   }
   return { nodes, links: [...uniqueLinks.values()] };
 }
 
+function applyGraphStyling({
+  graphData,
+  activeCategories,
+  temporalMode,
+  selectedTimeMs,
+  showInvalidated,
+  selectedElement,
+}: {
+  graphData: { nodes: ForceGraphNode[]; links: ForceGraphLink[] };
+  activeCategories: Set<RelationshipCategory>;
+  temporalMode: TemporalMode;
+  selectedTimeMs: number;
+  showInvalidated: boolean;
+  selectedElement: GraphSelection;
+}): { nodes: ForceGraphNode[]; links: ForceGraphLink[] } {
+  const matchingEdgeIds = new Set<string>();
+  const matchingNodeIds = new Set<string>();
+  const categoryFilterActive = activeCategories.size > 0;
+
+  for (const link of graphData.links) {
+    const category = categoryForRelation(link.relationshipType ?? link.label);
+    const categoryMatch = !categoryFilterActive || (category ? activeCategories.has(category) : false);
+    if (categoryMatch) {
+      matchingEdgeIds.add(link.id);
+      matchingNodeIds.add(link.__sourceId);
+      matchingNodeIds.add(link.__targetId);
+    }
+  }
+
+  const nodeIds = new Set(graphData.nodes.map((node) => node.id));
+  const links = graphData.links.map((link) => {
+    let opacity = 1;
+    const invalidated = isInvalidated(link);
+    const category = categoryForRelation(link.relationshipType ?? link.label);
+    const categoryMatch = !categoryFilterActive || matchingEdgeIds.has(link.id);
+    if (!categoryMatch) opacity = Math.min(opacity, DIMMED_OPACITY);
+    if (!isElementValidAt(link, temporalMode, selectedTimeMs)) opacity = Math.min(opacity, DIMMED_OPACITY);
+    if (invalidated) opacity = showInvalidated ? Math.min(categoryMatch ? 1 : DIMMED_OPACITY, INVALIDATED_VISIBLE_OPACITY) : INVALIDATED_HIDDEN_OPACITY;
+    return {
+      ...link,
+      __category: category,
+      __opacity: opacity,
+      __invalidated: invalidated,
+      __visibleInvalidated: invalidated && showInvalidated,
+      __selected: selectedElement?.kind === 'edge' && selectedElement.item.id === link.id,
+    };
+  });
+
+  const nodes = graphData.nodes.map((node) => {
+    let opacity = 1;
+    const invalidated = isInvalidated(node);
+    const categoryMatch = !categoryFilterActive || matchingNodeIds.has(node.id) || !nodeIds.has(node.id);
+    if (!categoryMatch) opacity = Math.min(opacity, DIMMED_OPACITY);
+    if (!isElementValidAt(node, temporalMode, selectedTimeMs)) opacity = Math.min(opacity, DIMMED_OPACITY);
+    if (invalidated) opacity = showInvalidated ? Math.min(categoryMatch ? 1 : DIMMED_OPACITY, INVALIDATED_VISIBLE_OPACITY) : INVALIDATED_HIDDEN_OPACITY;
+    return {
+      ...node,
+      __opacity: opacity,
+      __invalidated: invalidated,
+      __visibleInvalidated: invalidated && showInvalidated,
+      __selected: selectedElement?.kind === 'node' && selectedElement.item.id === node.id,
+    };
+  });
+
+  return { nodes, links };
+}
+
 function paintGraphNode(node: ForceGraphNode, ctx: CanvasRenderingContext2D, globalScale: number) {
-  const label = node.__cluster ? node.label : node.label.slice(0, 42);
+  const rawLabel = node.__cluster ? node.label : node.label.slice(0, 42);
+  const label = node.__visibleInvalidated ? `~~ ${rawLabel}` : rawLabel;
   const entityType = node.entityType ?? node.type;
   const fill = node.reviewState === 'missing' ? '#fee2e2' : getACOColor(entityType);
   const stroke = node.reviewState === 'missing' ? '#dc2626' : getACOBorderColor(entityType);
   const radius = node.type === 'capsule' ? 8 : node.__cluster ? Math.min(18, 8 + Math.log2((node.__count ?? 2) + 1) * 2) : 5.5;
   const x = node.x ?? 0;
   const y = node.y ?? 0;
+  const opacity = node.__opacity ?? 1;
   ctx.save();
+  ctx.globalAlpha = opacity;
   ctx.beginPath();
   if (node.reviewState === 'missing') {
     ctx.rect(x - radius, y - radius, radius * 2, radius * 2);
@@ -344,9 +591,9 @@ function paintGraphNode(node: ForceGraphNode, ctx: CanvasRenderingContext2D, glo
   }
   ctx.fillStyle = fill;
   ctx.fill();
-  ctx.lineWidth = node.reviewState === 'canonical' || node.reviewState === 'reviewed' ? 1.5 : 2;
-  ctx.strokeStyle = stroke;
-  if (node.reviewState !== 'canonical' && node.reviewState !== 'reviewed') ctx.setLineDash([3, 3]);
+  ctx.lineWidth = node.__selected ? 2.8 : node.reviewState === 'canonical' || node.reviewState === 'reviewed' ? 1.5 : 2;
+  ctx.strokeStyle = node.__selected ? '#0f172a' : stroke;
+  if (node.__visibleInvalidated || (node.reviewState !== 'canonical' && node.reviewState !== 'reviewed')) ctx.setLineDash([3, 3]);
   ctx.stroke();
   ctx.setLineDash([]);
   if (node.reviewState === 'reviewed') {
@@ -356,11 +603,38 @@ function paintGraphNode(node: ForceGraphNode, ctx: CanvasRenderingContext2D, glo
     ctx.fill();
   }
   const fontSize = Math.max(9, 11 / globalScale);
+  const labelY = y + radius + 4;
   ctx.font = `600 ${fontSize}px Inter, ui-sans-serif, system-ui, sans-serif`;
   ctx.fillStyle = '#334155';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText(label, x, y + radius + 4);
+  ctx.fillText(label, x, labelY);
+  if (node.__visibleInvalidated) {
+    const width = ctx.measureText(label).width;
+    ctx.beginPath();
+    ctx.moveTo(x - width / 2, labelY + fontSize * 0.55);
+    ctx.lineTo(x + width / 2, labelY + fontSize * 0.55);
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#334155';
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function paintGraphLink(link: ForceGraphLink, ctx: CanvasRenderingContext2D) {
+  const source = typeof link.source === 'object' ? link.source : null;
+  const target = typeof link.target === 'object' ? link.target : null;
+  if (!source || !target) return;
+  const opacity = link.__opacity ?? 1;
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  ctx.beginPath();
+  ctx.moveTo(source.x ?? 0, source.y ?? 0);
+  ctx.lineTo(target.x ?? 0, target.y ?? 0);
+  ctx.lineWidth = link.__selected ? 2.6 : Math.max(0.35, 1.2 * opacity);
+  ctx.strokeStyle = link.__selected ? '#0f172a' : edgeColor(link);
+  if (link.__visibleInvalidated || link.reviewState === 'proposed' || link.reviewState === 'advisory' || link.reviewState === 'missing') ctx.setLineDash([4, 3]);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -373,9 +647,156 @@ function paintNodePointerArea(node: ForceGraphNode, color: string, ctx: CanvasRe
 }
 
 function edgeColor(link: ForceGraphLink): string {
-  const category = getRelationshipCategory(link.relationshipType ?? link.label);
+  const category = link.__category ?? categoryForRelation(link.relationshipType ?? link.label);
   if (category) return RELATIONSHIP_CATEGORY_COLORS[category];
   if (link.reviewState === 'missing') return '#dc2626';
   if (link.reviewState === 'proposed' || link.reviewState === 'advisory') return '#d97706';
-  return '#94a3b8';
+  return '#64748b';
+}
+
+function panelSelectionFrom(selection: GraphSelection, nodeLabelById: Map<string, string>): CapsuleGraphWhyPanelSelection | null {
+  if (!selection) return null;
+  if (selection.kind === 'node') {
+    const node = selection.item;
+    return {
+      kind: 'node',
+      id: node.id,
+      label: node.label,
+      acoType: node.entityType ?? node.type,
+      reviewState: node.reviewState,
+      confidence: node.confidence,
+      confidenceKind: node.confidenceKind,
+      rationale: node.rationale,
+      derivedFrom: node.derivedFrom,
+      generatedBy: node.generatedBy,
+      invalidatedAt: node.invalidatedAt,
+      invalidationReason: node.invalidationReason,
+      supersededBy: node.supersededBy,
+    };
+  }
+  const edge = selection.item;
+  return {
+    kind: 'edge',
+    id: edge.id,
+    label: edge.relationshipType ?? edge.label,
+    acoType: categoryLabel(categoryForRelation(edge.relationshipType ?? edge.label)) ?? edge.relationshipType ?? edge.label,
+    reviewState: edge.reviewState,
+    confidence: edge.confidence,
+    confidenceKind: edge.confidenceKind,
+    rationale: edge.rationale,
+    derivedFrom: edge.derivedFrom,
+    generatedBy: edge.generatedBy,
+    invalidatedAt: edge.invalidatedAt,
+    invalidationReason: edge.invalidationReason,
+    supersededBy: edge.supersededBy,
+    sourceLabel: nodeLabelById.get(edge.__sourceId) ?? edge.__sourceId,
+    targetLabel: nodeLabelById.get(edge.__targetId) ?? edge.__targetId,
+    judgeRationale: edge.judgeRationale,
+  };
+}
+
+function contradictionsForSelection(selection: GraphSelection, links: ForceGraphLink[], nodeLabelById: Map<string, string>): CapsuleGraphWhyPanelContradiction[] {
+  if (!selection) return [];
+  const items: CapsuleGraphWhyPanelContradiction[] = [];
+  if (selection.kind === 'node') {
+    const selectedId = selection.item.id;
+    for (const link of links) {
+      if (!isContradictionLink(link) || (link.__sourceId !== selectedId && link.__targetId !== selectedId)) continue;
+      const otherId = link.__sourceId === selectedId ? link.__targetId : link.__sourceId;
+      items.push({
+        id: link.id,
+        elementId: otherId,
+        label: nodeLabelById.get(otherId) ?? otherId,
+        judgeRationale: link.judgeRationale,
+      });
+    }
+    return items;
+  }
+  const edge = selection.item;
+  if (isContradictionLink(edge)) {
+    items.push({
+      id: edge.id,
+      elementId: edge.__targetId,
+      label: `${nodeLabelById.get(edge.__sourceId) ?? edge.__sourceId} contradicts ${nodeLabelById.get(edge.__targetId) ?? edge.__targetId}`,
+      judgeRationale: edge.judgeRationale,
+    });
+  }
+  return items;
+}
+
+function buildNodeLabelMap(nodes: CapsuleGraphViewerNode[], graphNodes: ForceGraphNode[]): Map<string, string> {
+  const map = new Map(nodes.map((node) => [node.id, node.label]));
+  for (const node of graphNodes) map.set(node.id, node.label);
+  return map;
+}
+
+function buildTemporalBounds(nodes: CapsuleGraphViewerNode[], edges: CapsuleGraphViewerEdge[], now: number): { min: number; max: number } {
+  const times = [...nodes, ...edges]
+    .flatMap((element) => elementTimes(element))
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  if (!times.length) return { min: now - 30 * DAY_MS, max: now };
+  return { min: Math.min(now, ...times), max: Math.max(now, ...times) };
+}
+
+function positionForTime(timeMs: number, bounds: { min: number; max: number }): number {
+  if (bounds.max <= bounds.min) return 100;
+  return clamp(((timeMs - bounds.min) / (bounds.max - bounds.min)) * 100, 0, 100);
+}
+
+function timeForPosition(position: number, bounds: { min: number; max: number }): number {
+  if (bounds.max <= bounds.min) return bounds.max;
+  return bounds.min + (bounds.max - bounds.min) * (clamp(position, 0, 100) / 100);
+}
+
+function elementTimes(element: TemporalGraphElement): number[] {
+  return [element.validFrom, element.validUntil, element.asOf, element.recordedAt, element.invalidatedAt, element.generatedBy?.at]
+    .map(parseTime)
+    .filter((value): value is number => typeof value === 'number');
+}
+
+function isElementValidAt(element: TemporalGraphElement, mode: TemporalMode, timeMs: number): boolean {
+  if (mode === 'event') {
+    const validFrom = parseTime(element.validFrom ?? element.asOf);
+    const validUntil = parseTime(element.validUntil);
+    if (validFrom !== null && timeMs < validFrom) return false;
+    if (validUntil !== null && timeMs > validUntil) return false;
+    return true;
+  }
+  const recordedAt = parseTime(element.recordedAt);
+  const invalidatedAt = parseTime(element.invalidatedAt);
+  if (recordedAt !== null && timeMs < recordedAt) return false;
+  if (invalidatedAt !== null && timeMs >= invalidatedAt) return false;
+  return true;
+}
+
+function parseTime(value: string | undefined): number | null {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function isInvalidated(element: TemporalGraphElement): boolean {
+  return Boolean(element.invalidatedAt || element.supersededBy || element.invalidationReason);
+}
+
+function categoryForRelation(relation: string | undefined): RelationshipCategory | null {
+  const normalized = normalizeRelation(relation);
+  return normalized ? getRelationshipCategory(normalized) : null;
+}
+
+function normalizeRelation(value: string | undefined): string {
+  return (value ?? '').trim().toLowerCase().replace(/[\s-]+/g, '_');
+}
+
+function isContradictionLink(link: Pick<ForceGraphLink, 'relationshipType' | 'label'>): boolean {
+  return normalizeRelation(link.relationshipType ?? link.label).includes('contradicts');
+}
+
+function categoryLabel(category: RelationshipCategory | null): string | null {
+  if (!category) return null;
+  return category.charAt(0).toUpperCase() + category.slice(1);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
 }

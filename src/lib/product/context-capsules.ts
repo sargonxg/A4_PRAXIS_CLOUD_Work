@@ -1071,7 +1071,16 @@ export const CAPSULE_WOW_DEMO_STARTER_IDS = [
   'starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026',
 ] as const;
 
-export const CAPSULE_STARTER_CATALOG_VERSION = '2026-06-11-graphlite-advisory-projection-v17-human-gated-depth';
+export const CAPSULE_STARTER_CATALOG_VERSION = '2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth';
+
+export const MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS = [
+  'starter-user-us-based-multilateral-desk-officer',
+  'starter-situation-syria-political-security-humanitarian-watch',
+  'starter-tool-multilateral-source-trust-ledger',
+  'starter-tool-media-source-prioritization-docket',
+  'starter-tool-briefing-synthesis-sourceability-protocol',
+  'starter-output-two-page-syria-media-roundup',
+] as const;
 export const CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS = 12_000;
 export const CAPSULE_STARTER_PROMPT_MAX_CHARS = 16_000;
 export const CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS = [
@@ -4926,6 +4935,340 @@ function realWorkStarter(spec: RealWorkCapsuleSpec): CapsuleStarterDefinition {
   );
 }
 
+const MULTILATERAL_SYRIA_GRAPH_SEED_MIN_POINTS = 110;
+
+const MULTILATERAL_SYRIA_SOURCE_PACK: CapsuleStarterSource[] = [
+  realWorkSource('syria-reliefweb-country-lane', 'ReliefWeb Syrian Arab Republic updates', 'https://reliefweb.int/country/syr', 'public-library', 'ReliefWeb', '2026', 'Humanitarian updates, situation reports, maps, assessments, and operational source discovery for Syria.', 1),
+  realWorkSource('syria-icrc-country-lane', 'ICRC Syria country page', 'https://www.icrc.org/en/where-we-work/syria', 'public-library', 'International Committee of the Red Cross', '2026', 'Neutral humanitarian protection, assistance, and conflict-impact source lane.', 1),
+  realWorkSource('syria-rights-country-lane', 'Human rights country reporting library', 'https://www.ohchr.org/en/countries/syrian-arab-republic', 'public-library', 'Rights reporting office', '2026', 'Human-rights monitoring and reporting source lane for allegations, protection concerns, and accountability caveats.', 1),
+  realWorkSource('syria-crisisgroup-analysis-lane', 'Crisis Group Syria analysis', 'https://www.crisisgroup.org/middle-east-north-africa/east-mediterranean-mena/syria', 'public-library', 'International Crisis Group', '2026', 'Independent conflict-analysis source lane for political settlement, violence dynamics, and actor incentives.', 2),
+  realWorkSource('syria-reuters-middle-east-lane', 'Reuters Middle East coverage', 'https://www.reuters.com/world/middle-east/', 'public-library', 'Reuters', '2026', 'Media wire lane for dated political, security, diplomatic, and humanitarian developments requiring corroboration.', 2),
+  realWorkSource('syria-ap-country-lane', 'Associated Press Syria coverage', 'https://apnews.com/hub/syria', 'public-library', 'Associated Press', '2026', 'Media wire lane for public reporting, local developments, and quote/source triangulation.', 2),
+];
+
+const MULTILATERAL_SYRIA_DEEP_GRAPH_NODE_LANES = [
+  { kind: 'Actor', items: ['desk officer', 'political lead', 'humanitarian focal point', 'rights focal point', 'regional interlocutor', 'capital representative', 'field analyst', 'media monitor'] },
+  { kind: 'PoliticalDevelopment', items: ['transition signal', 'negotiation cue', 'public statement', 'appointment change', 'sanctions posture', 'diplomatic visit', 'constitutional question', 'local governance update'] },
+  { kind: 'GroundSituation', items: ['frontline incident', 'local security report', 'access checkpoint', 'civilian harm signal', 'detention concern', 'service disruption', 'border movement', 'infrastructure damage'] },
+  { kind: 'HumanitarianSignal', items: ['needs assessment', 'access constraint', 'displacement movement', 'health service gap', 'food security pressure', 'winterization need', 'water system disruption', 'cash assistance constraint'] },
+  { kind: 'RightsConcern', items: ['accountability claim', 'protection allegation', 'arbitrary detention concern', 'missing persons issue', 'property restitution question', 'minority protection concern', 'returnee risk', 'documentation barrier'] },
+  { kind: 'SourceLane', items: ['official public record lane', 'humanitarian update lane', 'rights reporting lane', 'independent analysis lane', 'wire report lane', 'local context lane', 'map and dashboard lane', 'prior brief lane'] },
+  { kind: 'TrustAssessment', items: ['primary-source proximity', 'date freshness', 'publisher independence', 'corroboration count', 'quote attribution', 'method transparency', 'geographic specificity', 'claim severity'] },
+  { kind: 'RoundupSection', items: ['key judgments', 'political developments', 'situation on the ground', 'humanitarian and human rights', 'watch items', 'source ledger', 'caveats', 'next questions'] },
+  { kind: 'TacitHeuristic', items: ['do not merge access and accountability', 'separate event from trend', 'flag single-source allegations', 'bind every claim to a date', 'write for review not advocacy', 'preserve actor uncertainty', 'avoid mandate overreach', 'surface missing locality'] },
+  { kind: 'ReviewGate', items: ['source refresh before export', 'human approval before external use', 'graph proposal before promotion', 'memory recall remains advisory', 'high-severity claim escalation', 'stale source demotion', 'unsupported claim repair', 'private document separation'] },
+] as const;
+
+function multilateralSyriaSourcePack(): CapsuleStarterSource[] {
+  return MULTILATERAL_SYRIA_SOURCE_PACK.map((source) => ({ ...source }));
+}
+
+function buildMultilateralSyriaDeepNodeTemplates(starter: CapsuleStarterDefinition): string[] {
+  const baseTemplates = starter.ontologyOverlay?.graphSeed.nodeTemplates ?? [];
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const laneTemplates = MULTILATERAL_SYRIA_DEEP_GRAPH_NODE_LANES.flatMap((lane, laneIndex) =>
+    lane.items.map((item, itemIndex) =>
+      shortGraphSeedTemplate([
+        `node-${graphSeedOrdinal(301 + (laneIndex * 12) + itemIndex)}`,
+        lane.kind,
+        item,
+        `${starter.label}; source=${sourceIds[(laneIndex + itemIndex) % Math.max(1, sourceIds.length)] ?? 'source-refresh-required'}; layer=multilateral-syria`,
+      ].join('|')),
+    ),
+  );
+  const templates = uniqueStrings([...baseTemplates, ...laneTemplates]);
+  let index = 0;
+  while (templates.length < MULTILATERAL_SYRIA_GRAPH_SEED_MIN_POINTS) {
+    index += 1;
+    templates.push(shortGraphSeedTemplate(
+      `node-${graphSeedOrdinal(520 + index)}|TacitHeuristic|desk review repair lane ${index}|${starter.label}; layer=multilateral-syria`,
+    ));
+  }
+  return templates.slice(0, MULTILATERAL_SYRIA_GRAPH_SEED_MIN_POINTS);
+}
+
+function buildMultilateralSyriaDeepEdgeTemplates(
+  starter: CapsuleStarterDefinition,
+  nodeTemplates: string[],
+): string[] {
+  const baseTemplates = starter.ontologyOverlay?.graphSeed.edgeTemplates ?? [];
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const edgeTypes = uniqueStrings([
+    ...(starter.ontologyOverlay?.graphEdgeTypes ?? []),
+    'SUPPORTED_BY',
+    'CONSTRAINS',
+    'DEPENDS_ON',
+    'TRIGGERS_REVIEW',
+    'CITED_BY',
+    'CORROBORATES',
+    'QUALIFIES',
+    'ESCALATES_TO',
+    'SUMMARIZES',
+    'SEPARATES_FROM',
+  ]);
+  const narratives = [
+    'source lane supports the graph point',
+    'trust assessment constrains synthesis',
+    'roundup section depends on dated evidence',
+    'single-source claim triggers repair',
+    'source ledger cites the underlying update',
+    'rights concern is separated from humanitarian access reporting',
+    'political development is qualified by actor uncertainty',
+    'ground situation escalates to human review when severity is high',
+    'tacit heuristic prevents overclaiming',
+    'next question preserves unresolved source gaps',
+  ];
+  const generatedEdges = Array.from({ length: MULTILATERAL_SYRIA_GRAPH_SEED_MIN_POINTS }, (_, index) => {
+    const sourceRef = graphSeedNodeRef(nodeTemplates[index % nodeTemplates.length], index);
+    const targetRef = graphSeedNodeRef(nodeTemplates[(index * 9 + 7) % nodeTemplates.length], index + 7);
+    const sourceId = sourceIds[index % Math.max(1, sourceIds.length)] ?? 'source-refresh-required';
+    return shortGraphSeedTemplate([
+      `edge-${graphSeedOrdinal(401 + index)}`,
+      edgeTypes[index % edgeTypes.length],
+      `${sourceRef}->${targetRef}`,
+      starter.starterId,
+      `evidence=${sourceId}`,
+      narratives[index % narratives.length],
+    ].join('|'));
+  });
+  const templates = uniqueStrings([...baseTemplates, ...generatedEdges]);
+  let index = 0;
+  while (templates.length < MULTILATERAL_SYRIA_GRAPH_SEED_MIN_POINTS) {
+    index += 1;
+    templates.push(shortGraphSeedTemplate(
+      `edge-${graphSeedOrdinal(640 + index)}|TRIGGERS_REVIEW|node-001:CapsuleIdentity->node-${graphSeedOrdinal(520 + index)}:TacitHeuristic|${starter.starterId}|evidence=source-refresh-required|review repair lane`,
+    ));
+  }
+  return templates.slice(0, MULTILATERAL_SYRIA_GRAPH_SEED_MIN_POINTS);
+}
+
+function withMultilateralSyriaDeepGraph(starter: CapsuleStarterDefinition): CapsuleStarterDefinition {
+  const baseOverlay = starter.ontologyOverlay;
+  if (!baseOverlay) return starter;
+  const graphNodeTypes = uniqueStrings([
+    ...baseOverlay.graphNodeTypes,
+    'PoliticalDevelopment',
+    'GroundSituation',
+    'HumanitarianSignal',
+    'RightsConcern',
+    'TrustAssessment',
+    'RoundupSection',
+    'TacitHeuristic',
+    'ReviewGate',
+  ]);
+  const graphEdgeTypes = uniqueStrings([
+    ...baseOverlay.graphEdgeTypes,
+    'CORROBORATES',
+    'QUALIFIES',
+    'ESCALATES_TO',
+    'SUMMARIZES',
+    'SEPARATES_FROM',
+  ]);
+  const ontologyNodeHints = uniqueStrings([
+    ...baseOverlay.ontologyNodeHints,
+    'political development',
+    'situation on the ground',
+    'humanitarian signal',
+    'human rights concern',
+    'source trust score',
+    'two-page roundup section',
+    'tacit desk heuristic',
+    'review gate',
+  ]);
+  const nodeTemplates = buildMultilateralSyriaDeepNodeTemplates(starter);
+  const edgeTemplates = buildMultilateralSyriaDeepEdgeTemplates(starter, nodeTemplates);
+  const ontologyOverlay: CapsuleStarterOntologyOverlay = {
+    ...baseOverlay,
+    overlayId: `${starter.starterId}-multilateral-syria-ontology-overlay-v1`,
+    baseOntologyIds: uniqueStrings([
+      ...baseOverlay.baseOntologyIds,
+      'active-conflict',
+      'humanitarian-crisis',
+      'political-transition',
+      'forced-displacement',
+      'negotiation-mediation',
+    ]) as CapsuleStarterOntologyCaseType[],
+    workOntologyId: 'foreign-policy-research',
+    graphNodeTypes,
+    graphEdgeTypes,
+    ontologyNodeHints,
+    cognee: {
+      ...baseOverlay.cognee,
+      customPromptHint: `Extract only reviewable multilateral Syria candidates for ${starter.label}: actors, claims, dates, locations, source posture, political developments, ground situation signals, humanitarian signals, rights concerns, roundup sections, and review gates. Keep all candidates advisory until human review.`,
+    },
+    graphSeed: {
+      ...baseOverlay.graphSeed,
+      proposalLabel: `${starter.label} multilateral Syria ACO graph proposal`,
+      nodeTemplates,
+      edgeTemplates,
+      evidenceRequired: uniqueStrings([
+        ...baseOverlay.graphSeed.evidenceRequired,
+        'Every political, ground, humanitarian, or rights claim must carry a source id, date, and confidence posture.',
+        'Media roundup sections require at least one source lane plus an explicit caveat or repair action.',
+      ]),
+      reviewGate: 'Human review required before source refresh acceptance, graph promotion, memory capture, external sharing, or publication.',
+    },
+    promotionRules: uniqueStrings([
+      ...baseOverlay.promotionRules,
+      'Promote multilateral Syria graph rows only from source-bound review cards with dated evidence.',
+      'Keep source trust scores, media summaries, and rights allegations advisory until a human reviewer approves the lane.',
+    ]),
+    forbiddenClaims: uniqueStrings([
+      ...baseOverlay.forbiddenClaims,
+      'Do not claim private institutional access, endorsement, mandate authority, field confirmation, legal findings, or operational feasibility.',
+      'Do not collapse political developments, situation on the ground, humanitarian need, and human-rights allegations into one unqualified conclusion.',
+    ]),
+  };
+  const graphLiteProjection = buildStarterGraphLiteProjection({
+    starterId: starter.starterId,
+    label: starter.label,
+    sourcePack: starter.sourcePack,
+    ontologyOverlay,
+  });
+  return {
+    ...starter,
+    tags: uniqueStrings([
+      ...starter.tags,
+      'multilateral-orgs',
+      'syria',
+      'public-flagship',
+      'strict-sanitized',
+      'sourceability',
+    ]),
+    ontologyOverlay,
+    graphLiteProjection,
+    inspectionSections: starter.inspectionSections.map((section) => {
+      if (section.label === 'GraphLite advisory projection') {
+        return {
+          ...section,
+          detail: `${graphLiteProjection.projectionId}: ${graphLiteProjection.status}; named graph ${graphLiteProjection.namedGraph}; nodes ${graphLiteProjection.nodeCount}; edges ${graphLiteProjection.edgeCount}; ${graphLiteProjection.promotionGate}`,
+        };
+      }
+      if (section.label === 'Embedded Graph') {
+        return {
+          ...section,
+          detail: `${ontologyOverlay.graphSeed.proposalLabel}: ${ontologyOverlay.graphSeed.nodeTemplates.length} nodes and ${ontologyOverlay.graphSeed.edgeTemplates.length} edges across ${ontologyOverlay.graphNodeTypes.join(', ')} staged as proposals only.`,
+        };
+      }
+      return section;
+    }),
+  };
+}
+
+const MULTILATERAL_SYRIA_FLAGSHIP_CAPSULES: CapsuleStarterDefinition[] = [
+  withMultilateralSyriaDeepGraph(realWorkStarter({
+    starterId: 'starter-user-us-based-multilateral-desk-officer',
+    category: 'user',
+    domain: 'analyst-role',
+    label: 'US-based multilateral organization desk officer capsule',
+    summary: 'A sanitized user capsule for a US-based multilateral desk officer who needs concise Syria monitoring, source discipline, review gates, and handover-ready drafting.',
+    detail: 'Use this when PRAXIS should think like a multilateral desk officer: keep mandate-aware language, member-state sensitivities, source confidence, internal review, and cautious drafting posture visible without claiming affiliation or private access.',
+    tags: ['multilateral-orgs', 'syria', 'desk-officer', 'sourceability', 'strict-sanitized', 'public-flagship', 'team:diplomatic'],
+    sourcePack: multilateralSyriaSourcePack(),
+    recommendedToolIds: ['sourceability', 'stakeholder-map', 'memo-drafter'],
+    outputProductIds: ['two-page-media-roundup', 'diplomatic-cable'],
+    combinesWellWith: ['starter-situation-syria-political-security-humanitarian-watch', 'starter-tool-multilateral-source-trust-ledger', 'starter-output-two-page-syria-media-roundup'],
+    userJob: 'a US-based multilateral desk officer preparing Syria monitoring, source review, meeting notes, and handover-ready brief material',
+    realWorkUse: 'Use when the user needs a desk-officer operating posture for Syria work rather than a generic country explainer.',
+    decisionFocus: 'Which Syria claims are sourceable, which issues require review, and what should be escalated or summarized for a careful desk brief?',
+    draftingStyle: 'concise desk-officer brief style with caveats, dated sources, review gates, and no claim of institutional access',
+    pathCoreId: 'foreign-policy',
+  })),
+  withMultilateralSyriaDeepGraph(realWorkStarter({
+    starterId: 'starter-situation-syria-political-security-humanitarian-watch',
+    category: 'situation',
+    domain: 'diplomacy',
+    label: 'Syria political, security, humanitarian, and rights watch capsule',
+    summary: 'A Syria situation capsule for political developments, situation on the ground, humanitarian signals, human-rights concerns, source confidence, and reviewable watch items.',
+    detail: 'Use this when PRAXIS needs to separate Syria political developments, situation on the ground, humanitarian conditions, and human-rights concerns before drafting a brief, roundup, or sourceability ledger.',
+    tags: ['syria', 'multilateral-orgs', 'political-developments', 'situation-on-the-ground', 'humanitarian', 'human-rights', 'sourceability', 'strict-sanitized', 'public-flagship'],
+    sourcePack: multilateralSyriaSourcePack(),
+    recommendedToolIds: ['grounded-research', 'sourceability', 'scenario-projector'],
+    outputProductIds: ['two-page-media-roundup', 'risk-monitor-card'],
+    combinesWellWith: ['starter-user-us-based-multilateral-desk-officer', 'starter-tool-media-source-prioritization-docket', 'starter-output-two-page-syria-media-roundup'],
+    userJob: 'a Syria desk or policy analyst building a sourced operating picture across political, security, humanitarian, and rights lanes',
+    realWorkUse: 'Use when Syria monitoring must preserve section boundaries, dates, source tiers, and uncertainty before synthesis.',
+    decisionFocus: 'What changed in Syria, which source lanes support it, and which claims require repair before a roundup or briefing?',
+    draftingStyle: 'watch brief style with dated developments, source ledger, uncertainty labels, and section-specific caveats',
+    pathCoreId: 'humanitarian-analysis',
+  })),
+  withMultilateralSyriaDeepGraph(realWorkStarter({
+    starterId: 'starter-tool-multilateral-source-trust-ledger',
+    category: 'tool',
+    domain: 'source-intake',
+    label: 'Multilateral source trust ledger tool capsule',
+    summary: 'A tool capsule for scoring Syria sources by proximity, freshness, corroboration, independence, specificity, severity, and review status.',
+    detail: 'Use this before accepting source material into a Syria capsule. It ranks source trust, marks weak lanes, separates factual claims from interpretation, and creates repair actions for unsupported or stale claims.',
+    tags: ['syria', 'multilateral-orgs', 'source-trust', 'trustworthiness', 'sourceability', 'strict-sanitized', 'public-flagship'],
+    sourcePack: multilateralSyriaSourcePack(),
+    recommendedToolIds: ['sourceability', 'contradiction-finder', 'grounded-research'],
+    outputProductIds: ['evidence-sourceability-annex', 'two-page-media-roundup'],
+    combinesWellWith: ['starter-situation-syria-political-security-humanitarian-watch', 'starter-tool-media-source-prioritization-docket', 'starter-output-two-page-syria-media-roundup'],
+    userJob: 'a desk officer or reviewer deciding which Syria source lanes can support a brief and which must remain caveated',
+    realWorkUse: 'Use when a source pack includes mixed official records, humanitarian updates, rights reporting, media wires, and analysis that need trust scoring.',
+    decisionFocus: 'Which source is trustworthy for which claim, and what must be corroborated before synthesis?',
+    draftingStyle: 'source ledger style with scores, rationale, caveats, and repair actions',
+    deviceKind: 'source-trust-ledger',
+    reasoningOperation: 'turn Syria source intake into a reviewable trust ledger with claim-level support and repair actions',
+  })),
+  withMultilateralSyriaDeepGraph(realWorkStarter({
+    starterId: 'starter-tool-media-source-prioritization-docket',
+    category: 'tool',
+    domain: 'source-intake',
+    label: 'Media source prioritization docket tool capsule',
+    summary: 'A tool capsule for deciding which Syria media items deserve attention, corroboration, inclusion, demotion, or exclusion from a brief.',
+    detail: 'Use this when many Syria stories are available and PRAXIS needs to prioritize what is decision-relevant: political developments, situation on the ground, humanitarian signals, rights concerns, and source gaps.',
+    tags: ['syria', 'multilateral-orgs', 'media-prioritization', 'triage', 'sourceability', 'strict-sanitized', 'public-flagship'],
+    sourcePack: multilateralSyriaSourcePack(),
+    recommendedToolIds: ['grounded-research', 'sourceability', 'frame-narrative'],
+    outputProductIds: ['two-page-media-roundup', 'daily-read'],
+    combinesWellWith: ['starter-tool-multilateral-source-trust-ledger', 'starter-tool-briefing-synthesis-sourceability-protocol', 'starter-output-two-page-syria-media-roundup'],
+    userJob: 'a desk officer triaging Syria media items for relevance, corroboration, risk, and roundup placement',
+    realWorkUse: 'Use when Syria reporting volume is high and the brief needs disciplined inclusion, exclusion, and watch-item logic.',
+    decisionFocus: 'Which media items belong in the two-page roundup, which need corroboration, and which should be excluded or parked as watch items?',
+    draftingStyle: 'triage docket style with priority, source status, section fit, confidence, and next-source action',
+    deviceKind: 'media-source-prioritization-docket',
+    reasoningOperation: 'prioritize Syria media and source lanes into a reviewable roundup docket',
+  })),
+  withMultilateralSyriaDeepGraph(realWorkStarter({
+    starterId: 'starter-tool-briefing-synthesis-sourceability-protocol',
+    category: 'tool',
+    domain: 'audit-review',
+    label: 'Briefing synthesis sourceability protocol tool capsule',
+    summary: 'A tool capsule for turning Syria sources into concise synthesis while preserving citations, uncertainty, section boundaries, and human review gates.',
+    detail: 'Use this after source triage and before drafting. It forces PRAXIS to summarize only what sources can support, carry caveats into the output, and keep political, ground, humanitarian, and rights lanes distinct.',
+    tags: ['syria', 'multilateral-orgs', 'summarization', 'sourceability', 'synthesis', 'strict-sanitized', 'public-flagship'],
+    sourcePack: multilateralSyriaSourcePack(),
+    recommendedToolIds: ['sourceability', 'memo-drafter', 'contradiction-finder'],
+    outputProductIds: ['two-page-media-roundup', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-tool-multilateral-source-trust-ledger', 'starter-tool-media-source-prioritization-docket', 'starter-output-two-page-syria-media-roundup'],
+    userJob: 'a reviewer converting Syria source notes into concise sourceable synthesis for a careful brief',
+    realWorkUse: 'Use when the draft needs to be short, sectioned, sourceable, and clear about what is fact, inference, caveat, or watch item.',
+    decisionFocus: 'What can be summarized confidently, what must stay caveated, and what needs human review before circulation?',
+    draftingStyle: 'tight synthesis protocol with source tags, confidence labels, section headings, and review notes',
+    deviceKind: 'briefing-synthesis-sourceability-protocol',
+    reasoningOperation: 'convert Syria source notes into sectioned, sourceable, review-gated synthesis',
+  })),
+  withMultilateralSyriaDeepGraph(realWorkStarter({
+    starterId: 'starter-output-two-page-syria-media-roundup',
+    category: 'output',
+    domain: 'output-brief',
+    label: 'Two-page Syria media roundup output capsule',
+    summary: 'An output capsule for a two-page Syria media roundup with sourceable sections, concise judgments, caveats, watch items, and human review gates.',
+    detail: 'Use this to draft a two-page media roundup divided into Political Developments, Situation on the Ground, and Humanitarian and Human Rights. The output should include key judgments, watch items, a source ledger, caveats, and next questions.',
+    tags: ['syria', 'multilateral-orgs', 'two-page-media-roundup', 'political-developments', 'situation-on-the-ground', 'humanitarian-human-rights', 'sourceability', 'strict-sanitized', 'public-flagship'],
+    sourcePack: multilateralSyriaSourcePack(),
+    recommendedToolIds: ['grounded-research', 'sourceability', 'memo-drafter'],
+    outputProductIds: ['two-page-media-roundup', 'evidence-sourceability-annex'],
+    combinesWellWith: ['starter-user-us-based-multilateral-desk-officer', 'starter-situation-syria-political-security-humanitarian-watch', 'starter-tool-briefing-synthesis-sourceability-protocol'],
+    userJob: 'a desk officer producing a short Syria media roundup that is useful for review, handover, and follow-up source collection',
+    realWorkUse: 'Use when the target artifact is a two-page Syria roundup rather than a long analysis note.',
+    decisionFocus: 'Which developments belong in the roundup, which claims are sourceable, and what caveats or next questions must travel with the brief?',
+    draftingStyle: 'two-page media roundup with short bullets, dated source tags, section boundaries, caveats, and review-ready next questions',
+    pathCoreId: 'foreign-policy',
+  })),
+];
+
 const REAL_WORK_SITUATION_CAPSULES: CapsuleStarterDefinition[] = [
   realWorkStarter({
     starterId: 'starter-situation-red-sea-maritime-logistics-risk',
@@ -6998,6 +7341,7 @@ const HUMAN_GATED_POLICY_JUDGMENT_CAPSULES: CapsuleStarterDefinition[] = [
 
 const RAW_CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = [
   ...HUMAN_GATED_POLICY_JUDGMENT_CAPSULES,
+  ...MULTILATERAL_SYRIA_FLAGSHIP_CAPSULES,
   starter('starter-situation-sustainability-transition', 'situation', 'sustainability', 'Sustainability transition capsule', 'A source-backed sustainability situation capsule for CSRD/ESRS-style reporting, transition risk, supply-chain exposure, and assurance gaps.', 'Use this when the work concerns climate-transition planning, sustainability reporting, supplier risk, or board-ready ESG posture. PRAXIS should separate regulatory requirements, company claims, value-chain evidence, and confidence gaps before drafting.', ['sustainability', 'csrd', 'esrs', 'issb', 'supply-chain'], { situationCoreId: 'starter-situation-sustainability-transition', pathCoreId: 'climate-development', sourceCoreIds: ['ifrs-s1-s2', 'eu-esrs'], toolCoreIds: ['grounded-research', 'sourceability'], outputCoreIds: ['country-risk-card'] }, ['grounded-research', 'sourceability', 'memo-drafter'], ['country-risk-card', 'options-memo'], ['starter-user-esg-sustainability-lead', 'starter-tool-source-pack-builder', 'starter-output-sustainability-risk-brief'], {
     readinessStars: 5,
     sourcePack: [
@@ -8854,8 +9198,316 @@ function rewriteHumanGatedPolicyJudgmentInspectionSections(input: {
   });
 }
 
+const CATALOG_GRAPH_REASONED_NODE_MIN = 84;
+const CATALOG_GRAPH_REASONED_EDGE_MIN = 84;
+const CATALOG_GRAPH_REASONED_NODE_MAX = 144;
+const CATALOG_GRAPH_REASONED_EDGE_MAX = 152;
+
+function stableCatalogGraphHash(value: string): number {
+  let hash = 2166136261;
+  for (const char of value) {
+    hash ^= char.charCodeAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return hash >>> 0;
+}
+
+function catalogGraphTargetCount(starter: CapsuleStarterDefinition, kind: 'node' | 'edge'): number {
+  const hash = stableCatalogGraphHash([
+    starter.starterId,
+    starter.category,
+    starter.domain,
+    starter.tags.join(','),
+    starter.sourcePack.map((source) => source.id).join(','),
+    starter.recommendedToolIds.join(','),
+    starter.outputProductIds.join(','),
+    kind,
+  ].join('|'));
+  const categoryBonus: Record<CapsuleStarterCategory, number> = {
+    situation: 8,
+    tool: 6,
+    output: 5,
+    user: 4,
+  };
+  const strategicTagBonus = starter.tags.filter((tag) =>
+    /syria|humanitarian|rights|source|trust|mediation|conflict|monitor|review|ai|legal|finance|security|brief|roundup/i.test(tag),
+  ).length;
+  const sourceBonus = Math.min(12, starter.sourcePack.length * 2);
+  const tagBonus = Math.min(10, strategicTagBonus);
+  const base = kind === 'node' ? CATALOG_GRAPH_REASONED_NODE_MIN : CATALOG_GRAPH_REASONED_EDGE_MIN + 4;
+  const spread = kind === 'node' ? 37 : 43;
+  const max = kind === 'node' ? CATALOG_GRAPH_REASONED_NODE_MAX : CATALOG_GRAPH_REASONED_EDGE_MAX;
+  return Math.min(max, base + categoryBonus[starter.category] + sourceBonus + tagBonus + (hash % spread));
+}
+
+function buildCatalogReasonedBoundaryNodeTemplates(starter: CapsuleStarterDefinition): string[] {
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const primarySource = sourceIds[0] ?? 'source-review-required';
+  const secondarySource = sourceIds[1] ?? primarySource;
+  const primaryTool = starter.recommendedToolIds[0] ?? 'ask-praxis';
+  const primaryOutput = starter.outputProductIds[0] ?? 'analysis-note';
+  const domainLabel = starter.domain.replace(/-/g, ' ');
+  return [
+    `node-701|ContextFrame|${starter.category}:${starter.domain}|${starter.label}; frame structures what the capsule is for and which work it should not absorb`,
+    `node-702|KnowledgeBoundary|source:${primarySource}|claims must stay inside dated source receipts and explicit user-provided context`,
+    `node-703|DelimitationRule|scope:${domainLabel}|exclude adjacent topics unless a source receipt or user instruction pulls them in`,
+    `node-704|ConfidencePosture|review-gated|confidence is capped until source freshness, missing-evidence, and human review gates are cleared`,
+    `node-705|ReviewQuestion|what would change this answer|force the agent to name disconfirming evidence, stale assumptions, and omitted actor lanes`,
+    `node-706|SourceScope|source:${secondarySource}|distinguish official text, field reporting, analytical interpretation, and media summaries`,
+    `node-707|OutputBoundary|${primaryOutput}|shape the deliverable without letting format requirements become factual claims`,
+    `node-708|AgentStopCondition|${primaryTool}|stop drafting when source gaps, attribution gaps, or mandate-sensitive claims exceed the capsule boundary`,
+    `node-709|TacitAssumption|operator judgment|capture what a human analyst would inspect before trusting the graph`,
+    `node-710|GraphVisualizationHint|structure-and-delimitation|render evidence, boundary, confidence, and review lanes as visible graph clusters`,
+  ].map(shortGraphSeedTemplate);
+}
+
+function buildCatalogReasonedNodeTemplates(starter: CapsuleStarterDefinition, targetCount: number): string[] {
+  const baseTemplates = starter.ontologyOverlay?.graphSeed.nodeTemplates ?? [];
+  const boundaryTemplates = buildCatalogReasonedBoundaryNodeTemplates(starter);
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const signals = uniqueStrings([
+    starter.category,
+    starter.domain,
+    ...starter.tags,
+    ...sourceIds,
+    ...starter.recommendedToolIds,
+    ...starter.outputProductIds,
+    ...starter.combinesWellWith,
+  ]);
+  const generatedTemplates: string[] = [];
+  let index = 0;
+  while (generatedTemplates.length < targetCount + 20) {
+    const signal = signals[index % Math.max(1, signals.length)] ?? starter.domain;
+    const sourceId = sourceIds[index % Math.max(1, sourceIds.length)] ?? 'source-review-required';
+    const nodeKind = [
+      'ContextFrame',
+      'KnowledgeBoundary',
+      'DelimitationRule',
+      'ConfidencePosture',
+      'ReviewQuestion',
+      'ReasoningMove',
+      'EvidenceNeed',
+      'ToolAction',
+      'AbstractConcept',
+      'RealInfo',
+    ][index % 10];
+    const nodePurpose = [
+      'structures the capsule knowledge lane before generation',
+      'delimits claims that must remain out of context',
+      'maps the source or review gap that blocks confident use',
+      'preserves uncertainty for the graph visualization',
+      'shows what the agent should inspect before summarizing',
+      'links tacit analyst judgment to a reproducible review action',
+    ][index % 6];
+    generatedTemplates.push(shortGraphSeedTemplate(
+      `node-${graphSeedOrdinal(800 + index)}|${nodeKind}|${signal}|${starter.label}; source=${sourceId}; ${nodePurpose}`,
+    ));
+    index += 1;
+  }
+  return uniqueStrings([
+    ...baseTemplates.slice(0, 18),
+    ...boundaryTemplates,
+    ...baseTemplates.slice(18),
+    ...generatedTemplates,
+  ]).slice(0, targetCount);
+}
+
+function buildCatalogReasonedBoundaryEdgeTemplates(
+  starter: CapsuleStarterDefinition,
+  nodeTemplates: string[],
+): string[] {
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const primarySource = sourceIds[0] ?? 'source-review-required';
+  const edgeSpecs = [
+    ['DELIMITS', 'node-703:DelimitationRule', 'node-701:ContextFrame', 'scope boundary delimits the working frame'],
+    ['STRUCTURES', 'node-701:ContextFrame', 'node-710:GraphVisualizationHint', 'context frame structures the visible graph clusters'],
+    ['BOUNDS_CONFIDENCE', 'node-704:ConfidencePosture', 'node-702:KnowledgeBoundary', 'confidence posture bounds what can be claimed'],
+    ['REQUIRES_SOURCE_REFRESH', 'node-705:ReviewQuestion', 'node-706:SourceScope', 'review question requires a fresh source pass'],
+    ['SUPPORTED_BY', 'node-702:KnowledgeBoundary', graphSeedNodeRef(nodeTemplates[0] ?? '', 0), 'source boundary supports first-order graph use'],
+    ['CONSTRAINS', 'node-708:AgentStopCondition', graphSeedNodeRef(nodeTemplates[1] ?? '', 1), 'agent stop condition constrains overreach'],
+    ['DEPENDS_ON', 'node-704:ConfidencePosture', graphSeedNodeRef(nodeTemplates[2] ?? '', 2), 'confidence depends on evidence and review state'],
+    ['TRIGGERS_REVIEW', 'node-705:ReviewQuestion', graphSeedNodeRef(nodeTemplates[3] ?? '', 3), 'open review question triggers repair'],
+    ['CITED_BY', graphSeedNodeRef(nodeTemplates[4] ?? '', 4), 'node-707:OutputBoundary', 'output boundary cites source-bound context'],
+  ] as const;
+  return edgeSpecs.map(([edgeType, sourceRef, targetRef, narrative], index) => shortGraphSeedTemplate(
+    `edge-${graphSeedOrdinal(701 + index)}|${edgeType}|${sourceRef}->${targetRef}|${starter.starterId}|evidence=${primarySource}|${narrative}`,
+  ));
+}
+
+function buildCatalogReasonedEdgeTemplates(
+  starter: CapsuleStarterDefinition,
+  nodeTemplates: string[],
+  targetCount: number,
+): string[] {
+  const baseTemplates = starter.ontologyOverlay?.graphSeed.edgeTemplates ?? [];
+  const boundaryTemplates = buildCatalogReasonedBoundaryEdgeTemplates(starter, nodeTemplates);
+  const sourceIds = starter.sourcePack.map((source) => source.id);
+  const edgeTypes = uniqueStrings([
+    ...(starter.ontologyOverlay?.graphEdgeTypes ?? []),
+    'DELIMITS',
+    'STRUCTURES',
+    'BOUNDS_CONFIDENCE',
+    'REQUIRES_SOURCE_REFRESH',
+    'SUPPORTED_BY',
+    'CONSTRAINS',
+    'DEPENDS_ON',
+    'TRIGGERS_REVIEW',
+    'CITED_BY',
+  ]);
+  const narratives = [
+    'structures context so the graph explains what is inside scope',
+    'delimits knowledge so adjacent but unsupported claims remain outside scope',
+    'bounds confidence until source freshness and review state are visible',
+    'requires source refresh before a summary becomes externally usable',
+    'connects tacit judgment to a reproducible evidence repair step',
+    'keeps output format separate from factual claim strength',
+    'routes uncertain claims toward review cards instead of confident prose',
+  ];
+  const generatedTemplates: string[] = [];
+  let index = 0;
+  while (generatedTemplates.length < targetCount + 20) {
+    const edgeType = edgeTypes[index % edgeTypes.length] ?? 'REQUIRES_REVIEW';
+    const sourceRef = graphSeedNodeRef(nodeTemplates[index % nodeTemplates.length], index);
+    const targetRef = graphSeedNodeRef(nodeTemplates[(index * 11 + 9) % nodeTemplates.length], index + 9);
+    const sourceId = sourceIds[index % Math.max(1, sourceIds.length)] ?? 'source-review-required';
+    const narrative = narratives[index % narratives.length];
+    generatedTemplates.push(shortGraphSeedTemplate(
+      `edge-${graphSeedOrdinal(900 + index)}|${edgeType}|${sourceRef}->${targetRef}|${starter.starterId}|evidence=${sourceId}|${narrative}`,
+    ));
+    index += 1;
+  }
+  return uniqueStrings([
+    ...baseTemplates.slice(0, 18),
+    ...boundaryTemplates,
+    ...baseTemplates.slice(18),
+    ...generatedTemplates,
+  ]).slice(0, targetCount);
+}
+
+function rewriteCatalogReasonedGraphInspectionSections(input: {
+  starter: CapsuleStarterDefinition;
+  ontologyOverlay: CapsuleStarterOntologyOverlay;
+  graphLiteProjection: CapsuleStarterGraphLiteProjection;
+}): CapsuleStarterInspectionSection[] {
+  return input.starter.inspectionSections.map((section) => {
+    if (section.label === 'Embedded Graph') {
+      return {
+        ...section,
+        detail: `${input.ontologyOverlay.graphSeed.proposalLabel}: ${input.ontologyOverlay.graphSeed.nodeTemplates.length} nodes and ${input.ontologyOverlay.graphSeed.edgeTemplates.length} edges; graph explicitly separates structure, source evidence, confidence, review questions, and delimitation boundaries.`,
+      };
+    }
+    if (section.label === 'Ontology/graph seed') {
+      return {
+        ...section,
+        detail: `${input.ontologyOverlay.graphSeed.proposalLabel}: node types ${input.ontologyOverlay.graphNodeTypes.join(', ')}; edge types ${input.ontologyOverlay.graphEdgeTypes.join(', ')}; advisory graph remains review-card gated and source-bound.`,
+      };
+    }
+    if (section.label === 'GraphLite advisory projection') {
+      return {
+        ...section,
+        detail: `${input.graphLiteProjection.projectionId}: ${input.graphLiteProjection.status}; named graph ${input.graphLiteProjection.namedGraph}; nodes ${input.graphLiteProjection.nodeCount}; edges ${input.graphLiteProjection.edgeCount}; ${input.graphLiteProjection.promotionGate}`,
+      };
+    }
+    return section;
+  });
+}
+
+function applyCatalogWideReasonedGraphVariation(starter: CapsuleStarterDefinition): CapsuleStarterDefinition {
+  if (!starter.ontologyOverlay) return starter;
+  const nodeTarget = Math.max(
+    CATALOG_GRAPH_REASONED_NODE_MIN,
+    catalogGraphTargetCount(starter, 'node'),
+    Math.min(CATALOG_GRAPH_REASONED_NODE_MAX, starter.ontologyOverlay.graphSeed.nodeTemplates.length),
+  );
+  const nodeTemplates = buildCatalogReasonedNodeTemplates(starter, nodeTarget);
+  const edgeTarget = Math.max(
+    CATALOG_GRAPH_REASONED_EDGE_MIN,
+    catalogGraphTargetCount(starter, 'edge'),
+    Math.min(CATALOG_GRAPH_REASONED_EDGE_MAX, starter.ontologyOverlay.graphSeed.edgeTemplates.length),
+  );
+  const edgeTemplates = buildCatalogReasonedEdgeTemplates(starter, nodeTemplates, edgeTarget);
+  const ontologyOverlay: CapsuleStarterOntologyOverlay = {
+    ...starter.ontologyOverlay,
+    graphNodeTypes: uniqueStrings([
+      ...starter.ontologyOverlay.graphNodeTypes,
+      'ContextFrame',
+      'KnowledgeBoundary',
+      'DelimitationRule',
+      'ConfidencePosture',
+      'ReviewQuestion',
+      'SourceScope',
+      'OutputBoundary',
+      'AgentStopCondition',
+      'TacitAssumption',
+      'GraphVisualizationHint',
+    ]),
+    graphEdgeTypes: uniqueStrings([
+      ...starter.ontologyOverlay.graphEdgeTypes,
+      'DELIMITS',
+      'STRUCTURES',
+      'BOUNDS_CONFIDENCE',
+      'REQUIRES_SOURCE_REFRESH',
+      'SUPPORTED_BY',
+      'CONSTRAINS',
+      'DEPENDS_ON',
+      'TRIGGERS_REVIEW',
+      'CITED_BY',
+    ]),
+    ontologyNodeHints: uniqueStrings([
+      ...starter.ontologyOverlay.ontologyNodeHints,
+      'ContextFrame: what belongs inside the capsule for this user job',
+      'KnowledgeBoundary: what must remain outside the capsule without source receipts',
+      'DelimitationRule: the negative space that prevents overbroad context capture',
+      'ConfidencePosture: confidence cap, freshness posture, and review state',
+      'ReviewQuestion: source-refresh and disconfirmation questions for agents',
+      'GraphVisualizationHint: visible clusters for structure, evidence, confidence, and boundary lanes',
+    ]).slice(0, 20),
+    graphSeed: {
+      ...starter.ontologyOverlay.graphSeed,
+      nodeTemplates,
+      edgeTemplates,
+      evidenceRequired: uniqueStrings([
+        ...starter.ontologyOverlay.graphSeed.evidenceRequired,
+        'Every graph cluster must preserve source provenance, review state, and confidence cap before it is used in generation.',
+        'Delimitation nodes must state which adjacent claims, actors, or outputs are intentionally out of scope.',
+        'Source-refresh edges must be created for stale, missing, or high-stakes evidence lanes before external use.',
+      ]).slice(0, 12),
+      reviewGate: `${starter.ontologyOverlay.graphSeed.reviewGate} Graph structure and delimitation lanes must remain visible in the capsule graph before agentic capture or promotion.`,
+    },
+    promotionRules: uniqueStrings([
+      ...starter.ontologyOverlay.promotionRules,
+      'Promote graph candidates only when structure, source support, confidence boundary, and delimitation rationale are all visible.',
+      'Do not collapse review questions into factual claims; keep them as repair lanes until a human accepts the evidence.',
+      'Require a source-refresh edge for stale or high-stakes claims before exporting the capsule into an agent workflow.',
+    ]).slice(0, 12),
+    forbiddenClaims: uniqueStrings([
+      ...starter.ontologyOverlay.forbiddenClaims,
+      'Do not treat a graph edge as proof when it only represents context structure, delimitation, or a review question.',
+      'Do not infer organizational positions, endorsements, or mandates from capsule labels, user roles, or public source packs.',
+      'Do not summarize beyond the capsule boundary unless the user adds a source receipt or explicit instruction.',
+    ]).slice(0, 12),
+  };
+  const graphLiteProjection = buildStarterGraphLiteProjection({
+    starterId: starter.starterId,
+    label: starter.label,
+    sourcePack: starter.sourcePack,
+    ontologyOverlay,
+  });
+  return {
+    ...starter,
+    ontologyOverlay,
+    graphLiteProjection,
+    inspectionSections: rewriteCatalogReasonedGraphInspectionSections({
+      starter,
+      ontologyOverlay,
+      graphLiteProjection,
+    }),
+  };
+}
+
 export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = RAW_CAPSULE_STARTER_DEFINITIONS
-  .map(applyHumanGatedPolicyJudgmentPhaseBRewrite);
+  .map(applyHumanGatedPolicyJudgmentPhaseBRewrite)
+  .map(applyCatalogWideReasonedGraphVariation);
 
 export function getCapsuleStarterDefinition(capsuleId: string | null | undefined): CapsuleStarterDefinition | null {
   if (!capsuleId) return null;

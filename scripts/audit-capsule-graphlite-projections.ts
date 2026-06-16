@@ -30,8 +30,8 @@ for (const starter of CAPSULE_STARTER_DEFINITIONS) {
 
   if (projection.nodeCount !== (graphSeed?.nodeTemplates.length ?? 0)) add(starter.starterId, 'node count does not match ontology seed');
   if (projection.edgeCount !== (graphSeed?.edgeTemplates.length ?? 0)) add(starter.starterId, 'edge count does not match ontology seed');
-  if (projection.nodeCount < 64) add(starter.starterId, 'GraphLite projection below 64 nodes');
-  if (projection.edgeCount < 64) add(starter.starterId, 'GraphLite projection below 64 edges');
+  if (projection.nodeCount < 84) add(starter.starterId, 'GraphLite projection below 84 nodes');
+  if (projection.edgeCount < 84) add(starter.starterId, 'GraphLite projection below 84 edges');
   if (!starter.sourcePack.every((source) => projection.sourceIds.includes(source.id))) add(starter.starterId, 'projection does not cover full source pack');
   if (!projection.sourceChecksum.match(/^gql-[a-f0-9]{8}$/)) add(starter.starterId, 'projection source checksum missing or malformed');
 
@@ -41,8 +41,8 @@ for (const starter of CAPSULE_STARTER_DEFINITIONS) {
   if (/\b(DROP|DELETE|DETACH)\b/i.test(sampleGql)) add(starter.starterId, 'sample GQL contains destructive verbs');
 }
 
-if (!CAPSULE_STARTER_CATALOG_VERSION.match(/graphlite-advisory-projection.*v17/)) {
-  add('catalog', `catalog version is not GraphLite v17: ${CAPSULE_STARTER_CATALOG_VERSION}`);
+if (!CAPSULE_STARTER_CATALOG_VERSION.match(/graphlite-advisory-projection.*v18/)) {
+  add('catalog', `catalog version is not GraphLite v18: ${CAPSULE_STARTER_CATALOG_VERSION}`);
 }
 
 const report = {

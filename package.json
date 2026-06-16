@@ -70,6 +70,7 @@
     "audit:capsule-depth": "tsx scripts/audit-capsule-depth.ts",
     "audit:capsule-quality-ranking": "tsx scripts/audit-capsule-quality-ranking.ts",
     "audit:capsule-consolidation": "tsx scripts/audit-capsule-consolidation.ts",
+    "audit:capsule-database": "tsx scripts/audit-capsule-database.ts",
     "build:capsule-cognee-seed": "tsx scripts/build-capsule-cognee-seed-pack.ts",
     "audit:capsule-inventory": "tsx scripts/audit-capsule-inventory.ts",
     "audit:capsule-contract": "tsx scripts/audit-capsule-contract.ts",

@@ -1,0 +1,748 @@
+{
+  "ok": true,
+  "generatedAt": "2026-06-16T22:23:21.263Z",
+  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
+  "auditedScope": {
+    "canonicalStore": "Firestore ContextCapsules",
+    "auditedRecords": "local starter catalog definitions and seedable GraphLite advisory projection metadata",
+    "remoteFirestoreQueried": false,
+    "remoteFirestoreMutation": false,
+    "note": "This audit validates the capsule database shape available to the app without writing to remote stores."
+  },
+  "totals": {
+    "capsules": 211,
+    "records": 211,
+    "categories": 4,
+    "domains": 18,
+    "sourceRecords": 935,
+    "excerptRecords": 786,
+    "graphNodeTemplates": 25822,
+    "graphEdgeTemplates": 27404,
+    "namedGraphRecords": 211
+  },
+  "recordsByCategory": [
+    {
+      "id": "situation",
+      "count": 86
+    },
+    {
+      "id": "tool",
+      "count": 75
+    },
+    {
+      "id": "output",
+      "count": 36
+    },
+    {
+      "id": "user",
+      "count": 14
+    }
+  ],
+  "recordsByDomain": [
+    {
+      "id": "output-brief",
+      "count": 33
+    },
+    {
+      "id": "audit-review",
+      "count": 21
+    },
+    {
+      "id": "diplomacy",
+      "count": 21
+    },
+    {
+      "id": "options-mapping",
+      "count": 19
+    },
+    {
+      "id": "finance",
+      "count": 16
+    },
+    {
+      "id": "analyst-role",
+      "count": 14
+    },
+    {
+      "id": "humanitarian-rights",
+      "count": 14
+    },
+    {
+      "id": "policy-review",
+      "count": 14
+    },
+    {
+      "id": "source-intake",
+      "count": 9
+    },
+    {
+      "id": "cyber-resilience",
+      "count": 8
+    },
+    {
+      "id": "exposure-mapping",
+      "count": 8
+    },
+    {
+      "id": "ai-governance",
+      "count": 7
+    },
+    {
+      "id": "public-health",
+      "count": 7
+    },
+    {
+      "id": "critical-minerals",
+      "count": 6
+    },
+    {
+      "id": "sustainability",
+      "count": 5
+    },
+    {
+      "id": "election-integrity",
+      "count": 4
+    },
+    {
+      "id": "migration-displacement",
+      "count": 4
+    },
+    {
+      "id": "hr",
+      "count": 1
+    }
+  ],
+  "recordsByReadinessStars": [
+    {
+      "id": "5",
+      "count": 117
+    },
+    {
+      "id": "4",
+      "count": 75
+    },
+    {
+      "id": "3",
+      "count": 19
+    }
+  ],
+  "recordsBySourceTier": [
+    {
+      "id": "tier-1",
+      "count": 611
+    },
+    {
+      "id": "tier-2",
+      "count": 269
+    },
+    {
+      "id": "tier-3",
+      "count": 55
+    }
+  ],
+  "recordsByOutputProduct": [
+    {
+      "id": "principals-decision-memo",
+      "count": 101
+    },
+    {
+      "id": "options-memo",
+      "count": 50
+    },
+    {
+      "id": "evidence-sourceability-annex",
+      "count": 46
+    },
+    {
+      "id": "talking-points",
+      "count": 42
+    },
+    {
+      "id": "country-risk-card",
+      "count": 30
+    },
+    {
+      "id": "scenario-risk-dashboard-card",
+      "count": 30
+    },
+    {
+      "id": "legal-mandate-compliance-note",
+      "count": 29
+    },
+    {
+      "id": "risk-monitor-card",
+      "count": 27
+    },
+    {
+      "id": "humanitarian-one-pager",
+      "count": 23
+    },
+    {
+      "id": "negotiation-prep-book",
+      "count": 20
+    },
+    {
+      "id": "diplomatic-cable",
+      "count": 12
+    },
+    {
+      "id": "daily-read",
+      "count": 7
+    },
+    {
+      "id": "two-page-media-roundup",
+      "count": 6
+    },
+    {
+      "id": "country-one-pager",
+      "count": 5
+    },
+    {
+      "id": "governance-index",
+      "count": 5
+    },
+    {
+      "id": "actor-dossier",
+      "count": 4
+    },
+    {
+      "id": "narrative-monitor",
+      "count": 4
+    },
+    {
+      "id": "electoral-risk-card",
+      "count": 3
+    },
+    {
+      "id": "morning-brief",
+      "count": 1
+    }
+  ],
+  "recordsByTool": [
+    {
+      "id": "sourceability",
+      "count": 200
+    },
+    {
+      "id": "memo-drafter",
+      "count": 112
+    },
+    {
+      "id": "contradiction-finder",
+      "count": 61
+    },
+    {
+      "id": "scenario-projector",
+      "count": 57
+    },
+    {
+      "id": "grounded-research",
+      "count": 56
+    },
+    {
+      "id": "stakeholder-map",
+      "count": 44
+    },
+    {
+      "id": "ach",
+      "count": 38
+    },
+    {
+      "id": "commitment-tracker",
+      "count": 25
+    },
+    {
+      "id": "frame-narrative",
+      "count": 17
+    },
+    {
+      "id": "position-vs-interest",
+      "count": 16
+    },
+    {
+      "id": "coalition-detector",
+      "count": 4
+    },
+    {
+      "id": "ask-praxis",
+      "count": 3
+    }
+  ],
+  "recordsByGraphDensityBand": [
+    {
+      "id": "115-129",
+      "count": 95
+    },
+    {
+      "id": "130-plus",
+      "count": 63
+    },
+    {
+      "id": "100-114",
+      "count": 52
+    },
+    {
+      "id": "84-99",
+      "count": 1
+    }
+  ],
+  "graphStats": {
+    "nodes": {
+      "min": 99,
+      "max": 143,
+      "average": 122.38,
+      "uniqueCounts": 43,
+      "sameNodeEdgeRecords": 2,
+      "distribution": [
+        {
+          "id": "122",
+          "count": 15
+        },
+        {
+          "id": "129",
+          "count": 10
+        },
+        {
+          "id": "135",
+          "count": 10
+        },
+        {
+          "id": "105",
+          "count": 9
+        },
+        {
+          "id": "118",
+          "count": 8
+        },
+        {
+          "id": "131",
+          "count": 8
+        },
+        {
+          "id": "108",
+          "count": 7
+        },
+        {
+          "id": "115",
+          "count": 7
+        },
+        {
+          "id": "119",
+          "count": 7
+        },
+        {
+          "id": "133",
+          "count": 7
+        },
+        {
+          "id": "138",
+          "count": 7
+        },
+        {
+          "id": "104",
+          "count": 6
+        },
+        {
+          "id": "113",
+          "count": 6
+        },
+        {
+          "id": "116",
+          "count": 6
+        },
+        {
+          "id": "126",
+          "count": 6
+        },
+        {
+          "id": "117",
+          "count": 5
+        },
+        {
+          "id": "120",
+          "count": 5
+        },
+        {
+          "id": "123",
+          "count": 5
+        },
+        {
+          "id": "127",
+          "count": 5
+        },
+        {
+          "id": "128",
+          "count": 5
+        },
+        {
+          "id": "130",
+          "count": 5
+        },
+        {
+          "id": "136",
+          "count": 5
+        },
+        {
+          "id": "106",
+          "count": 4
+        },
+        {
+          "id": "109",
+          "count": 4
+        },
+        {
+          "id": "112",
+          "count": 4
+        },
+        {
+          "id": "121",
+          "count": 4
+        },
+        {
+          "id": "125",
+          "count": 4
+        },
+        {
+          "id": "137",
+          "count": 4
+        },
+        {
+          "id": "142",
+          "count": 4
+        },
+        {
+          "id": "111",
+          "count": 3
+        },
+        {
+          "id": "114",
+          "count": 3
+        },
+        {
+          "id": "124",
+          "count": 3
+        },
+        {
+          "id": "134",
+          "count": 3
+        },
+        {
+          "id": "139",
+          "count": 3
+        },
+        {
+          "id": "103",
+          "count": 2
+        },
+        {
+          "id": "107",
+          "count": 2
+        },
+        {
+          "id": "132",
+          "count": 2
+        },
+        {
+          "id": "140",
+          "count": 2
+        },
+        {
+          "id": "141",
+          "count": 2
+        },
+        {
+          "id": "101",
+          "count": 1
+        },
+        {
+          "id": "102",
+          "count": 1
+        },
+        {
+          "id": "143",
+          "count": 1
+        },
+        {
+          "id": "99",
+          "count": 1
+        }
+      ]
+    },
+    "edges": {
+      "min": 106,
+      "max": 152,
+      "average": 129.88,
+      "uniqueCounts": 47,
+      "sameNodeEdgeRecords": 2,
+      "distribution": [
+        {
+          "id": "140",
+          "count": 12
+        },
+        {
+          "id": "119",
+          "count": 9
+        },
+        {
+          "id": "126",
+          "count": 8
+        },
+        {
+          "id": "114",
+          "count": 7
+        },
+        {
+          "id": "116",
+          "count": 7
+        },
+        {
+          "id": "121",
+          "count": 7
+        },
+        {
+          "id": "132",
+          "count": 7
+        },
+        {
+          "id": "134",
+          "count": 7
+        },
+        {
+          "id": "148",
+          "count": 7
+        },
+        {
+          "id": "108",
+          "count": 6
+        },
+        {
+          "id": "133",
+          "count": 6
+        },
+        {
+          "id": "136",
+          "count": 6
+        },
+        {
+          "id": "139",
+          "count": 6
+        },
+        {
+          "id": "146",
+          "count": 6
+        },
+        {
+          "id": "147",
+          "count": 6
+        },
+        {
+          "id": "111",
+          "count": 5
+        },
+        {
+          "id": "117",
+          "count": 5
+        },
+        {
+          "id": "118",
+          "count": 5
+        },
+        {
+          "id": "130",
+          "count": 5
+        },
+        {
+          "id": "131",
+          "count": 5
+        },
+        {
+          "id": "141",
+          "count": 5
+        },
+        {
+          "id": "143",
+          "count": 5
+        },
+        {
+          "id": "144",
+          "count": 5
+        },
+        {
+          "id": "112",
+          "count": 4
+        },
+        {
+          "id": "115",
+          "count": 4
+        },
+        {
+          "id": "124",
+          "count": 4
+        },
+        {
+          "id": "127",
+          "count": 4
+        },
+        {
+          "id": "129",
+          "count": 4
+        },
+        {
+          "id": "137",
+          "count": 4
+        },
+        {
+          "id": "138",
+          "count": 4
+        },
+        {
+          "id": "142",
+          "count": 4
+        },
+        {
+          "id": "145",
+          "count": 4
+        },
+        {
+          "id": "125",
+          "count": 3
+        },
+        {
+          "id": "149",
+          "count": 3
+        },
+        {
+          "id": "106",
+          "count": 2
+        },
+        {
+          "id": "109",
+          "count": 2
+        },
+        {
+          "id": "113",
+          "count": 2
+        },
+        {
+          "id": "120",
+          "count": 2
+        },
+        {
+          "id": "123",
+          "count": 2
+        },
+        {
+          "id": "128",
+          "count": 2
+        },
+        {
+          "id": "135",
+          "count": 2
+        },
+        {
+          "id": "151",
+          "count": 2
+        },
+        {
+          "id": "152",
+          "count": 2
+        },
+        {
+          "id": "107",
+          "count": 1
+        },
+        {
+          "id": "110",
+          "count": 1
+        },
+        {
+          "id": "122",
+          "count": 1
+        },
+        {
+          "id": "150",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "sourceStats": {
+    "minPerCapsule": 4,
+    "maxPerCapsule": 6,
+    "averagePerCapsule": 4.43,
+    "uniqueSourceIds": 215,
+    "capsulesWithFourOrMoreSources": 211
+  },
+  "flagshipMultilateralSyriaRecords": [
+    {
+      "starterId": "starter-user-us-based-multilateral-desk-officer",
+      "found": true,
+      "category": "user",
+      "domain": "analyst-role",
+      "nodeTemplates": 133,
+      "edgeTemplates": 111,
+      "sourceRecords": 6,
+      "graphLabel": "US-based multilateral organization desk officer capsule multilateral Syria ACO graph proposal"
+    },
+    {
+      "starterId": "starter-situation-syria-political-security-humanitarian-watch",
+      "found": true,
+      "category": "situation",
+      "domain": "diplomacy",
+      "nodeTemplates": 127,
+      "edgeTemplates": 150,
+      "sourceRecords": 6,
+      "graphLabel": "Syria political, security, humanitarian, and rights watch capsule multilateral Syria ACO graph proposal"
+    },
+    {
+      "starterId": "starter-tool-multilateral-source-trust-ledger",
+      "found": true,
+      "category": "tool",
+      "domain": "source-intake",
+      "nodeTemplates": 142,
+      "edgeTemplates": 129,
+      "sourceRecords": 6,
+      "graphLabel": "Multilateral source trust ledger tool capsule multilateral Syria ACO graph proposal"
+    },
+    {
+      "starterId": "starter-tool-media-source-prioritization-docket",
+      "found": true,
+      "category": "tool",
+      "domain": "source-intake",
+      "nodeTemplates": 113,
+      "edgeTemplates": 127,
+      "sourceRecords": 6,
+      "graphLabel": "Media source prioritization docket tool capsule multilateral Syria ACO graph proposal"
+    },
+    {
+      "starterId": "starter-tool-briefing-synthesis-sourceability-protocol",
+      "found": true,
+      "category": "tool",
+      "domain": "audit-review",
+      "nodeTemplates": 140,
+      "edgeTemplates": 116,
+      "sourceRecords": 6,
+      "graphLabel": "Briefing synthesis sourceability protocol tool capsule multilateral Syria ACO graph proposal"
+    },
+    {
+      "starterId": "starter-output-two-page-syria-media-roundup",
+      "found": true,
+      "category": "output",
+      "domain": "output-brief",
+      "nodeTemplates": 126,
+      "edgeTemplates": 119,
+      "sourceRecords": 6,
+      "graphLabel": "Two-page Syria media roundup output capsule multilateral Syria ACO graph proposal"
+    }
+  ],
+  "findings": [],
+  "architectureSuggestions": [
+    "Promote graph density, source freshness cadence, and confidence cap into an explicit graphDensityProfile field instead of inferring from templates.",
+    "Add a Firestore seed dry-run diff that compares starter definitions with persisted user capsules before any remote write is allowed.",
+    "Store source-refresh SLAs per capsule family so stale official reports, media items, and method sources age differently.",
+    "Add graph visualization lens filters for structure, evidence, confidence, delimitation, and source-refresh edges.",
+    "Create named capsule bundles for flagship policy workflows so starred packs can be installed without hardcoding UI order.",
+    "Add per-capsule prompt-budget telemetry so large ontology overlays are summarized before they crowd out user evidence.",
+    "Keep GraphLite projections advisory until a review card accepts a node or edge into canonical capsule state."
+  ]
+}
