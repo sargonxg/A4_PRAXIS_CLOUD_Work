@@ -5,13 +5,16 @@ import { join } from 'node:path';
 const report = collectAgenticSearchHealth();
 const routeFailures = checkRouteInventory();
 const redflag = buildRedflagArtifact(report, routeFailures);
-writeRedflagArtifacts(redflag);
+const shouldWriteArtifacts = process.argv.includes('--write');
+if (shouldWriteArtifacts) writeRedflagArtifacts(redflag);
 
 console.log('audit:agentic-search');
 console.log(`Status: ${report.status}`);
 console.log(`Summary: ${report.summary}`);
 console.log(`Checked: ${report.checkedAt}`);
-console.log(`Redflag artifact: ${redflag.markdownPath}`);
+console.log(shouldWriteArtifacts
+  ? `Redflag artifact: ${redflag.markdownPath}`
+  : `Redflag artifact: not written (pass --write to save ${redflag.markdownPath})`);
 
 for (const check of report.checks) {
   const missing = check.missing?.length ? ` missing=${check.missing.join(', ')}` : '';
