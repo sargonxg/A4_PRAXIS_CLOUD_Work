@@ -691,7 +691,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('capsules={humanGatedExampleCapsules}');
     expect(humanGatedExampleSource).toContain('capsules.find(isHumanGatedPolicyJudgmentCapsule)');
     expect(humanGatedExampleSource).toContain('Example capsule family');
-    expect(humanGatedExampleSource).toContain('Human-Gated Policy Judgment Capsule');
+    expect(humanGatedExampleSource).toContain('Human-gated judgment example');
     expect(humanGatedExampleSource).toContain('This is a working example');
     expect(humanGatedExampleSource).toContain('Use example');
     expect(humanGatedExampleSource).toContain('Inspect');

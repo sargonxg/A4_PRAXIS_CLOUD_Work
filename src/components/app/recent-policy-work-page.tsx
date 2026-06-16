@@ -70,7 +70,7 @@ export function RecentPolicyWorkPage() {
           </Link>
           <nav className="flex flex-wrap items-center gap-4 text-sm font-semibold text-slate-500" aria-label="Recent work navigation">
             <Link href="/app" className="hover:text-slate-950">Ask PRAXIS</Link>
-            <Link href="/app/capsules" className="hover:text-slate-950">Saved context</Link>
+            <Link href="/app/capsules" className="hover:text-slate-950">Context Capsules library</Link>
             <Link href="/app/capsules?lane=marketplace" className="hover:text-slate-950">Marketplace</Link>
             <Link href="/learn" className="hover:text-slate-950">Learn</Link>
             <Link href="/release-notes" className="hover:text-slate-950">Release notes</Link>

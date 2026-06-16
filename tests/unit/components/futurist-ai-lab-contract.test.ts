@@ -47,8 +47,8 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(marketingHome).toContain('mode="public"');
     expect(chatShell).toContain('data-testid="praxis-chat-first-shell"');
     expect(chatShell).toContain('PraxisChat');
-    expect(praxisChat).toContain('Ask anything. Leave with a sourced brief.');
-    expect(praxisChat).toContain('Start with the question.');
+    expect(praxisChat).toContain('Ask. Get a sourced brief.');
+    expect(praxisChat).toContain('Ask first.');
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('data-testid="app-first-root"');
@@ -72,7 +72,7 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(chatShell).toContain('HOME_SIDEBAR_DESTINATIONS');
     expect(primaryNav).toContain('HOME_SIDEBAR_DESTINATIONS');
     expect(primaryNav).toContain("label: 'Ask'");
-    expect(primaryNav).toContain("label: 'Saved context'");
+    expect(primaryNav).toContain("label: 'Context Capsules library'");
     expect(primaryNav).toContain("label: 'Boardroom'");
     expect(primaryNav).toContain("label: 'Drafts'");
     expect(praxisChat).toContain('data-testid="simple-home-chat"');
@@ -88,7 +88,7 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(sitemap).toContain('CONTENT_LAST_MODIFIED');
     expect(sitemap).not.toContain('const lastModified = new Date()');
     expect(ogImage).toContain('Sourced briefs');
-    expect(ogImage).toContain('Saved context');
+    expect(ogImage).toContain('Capsules');
     expect(ogImage).toContain('Brief');
   });
 });

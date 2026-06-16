@@ -1089,6 +1089,11 @@ export function TaskletPraxisWorkbench({
   const activeCapsuleTaxonomyStats = isAuthenticated && !showingStarterFallback
     ? userCapsuleTaxonomyStats
     : publicCapsuleTaxonomyStats;
+  const capsuleLibraryOverview = buildCapsuleLibraryOverview(
+    displayedCapsuleCards,
+    publicCapsuleTaxonomyStats,
+    userCapsuleTaxonomyStats,
+  );
   const repositoryDocIds = new Set(selectedCapsule?.coreRefs.documentCoreIds ?? []);
   const visibleRepositoryDocuments = repositoryDocuments.filter((document) =>
     repositoryDocIds.size === 0 || repositoryDocIds.has(document.id),
@@ -4326,10 +4331,10 @@ export function TaskletPraxisWorkbench({
               ) : null}
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">
                 <div>
-                  <h2 className="text-xl font-semibold text-slate-900">{isCapsuleRepositoryPage ? 'Capsules' : isRepositoryPage ? 'Repository' : 'Capsules'}</h2>
+                  <h2 className="text-xl font-semibold text-slate-900">{isCapsuleRepositoryPage ? 'Context Capsules library' : isRepositoryPage ? 'Repository' : 'Capsules'}</h2>
                   <p className="mt-1 text-sm text-slate-500">
                     {isCapsuleRepositoryPage
-                      ? 'Manage reusable ContextCapsules with sources, privacy, .praxis downloads, and review-gated AI improvements.'
+                      ? 'Browse, inspect, and attach reusable capsules with sources, graph context, privacy, downloads, and review-gated AI improvements.'
                       : isRepositoryPage
                         ? 'Inspect uploaded documents, source attachment state, summaries, refreshes, and missing-source actions for the active capsule.'
                       : 'Stored context, documents, and AI work.'}
@@ -4356,6 +4361,10 @@ export function TaskletPraxisWorkbench({
                   </Link>
                 </div>
               </div>
+
+              {isCapsuleRepositoryPage ? (
+                <CapsuleLibraryStatsBand overview={capsuleLibraryOverview} />
+              ) : null}
 
               {isCapsuleRepositoryPage && !isRepositoryLane ? (
                 <CapsuleStudioCommandBand
@@ -4439,8 +4448,8 @@ export function TaskletPraxisWorkbench({
                     <>
                       <FeaturedExpertPicksShelf
                         capsules={filteredHumanGatedPolicyCapsuleCards}
-                        title={HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.label}
-                        subtitle={HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY.summary}
+                        title="Human-gated judgment"
+                        subtitle="Source-aware capsules with dated evidence, claim ledgers, output contracts, and approval gates."
                         isAuthenticated={isAuthenticated}
                         onBuildOwn={openBuildYourOwnKnowledge}
                         onSelect={openCapsuleInspector}
@@ -5709,6 +5718,7 @@ function CapsuleRepositoryTile({
   const readiness = deriveCapsuleReadinessSummary(capsule, { now: STARTER_CAPSULE_UPDATED_AT });
   const humanGateStatus = deriveHumanGateStatus(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT });
   const unsupportedClaims = capsuleUnsupportedClaimCount(capsule);
+  const graphCounts = capsuleGraphSeedCounts(capsule);
   const categories = [
     meta.taxonomy.types[0]?.label ?? capsuleRoleLabel(role),
     meta.taxonomy.domains[0]?.label ?? capsule.scope,
@@ -5755,6 +5765,14 @@ function CapsuleRepositoryTile({
       <span className="mt-3 block line-clamp-2 text-sm leading-6 text-slate-600">
         {meta.starterDefinition?.richProfile?.purpose ?? meta.summary}
       </span>
+      <CapsuleMiniGraph
+        className="mt-3"
+        seed={capsule.capsuleId}
+        color={meta.color}
+        nodeCount={graphCounts.graphNodeCount}
+        edgeCount={graphCounts.graphEdgeCount}
+        entityTypeCounts={graphCounts.entityTypeCounts}
+      />
       <span className="mt-3 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-slate-600" data-testid="capsule-repository-v2-scoreboard">
         <span className="rounded-md bg-slate-50 px-2 py-1">Quality {v2Quality.score}/100</span>
         <span className="rounded-md bg-slate-50 px-2 py-1">Gate {humanGateStatusLabel(humanGateStatus)}</span>
@@ -6943,6 +6961,91 @@ function capsuleCounts(capsule: PraxisCapsuleSummary) {
   };
 }
 
+type CapsuleLibraryOverview = {
+  visibleCapsules: number;
+  starterCapsules: number;
+  workspaceCapsules: number;
+  sourceReferences: number;
+  graphNodes: number;
+  graphEdges: number;
+  typeCount: number;
+  domainCount: number;
+  policyTeamCount: number;
+};
+
+function buildCapsuleLibraryOverview(
+  capsules: PraxisCapsuleSummary[],
+  publicStats: CapsuleTaxonomyStats,
+  userStats: CapsuleTaxonomyStats,
+): CapsuleLibraryOverview {
+  const types = new Set<string>();
+  const domains = new Set<string>();
+  const policyTeams = new Set<string>();
+  const totals = capsules.reduce(
+    (acc, capsule) => {
+      const counts = capsuleCounts(capsule);
+      const graphCounts = capsuleGraphSeedCounts(capsule);
+      const taxonomy = resolveCapsuleTaxonomy(capsule);
+      taxonomy.types.forEach((item) => types.add(item.id));
+      taxonomy.domains.forEach((item) => domains.add(item.id));
+      taxonomy.policyTeams.forEach((item) => policyTeams.add(item.id));
+      return {
+        sourceReferences: acc.sourceReferences + counts.sources + counts.documents,
+        graphNodes: acc.graphNodes + graphCounts.graphNodeCount,
+        graphEdges: acc.graphEdges + graphCounts.graphEdgeCount,
+      };
+    },
+    { sourceReferences: 0, graphNodes: 0, graphEdges: 0 },
+  );
+  return {
+    visibleCapsules: capsules.length,
+    starterCapsules: publicStats.visibleCapsules,
+    workspaceCapsules: userStats.visibleCapsules,
+    sourceReferences: totals.sourceReferences,
+    graphNodes: totals.graphNodes,
+    graphEdges: totals.graphEdges,
+    typeCount: types.size,
+    domainCount: domains.size,
+    policyTeamCount: policyTeams.size,
+  };
+}
+
+function CapsuleLibraryStatsBand({ overview }: { overview: CapsuleLibraryOverview }) {
+  const stats = [
+    { label: 'Visible', value: overview.visibleCapsules.toLocaleString(), detail: 'current filters', icon: Library },
+    { label: 'Starter catalog', value: overview.starterCapsules.toLocaleString(), detail: 'curated capsules', icon: Database },
+    { label: 'Workspace', value: overview.workspaceCapsules.toLocaleString(), detail: 'reviewed or saved', icon: HardDrive },
+    { label: 'Source refs', value: overview.sourceReferences.toLocaleString(), detail: 'sources + documents', icon: FileText },
+    { label: 'Graph', value: `${overview.graphNodes.toLocaleString()} / ${overview.graphEdges.toLocaleString()}`, detail: 'nodes / edges', icon: Network },
+    { label: 'Coverage', value: `${overview.typeCount}/${overview.domainCount}/${overview.policyTeamCount}`, detail: 'types / domains / teams', icon: ShieldCheck },
+  ] as const;
+  return (
+    <section
+      className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-white/85 p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+      data-testid="capsule-library-stats"
+      aria-label="Context Capsules library statistics"
+    >
+      {stats.map((stat) => {
+        const Icon = stat.icon;
+        return (
+          <div key={stat.label} className="min-w-0 rounded-md border border-slate-100 bg-[color:var(--color-archive-paper-strong)] px-3 py-2">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white text-slate-700 shadow-sm">
+                <Icon className="h-3.5 w-3.5" />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">{stat.label}</span>
+                <span className="block truncate text-sm font-semibold text-slate-950">{stat.value}</span>
+              </span>
+            </div>
+            <p className="mt-1 truncate text-[11px] font-medium text-slate-500">{stat.detail}</p>
+          </div>
+        );
+      })}
+    </section>
+  );
+}
+
 function countUniqueCoreRefs(values: string[] | undefined): number {
   return new Set((values ?? []).map((value) => value.trim()).filter(Boolean)).size;
 }
@@ -7114,7 +7217,7 @@ function HumanGatedPolicyFamilyPanel({
       <div className="flex flex-wrap items-start justify-between gap-3" data-testid="human-gated-example-panel">
         <div className="min-w-0">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-oxide)]">Example capsule family</p>
-          <h2 className="mt-1 text-lg font-semibold leading-6 text-slate-950">Human-Gated Policy Judgment Capsule</h2>
+          <h2 className="mt-1 text-lg font-semibold leading-6 text-slate-950">Human-gated judgment example</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-700">
             This is a working example: load it into the ContextChain, inspect its gates, or sign in to fork it into the full library.
           </p>
@@ -7338,7 +7441,7 @@ function CapsuleTaxonomyFilterBar({
   return (
     <details className="mt-4 rounded-lg border border-slate-200 bg-white p-3" data-testid="capsule-taxonomy-filter-bar">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-slate-800">
-        Marketplace filters
+        Library filters
         <span className="text-xs font-medium text-slate-500">{activeFilterLabels.length ? activeFilterLabels.join(' / ') : 'No filters applied'}</span>
       </summary>
       <div className="mt-3 grid gap-3">

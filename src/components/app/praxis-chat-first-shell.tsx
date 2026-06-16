@@ -92,8 +92,8 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const activeCapsuleId = selectedCapsuleRefs[0]?.capsuleId ?? stack.capsuleId;
   const showUserCoreOnboarding = !isPublic && hydrated && !selectedCapsuleRefs.length && !activeCapsuleId;
   const contextLabel = useMemo(() => {
-    if (!selectedCapsuleRefs.length && !activeCapsuleId) return '+ Saved context';
-    return `${selectedCapsuleRefs.length || 1} saved context`;
+    if (!selectedCapsuleRefs.length && !activeCapsuleId) return '+ Capsule';
+    return `${selectedCapsuleRefs.length || 1} capsule${(selectedCapsuleRefs.length || 1) === 1 ? '' : 's'}`;
   }, [activeCapsuleId, selectedCapsuleRefs.length]);
 
   async function activateCapsule(capsuleId: string) {
@@ -377,7 +377,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
         </nav>
       ) : null}
       <div className="mt-5 rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-xs leading-5 text-slate-600">
-        Start with the question. Save context when the work needs sources, decisions, or a draft you can reuse.
+        Ask first. Save the context worth reusing.
       </div>
       <a
         href="https://tacitus.me"
@@ -427,7 +427,7 @@ function ContextDrawer({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Context</p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-950">Saved context unlocks after sign-in.</h2>
+            <h2 className="mt-1 text-lg font-semibold text-slate-950">Context Capsules unlock after sign-in.</h2>
             <p className="mt-1 text-xs leading-5 text-slate-500">
               Attach capsules, import DIALECTICA verified-context packages, and reuse the stack across briefs.
             </p>
@@ -456,7 +456,7 @@ function ContextDrawer({
           className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
           <Library className="h-3.5 w-3.5 text-emerald-700" />
-          {selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} context item${selectedCapsuleRefs.length === 1 ? '' : 's'} attached` : 'No saved context'}
+          {selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} capsule${selectedCapsuleRefs.length === 1 ? '' : 's'} attached` : 'No capsules attached'}
         </button>
         <div className="flex flex-wrap items-center gap-2">
           <CapsuleListPicker activeCapsuleId={activeCapsuleId ?? null} onSelect={onActivateCapsule} />
@@ -471,7 +471,7 @@ function ContextDrawer({
       <div data-testid="launchpad-capsule-stack" className="mt-3 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Saved context</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Context Capsules library</p>
             <p className="mt-1 text-xs leading-5 text-slate-500">
               {hydrated ? (persisted ? 'Saved to your workspace.' : 'Local context is active.') : 'Loading context...'}
               {savingContext ? ' Saving...' : ''}
@@ -519,7 +519,7 @@ function ContextDrawer({
             </div>
           )) : (
             <p className="rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
-              No saved context yet. Ask PRAXIS can still answer directly, but serious work should attach sources or context.
+              No capsules attached yet. Ask PRAXIS can still answer directly.
             </p>
           )}
         </div>

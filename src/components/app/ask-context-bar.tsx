@@ -389,11 +389,11 @@ export function AskContextBar({
         ) : null}
       </div>
 
-      {/* Collapsible provenance detail row: Sources / Saved context / Readiness */}
+      {/* Collapsible provenance detail row: Sources / Capsules / Readiness */}
       {detailsOpen ? (
         <div className="mt-2 flex min-w-0 gap-1.5 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
           <ContextChip dark={dark} icon={LibraryBig} label="Sources" value={`${sourceCount} attached`} detail={sourceCount ? 'Receipts can ground answer' : 'Attach sources before final use'} tone={sourceCount ? 'ready' : 'review'} />
-          <ContextChip dark={dark} icon={Boxes} label="Saved context" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No context selected'} tone={capsuleCount ? 'ready' : 'review'} />
+          <ContextChip dark={dark} icon={Boxes} label="Capsules" value={`${capsuleCount} attached`} detail={activeCapsuleId ?? 'No context selected'} tone={capsuleCount ? 'ready' : 'review'} />
           <ContextChip dark={dark} icon={UserRound} label="Analyst" value={labelize(analystProfile?.identity.role ?? user?.role ?? (isPublic ? 'Guest' : 'Analyst'))} detail={analystProfile?.perspective.audience ? labelize(analystProfile.perspective.audience) : user?.orgName ?? 'Workspace'} tone="ready" />
           <ContextChip dark={dark} icon={Gauge} label="Readiness" value={readiness.label} detail={readiness.detail} tone={readiness.tone} />
         </div>

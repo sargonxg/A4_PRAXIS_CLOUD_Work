@@ -438,13 +438,10 @@ export function PraxisChat({
               Ask PRAXIS
             </p>
             <h1 className="mt-4 font-serif text-4xl font-semibold tracking-normal text-[color:var(--color-app-text)] sm:text-5xl">
-              Ask anything. Leave with a sourced brief.
+              Ask. Get a sourced brief.
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-              {greeting ?? 'Attach context capsules when the work has to hold up.'}
-            </p>
-            <p className="mx-auto mt-2 max-w-2xl font-mono text-[11px] uppercase tracking-[0.18em] text-slate-400">
-              Every claim has a receipt<span aria-hidden className="text-emerald-600">.</span>
+              {greeting ?? 'Add capsules when it needs to hold up.'}
             </p>
           </div>
         ) : null}
@@ -458,8 +455,8 @@ export function PraxisChat({
           {messages.length === 0 ? (
             <EmptyState
               icon={ShieldCheck}
-              label={isPublic ? 'Start with the question.' : 'Ready for the next serious question.'}
-              hint={isPublic ? 'Sign in after you ask; PRAXIS carries the draft forward.' : 'Answers can show sources, gaps, and draft-ready next steps.'}
+              label={isPublic ? 'Ask first.' : 'Ready for the next serious question.'}
+              hint={isPublic ? 'Sign in to keep the brief.' : 'Answers can show sources, gaps, and draft-ready next steps.'}
               testId="praxis-chat-empty-state"
               className={cn('border-emerald-100', variant === 'floating' ? 'min-h-48 bg-slate-900 text-white' : 'min-h-40')}
             />

@@ -19,7 +19,7 @@ interface WelcomeModalProps {
 
 const REAL_FEATURES = [
   { icon: MessageSquare, label: 'Ask first', description: 'Start with the policy question or draft you need.' },
-  { icon: Users, label: 'Saved context', description: 'Keep the role, situation, sources, tools, and output visible.' },
+  { icon: Users, label: 'Context Capsules library', description: 'Keep the role, situation, sources, tools, and output visible.' },
   { icon: Wrench, label: 'Workflows', description: 'PRAXIS can route deeper work to memo, review, monitoring, or handover skills.' },
   { icon: Search, label: 'Source receipts', description: 'Keep evidence and gaps attached to the work.' },
   { icon: FileText, label: 'Drafts', description: 'Open the draft where the run finishes.' },

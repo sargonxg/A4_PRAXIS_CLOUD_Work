@@ -40,7 +40,7 @@ describe('Ask context bar contract', () => {
       'Tool',
       'Sources',
       'Output',
-      'Saved context',
+      'Capsules',
       'Readiness',
       'Attach {dockSlots.slots.find',
       'Build context',

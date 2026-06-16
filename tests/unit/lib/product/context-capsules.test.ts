@@ -343,10 +343,10 @@ describe('context capsule product contract', () => {
     expect(roundup?.outputProductIds).toEqual(expect.arrayContaining(['two-page-media-roundup']));
   });
 
-  it('features Human-Gated Policy Judgment Capsules as sourceable flagship seeds', () => {
+  it('features human-gated judgment as sourceable flagship seeds', () => {
     expect(HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY).toMatchObject({
       id: 'human-gated-policy-judgment',
-      label: 'Human-Gated Policy Judgment Capsules',
+      label: 'Human-gated judgment',
     });
     expect(HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS).toEqual([
       'starter-situation-haiti-gang-mss-access-watch',

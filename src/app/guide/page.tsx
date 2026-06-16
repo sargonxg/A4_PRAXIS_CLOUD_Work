@@ -56,7 +56,7 @@ const guideCards = [
     body: 'Use this for actual analysis, generation, saved conversations, source operations, memos, and durable runtime receipts.',
   },
   {
-    label: 'Saved context',
+    label: 'Context Capsules library',
     body: 'Use this for reusable policy context: source packs, document links, thinking devices, output contracts, review cards, and locked cores.',
   },
   {
@@ -85,7 +85,7 @@ export default function GuidePage() {
           Ask the question. Check the evidence. Save the work.
         </h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-[color:var(--color-ink)]/70">
-          PRAXIS is simplest when you treat it as one cockpit: ask the question, attach sources or saved context when needed, inspect the evidence, and save the work with receipts.
+          PRAXIS is simplest when you treat it as one cockpit: ask the question, attach sources or capsules when needed, inspect the evidence, and save the work with receipts.
         </p>
         <LivingContextRail cells={guideRailCells} compact className="mt-8" />
         <div className="mt-8 flex flex-wrap gap-3">
@@ -105,7 +105,7 @@ export default function GuidePage() {
             From prompt to policy product
           </h2>
           <p className="mt-4 text-sm leading-6 text-[color:var(--color-ink)]/70">
-            Saved context does not replace judgment. It gives the model the right working memory, source posture, constraints, and output contract so each generation starts from the team&apos;s reviewed context instead of a blank prompt.
+            Context Capsules do not replace judgment. They give the model the right working memory, source posture, constraints, and output contract so each generation starts from the team&apos;s reviewed context instead of a blank prompt.
           </p>
         </div>
         <ol className="grid gap-3">

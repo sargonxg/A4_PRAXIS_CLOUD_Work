@@ -162,7 +162,7 @@ export function UserCoreOnboardingCard({
           </span>
           <div className="min-w-0">
             <p className="text-sm font-semibold text-slate-950">Build your User Core</p>
-            <p className="mt-1 text-xs leading-5 text-slate-600">No saved context - direct ask. Add the analyst posture PRAXIS should use first.</p>
+            <p className="mt-1 text-xs leading-5 text-slate-600">No capsules attached - direct ask. Add the analyst posture PRAXIS should use first.</p>
           </div>
         </div>
         <button type="button" onClick={dismiss} aria-label="Dismiss User Core builder" className="rounded-md p-1 text-slate-500 hover:bg-white hover:text-slate-800">

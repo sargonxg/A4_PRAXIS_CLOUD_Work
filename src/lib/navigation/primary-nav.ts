@@ -84,7 +84,7 @@ export interface HomeSidebarDestination extends Pick<PrimaryNavItem, 'id' | 'lab
 
 export const HOME_SIDEBAR_DESTINATIONS = [
   { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: 'MessageSquareText' },
-  { id: 'context', label: 'Saved context', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: 'FolderKanban' },
+  { id: 'context', label: 'Context Capsules library', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: 'FolderKanban' },
   { id: 'boardroom', label: 'Boardroom', href: '/app/boardroom', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fboardroom', icon: 'ShieldCheck' },
   { id: 'drafts', label: 'Drafts', href: '/app?panel=memo', publicHref: '/login?mode=signup&redirect=%2Fapp%3Fpanel%3Dmemo', icon: 'FileText' },
 ] as const satisfies readonly HomeSidebarDestination[];

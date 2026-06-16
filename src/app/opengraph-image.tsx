@@ -227,7 +227,7 @@ export default async function Image() {
             flexWrap: 'wrap',
           }}
         >
-          {['Question', 'Sources', 'Saved context', 'Review', 'Brief'].map((s) => (
+          {['Question', 'Sources', 'Capsules', 'Review', 'Brief'].map((s) => (
             <div
               key={s}
               style={{

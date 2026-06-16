@@ -1058,8 +1058,8 @@ export const HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS = [
 
 export const HUMAN_GATED_POLICY_JUDGMENT_SEED_FAMILY = {
   id: 'human-gated-policy-judgment',
-  label: 'Human-Gated Policy Judgment Capsules',
-  summary: 'Flagship source-aware policy judgment capsules with refreshed external source spines, claim-ledger scaffolds, output contracts, and no invented approval.',
+  label: 'Human-gated judgment',
+  summary: 'Source-aware capsules with dated evidence, claim ledgers, output contracts, and approval gates.',
   starterIds: HUMAN_GATED_POLICY_JUDGMENT_STARTER_IDS,
 } as const;
 

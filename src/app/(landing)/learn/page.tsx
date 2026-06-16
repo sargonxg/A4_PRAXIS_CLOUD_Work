@@ -49,7 +49,7 @@ const currentCapabilityAnchors = [
   {
     id: "role-capsules",
     title: "Role-aware context",
-    body: "Saved context can carry role, institution, lens, constraints, and output goals so PRAXIS answers for a real policy job instead of a generic chat.",
+    body: "Context Capsules can carry role, institution, lens, constraints, and output goals so PRAXIS answers for a real policy job instead of a generic chat.",
   },
   {
     id: "output-quality",
