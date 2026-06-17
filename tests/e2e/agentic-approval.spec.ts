@@ -111,7 +111,9 @@ test.describe('Agent approval and multi-agent supervisor canary', () => {
     await runPanel.getByRole('button', { name: /^Approve$/ }).click();
     await runPanel.getByRole('button', { name: /details/i }).click();
 
-    await expect(runPanel).toContainText(/Research agent/i, { timeout: 20_000 });
+    await expect(runPanel.getByTestId('ask-agent-chain-proof')).toContainText(/Sub-agents\/tools/i, { timeout: 20_000 });
+    await expect(runPanel.getByTestId('ask-agent-chain-proof')).toContainText(/grounded search/i, { timeout: 20_000 });
+    await expect(runPanel).toContainText(/Drafting agent/i, { timeout: 20_000 });
     await expect(runPanel).toContainText(/Red-team agent/i, { timeout: 20_000 });
     await expect(runPanel).toContainText(/Revise agent/i, { timeout: 20_000 });
     await expect(runPanel).toContainText(/produces: finalMemo/i, { timeout: 20_000 });
