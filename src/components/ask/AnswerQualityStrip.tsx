@@ -23,11 +23,19 @@ export function AnswerQualityStrip({
   const contextRepairActions = envelope?.contextRepairActions ?? [];
   const healthy = summary.contextReadiness === 'ready' || summary.contextReadiness === 'thin';
   const Icon = healthy ? CheckCircle2 : AlertTriangle;
-  const supportedClaims = envelope?.sourceAudit.supportedClaimCount ?? 0;
-  const assumptionClaims = envelope?.sourceAudit.assumptionClaimCount ?? envelope?.sourceAudit.modelPriorClaimCount ?? 0;
+  const sourceAudit = envelope?.sourceAudit;
+  const supportedClaims = sourceAudit?.supportedClaimCount
+    ?? (envelope?.claimLedger ?? []).filter((claim) => claim.status === 'supported').length;
+  const weakClaims = summary.weakClaimCount ?? sourceAudit?.weakClaimCount ?? 0;
+  const unsupportedClaims = summary.unsupportedClaimCount ?? sourceAudit?.unsupportedClaimCount ?? 0;
+  const assumptionClaims = sourceAudit?.assumptionClaimCount ?? sourceAudit?.modelPriorClaimCount ?? 0;
+  const sourceCount = summary.sourceCount ?? sourceAudit?.sourceCount ?? 0;
+  const sourceReceiptCount = summary.sourceReceiptCount ?? sourceAudit?.sourceReceiptCount ?? 0;
+  const sourceGapCount = summary.sourceGapCount ?? 0;
+  const confidencePosture = summary.confidencePosture ?? 'low';
   const coverage = computeEvidenceCoverage(envelope?.sourceabilityVerdicts ?? []);
   const dateCheckCount = (envelope?.claimLedger ?? []).filter((claim) => claim.freshness !== 'current').length
-    + (envelope?.sourceRefreshDocket.staleSourceIds.length ?? 0);
+    + (envelope?.sourceRefreshDocket?.staleSourceIds.length ?? 0);
   const coverageLabel = coverage.totalClaims
     ? `${coverage.coveragePercent}% supported`
     : 'No claims checked';
@@ -49,24 +57,24 @@ export function AnswerQualityStrip({
         </p>
         <span className={cn(
           'rounded-md border px-2 py-1 font-mono text-[10px]',
-          summary.confidencePosture === 'high'
+          confidencePosture === 'high'
             ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-            : summary.confidencePosture === 'medium'
+            : confidencePosture === 'medium'
               ? 'border-sky-200 bg-sky-50 text-sky-900'
               : 'border-amber-200 bg-amber-50 text-amber-900',
         )}>
-          {summary.confidencePosture} confidence
+          {confidencePosture} confidence
         </span>
       </div>
       <div className="mt-2 flex flex-wrap gap-1.5">
         <QualityPill label="Context" value={formatContextReadiness(summary.contextReadiness)} />
-        <QualityPill label="Sources" value={`${summary.sourceCount} (${summary.sourceReceiptCount} receipts)`} />
+        <QualityPill label="Sources" value={`${sourceCount} (${sourceReceiptCount} receipts)`} />
         <QualityPill label="Supported claims" value={String(supportedClaims)} />
-        <QualityPill label="Weak claims" value={String(summary.weakClaimCount)} />
-        <QualityPill label="Unsupported claims" value={String(summary.unsupportedClaimCount)} />
+        <QualityPill label="Weak claims" value={String(weakClaims)} />
+        <QualityPill label="Unsupported claims" value={String(unsupportedClaims)} />
         <QualityPill label="Assumptions" value={String(assumptionClaims)} />
         <QualityPill label="Date checks" value={String(dateCheckCount)} />
-        <QualityPill label="Gaps" value={String(summary.sourceGapCount)} />
+        <QualityPill label="Gaps" value={String(sourceGapCount)} />
         <QualityPill label="Deep run" value={formatDeepRun(summary.queuedDeepRunStatus)} />
       </div>
       <div className="mt-2 rounded-md border border-slate-200 bg-white p-2" data-testid="evidence-coverage-meter">
