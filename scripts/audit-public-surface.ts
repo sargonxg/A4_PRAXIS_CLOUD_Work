@@ -28,11 +28,9 @@ function forbidAll(label: string, source: string, markers: string[]): void {
 const publicPage = read('src/app/page.tsx');
 const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
 const appIndex = read('src/app/app/page.tsx');
-const appLaunchpad = read('src/components/app/praxis-app-launchpad.tsx');
 const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
 const praxisChat = read('src/components/app/praxis-chat.tsx');
-const publicShell = read('src/components/app/public-shell.tsx');
-const sharedHomeSurface = `${marketingHome}\n${appLaunchpad}\n${chatShell}\n${praxisChat}\n${publicShell}`;
+const sharedHomeSurface = `${marketingHome}\n${appIndex}\n${chatShell}\n${praxisChat}`;
 const policyMissions = read('src/lib/product/policy-missions.ts');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
 const boardroom = read('src/components/boardroom/boardroom-workspace.tsx');
@@ -62,13 +60,13 @@ requireAll('marketing home', sharedHomeSurface, [
   'marketing-home',
   'data-testid="praxis-chat-first-shell"',
   'data-testid="simple-home-chat"',
-  'Ask anything. Leave with a sourced brief.',
+  'Ask. Get a sourced brief.',
   'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
   'data-testid="marketing-primary-cta"',
   'Continue',
   'Ask',
-  'Saved context',
+  'Context Capsules library',
   'Guide',
   'Pricing',
 ]);
@@ -86,6 +84,9 @@ forbidAll('marketing home', sharedHomeSurface, [
   'catalogued',
   'TaskletPraxisWorkbench',
   'AskPraxisHome',
+  '<PublicShell',
+  'PolicyAgentStrip',
+  'PublicFlagshipCapsuleStrip',
 ]);
 
 const primaryCtaCount = sharedHomeSurface.split('data-testid="marketing-primary-cta"').length - 1;
@@ -93,15 +94,14 @@ if (primaryCtaCount !== 1) {
   failures.push(`marketing home should expose exactly one primary CTA test id, found ${primaryCtaCount}`);
 }
 
-requireAll('signed-in app index', appIndex, ['PraxisAppLaunchpad']);
-forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
-requireAll('signed-in launchpad wrapper', appLaunchpad, [
+requireAll('signed-in app index', appIndex, [
   'PraxisChatFirstShell',
   'mode="authenticated"',
 ]);
+forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
-  'Ask anything. Leave with a sourced brief.',
+  'Ask. Get a sourced brief.',
   'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
   'fetch(\'/api/ai/chat\'',
@@ -112,7 +112,6 @@ requireAll('signed-in launchpad', sharedHomeSurface, [
   'data-testid="launchpad-capsule-stack"',
   'Attach context',
   'Build context',
-  '/app?panel=memo',
   'data-testid="advanced-edit-context"',
 ]);
 requireAll('policy missions', policyMissions, [
