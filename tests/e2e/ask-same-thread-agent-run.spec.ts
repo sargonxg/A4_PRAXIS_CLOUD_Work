@@ -13,6 +13,7 @@ test.describe('Ask PRAXIS same-thread AgentRun canary', () => {
     const capsuleId = 'starter-user-humanitarian-legal-investigator';
     const runId = 'run-same-thread-agent-proof';
     const envelope = sameThreadEnvelope({ capsuleId, runId });
+    let turnPosted = false;
 
     await page.route(`**/api/conversations/${conversationId}`, async (route) => {
       await route.fulfill({
@@ -26,6 +27,7 @@ test.describe('Ask PRAXIS same-thread AgentRun canary', () => {
       });
     });
     await page.route(`**/api/conversations/${conversationId}/turns`, async (route) => {
+      turnPosted = true;
       await route.fulfill({
         status: 200,
         contentType: 'text/plain; charset=utf-8',
@@ -87,7 +89,15 @@ test.describe('Ask PRAXIS same-thread AgentRun canary', () => {
 
     const composer = page.getByLabel(/Describe a task or responsibility/i);
     await composer.fill('Prepare a sourced policy brief and keep the durable run in this conversation.');
-    await page.getByRole('button', { name: /Send to PRAXIS/i }).click();
+    const turnResponse = page.waitForResponse((response) => (
+      response.url().includes(`/api/conversations/${conversationId}/turns`)
+      && response.request().method() === 'POST'
+    ), { timeout: 30_000 });
+    const sendButton = page.locator('button[aria-label="Send to PRAXIS"]');
+    await expect(sendButton).toBeEnabled({ timeout: 30_000 });
+    await sendButton.click();
+    await turnResponse;
+    expect(turnPosted).toBeTruthy();
 
     await expect(page).toHaveURL(new RegExp(`/app/conversations/${conversationId}\\?capsuleId=${capsuleId}`));
     await expect(page.getByText(/same-thread policy brief/i)).toBeVisible({ timeout: 20_000 });

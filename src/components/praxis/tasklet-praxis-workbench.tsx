@@ -4931,7 +4931,7 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
     { label: 'Sourceability review', detail: `${claimLedger?.supportedClaims ?? 0} supported, ${claimLedger?.unsupportedClaims ?? 0} unsupported.` },
     { label: 'Tool route', detail: `${receipt.toolRouting.selectedToolIds.length} selected, ${receipt.toolRouting.blockedToolIds.length} blocked, ${receipt.toolRouting.approvalRequiredToolIds.length} approval gated.` },
     { label: 'Agent queued/running', detail: receipt.supervisor.queuedRun?.runId ?? 'No durable run needed.' },
-    { label: 'Output drafted', detail: generationReceipt?.finishReason ? `Finished: ${generationReceipt.finishReason}` : receipt.workflowPlan.workflowKind.replace(/_/g, ' ') },
+    { label: 'Output drafted', detail: generationReceipt?.finishReason ? `Finished: ${generationReceipt.finishReason}` : (receipt.workflowPlan?.workflowKind ?? 'queued workflow').replace(/_/g, ' ') },
     { label: 'Human review gate', detail: languagePolicyReview?.required ? 'Terminology, sourceability, and gap language checked.' : 'Standard terminology check.' },
   ] : [];
   return (

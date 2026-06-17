@@ -1201,7 +1201,7 @@ function OrchestrationReceiptPanel({ envelope }: { envelope?: AskAnswerEnvelope 
             Agent run: {queuedRunLabel}
           </span>
         ) : null}
-        {receipt.workflowPlan ? (
+        {receipt.workflowPlan?.workflowKind ? (
           <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-slate-600">
             Workflow: {receipt.workflowPlan.workflowKind.replace(/_/g, ' ')}
           </span>
