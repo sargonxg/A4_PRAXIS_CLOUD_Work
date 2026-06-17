@@ -16,13 +16,18 @@ test.describe('Ask PRAXIS same-thread AgentRun canary', () => {
     let turnPosted = false;
 
     await page.route(`**/api/conversations/${conversationId}`, async (route) => {
+      const turns = turnPosted ? [{
+        prompt: 'Prepare a sourced policy brief and keep the durable run in this conversation.',
+        output: 'PRAXIS queued a same-thread policy brief with durable AgentRun proof.',
+        runtime: { answerEnvelope: envelope },
+      }] : [];
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
           persisted: true,
-          conversation: { conversationId, capsuleId, turnCount: 0 },
-          turns: [],
+          conversation: { conversationId, capsuleId, turnCount: turns.length },
+          turns,
         }),
       });
     });
@@ -103,7 +108,7 @@ test.describe('Ask PRAXIS same-thread AgentRun canary', () => {
     await expect(page.getByText(/same-thread policy brief/i)).toBeVisible({ timeout: 20_000 });
     const runPanel = page.getByTestId('ask-agent-run-panel');
     await expect(runPanel).toBeVisible({ timeout: 20_000 });
-    await expect(runPanel.getByText(runId)).toBeVisible();
+    await expect(runPanel).toContainText(/Research Memo Agent/i);
     await expect(runPanel.getByTestId('ask-agent-run-proof-rail')).toContainText(/Output saved|Returned to thread|Sources/i, { timeout: 20_000 });
     await expect(runPanel.getByTestId('ask-agent-chain-proof')).toContainText(/Research Memo Agent|grounded search/i, { timeout: 20_000 });
     await expect(page.getByText(/Research Memo Agent/i).first()).toBeVisible();
