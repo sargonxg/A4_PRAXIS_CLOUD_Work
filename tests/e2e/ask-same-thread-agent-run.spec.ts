@@ -94,7 +94,8 @@ test.describe('Ask PRAXIS same-thread AgentRun canary', () => {
     const runPanel = page.getByTestId('ask-agent-run-panel');
     await expect(runPanel).toBeVisible({ timeout: 20_000 });
     await expect(runPanel.getByText(runId)).toBeVisible();
-    await expect(page.getByTestId('ask-agent-run-lifecycle')).toContainText(/Completed/i, { timeout: 20_000 });
+    await expect(runPanel.getByTestId('ask-agent-run-proof-rail')).toContainText(/Output saved|Returned to thread|Sources/i, { timeout: 20_000 });
+    await expect(runPanel.getByTestId('ask-agent-chain-proof')).toContainText(/Research Memo Agent|grounded search/i, { timeout: 20_000 });
     await expect(page.getByText(/Research Memo Agent/i).first()).toBeVisible();
   });
 });
@@ -209,6 +210,7 @@ function sameThreadEnvelope({ capsuleId, runId }: { capsuleId: string; runId: st
       reason: 'Durable policy brief work remains tied to this Ask turn.',
     },
     sourceCards: [],
+    sourceRefreshDocket: { status: 'fresh', staleSourceIds: [], missingEvidenceGaps: [], refreshSuggestions: [] },
     followUps: ['Create evidence annex from this run'],
     continuationActions: [
       {

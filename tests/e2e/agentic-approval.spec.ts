@@ -74,6 +74,21 @@ test.describe('Agent approval and multi-agent supervisor canary', () => {
     await page.route('**/api/conversations', async (route) => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ conversations: [] }) });
     });
+    await page.route(`**/api/conversations/${conversationId}`, async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          persisted: true,
+          conversation: { conversationId, capsuleId, turnCount: 1 },
+          turns: [{
+            prompt: 'Run a multi-agent review and pause for approval.',
+            output: 'PRAXIS queued a multi-agent review that is waiting for approval.',
+            runtime: { answerEnvelope: envelope({ capsuleId, runId, conversationId }) },
+          }],
+        }),
+      });
+    });
     await page.route(`**/api/conversations/${conversationId}/turns`, async (route) => {
       await route.fulfill({
         status: 200,
@@ -147,6 +162,7 @@ function envelope({ capsuleId, runId, conversationId }: { capsuleId: string; run
     answerQualitySummary: { contextReadiness: 'ready', sourceCount: 1, sourceReceiptCount: 1, sourceGapCount: 0, weakClaimCount: 0, unsupportedClaimCount: 0, confidencePosture: 'medium', recommendedNextAction: 'Approve multi-agent review.', memoHandoffReady: false, queuedDeepRunStatus: 'queued' },
     agenticDepthRecommendation: { mode: 'queued', runId, label: 'Approval required', reason: 'Supervisor is waiting before multi-agent work starts.' },
     sourceCards: [{ sourceReceiptId: 'web-supervisor-1', label: 'Supervisor source', title: 'Supervisor source', quotePreview: 'Source-backed paragraph.', url: 'https://example.test/supervisor' }],
+    sourceRefreshDocket: { status: 'fresh', staleSourceIds: [], missingEvidenceGaps: [], refreshSuggestions: [] },
     provenance: { conversationId },
     followUps: ['Approve the multi-agent review'],
     continuationActions: [],

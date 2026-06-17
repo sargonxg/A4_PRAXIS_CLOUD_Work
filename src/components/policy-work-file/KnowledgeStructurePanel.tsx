@@ -12,8 +12,8 @@ export function knowledgeStructureFromAskEnvelope(envelope?: AskAnswerEnvelope):
   const claims = (envelope?.claimLedger ?? []).map((claim) => `${claim.status}: ${claim.text}`);
   const evidence = (envelope?.sourceCards ?? []).map((source) => source.sourceReceiptId ? `${source.title} (${source.sourceReceiptId})` : source.title);
   const gaps = [
-    ...(envelope?.sourceRefreshDocket.missingEvidenceGaps ?? []),
-    ...(envelope?.documentPackCandidate.gaps ?? []),
+    ...(envelope?.sourceRefreshDocket?.missingEvidenceGaps ?? []),
+    ...(envelope?.documentPackCandidate?.gaps ?? []),
   ];
   const reviewCards = (envelope?.reviewCardSuggestions ?? []).map((card) => `${card.label} (review card)`);
 
@@ -68,7 +68,7 @@ export function KnowledgeStructurePanel({
 
 function inferredItems(envelope: AskAnswerEnvelope | undefined, pattern: RegExp): string[] {
   return [
-    ...(envelope?.documentPackCandidate.gaps ?? []),
+    ...(envelope?.documentPackCandidate?.gaps ?? []),
     ...(envelope?.claimLedger ?? []).map((claim) => claim.text),
     ...(envelope?.followUps ?? []),
   ].filter((item) => pattern.test(item));
