@@ -1,17 +1,17 @@
 {
   "ok": true,
-  "catalogVersion": "2026-06-11-graphlite-advisory-projection-v17-human-gated-depth",
-  "total": 205,
+  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
+  "total": 211,
   "counts": {
-    "situation": 85,
-    "tool": 72,
-    "output": 35,
-    "user": 13
+    "situation": 86,
+    "user": 14,
+    "tool": 75,
+    "output": 36
   },
   "sourceRegistryCount": 27,
   "prompt": {
-    "averageLength": 9489,
-    "maxLength": 11827,
+    "averageLength": 9519,
+    "maxLength": 11880,
     "warnTarget": 12000,
     "hardCap": 16000
   },

@@ -1,9 +1,9 @@
 {
-  "catalogVersion": "2026-06-11-graphlite-advisory-projection-v17-human-gated-depth",
-  "starterCount": 205,
+  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
+  "starterCount": 211,
   "provider": "graphlite",
   "projectionMode": "advisory",
   "canonicalStore": "Firestore ContextCapsules",
-  "namedGraphCount": 205,
+  "namedGraphCount": 211,
   "findings": []
 }

@@ -1,7 +1,7 @@
 # Capsule Database Audit
 
 Catalog version: 2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth
-Generated at: 2026-06-16T22:23:21.263Z
+Generated at: 2026-06-17T02:54:11.168Z
 Result: pass
 Canonical store: Firestore ContextCapsules
 Audited scope: local starter catalog definitions and seedable GraphLite advisory projection metadata

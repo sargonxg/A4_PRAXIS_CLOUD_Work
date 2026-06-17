@@ -1,12 +1,12 @@
 # Capsule Consolidation Audit
 
 - Output: rolling LATEST file
-- Catalog version: 2026-06-11-graphlite-advisory-projection-v17-human-gated-depth
+- Catalog version: 2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth
 - Result: pass
-- Starters: 205
-- Category counts: situation 85, tool 72, output 35, user 13
+- Starters: 211
+- Category counts: situation 86, tool 75, output 36, user 14
 - Source registry entries: 27
-- Prompt average/max: 9489/11827 chars
+- Prompt average/max: 9519/11880 chars
 
 ## Failures
 

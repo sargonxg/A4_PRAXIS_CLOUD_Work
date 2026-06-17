@@ -1,10 +1,10 @@
 # Capsule Depth Audit
 
 - Output: rolling LATEST file
-- Catalog version: 2026-06-11-graphlite-advisory-projection-v17-human-gated-depth
+- Catalog version: 2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth
 - Result: pass
-- Total starters: 205
-- Category counts: situation 85, tool 72, output 35, user 13
+- Total starters: 211
+- Category counts: situation 86, tool 75, output 36, user 14
 
 ## Failures
 
@@ -18,6 +18,12 @@
 - starter-situation-sourceable-country-risk-judgment: situation, finance, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-mediation-process-memory: situation, diplomacy, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-narrative-legitimacy-audit: situation, diplomacy, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-user-us-based-multilateral-desk-officer: user, analyst-role, sources 6, excerpts 6, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-situation-syria-political-security-humanitarian-watch: situation, diplomacy, sources 6, excerpts 6, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-tool-multilateral-source-trust-ledger: tool, source-intake, sources 6, excerpts 6, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-tool-media-source-prioritization-docket: tool, source-intake, sources 6, excerpts 6, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-tool-briefing-synthesis-sourceability-protocol: tool, audit-review, sources 6, excerpts 6, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-output-two-page-syria-media-roundup: output, output-brief, sources 6, excerpts 6, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-sustainability-transition: situation, sustainability, sources 4, excerpts 2, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-finance-country-risk: situation, finance, sources 4, excerpts 2, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-ukraine-reconstruction-integrity-finance: situation, finance, sources 4, excerpts 2, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes

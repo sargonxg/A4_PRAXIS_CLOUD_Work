@@ -1,20 +1,20 @@
 {
   "ok": true,
-  "catalogVersion": "2026-06-11-graphlite-advisory-projection-v17-human-gated-depth",
-  "total": 205,
+  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
+  "total": 211,
   "counts": {
-    "situation": 85,
-    "tool": 72,
-    "output": 35,
-    "user": 13
+    "situation": 86,
+    "user": 14,
+    "tool": 75,
+    "output": 36
   },
   "expected": {
-    "total": 205,
+    "total": 211,
     "counts": {
-      "output": 35,
-      "situation": 85,
-      "tool": 72,
-      "user": 13
+      "output": 36,
+      "situation": 86,
+      "tool": 75,
+      "user": 14
     }
   },
   "failures": [],
@@ -80,6 +80,72 @@
       "domain": "diplomacy",
       "sourceCount": 5,
       "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-user-us-based-multilateral-desk-officer",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 6,
+      "excerptCount": 6,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-syria-political-security-humanitarian-watch",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 6,
+      "excerptCount": 6,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-tool-multilateral-source-trust-ledger",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 6,
+      "excerptCount": 6,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-tool-media-source-prioritization-docket",
+      "category": "tool",
+      "domain": "source-intake",
+      "sourceCount": 6,
+      "excerptCount": 6,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-tool-briefing-synthesis-sourceability-protocol",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 6,
+      "excerptCount": 6,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-output-two-page-syria-media-roundup",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 6,
+      "excerptCount": 6,
       "compatibleCount": 3,
       "richProfile": true,
       "intelligenceProfile": true,
