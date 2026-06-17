@@ -10,7 +10,6 @@ const marketingHomePath = join(root, 'src/components/marketing/praxis-marketing-
 const chatShellPath = join(root, 'src/components/app/praxis-chat-first-shell.tsx');
 const praxisChatPath = join(root, 'src/components/app/praxis-chat.tsx');
 const floatingPraxisPath = join(root, 'src/components/app/floating-praxis.tsx');
-const publicShellPath = join(root, 'src/components/app/public-shell.tsx');
 const primaryNavPath = join(root, 'src/lib/navigation/primary-nav.ts');
 
 describe('EPIC 1.9 public and signed-in home contracts', () => {
@@ -37,9 +36,8 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     const shellSource = readFileSync(chatShellPath, 'utf8');
     const chatSource = readFileSync(praxisChatPath, 'utf8');
     const floatingSource = readFileSync(floatingPraxisPath, 'utf8');
-    const publicShellSource = readFileSync(publicShellPath, 'utf8');
     const primaryNavSource = readFileSync(primaryNavPath, 'utf8');
-    const homeSource = `${shellSource}\n${chatSource}\n${publicShellSource}\n${primaryNavSource}`;
+    const homeSource = `${shellSource}\n${chatSource}\n${primaryNavSource}`;
 
     expect(marketingSource).toContain('PraxisChatFirstShell');
     expect(marketingSource).toContain('mode="public"');
@@ -61,10 +59,9 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'data-testid="marketing-hero-prompt"',
       'data-testid="marketing-primary-cta"',
       'data-testid="public-sign-in-affordance"',
-      'data-testid="public-flagship-capsule-strip"',
-      'MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS',
-      'PUBLIC_FLAGSHIP_CAPSULES',
-      'Multilateral Syria desk workflow',
+      '<HomeTopBar isPublic={isPublic} />',
+      'className="praxis-app-surface min-h-screen text-slate-950"',
+      'Sign in to save and reuse capsules.',
       'Ask. Get a sourced brief.',
       'Ask',
       'Context Capsules library',
@@ -90,9 +87,15 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'red flags',
       'capsule-context-bar',
       'Created Work',
+      'PolicyAgentStrip',
+      'PublicFlagshipCapsuleStrip',
+      'PUBLIC_FLAGSHIP_CAPSULES',
+      'MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS',
     ]) {
       expect(shellSource).not.toContain(forbidden);
     }
+
+    expect(shellSource).not.toContain('<PublicShell');
   });
 
   it('rebuilds signed-in /app as a calm launchpad instead of the full cockpit default', () => {

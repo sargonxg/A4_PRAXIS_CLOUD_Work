@@ -18,7 +18,6 @@ import {
   X,
 } from 'lucide-react';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
-import { PublicShell } from '@/components/app/public-shell';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import {
   DEFAULT_CONTEXT_STACK_ID,
@@ -27,10 +26,6 @@ import {
   swapCapsuleRef,
 } from '@/lib/context/active-context-stack';
 import { HOME_SIDEBAR_DESTINATIONS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
-import {
-  CAPSULE_STARTER_DEFINITIONS,
-  MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS,
-} from '@/lib/product/context-capsules-client';
 
 const CapsuleListPicker = dynamic(
   () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
@@ -57,11 +52,6 @@ const CapsuleImportButton = dynamic(
   { ssr: false },
 );
 
-const PolicyAgentStrip = dynamic(
-  () => import('@/components/app/policy-agent-strip').then((module) => module.PolicyAgentStrip),
-  { ssr: false },
-);
-
 const PUBLIC_TOP_LINKS = [
   { label: 'Pricing', href: '/pricing' },
   { label: 'Learn', href: '/learn' },
@@ -75,10 +65,6 @@ const HOME_DESTINATION_ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ cla
   ShieldCheck,
   FileText,
 };
-
-const PUBLIC_FLAGSHIP_CAPSULES = MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS
-  .map((starterId) => CAPSULE_STARTER_DEFINITIONS.find((starter) => starter.starterId === starterId))
-  .filter((starter): starter is NonNullable<typeof starter> => Boolean(starter));
 
 export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated' }) {
   const isPublic = mode === 'public';
@@ -169,12 +155,12 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
 
   const body = (
     <main
-      className={isPublic ? 'min-h-[calc(100vh-5rem)] text-slate-950' : 'praxis-app-surface min-h-screen text-slate-950'}
+      className="praxis-app-surface min-h-screen text-slate-950"
       data-testid="praxis-chat-first-shell"
     >
       <div data-testid={isPublic ? 'marketing-home' : 'app-launchpad'} className="mx-auto flex w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
-        {!isPublic ? <HomeTopBar isPublic={false} /> : null}
-        <div className={`${isPublic ? 'mt-2' : 'mt-5'} grid min-h-[calc(100vh-11rem)] gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]`}>
+        <HomeTopBar isPublic={isPublic} />
+        <div className="mt-5 grid min-h-[calc(100vh-11rem)] gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
           <HomeSidebar isPublic={isPublic} pathname={pathname ?? '/'} />
           <section className="min-w-0">
             <PraxisChat
@@ -223,17 +209,11 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                 onMakePrimaryCapsule={(capsuleId) => void makePrimaryCapsule(capsuleId)}
               />
             ) : null}
-            {isPublic ? <PolicyAgentStrip isPublic /> : null}
-            {isPublic ? <PublicFlagshipCapsuleStrip /> : null}
           </section>
         </div>
       </div>
     </main>
   );
-
-  if (isPublic) {
-    return <PublicShell contentClassName="p-0" showFooter={false}>{body}</PublicShell>;
-  }
 
   return body;
 }
@@ -261,46 +241,6 @@ function HomeTopBar({ isPublic }: { isPublic: boolean }) {
         ) : null}
       </nav>
     </header>
-  );
-}
-
-function PublicFlagshipCapsuleStrip() {
-  return (
-    <section className="mt-5" data-testid="public-flagship-capsule-strip" aria-label="Public flagship capsules">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Flagship capsules</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-950">Multilateral Syria desk workflow</h2>
-        </div>
-        <Link
-          href="/login?mode=signup&redirect=%2Fapp%2Fcapsules"
-          className="inline-flex min-h-9 items-center rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-[var(--shadow-card)] hover:bg-slate-50"
-        >
-          Add to workspace
-        </Link>
-      </div>
-      <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
-        {PUBLIC_FLAGSHIP_CAPSULES.map((capsule) => (
-          <Link
-            key={capsule.starterId}
-            href={`/login?mode=signup&redirect=%2Fapp%2Fcapsules&capsuleId=${encodeURIComponent(capsule.starterId)}`}
-            className="min-w-0 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3 shadow-[var(--shadow-card)] transition hover:border-emerald-200 hover:bg-emerald-50/40"
-            data-testid={`public-flagship-capsule-${capsule.starterId}`}
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="rounded-[var(--radius-sm)] bg-slate-100 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">
-                {capsule.category}
-              </span>
-              <span className="font-mono text-[10px] font-semibold text-emerald-700">
-                {capsule.ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0}+ nodes
-              </span>
-            </div>
-            <h3 className="mt-2 line-clamp-2 text-sm font-semibold leading-5 text-slate-950">{capsule.label}</h3>
-            <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">{capsule.summary}</p>
-          </Link>
-        ))}
-      </div>
-    </section>
   );
 }
 
@@ -425,21 +365,52 @@ function ContextDrawer({
     return (
       <section className="praxis-shell-card mt-4 p-4" data-testid="advanced-edit-context">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Context</p>
-            <h2 className="mt-1 text-lg font-semibold text-slate-950">Context Capsules unlock after sign-in.</h2>
-            <p className="mt-1 text-xs leading-5 text-slate-500">
-              Attach capsules, import DIALECTICA verified-context packages, and reuse the stack across briefs.
-            </p>
-          </div>
-          <p className="text-xs leading-5 text-slate-500">
+          <span
+            data-testid="launchpad-capsule-chip"
+            className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-1.5 text-xs font-semibold text-slate-700"
+          >
+            <Library className="h-3.5 w-3.5 text-emerald-700" />
+            No capsules attached
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/login?mode=signup&redirect=%2Fapp"
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <Boxes className="h-3.5 w-3.5" />
+              Attach context
+            </Link>
             <Link
               href="/login?mode=signup&redirect=%2Fapp%2Fcapsules"
-              className="font-semibold text-emerald-700 underline-offset-2 hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Import
+            </Link>
+            <Link
+              href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%2Fbuilder"
+              className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <PlusCircle className="h-3.5 w-3.5" />
+              Build context
+            </Link>
+          </div>
+        </div>
+
+        <div data-testid="launchpad-capsule-stack" className="mt-3 rounded-[var(--radius-md)] border border-slate-200 bg-white p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Context Capsules library</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">Sign in to save and reuse capsules.</p>
+            </div>
+            <Link
+              href="/login?mode=signup&redirect=%2Fapp"
+              className="text-xs font-semibold text-emerald-700 underline-offset-2 hover:underline"
             >
               Sign in
-            </Link>{' '}
-            to save context for future briefs.
+            </Link>
+          </div>
+          <p className="mt-3 rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
+            No capsules attached yet. Ask PRAXIS can still answer directly.
           </p>
         </div>
       </section>
