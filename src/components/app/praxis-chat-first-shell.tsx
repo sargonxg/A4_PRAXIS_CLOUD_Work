@@ -155,7 +155,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
 
   const body = (
     <main
-      className="praxis-app-surface min-h-screen text-slate-950"
+      className="praxis-app-surface praxis-checker-constellation min-h-screen text-slate-950"
       data-testid="praxis-chat-first-shell"
     >
       <div data-testid={isPublic ? 'marketing-home' : 'app-launchpad'} className="mx-auto flex w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
@@ -305,7 +305,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
                 className="group rounded-[var(--radius-md)] px-3 py-1.5 transition hover:bg-white"
                 title={item.title ?? item.conversationId}
               >
-                <span className="block truncate text-[13px] font-medium text-slate-700 group-hover:text-slate-950">
+                <span className="block overflow-hidden break-words text-[13px] font-medium leading-snug text-slate-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] group-hover:text-slate-950">
                   {item.title ?? 'PRAXIS conversation'}
                 </span>
                 <span className="block font-mono text-[10px] text-slate-400">

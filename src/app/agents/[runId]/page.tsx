@@ -19,17 +19,18 @@ export default async function AgentWorkspacePage({ params }: AgentWorkspacePageP
       activeCapsuleName="Agent workspace"
       capsuleId="default"
       focusedRunId={runId}
+      className="app-light praxis-app-surface"
     />
   );
 }
 
 function WorkbenchLoadingSkeleton() {
   return (
-    <main className="grid min-h-screen gap-4 bg-emerald-50/30 p-4" data-testid="tasklet-workbench-loading-skeleton">
-      <Skeleton className="h-16 w-full" />
-      <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <Skeleton className="h-[32rem] w-full" />
-        <Skeleton className="hidden h-[32rem] w-full lg:block" />
+    <main className="app-light praxis-app-surface praxis-checker-constellation grid min-h-screen gap-4 p-4" data-testid="tasklet-workbench-loading-skeleton">
+      <Skeleton className="h-16 w-full rounded-[var(--radius-xl)]" />
+      <div className="grid min-h-0 gap-4 lg:grid-cols-[250px_minmax(0,1fr)]">
+        <Skeleton className="hidden h-[32rem] w-full rounded-[var(--radius-xl)] lg:block" />
+        <Skeleton className="h-[32rem] w-full rounded-[var(--radius-xl)]" />
       </div>
     </main>
   );

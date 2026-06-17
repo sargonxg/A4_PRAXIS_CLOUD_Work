@@ -438,10 +438,10 @@ export function PraxisChat({
               Ask PRAXIS
             </p>
             <h1 className="mt-4 font-serif text-4xl font-semibold tracking-normal text-[color:var(--color-app-text)] sm:text-5xl">
-              Ask. Get a sourced brief.
+              Write trusted knowledge products.
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-              {greeting ?? 'Add capsules when it needs to hold up.'}
+              {greeting ?? 'Capsules keep the context clear.'}
             </p>
           </div>
         ) : null}

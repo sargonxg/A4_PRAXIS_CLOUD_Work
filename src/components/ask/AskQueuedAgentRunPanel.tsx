@@ -242,6 +242,13 @@ export function AskQueuedAgentRunPanel({
     outputHref: visibleRun?.outputHref ?? queuedRun.outputHref ?? null,
   });
   const searchTools = selectedTools.filter((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent');
+  const agentChain = buildAgentChainItems({
+    agentLabel,
+    approvalGateCount,
+    outputTarget,
+    searchTools,
+    selectedTools,
+  });
   const stateLabel = dispatchFailed
     ? 'Dispatch failed'
     : expiredRun
@@ -323,6 +330,15 @@ export function AskQueuedAgentRunPanel({
           </li>
         ))}
       </ol>
+      <div className="mt-2 grid gap-1.5 sm:grid-cols-2" data-testid="ask-agent-chain-proof">
+        {agentChain.map((item) => (
+          <div key={item.label} className="rounded-md border border-white/80 bg-white/75 px-2 py-1.5">
+            <p className="font-mono text-[9px] font-bold uppercase tracking-[0.12em] text-slate-500">{item.label}</p>
+            <p className="mt-0.5 text-[11px] font-semibold text-slate-900">{item.value}</p>
+            <p className="mt-0.5 text-[10px] leading-4 text-slate-600">{item.detail}</p>
+          </div>
+        ))}
+      </div>
       {snapshotState.isConnected ? <p className="mt-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700">Live Firestore timeline</p> : null}
       {error ?? snapshotState.error ? <p className="mt-2 rounded-md border border-gold-200 bg-white px-2 py-1 text-xs text-gold-900">{error ?? snapshotState.error}</p> : null}
       {pendingApprovals.length ? (
@@ -370,6 +386,46 @@ export function AskQueuedAgentRunPanel({
       ) : null}
     </section>
   );
+}
+
+function buildAgentChainItems(input: {
+  agentLabel: string;
+  approvalGateCount: number;
+  outputTarget: string | null;
+  searchTools: string[];
+  selectedTools: string[];
+}): Array<{ label: string; value: string; detail: string }> {
+  return [
+    {
+      label: 'Supervisor',
+      value: 'Ask PRAXIS supervisor',
+      detail: 'Reads objective, capsules, and output target before routing.',
+    },
+    {
+      label: 'Primary agent',
+      value: input.agentLabel,
+      detail: 'Owns the run and can call specialist tools or review lanes.',
+    },
+    {
+      label: 'Sub-agents/tools',
+      value: input.selectedTools.length ? input.selectedTools.map(labelizeAgentToken).join(', ') : 'Context resolver',
+      detail: input.searchTools.length ? 'Includes internet/RAG source search.' : 'Runs from attached capsule context first.',
+    },
+    {
+      label: 'Human gate',
+      value: input.approvalGateCount ? `${input.approvalGateCount} gated step${input.approvalGateCount === 1 ? '' : 's'}` : 'No pending gate',
+      detail: 'High-risk external or graph actions stay approval-gated.',
+    },
+    {
+      label: 'Output contract',
+      value: input.outputTarget ?? 'Ask thread',
+      detail: 'Returns with source posture, receipts, and artifact links.',
+    },
+  ];
+}
+
+function labelizeAgentToken(value: string): string {
+  return value.replace(/[-_]/g, ' ');
 }
 
 function AgentEventProofFacts({ event }: { event: ReturnType<typeof useOrchestratorEvents>['events'][number] }) {

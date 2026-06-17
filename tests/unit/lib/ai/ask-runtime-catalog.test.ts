@@ -24,6 +24,9 @@ describe('Ask PRAXIS runtime catalog', () => {
 
     expect(policy.frontierPrimary.chatModelId).toBe(getModelMatrixEntry('balanced').model);
     expect(policy.frontierPrimary.deepModelId).toBe(getModelMatrixEntry('complex_reasoning').model);
+    expect(getModelMatrixEntry('balanced').maxTokens).toBeGreaterThanOrEqual(8192);
+    expect(getModelMatrixEntry('complex_reasoning').maxTokens).toBeGreaterThanOrEqual(16384);
+    expect(getModelMatrixEntry('writing_quality').maxTokens).toBeGreaterThanOrEqual(8192);
     expect(policy.stableFallback.deep).toEqual(['gemini-2.5-pro', 'gemini-2.5-flash']);
     expect(policy.vertexLocationPolicy.frontierGemini3Location).toBe('global');
   });

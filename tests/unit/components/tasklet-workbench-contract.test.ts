@@ -203,6 +203,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     for (const expected of ['Deep work queue', 'source receipts', 'tools', 'gates', 'Retry', 'Cancel', 'Open run', 'Approval required', 'Approve', 'Reject']) {
       expect(askQueuedAgentRunPanelSource).toContain(expected);
     }
+    for (const expected of ['data-testid="ask-agent-chain-proof"', 'Supervisor', 'Primary agent', 'Sub-agents/tools', 'Human gate', 'Output contract', 'Ask PRAXIS supervisor']) {
+      expect(askQueuedAgentRunPanelSource).toContain(expected);
+    }
     expect(askQueuedAgentRunPanelSource).toContain('Agent dispatch failed');
     expect(askQueuedAgentRunPanelSource).toContain('run was created but not started');
     expect(askQueuedAgentRunPanelSource).toContain('/approvals/${encodeURIComponent(approvalId)}');

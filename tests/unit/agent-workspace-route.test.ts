@@ -13,6 +13,8 @@ describe('agent workspace route contract', () => {
     const routeSource = readFileSync(routePath, 'utf8');
     expect(routeSource).toContain('TaskletPraxisWorkbench');
     expect(routeSource).toContain('focusedRunId');
+    expect(routeSource).toContain('className="app-light praxis-app-surface"');
+    expect(routeSource).toContain('praxis-checker-constellation');
   });
 
   it('keeps the workbench focused-run mode wired to the agent run API', () => {

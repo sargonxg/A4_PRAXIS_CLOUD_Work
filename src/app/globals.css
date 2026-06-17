@@ -577,13 +577,16 @@ body {
 .praxis-public-shell,
 .praxis-app-surface {
   background:
-    radial-gradient(ellipse 70% 38% at 50% -4%, rgba(16, 185, 129, 0.07), transparent 70%),
-    radial-gradient(ellipse 42% 30% at 88% 8%, rgba(6, 182, 212, 0.045), transparent 72%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0) 340px),
-    linear-gradient(rgba(15, 23, 42, 0.026) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.026) 1px, transparent 1px),
+    radial-gradient(circle at 12px 12px, rgba(15, 23, 42, 0.08) 0 1px, transparent 1.45px),
+    conic-gradient(from 90deg at 1px 1px, rgba(15, 23, 42, 0.035) 25%, transparent 0 50%, rgba(15, 23, 42, 0.024) 0 75%, transparent 0),
+    radial-gradient(ellipse 70% 38% at 50% -4%, rgba(16, 185, 129, 0.08), transparent 70%),
+    radial-gradient(ellipse 42% 30% at 88% 8%, rgba(6, 182, 212, 0.055), transparent 72%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0) 340px),
+    linear-gradient(rgba(15, 23, 42, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.03) 1px, transparent 1px),
     var(--color-praxis-bg);
-  background-size: auto, auto, auto, 30px 30px, 30px 30px, auto;
+  background-size: 24px 24px, 96px 96px, auto, auto, auto, 30px 30px, 30px 30px, auto;
+  background-position: 0 0, 8px 8px, center top, right top, 0 0, 0 0, 0 0, 0 0;
   color: var(--color-praxis-text);
   color-scheme: light;
 }

@@ -60,7 +60,8 @@ requireAll('marketing home', sharedHomeSurface, [
   'marketing-home',
   'data-testid="praxis-chat-first-shell"',
   'data-testid="simple-home-chat"',
-  'Ask. Get a sourced brief.',
+  'Write trusted knowledge products.',
+  'Capsules keep the context clear.',
   'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
   'data-testid="marketing-primary-cta"',
@@ -101,7 +102,7 @@ requireAll('signed-in app index', appIndex, [
 forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
-  'Ask. Get a sourced brief.',
+  'Write trusted knowledge products.',
   'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
   'fetch(\'/api/ai/chat\'',

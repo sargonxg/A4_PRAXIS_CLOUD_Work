@@ -60,9 +60,10 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'data-testid="marketing-primary-cta"',
       'data-testid="public-sign-in-affordance"',
       '<HomeTopBar isPublic={isPublic} />',
-      'className="praxis-app-surface min-h-screen text-slate-950"',
+      'className="praxis-app-surface praxis-checker-constellation min-h-screen text-slate-950"',
       'Sign in to save and reuse capsules.',
-      'Ask. Get a sourced brief.',
+      'Write trusted knowledge products.',
+      'Capsules keep the context clear.',
       'Ask',
       'Context Capsules library',
       'Boardroom',
@@ -118,6 +119,8 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).toContain('Detach');
     expect(shellSource).toContain('Build context');
     expect(shellSource).toContain('Ask PRAXIS');
+    expect(shellSource).toContain('[-webkit-line-clamp:2]');
+    expect(shellSource).not.toContain('block truncate text-[13px] font-medium text-slate-700');
     expect(shellSource).not.toContain('PRAXIS sample artifacts');
     expect(source).not.toContain('AskPraxisHome');
     expect(source).not.toContain('TaskletPraxisWorkbench');

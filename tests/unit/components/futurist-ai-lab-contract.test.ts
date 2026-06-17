@@ -47,7 +47,8 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(marketingHome).toContain('mode="public"');
     expect(chatShell).toContain('data-testid="praxis-chat-first-shell"');
     expect(chatShell).toContain('PraxisChat');
-    expect(praxisChat).toContain('Ask. Get a sourced brief.');
+    expect(praxisChat).toContain('Write trusted knowledge products.');
+    expect(praxisChat).toContain('Capsules keep the context clear.');
     expect(praxisChat).toContain('Ask first.');
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
