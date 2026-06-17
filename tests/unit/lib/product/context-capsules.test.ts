@@ -423,6 +423,25 @@ describe('context capsule product contract', () => {
     ]));
   });
 
+  it('keeps catalog graph seed sizes varied and rich enough for visible reasoning graphs', () => {
+    const nodeCounts = new Set<number>();
+    const edgeCounts = new Set<number>();
+
+    for (const starter of CAPSULE_STARTER_DEFINITIONS) {
+      const nodeTemplates = starter.ontologyOverlay?.graphSeed.nodeTemplates ?? [];
+      const edgeTemplates = starter.ontologyOverlay?.graphSeed.edgeTemplates ?? [];
+      nodeCounts.add(nodeTemplates.length);
+      edgeCounts.add(edgeTemplates.length);
+      expect(nodeTemplates.length, `${starter.starterId} reasoned graph nodes`).toBeGreaterThanOrEqual(96);
+      expect(edgeTemplates.length, `${starter.starterId} reasoned graph edges`).toBeGreaterThanOrEqual(100);
+      expect(nodeTemplates.join('\n'), `${starter.starterId} graph boundary`).toMatch(/KnowledgeBoundary|DelimitationRule|SourceScope|GraphVisualizationHint/);
+      expect(edgeTemplates.join('\n'), `${starter.starterId} graph delimitation edge`).toMatch(/DELIMITS|BOUNDS_CONFIDENCE|TRIGGERS_REVIEW|CONSTRAINS/);
+    }
+
+    expect(nodeCounts.size).toBeGreaterThan(12);
+    expect(edgeCounts.size).toBeGreaterThan(12);
+  });
+
   it('consolidates starter source metadata and curation profiles across the full catalog', () => {
     const externalSourceCount = (starter: (typeof CAPSULE_STARTER_DEFINITIONS)[number]) =>
       starter.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog' && !source.url.includes('praxis.tacitus.me')).length;

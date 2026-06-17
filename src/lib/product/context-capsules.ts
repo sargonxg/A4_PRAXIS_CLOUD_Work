@@ -9198,10 +9198,10 @@ function rewriteHumanGatedPolicyJudgmentInspectionSections(input: {
   });
 }
 
-const CATALOG_GRAPH_REASONED_NODE_MIN = 84;
-const CATALOG_GRAPH_REASONED_EDGE_MIN = 84;
-const CATALOG_GRAPH_REASONED_NODE_MAX = 144;
-const CATALOG_GRAPH_REASONED_EDGE_MAX = 152;
+const CATALOG_GRAPH_REASONED_NODE_MIN = 96;
+const CATALOG_GRAPH_REASONED_EDGE_MIN = 100;
+const CATALOG_GRAPH_REASONED_NODE_MAX = 176;
+const CATALOG_GRAPH_REASONED_EDGE_MAX = 188;
 
 function stableCatalogGraphHash(value: string): number {
   let hash = 2166136261;
@@ -9235,7 +9235,7 @@ function catalogGraphTargetCount(starter: CapsuleStarterDefinition, kind: 'node'
   const sourceBonus = Math.min(12, starter.sourcePack.length * 2);
   const tagBonus = Math.min(10, strategicTagBonus);
   const base = kind === 'node' ? CATALOG_GRAPH_REASONED_NODE_MIN : CATALOG_GRAPH_REASONED_EDGE_MIN + 4;
-  const spread = kind === 'node' ? 37 : 43;
+  const spread = kind === 'node' ? 55 : 61;
   const max = kind === 'node' ? CATALOG_GRAPH_REASONED_NODE_MAX : CATALOG_GRAPH_REASONED_EDGE_MAX;
   return Math.min(max, base + categoryBonus[starter.category] + sourceBonus + tagBonus + (hash % spread));
 }
@@ -9290,7 +9290,12 @@ function buildCatalogReasonedNodeTemplates(starter: CapsuleStarterDefinition, ta
       'ToolAction',
       'AbstractConcept',
       'RealInfo',
-    ][index % 10];
+      'SourceFreshnessGate',
+      'ForbiddenInference',
+      'OutputConstraint',
+      'DisconfirmingSignal',
+      'AgentHandoffCue',
+    ][index % 15];
     const nodePurpose = [
       'structures the capsule knowledge lane before generation',
       'delimits claims that must remain out of context',
@@ -9353,6 +9358,9 @@ function buildCatalogReasonedEdgeTemplates(
     'DEPENDS_ON',
     'TRIGGERS_REVIEW',
     'CITED_BY',
+    'FLAGS_FORBIDDEN_INFERENCE',
+    'REQUIRES_DISCONFIRMATION_CHECK',
+    'LIMITS_OUTPUT_SCOPE',
   ]);
   const narratives = [
     'structures context so the graph explains what is inside scope',
@@ -9440,6 +9448,11 @@ function applyCatalogWideReasonedGraphVariation(starter: CapsuleStarterDefinitio
       'AgentStopCondition',
       'TacitAssumption',
       'GraphVisualizationHint',
+      'SourceFreshnessGate',
+      'ForbiddenInference',
+      'OutputConstraint',
+      'DisconfirmingSignal',
+      'AgentHandoffCue',
     ]),
     graphEdgeTypes: uniqueStrings([
       ...starter.ontologyOverlay.graphEdgeTypes,
@@ -9452,6 +9465,9 @@ function applyCatalogWideReasonedGraphVariation(starter: CapsuleStarterDefinitio
       'DEPENDS_ON',
       'TRIGGERS_REVIEW',
       'CITED_BY',
+      'FLAGS_FORBIDDEN_INFERENCE',
+      'REQUIRES_DISCONFIRMATION_CHECK',
+      'LIMITS_OUTPUT_SCOPE',
     ]),
     ontologyNodeHints: uniqueStrings([
       ...starter.ontologyOverlay.ontologyNodeHints,
@@ -9461,6 +9477,9 @@ function applyCatalogWideReasonedGraphVariation(starter: CapsuleStarterDefinitio
       'ConfidencePosture: confidence cap, freshness posture, and review state',
       'ReviewQuestion: source-refresh and disconfirmation questions for agents',
       'GraphVisualizationHint: visible clusters for structure, evidence, confidence, and boundary lanes',
+      'ForbiddenInference: claims the capsule must actively suppress without new receipts',
+      'DisconfirmingSignal: what evidence would change or weaken the working judgment',
+      'AgentHandoffCue: what Ask PRAXIS should preserve when turning this capsule into work',
     ]).slice(0, 20),
     graphSeed: {
       ...starter.ontologyOverlay.graphSeed,

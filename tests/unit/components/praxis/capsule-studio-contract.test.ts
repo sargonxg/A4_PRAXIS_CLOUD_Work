@@ -66,6 +66,23 @@ describe('Capsule Studio living graph UI contract', () => {
     }
   });
 
+  it('surfaces graph stats and context-boundary signals in the viewer', () => {
+    for (const expected of [
+      'data-testid="capsule-graph-stats"',
+      'graphStats',
+      'sourceBackedClaims',
+      'unsupportedClaims',
+      'boundaryNodes',
+      'reviewGatedNodes',
+      'provenanceCoveragePct',
+      'Boundary',
+      'Context / boundary',
+    ]) {
+      expect(source).toContain(expected);
+    }
+    expect(sectionSource).toContain('graphStats={graph.stats}');
+  });
+
   it('renders a reusable graph why panel with rationale, provenance, and contradiction history', () => {
     expect(viewerSource).toContain('CapsuleGraphWhyPanel,');
     expect(viewerSource).toContain("from '@/components/capsules/viewers/CapsuleGraphWhyPanel'");

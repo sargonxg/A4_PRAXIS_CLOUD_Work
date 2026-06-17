@@ -1,7 +1,7 @@
 # Capsule Database Audit
 
 Catalog version: 2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth
-Generated at: 2026-06-17T02:54:11.168Z
+Generated at: 2026-06-17T03:40:52.234Z
 Result: pass
 Canonical store: Firestore ContextCapsules
 Audited scope: local starter catalog definitions and seedable GraphLite advisory projection metadata
@@ -14,8 +14,8 @@ Remote Firestore mutation: false
 - Source records: 935
 - Excerpt records: 786
 - Named GraphLite graph records: 211
-- Graph node templates: 25822
-- Graph edge templates: 27404
+- Graph node templates: 30343
+- Graph edge templates: 32363
 
 ## Types
 
@@ -47,10 +47,10 @@ Remote Firestore mutation: false
 
 ## Graph Stats
 
-- Nodes: min 99, max 143, average 122.38, unique counts 43
-- Edges: min 106, max 152, average 129.88, unique counts 47
+- Nodes: min 115, max 173, average 143.81, unique counts 56
+- Edges: min 123, max 187, average 153.38, unique counts 63
 - Same node/edge count records: 2
-- Density bands: 115-129 95, 130-plus 63, 100-114 52, 84-99 1
+- Density bands: 130-plus 154, 115-129 57
 
 ## Source Stats
 
@@ -61,12 +61,12 @@ Remote Firestore mutation: false
 
 ## Multilateral Syria Flagship Records
 
-- starter-user-us-based-multilateral-desk-officer: found, user, analyst-role, nodes 133, edges 111, sources 6
-- starter-situation-syria-political-security-humanitarian-watch: found, situation, diplomacy, nodes 127, edges 150, sources 6
-- starter-tool-multilateral-source-trust-ledger: found, tool, source-intake, nodes 142, edges 129, sources 6
-- starter-tool-media-source-prioritization-docket: found, tool, source-intake, nodes 113, edges 127, sources 6
-- starter-tool-briefing-synthesis-sourceability-protocol: found, tool, audit-review, nodes 140, edges 116, sources 6
-- starter-output-two-page-syria-media-roundup: found, output, output-brief, nodes 126, edges 119, sources 6
+- starter-user-us-based-multilateral-desk-officer: found, user, analyst-role, nodes 151, edges 139, sources 6
+- starter-situation-syria-political-security-humanitarian-watch: found, situation, diplomacy, nodes 124, edges 174, sources 6
+- starter-tool-multilateral-source-trust-ledger: found, tool, source-intake, nodes 131, edges 144, sources 6
+- starter-tool-media-source-prioritization-docket: found, tool, source-intake, nodes 148, edges 142, sources 6
+- starter-tool-briefing-synthesis-sourceability-protocol: found, tool, audit-review, nodes 147, edges 169, sources 6
+- starter-output-two-page-syria-media-roundup: found, output, output-brief, nodes 164, edges 186, sources 6
 
 ## Findings
 

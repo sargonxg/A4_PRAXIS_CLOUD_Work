@@ -28,6 +28,18 @@ type CapsuleGraphGeneratedBy = {
   activity: 'extraction' | 'proposal' | 'review_decision' | 'import' | 'quality_review';
 };
 
+type CapsuleGraphViewerStats = {
+  totalNodes: number;
+  totalEdges: number;
+  sourceBackedClaims: number;
+  unsupportedClaims: number;
+  boundaryNodes: number;
+  reviewGatedNodes: number;
+  temporalNodes: number;
+  provenanceCoveragePct: number;
+  densityLabel: string;
+};
+
 type TemporalGraphElement = {
   validFrom?: string;
   validUntil?: string;
@@ -71,6 +83,7 @@ export type CapsuleGraphViewerEdge = {
   label: string;
   reviewState: string;
   relationshipType?: string;
+  provenance?: string;
   judgeRationale?: string;
   confidence?: number | null;
   confidenceKind?: CapsuleGraphConfidenceKind;
@@ -98,6 +111,7 @@ export type CapsuleGraphViewerProps = {
   height?: number;
   canonicalNodeCount?: number;
   proposedNodeCount?: number;
+  graphStats?: CapsuleGraphViewerStats;
   onProposalIntent?: (node: CapsuleGraphViewerNode | null, intent: CapsuleGraphProposalIntent) => void;
   onBuildFromSources?: () => void;
   proposalForm?: ReactNode;
@@ -184,6 +198,7 @@ function CapsuleGraphViewerComponent({
   height = 420,
   canonicalNodeCount = 0,
   proposedNodeCount = 0,
+  graphStats,
   onProposalIntent,
   onBuildFromSources,
   proposalForm = null,
@@ -300,6 +315,7 @@ function CapsuleGraphViewerComponent({
 
       <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-2 py-2" data-testid="capsule-graph-lens-bar">
         <span className="mr-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">ACO lenses</span>
+        <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">Context / boundary</span>
         {RELATIONSHIP_LENS_OPTIONS.map(({ category, label }) => {
           const active = activeCategories.has(category);
           return (
@@ -331,6 +347,17 @@ function CapsuleGraphViewerComponent({
           Invalidated
         </button>
       </div>
+
+      {graphStats ? (
+        <div className="grid grid-cols-2 gap-px border-b border-slate-100 bg-slate-100 text-xs sm:grid-cols-4 lg:grid-cols-8" data-testid="capsule-graph-stats">
+          {graphStatItems(graphStats).map((item) => (
+            <div key={item.label} className="min-w-0 bg-white px-2.5 py-2">
+              <p className="truncate text-[10px] font-bold uppercase tracking-[0.1em] text-slate-400">{item.label}</p>
+              <p className="mt-0.5 truncate text-sm font-semibold text-slate-900">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {graphIsEmpty ? (
         <div className="flex h-[420px] flex-col items-center justify-center gap-3 p-6 text-center">
@@ -421,6 +448,8 @@ function CapsuleGraphViewerComponent({
         <div className="flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
           <span>{canonicalNodeCount} canonical</span>
           <span>{proposedNodeCount} proposed/missing</span>
+          {graphStats ? <span>{graphStats.boundaryNodes} Boundary</span> : null}
+          {graphStats ? <span>{graphStats.provenanceCoveragePct}% provenance</span> : null}
           <span>{nodes.length > graphData.nodes.length ? `${nodes.length - graphData.nodes.length} nodes collapsed by level of detail` : 'Full graph visible'}</span>
           <span>GraphLite advisory projection</span>
           <span>Firestore canonical</span>
@@ -434,6 +463,19 @@ function CapsuleGraphViewerComponent({
 
 export const CapsuleGraphViewer = memo(CapsuleGraphViewerComponent);
 export default CapsuleGraphViewerComponent;
+
+function graphStatItems(stats: CapsuleGraphViewerStats): Array<{ label: string; value: string }> {
+  return [
+    { label: 'Density', value: stats.densityLabel },
+    { label: 'Nodes', value: String(stats.totalNodes) },
+    { label: 'Edges', value: String(stats.totalEdges) },
+    { label: 'Sourced', value: String(stats.sourceBackedClaims) },
+    { label: 'Unsupported', value: String(stats.unsupportedClaims) },
+    { label: 'Boundary', value: String(stats.boundaryNodes) },
+    { label: 'Review gated', value: String(stats.reviewGatedNodes) },
+    { label: 'Provenance', value: `${stats.provenanceCoveragePct}%` },
+  ];
+}
 
 function buildForceGraphData(graph: { nodes: CapsuleGraphViewerNode[]; edges: CapsuleGraphViewerEdge[] }, query: string): { nodes: ForceGraphNode[]; links: ForceGraphLink[] } {
   const term = query.trim().toLowerCase();
@@ -455,6 +497,7 @@ function buildForceGraphData(graph: { nodes: CapsuleGraphViewerNode[]; edges: Ca
         || node.type === 'core'
         || node.type === 'ontology'
         || node.type === 'review'
+        || node.type === 'boundary'
         || node.type === 'output'
         || index < 120;
       if (keep) {
@@ -572,14 +615,20 @@ function paintGraphNode(node: ForceGraphNode, ctx: CanvasRenderingContext2D, glo
   const entityType = node.entityType ?? node.type;
   const fill = node.reviewState === 'missing' ? '#fee2e2' : getACOColor(entityType);
   const stroke = node.reviewState === 'missing' ? '#dc2626' : getACOBorderColor(entityType);
-  const radius = node.type === 'capsule' ? 8 : node.__cluster ? Math.min(18, 8 + Math.log2((node.__count ?? 2) + 1) * 2) : 5.5;
+  const radius = node.type === 'capsule' ? 8 : node.type === 'boundary' ? 6.5 : node.__cluster ? Math.min(18, 8 + Math.log2((node.__count ?? 2) + 1) * 2) : 5.5;
   const x = node.x ?? 0;
   const y = node.y ?? 0;
   const opacity = node.__opacity ?? 1;
   ctx.save();
   ctx.globalAlpha = opacity;
   ctx.beginPath();
-  if (node.reviewState === 'missing') {
+  if (node.type === 'boundary') {
+    ctx.moveTo(x, y - radius - 2);
+    ctx.lineTo(x + radius + 2, y);
+    ctx.lineTo(x, y + radius + 2);
+    ctx.lineTo(x - radius - 2, y);
+    ctx.closePath();
+  } else if (node.reviewState === 'missing') {
     ctx.rect(x - radius, y - radius, radius * 2, radius * 2);
   } else if (node.reviewState === 'proposed' || node.reviewState === 'advisory') {
     ctx.moveTo(x, y - radius - 1);

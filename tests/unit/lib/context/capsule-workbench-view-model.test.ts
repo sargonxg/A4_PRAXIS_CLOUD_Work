@@ -100,6 +100,18 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.evidence.unsupportedClaims).toContain('procurement timing remains thin.');
     expect(model.graph.nodes.some((node) => node.type === 'agent' && node.label === 'Sourceability reviewer')).toBe(true);
     expect(model.graph.nodes.some((node) => node.reviewState === 'proposed')).toBe(true);
+    expect(model.graph.nodes.some((node) => node.type === 'boundary' && /unsupported claims/i.test(node.label))).toBe(true);
+    expect(model.graph.stats).toMatchObject({
+      totalNodes: model.graph.nodes.length,
+      totalEdges: model.graph.edges.length,
+      sourceBackedClaims: 0,
+      unsupportedClaims: 1,
+      boundaryNodes: expect.any(Number),
+      reviewGatedNodes: expect.any(Number),
+      provenanceCoveragePct: expect.any(Number),
+    });
+    expect(model.graph.stats.boundaryNodes).toBeGreaterThanOrEqual(3);
+    expect(model.graph.stats.provenanceCoveragePct).toBeGreaterThan(70);
     expect(model.ontology.active.some((item) => item.id === 'domestic-policy-analysis')).toBe(true);
     expect(model.tacitKnowledge.items[0]?.summary).toContain('primary-source caveats');
     expect(model.agents.recentRuns[0]?.status).toBe('completed');
@@ -213,6 +225,9 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.graph.nodes.some((node) => node.id === 'source:source-72')).toBe(true);
     expect(model.graph.nodes.some((node) => node.id === 'claim:claim-73')).toBe(true);
     expect(model.graph.edges.some((edge) => edge.source === 'claim:claim-73' && edge.target === 'source:source-73')).toBe(true);
+    expect(model.graph.stats.sourceBackedClaims).toBe(90);
+    expect(model.graph.stats.temporalNodes).toBeGreaterThanOrEqual(1);
+    expect(model.graph.stats.densityLabel).toMatch(/living graph|dense/i);
   });
 
   it('reads GraphLite advisory projections into the capsule embedded graph display', () => {

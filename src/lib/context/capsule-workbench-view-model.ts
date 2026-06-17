@@ -194,7 +194,7 @@ export interface CapsuleEvidenceDisplay {
 export interface CapsuleGraphNodeDisplay {
   id: string;
   label: string;
-  type: 'capsule' | 'core' | 'source' | 'document' | 'claim' | 'gap' | 'memory' | 'output' | 'agent' | 'ontology' | 'review';
+  type: 'capsule' | 'core' | 'source' | 'document' | 'claim' | 'gap' | 'memory' | 'output' | 'agent' | 'ontology' | 'review' | 'boundary';
   reviewState: CapsuleWorkbenchReviewState;
   detail?: string;
   entityType?: string;
@@ -228,6 +228,7 @@ export interface CapsuleGraphEdgeDisplay {
   label: string;
   reviewState: CapsuleWorkbenchReviewState;
   relationshipType?: string;
+  provenance?: string;
   judgeRationale?: string;
   confidence?: number | null;
   confidenceKind?: 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
@@ -254,6 +255,19 @@ export interface CapsuleGraphDisplay {
   edges: CapsuleGraphEdgeDisplay[];
   canonicalNodeCount: number;
   proposedNodeCount: number;
+  stats: CapsuleGraphStatsDisplay;
+}
+
+export interface CapsuleGraphStatsDisplay {
+  totalNodes: number;
+  totalEdges: number;
+  sourceBackedClaims: number;
+  unsupportedClaims: number;
+  boundaryNodes: number;
+  reviewGatedNodes: number;
+  temporalNodes: number;
+  provenanceCoveragePct: number;
+  densityLabel: string;
 }
 
 export interface CapsuleOntologyItemDisplay {
@@ -1106,6 +1120,7 @@ function buildGraph(input: {
     provenance: 'ContextCapsule envelope',
     confidence: confidenceFromScore(scoreForCapsule(input.capsule)),
     version: input.capsule.version ?? null,
+    recordedAt: capsuleGraphRecordedAt(input.capsule),
   }];
   const edges: CapsuleGraphEdgeDisplay[] = [];
   const sourceItems = sourceItemsFromUnknown(input.capsule.sourceRefs);
@@ -1115,7 +1130,12 @@ function buildGraph(input: {
     if (!nodes.some((existing) => existing.id === node.id)) nodes.push(node);
   };
   const addEdge = (edge: CapsuleGraphEdgeDisplay) => {
-    if (!edges.some((existing) => existing.id === edge.id)) edges.push(edge);
+    if (!edges.some((existing) => existing.id === edge.id)) {
+      edges.push({
+        derivedFrom: ['capsule-workbench-graph-builder'],
+        ...edge,
+      });
+    }
   };
 
   for (const core of input.anatomy) {
@@ -1272,6 +1292,14 @@ function buildGraph(input: {
     addNode({ id: `review:${card.id}`, label: card.title, type: 'review', reviewState: card.reviewState, detail: card.target, entityType: 'Commitment', provenance: card.sourceType });
     addEdge({ id: `review-${card.id}-capsule`, source: `review:${card.id}`, target: `capsule:${input.capsule.capsuleId}`, label: 'needs approval', reviewState: card.reviewState, relationshipType: 'made_commitment' });
   }
+  addGraphBoundaryLayer({
+    capsule: input.capsule,
+    evidence: input.evidence,
+    reviewQueue: input.reviewQueue,
+    sourceBackedClaimCount: claimItems.filter((claim) => claim.sourceIds.length > 0).length,
+    addNode,
+    addEdge,
+  });
   for (const proposal of graphProposalsFromUnknown(input.capsule.memoryPosture)) {
     if (proposal.kind === 'node' && proposal.operation !== 'delete') {
       const nodeId = graphProposalNodeId(proposal.payload.id);
@@ -1351,7 +1379,178 @@ function buildGraph(input: {
     edges,
     canonicalNodeCount,
     proposedNodeCount: nodes.length - canonicalNodeCount,
+    stats: summarizeCapsuleGraph({
+      nodes,
+      edges,
+      sourceBackedClaims: claimItems.filter((claim) => claim.sourceIds.length > 0).length,
+      unsupportedClaims: input.evidence.unsupportedClaims.length,
+    }),
   };
+}
+
+function addGraphBoundaryLayer(input: {
+  capsule: CapsuleWorkbenchCapsuleInput;
+  evidence: CapsuleEvidenceDisplay;
+  reviewQueue: CapsuleReviewCardDisplay[];
+  sourceBackedClaimCount: number;
+  addNode: (node: CapsuleGraphNodeDisplay) => void;
+  addEdge: (edge: CapsuleGraphEdgeDisplay) => void;
+}) {
+  const capsuleId = `capsule:${input.capsule.capsuleId}`;
+  const boundarySpecs = [
+    {
+      id: 'boundary:context-frame',
+      label: 'Context frame',
+      detail: cleanText(input.capsule.purpose) || cleanText(input.capsule.summary) || 'Defines the work this capsule is allowed to carry into Ask PRAXIS.',
+      reviewState: 'canonical' as const,
+      edgeLabel: 'frames use',
+      relationshipType: 'structures',
+      target: capsuleId,
+    },
+    {
+      id: 'boundary:source-scope',
+      label: `${input.evidence.sourceCount} source receipt${input.evidence.sourceCount === 1 ? '' : 's'} bound the graph`,
+      detail: input.evidence.sourcePosture,
+      reviewState: input.evidence.sourceCount ? 'canonical' as const : 'missing' as const,
+      edgeLabel: 'bounds evidence',
+      relationshipType: 'requires_resource',
+      target: 'core:source',
+    },
+    {
+      id: 'boundary:unsupported-claims',
+      label: `Unsupported claims boundary: ${input.evidence.unsupportedClaims.length} outside confident use`,
+      detail: input.evidence.unsupportedClaims.length
+        ? input.evidence.unsupportedClaims.slice(0, 3).join(' | ')
+        : 'No unsupported claims are currently visible in the capsule evidence ledger.',
+      reviewState: input.evidence.unsupportedClaims.length ? 'proposed' as const : 'canonical' as const,
+      edgeLabel: 'delimits confidence',
+      relationshipType: 'bounds_confidence',
+      target: 'core:source',
+    },
+    {
+      id: 'boundary:review-gate',
+      label: `${input.reviewQueue.length} review gate${input.reviewQueue.length === 1 ? '' : 's'} before promotion`,
+      detail: input.reviewQueue.length
+        ? input.reviewQueue.map((card) => card.title).slice(0, 4).join(' | ')
+        : 'No open review cards are blocking this capsule graph.',
+      reviewState: input.reviewQueue.length ? 'proposed' as const : 'canonical' as const,
+      edgeLabel: 'requires review',
+      relationshipType: 'triggers_review',
+      target: capsuleId,
+    },
+    {
+      id: 'boundary:agent-stop-condition',
+      label: 'Agent stop condition',
+      detail: 'Ask PRAXIS should stop or ask for review when claims cross source scope, freshness, confidence, or output-contract boundaries.',
+      reviewState: 'advisory' as const,
+      edgeLabel: 'constrains agent',
+      relationshipType: 'constrains',
+      target: 'core:tool',
+    },
+  ];
+
+  for (const spec of boundarySpecs) {
+    input.addNode({
+      id: spec.id,
+      label: spec.label,
+      type: 'boundary',
+      reviewState: spec.reviewState,
+      detail: spec.detail,
+      entityType: spec.id.includes('unsupported') ? 'Risk' : spec.id.includes('review') ? 'Commitment' : 'Constraint',
+      provenance: 'derived capsule delimitation layer',
+      confidence: spec.reviewState === 'canonical' ? 0.86 : spec.reviewState === 'missing' ? 0.35 : 0.62,
+      confidenceKind: 'ASSESSED',
+      sourceReceiptIds: input.evidence.sourceIds.slice(0, 4),
+      linkedClaimIds: input.evidence.unsupportedClaims.map((_, index) => `unsupported-${index + 1}`),
+      recordedAt: capsuleGraphRecordedAt(input.capsule),
+      rationale: 'Context is both structure and delimitation; this node keeps the graph honest about source scope, review gates, and forbidden overreach.',
+      derivedFrom: ['capsule-envelope', 'sourceability-gates', 'review-queue'],
+      generatedBy: {
+        actorType: 'model',
+        actorId: 'capsule-workbench-view-model',
+        at: capsuleGraphRecordedAt(input.capsule),
+        activity: 'quality_review',
+      },
+    });
+    input.addEdge({
+      id: `${spec.id}-edge`,
+      source: spec.id,
+      target: spec.target,
+      label: spec.edgeLabel,
+      reviewState: spec.reviewState,
+      relationshipType: spec.relationshipType,
+      confidence: spec.reviewState === 'canonical' ? 0.84 : 0.6,
+      confidenceKind: 'ASSESSED',
+      sourceReceiptIds: input.evidence.sourceIds.slice(0, 4),
+      recordedAt: capsuleGraphRecordedAt(input.capsule),
+      rationale: 'Boundary edge prevents graph structure from being mistaken for factual proof.',
+      derivedFrom: ['capsule-envelope', 'sourceability-gates'],
+      generatedBy: {
+        actorType: 'model',
+        actorId: 'capsule-workbench-view-model',
+        at: capsuleGraphRecordedAt(input.capsule),
+        activity: 'quality_review',
+      },
+    });
+  }
+
+  if (input.sourceBackedClaimCount > 0) {
+    input.addEdge({
+      id: 'boundary-source-backed-claims',
+      source: 'boundary:source-scope',
+      target: 'boundary:unsupported-claims',
+      label: `${input.sourceBackedClaimCount} claims remain inside source scope`,
+      reviewState: 'canonical',
+      relationshipType: 'delimits',
+      confidence: 0.78,
+      confidenceKind: 'ASSESSED',
+      sourceReceiptIds: input.evidence.sourceIds.slice(0, 4),
+      recordedAt: capsuleGraphRecordedAt(input.capsule),
+      rationale: 'Source-backed claims are separated from unsupported claims so generation can preserve the confidence boundary.',
+      derivedFrom: ['claim-ledger', 'source-receipts'],
+    });
+  }
+}
+
+function summarizeCapsuleGraph(input: {
+  nodes: CapsuleGraphNodeDisplay[];
+  edges: CapsuleGraphEdgeDisplay[];
+  sourceBackedClaims: number;
+  unsupportedClaims: number;
+}): CapsuleGraphStatsDisplay {
+  const allElements = [...input.nodes, ...input.edges];
+  const provenanceBacked = allElements.filter((element) => Boolean(
+    element.provenance
+    || element.sourceReceiptIds?.length
+    || element.derivedFrom?.length
+    || element.generatedBy,
+  )).length;
+  const provenanceCoveragePct = allElements.length
+    ? Math.round((provenanceBacked / allElements.length) * 100)
+    : 0;
+  const total = input.nodes.length + input.edges.length;
+  const densityLabel = total >= 320
+    ? 'dense living graph'
+    : total >= 140
+      ? 'living graph'
+      : total >= 60
+        ? 'structured graph'
+        : 'starter graph';
+  return {
+    totalNodes: input.nodes.length,
+    totalEdges: input.edges.length,
+    sourceBackedClaims: input.sourceBackedClaims,
+    unsupportedClaims: input.unsupportedClaims,
+    boundaryNodes: input.nodes.filter((node) => node.type === 'boundary').length,
+    reviewGatedNodes: input.nodes.filter((node) => node.reviewState === 'proposed' || node.reviewState === 'missing' || node.reviewState === 'advisory').length,
+    temporalNodes: input.nodes.filter((node) => node.validFrom || node.validUntil || node.asOf || node.recordedAt || node.invalidatedAt).length,
+    provenanceCoveragePct,
+    densityLabel,
+  };
+}
+
+function capsuleGraphRecordedAt(capsule: CapsuleWorkbenchCapsuleInput): string {
+  return capsule.updatedAt || '2026-01-01T00:00:00.000Z';
 }
 
 function scoreForCapsule(capsule: CapsuleWorkbenchCapsuleInput): number {

@@ -104,6 +104,7 @@ export const CapsuleGraphSection = memo(function CapsuleGraphSection({
           height={420}
           canonicalNodeCount={graph.canonicalNodeCount}
           proposedNodeCount={graph.proposedNodeCount}
+          graphStats={graph.stats}
           onProposalIntent={handleProposalIntent}
           onOpenClaim={handleOpenClaim}
           onBuildFromSources={() => setStatus('Graph build queued from attached source receipts.')}
