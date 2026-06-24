@@ -51,7 +51,7 @@ describe('agent runtime proof smoke', () => {
       runId: 'run-runtime-proof',
       status: 'queued',
       policyAgentId: 'research-memo',
-      policyAgentLabel: 'Research Memo Agent',
+      policyAgentLabel: 'Writer / Drafter',
       readiness: 'live',
       outputDestination: 'memo_studio',
     });

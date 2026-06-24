@@ -149,7 +149,7 @@ describe('active context stack block arrays', () => {
     expect(model.items.map((item) => [item.capsuleId, item.roleLabel, item.primary])).toEqual([
       ['cap-situation', 'Situation', true],
       ['cap-user', 'User core', false],
-      ['cap-tool', 'Tool', false],
+      ['cap-tool', 'Tools', false],
       ['cap-output', 'Output', false],
     ]);
     expect(model.warnings.map((warning) => warning.id)).toEqual(['missing-output']);
