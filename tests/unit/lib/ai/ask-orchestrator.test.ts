@@ -298,6 +298,48 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     }
   });
 
+  it('routes specialist knowledge-work prompts to the expanded policy-agent roster', () => {
+    const cases = [
+      {
+        prompt: 'Compare these two claims and report the deltas and conflicts.',
+        policyAgentId: 'difference-checker',
+        workflowKind: 'multi_agent_review',
+      },
+      {
+        prompt: 'Summarize this transcript into source-cited claims.',
+        policyAgentId: 'media-summarizer',
+        workflowKind: 'current_research_brief',
+      },
+      {
+        prompt: 'Apply the ACO lens to surface spoilers, leverage, commitments, narratives, and escalation risk.',
+        policyAgentId: 'human-friction-analyst',
+        workflowKind: 'multi_agent_review',
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const receipt = buildAskConversationOrchestrationReceipt({
+        prompt: testCase.prompt,
+        intent: 'normal_answer',
+        contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 3 }),
+        sourcePreviewCount: 1,
+        activeGapCount: 0,
+      });
+
+      expect(receipt.supervisor).toMatchObject({
+        action: 'queue_agent_run',
+        policyAgentId: testCase.policyAgentId,
+      });
+      expect(receipt.workflowPlan.workflowKind).toBe(testCase.workflowKind);
+      expect(receipt.workflowPlan.requiredPolicyAgentIds).toContain(testCase.policyAgentId);
+      expect(receipt.workflowPlan.steps).toEqual(expect.arrayContaining([
+        expect.objectContaining({
+          agentId: testCase.policyAgentId,
+        }),
+      ]));
+    }
+  });
+
   it('maps receipt stages to safe user-facing Ask working timeline events', () => {
     const receipt = buildAskConversationOrchestrationReceipt({
       prompt: 'Do a deep sourceability review and prepare a memo with current sources.',

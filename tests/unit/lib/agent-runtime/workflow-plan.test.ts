@@ -63,6 +63,47 @@ describe('agent workflow plan', () => {
       }),
     ]));
   });
+
+  it('shows selected specialist roster agents as workflow steps', () => {
+    const plan = buildAgentWorkflowPlan({
+      prompt: 'Compare these two positions and surface ACO conflict dynamics.',
+      runIntent: 'difference_check',
+      policyAgentId: 'difference-checker',
+      selectedToolIds: ['context-resolve', 'capsule-evidence-pack', 'document-retrieve', 'sourceability-reviewer', 'red-team-review'],
+      capsuleReadReceipt: receipt(),
+    });
+
+    expect(plan.workflowKind).toBe('multi_agent_review');
+    expect(plan.requiredPolicyAgentIds).toEqual(expect.arrayContaining([
+      'difference-checker',
+      'sourceability-reviewer',
+      'red-team-analyst',
+    ]));
+    expect(plan.steps).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'agent-difference-checker',
+        label: 'Difference Checker',
+        agentId: 'difference-checker',
+        lane: 'agent',
+      }),
+    ]));
+  });
+
+  it('routes media summarization through long-context document workflow planning', () => {
+    const plan = buildAgentWorkflowPlan({
+      prompt: 'Summarize this transcript into source-cited claims.',
+      runIntent: 'media_summary',
+      policyAgentId: 'media-summarizer',
+      selectedToolIds: ['context-resolve', 'capsule-evidence-pack', 'document-retrieve', 'sourceability-reviewer'],
+      capsuleReadReceipt: receipt(),
+    });
+
+    expect(plan.workflowKind).toBe('current_research_brief');
+    expect(plan.requiredPolicyAgentIds).toEqual(expect.arrayContaining([
+      'media-summarizer',
+      'sourceability-reviewer',
+    ]));
+  });
 });
 
 function receipt(): CapsuleReadReceipt {

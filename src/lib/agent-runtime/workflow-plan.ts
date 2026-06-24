@@ -138,6 +138,20 @@ function buildWorkflowSteps(input: {
       lane: 'sourceability',
     });
   }
+  for (const agentId of input.requiredPolicyAgentIds) {
+    if (agentId === 'sourceability-reviewer') continue;
+    const agent = getPolicyAgent(agentId);
+    if (!agent) continue;
+    steps.push({
+      id: `agent-${agent.id}`,
+      label: agent.label,
+      status: 'pending',
+      detail: `${agent.label} consumes the Agent Context Packet and returns ${agent.outputContract}`,
+      toolId: agent.recommendedToolIds[0] ?? null,
+      agentId: agent.id,
+      lane: 'agent',
+    });
+  }
   return steps;
 }
 
@@ -167,9 +181,17 @@ function classifyWorkflowKind(input: {
     input.policyAgentId === 'capsule-quality-review'
   ) return 'capsule_governance';
   if (input.runIntent === 'handover' || input.policyAgentId === 'handover-builder') return 'handover';
+  if (
+    input.runIntent === 'sourceability_review' ||
+    input.runIntent === 'red_team_review' ||
+    input.runIntent === 'difference_check' ||
+    input.runIntent === 'human_friction_analysis' ||
+    input.policyAgentId === 'difference-checker' ||
+    input.policyAgentId === 'human-friction-analyst'
+  ) return 'multi_agent_review';
   if (input.runIntent === 'research_memo' || input.selectedToolIds.some((toolId) => toolId === 'grounded-search' || toolId === 'deep-search-agent')) return 'current_research_brief';
+  if (input.runIntent === 'media_summary' || input.policyAgentId === 'media-summarizer') return 'current_research_brief';
   if (input.runIntent === 'format_output' || /\b(pdf|docx|memo|briefing pack|report|export|formatted)\b/.test(text)) return 'pdf_memo_output';
-  if (input.runIntent === 'sourceability_review' || input.runIntent === 'red_team_review') return 'multi_agent_review';
   if (/\b(gap|missing source|fill)\b/.test(text)) return 'gap_fill';
   return 'direct_answer';
 }

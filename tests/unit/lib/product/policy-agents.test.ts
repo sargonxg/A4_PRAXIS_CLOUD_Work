@@ -23,6 +23,9 @@ describe('PRAXIS policy agent registry', () => {
       'conflict-monitor',
       'sourceability-reviewer',
       'red-team-analyst',
+      'difference-checker',
+      'media-summarizer',
+      'human-friction-analyst',
       'handover-builder',
     ]);
 
@@ -30,7 +33,12 @@ describe('PRAXIS policy agent registry', () => {
       expect(destinationHref(agent.outputDestination)).toBe('/app');
       expect(agent.requiredCores.length).toBeGreaterThan(0);
       expect(agent.allowedTools.length).toBeGreaterThan(0);
+      expect(agent.recommendedToolIds.length).toBeGreaterThan(0);
       expect(agent.capsuleSlots.length).toBeGreaterThan(0);
+      expect(agent.capability).toMatch(/\S/);
+      expect(agent.inputContract).toMatch(/\S/);
+      expect(agent.outputContract).toMatch(/\S/);
+      expect(agent.modelTaskKind).toMatch(/\S/);
       expect(['low', 'medium', 'high']).toContain(agent.riskLevel);
       expect(agent.description.toLowerCase()).not.toMatch(/\b(filesystem|shell|gmail|slack)\b/);
     }
@@ -85,7 +93,45 @@ describe('PRAXIS policy agent registry', () => {
     expect(policyAgentRunIntent('boardroom-discussion')).toBe('boardroom_discussion');
     expect(policyAgentRunIntent('capsule-factory')).toBe('capsule_factory');
     expect(policyAgentRunIntent('output-formatter')).toBe('format_output');
+    expect(policyAgentRunIntent('sourceability-reviewer')).toBe('sourceability_review');
     expect(policyAgentRunIntent('red-team-analyst')).toBe('red_team_review');
+    expect(policyAgentRunIntent('difference-checker')).toBe('difference_check');
+    expect(policyAgentRunIntent('media-summarizer')).toBe('media_summary');
+    expect(policyAgentRunIntent('human-friction-analyst')).toBe('human_friction_analysis');
     expect(policyAgentRunIntent('unknown')).toBe('normal_answer');
+  });
+
+  it('exposes the required knowledge-work roster capabilities without hardcoded model ids', () => {
+    const agentsByCapability = new Map(PRAXIS_POLICY_AGENTS.map((agent) => [agent.capability, agent]));
+
+    expect(agentsByCapability.get('writer_drafter')).toMatchObject({
+      id: 'research-memo',
+      outputDestination: 'memo_studio',
+      modelTaskKind: 'writing_quality',
+    });
+    expect(agentsByCapability.get('source_checker')).toMatchObject({
+      id: 'sourceability-reviewer',
+      outputDestination: 'memo_studio',
+      modelTaskKind: 'complex_reasoning',
+    });
+    expect(agentsByCapability.get('difference_checker')).toMatchObject({
+      id: 'difference-checker',
+      outputDestination: 'memo_studio',
+      modelTaskKind: 'complex_reasoning',
+    });
+    expect(agentsByCapability.get('media_summarizer')).toMatchObject({
+      id: 'media-summarizer',
+      outputDestination: 'library',
+      modelTaskKind: 'long_context',
+    });
+    expect(agentsByCapability.get('human_friction_analyst')).toMatchObject({
+      id: 'human-friction-analyst',
+      outputDestination: 'canvas',
+      modelTaskKind: 'complex_reasoning',
+    });
+
+    for (const agent of agentsByCapability.values()) {
+      expect(agent.modelTaskKind).not.toMatch(/gemini|claude|gpt/i);
+    }
   });
 });

@@ -20,7 +20,8 @@ import { isAskThreadSqlConfigured, persistAskThreadTurnSql } from '@/lib/agent-r
 import { persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
 import { searchWeb, type WebSearchResult } from '@/lib/ai/grounded-research';
-import { getDeepThinkModel, getProModel, hasServerAiProvider } from '@/lib/ai/providers';
+import { getDeepThinkModel, getModel, getProModel, hasServerAiProvider } from '@/lib/ai/providers';
+import { getModelMatrixEntry, type TaskKind } from '@/lib/ai/model-matrix';
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 import { buildOutputFormatterReasoningLoop, buildResearchMemoReasoningLoop } from '@/lib/agent-runtime/reasoning-loop';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock, type CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
@@ -93,6 +94,9 @@ export type AgentRunExecutionMode =
   | 'output-formatter'
   | 'sourceability-reviewer'
   | 'red-team-analyst'
+  | 'difference-checker'
+  | 'media-summarizer'
+  | 'human-friction-analyst'
   | 'handover-builder';
 
 export type AgentWorkerFailureDiagnostic = {
@@ -143,11 +147,20 @@ type WorkerDeps = {
 type AgentTextGenerator = (input: {
   model?: LanguageModel;
   modelPurpose: 'pro' | 'deep-think';
+  modelTaskKind?: TaskKind;
   system: string;
   prompt: string;
   temperature?: number;
   providerOptions?: Record<string, unknown>;
 }) => Promise<{ text: string }>;
+
+type ReviewAgentExecutionMode =
+  | 'sourceability-reviewer'
+  | 'red-team-analyst'
+  | 'difference-checker'
+  | 'media-summarizer'
+  | 'human-friction-analyst'
+  | 'handover-builder';
 
 type AgentGroundedSearchReceipt = {
   sourceReceiptId: string;
@@ -228,7 +241,14 @@ export async function executeAgentRun(
   if (policyAgent?.id === 'output-formatter') {
     return executeOutputFormatterAgentRun(payload, { ...deps, getRun: async () => run });
   }
-  if (policyAgent?.id === 'sourceability-reviewer' || policyAgent?.id === 'red-team-analyst' || policyAgent?.id === 'handover-builder') {
+  if (
+    policyAgent?.id === 'sourceability-reviewer' ||
+    policyAgent?.id === 'red-team-analyst' ||
+    policyAgent?.id === 'difference-checker' ||
+    policyAgent?.id === 'media-summarizer' ||
+    policyAgent?.id === 'human-friction-analyst' ||
+    policyAgent?.id === 'handover-builder'
+  ) {
     return executeReviewAgentRun(payload, policyAgent.id, { ...deps, getRun: async () => run });
   }
   return executeNoopAgentRun(payload, { ...deps, getRun: async () => run });
@@ -2551,7 +2571,7 @@ async function executeOutputFormatterAgentRun(
 
 async function executeReviewAgentRun(
   payload: ExecuteAgentRunPayload,
-  executionMode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder',
+  executionMode: ReviewAgentExecutionMode,
   deps: WorkerDeps = {},
 ): Promise<ExecuteAgentRunResult> {
   const getRun = deps.getRun ?? getAgentRun;
@@ -2565,8 +2585,17 @@ async function executeReviewAgentRun(
   if (run.traceId !== payload.traceId || run.capsuleId !== payload.capsuleId) {
     throw new AgentWorkerError('Agent run execute payload does not match ledger pointers', 409);
   }
+  const policyAgent = getPolicyAgent(executionMode);
+  const outputTarget = policyAgent?.outputDestination ?? (executionMode === 'handover-builder' ? 'handover' : 'memo_studio');
+  const defaultOutputHref = outputTarget === 'handover'
+    ? '/app?panel=handover'
+    : outputTarget === 'library'
+      ? '/app?panel=library'
+      : outputTarget === 'canvas'
+        ? '/app?panel=canvas'
+        : '/app?panel=memo';
   if (run.status === 'succeeded') {
-    const outputHref = outputHrefFromMetadata(run.metadata, executionMode === 'handover-builder' ? '/app?panel=handover' : '/app?panel=memo');
+    const outputHref = outputHrefFromMetadata(run.metadata, defaultOutputHref);
     await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref, deps });
     return {
       runId: run.id,
@@ -2617,7 +2646,7 @@ async function executeReviewAgentRun(
     const { capsuleReadReceipt, workflowPlan } = await emitCapsuleReadAndWorkflowPlan(running, deps);
     executionStage = 'sourceability-ledger';
     let sourceabilityLedger = buildSourceabilityLedgerFromRun(running, {
-      outputTarget: executionMode === 'handover-builder' ? 'handover' : 'memo_studio',
+      outputTarget,
     });
     if (executionMode === 'sourceability-reviewer') {
       const liveSearchEvidence = await collectSearchEvidenceForRun(running, {
@@ -2665,7 +2694,7 @@ async function executeReviewAgentRun(
       changeNote: `Created by ${reviewAgentLabel(executionMode)} run ${running.id}.`,
       capsuleId: running.capsuleId,
       runId: running.id,
-      outputTarget: executionMode === 'handover-builder' ? 'handover' : 'policy-memo',
+      outputTarget,
       sourceReceiptIds: uniqueStrings(sourceabilityLedger.claims.flatMap((claim) => claim.sourceReceiptIds)),
       unsupportedClaims: sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim),
       claimChecks: sourceabilityLedger.claims.map((claim) => ({
@@ -2679,9 +2708,13 @@ async function executeReviewAgentRun(
       })),
       blocks: buildReviewMemoBlocks(running, executionMode, sourceabilityLedger),
     });
-    const outputHref = executionMode === 'handover-builder'
+    const outputHref = outputTarget === 'handover'
       ? `/app?panel=handover&memoId=${encodeURIComponent(memoRecord.memo.id)}`
-      : `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
+      : outputTarget === 'library'
+        ? `/app?panel=library&memoId=${encodeURIComponent(memoRecord.memo.id)}`
+        : outputTarget === 'canvas'
+          ? `/app?panel=canvas&memoId=${encodeURIComponent(memoRecord.memo.id)}`
+          : `/app?panel=memo&memoId=${encodeURIComponent(memoRecord.memo.id)}`;
 
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
@@ -3501,6 +3534,7 @@ async function generateRedTeamFindings(
   try {
     return (await generateAgentText(deps, {
       modelPurpose: 'deep-think',
+      modelTaskKind: getPolicyAgent('red-team-analyst')?.modelTaskKind,
       system: 'You are the PRAXIS red-team analyst. Challenge assumptions, weak sources, option framing, and unsupported claims without inventing new evidence.',
       prompt: [
         `Objective: ${running.objective}`,
@@ -3532,6 +3566,7 @@ async function reviseMemoWithRedTeamFindings(
   try {
     revised = (await generateAgentText(deps, {
       modelPurpose: 'pro',
+      modelTaskKind: getPolicyAgent('research-memo')?.modelTaskKind,
       system: 'You are the PRAXIS revise agent. Revise only the supplied draft and explicitly address red-team findings.',
       prompt: [
         `Objective: ${running.objective}`,
@@ -3731,6 +3766,7 @@ async function generateCapsuleQualityReviewProposals(
     try {
       const result = await generateAgentText(deps, {
         modelPurpose: 'pro',
+        modelTaskKind: getPolicyAgent('capsule-quality-review')?.modelTaskKind,
         system: [
           'You are the PRAXIS capsule reviewer.',
           'Inspect the active ContextCapsule and propose concrete improvements only as review-card candidates.',
@@ -4323,10 +4359,13 @@ async function draftAndCritiqueMemo(
 
   let modelPosture: LiveMemoDraft['modelPosture'] = 'live';
   let degradedReason: string | null = null;
+  const agentModelTaskKind = getPolicyAgent(typeof running.metadata?.policyAgentId === 'string' ? running.metadata.policyAgentId : 'research-memo')?.modelTaskKind
+    ?? getPolicyAgent('research-memo')?.modelTaskKind;
   let draftText: string;
   try {
     draftText = (await generateAgentText(deps, {
       modelPurpose: 'pro',
+      modelTaskKind: agentModelTaskKind,
       system: 'You are PRAXIS Research Memo Agent. Draft only from the supplied capsule evidence and live source receipts.',
       prompt: draftPrompt,
       temperature: 0.2,
@@ -4341,6 +4380,7 @@ async function draftAndCritiqueMemo(
   try {
     critiqueText = (await generateAgentText(deps, {
       modelPurpose: 'deep-think',
+      modelTaskKind: getPolicyAgent('sourceability-reviewer')?.modelTaskKind,
       system: 'You are PRAXIS sourceability self-critique. Identify unsupported paragraphs, weak citations, and export blockers.',
       prompt: [
         'Review this memo draft for sourceability gates.',
@@ -4375,7 +4415,8 @@ async function generateAgentText(
   if (!hasServerAiProvider()) {
     throw new Error('Server AI provider is not configured for live memo drafting.');
   }
-  const model = input.modelPurpose === 'deep-think' ? getDeepThinkModel('high') : getProModel();
+  const model = input.model
+    ?? (input.modelTaskKind ? getModel(getModelMatrixEntry(input.modelTaskKind).model) : input.modelPurpose === 'deep-think' ? getDeepThinkModel('high') : getProModel());
   const result = await aiGenerateText({
     model,
     system: input.system,
@@ -5026,23 +5067,33 @@ function buildBoardroomOutputCapsuleInput(
   };
 }
 
-function reviewAgentLabel(mode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder'): string {
+function reviewAgentLabel(mode: ReviewAgentExecutionMode): string {
   switch (mode) {
     case 'sourceability-reviewer':
       return 'Sourceability Reviewer';
     case 'red-team-analyst':
       return 'Red-Team Analyst';
+    case 'difference-checker':
+      return 'Difference Checker';
+    case 'media-summarizer':
+      return 'Media Summarizer';
+    case 'human-friction-analyst':
+      return 'Human-Friction Analyst';
     case 'handover-builder':
       return 'Handover Builder';
   }
 }
 
-function reviewAgentToolId(mode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder') {
+function reviewAgentToolId(mode: ReviewAgentExecutionMode) {
   switch (mode) {
     case 'sourceability-reviewer':
       return 'sourceability-reviewer';
     case 'red-team-analyst':
+    case 'difference-checker':
+    case 'human-friction-analyst':
       return 'red-team-review';
+    case 'media-summarizer':
+      return 'document-retrieve';
     case 'handover-builder':
       return 'handover-package';
   }
@@ -5050,7 +5101,7 @@ function reviewAgentToolId(mode: 'sourceability-reviewer' | 'red-team-analyst' |
 
 function buildReviewMemoBlocks(
   running: AgentRun,
-  mode: 'sourceability-reviewer' | 'red-team-analyst' | 'handover-builder',
+  mode: ReviewAgentExecutionMode,
   sourceabilityLedger?: SourceabilityLedger,
 ): SaveMemoDraftInput['blocks'] {
   const sourceCount = running.selectedCoreIds.sourceCoreIds.length + running.selectedCoreIds.documentCoreIds.length;
@@ -5072,11 +5123,29 @@ function buildReviewMemoBlocks(
           'Separate adversarial critique from policy recommendation.',
           'Keep safety boundaries intact; do not produce operational targeting advice.',
         ]
-      : [
-          'Package the objective, capsule pointer, open gaps, receipts, and next moves.',
-          'Preserve thread/run IDs so another analyst or agent can resume the work.',
-          'Review sensitive material before sharing externally.',
-        ];
+      : mode === 'difference-checker'
+        ? [
+            'Compare positions, claims, source receipts, or capsule versions side by side.',
+            'Separate aligned points from deltas, contradictions, and evidentiary conflicts.',
+            'Send unresolved contradictions back to sourceability review before export.',
+          ]
+        : mode === 'media-summarizer'
+          ? [
+              'Summarize only the attached document, transcript, or media-derived text.',
+              'Convert summaries into source-cited claims with speaker/source attribution when available.',
+              'Flag unclear segments, missing timestamps, and claims that need external corroboration.',
+            ]
+          : mode === 'human-friction-analyst'
+            ? [
+                'Apply Actor, Claim, Interest, Constraint, Leverage, Commitment, Event, and Narrative lenses.',
+                'Surface spoilers, leverage points, escalation risks, and commitments that constrain options.',
+                'Keep assessed dynamics tied to capsule evidence and mark inference boundaries.',
+              ]
+            : [
+                'Package the objective, capsule pointer, open gaps, receipts, and next moves.',
+                'Preserve thread/run IDs so another analyst or agent can resume the work.',
+                'Review sensitive material before sharing externally.',
+              ];
 
   return [
     {
@@ -5105,7 +5174,7 @@ function buildReviewMemoBlocks(
       metadata: {
         ...baseMetadata,
         sourceCount,
-        outputDestination: mode === 'handover-builder' ? 'handover' : 'memo_studio',
+        outputDestination: getPolicyAgent(mode)?.outputDestination ?? (mode === 'handover-builder' ? 'handover' : 'memo_studio'),
       },
     },
     {

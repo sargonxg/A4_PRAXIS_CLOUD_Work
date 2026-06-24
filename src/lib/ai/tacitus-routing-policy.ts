@@ -1,5 +1,6 @@
 import type { AskIntent } from '@/lib/ai/ask-conversation';
 import { buildModelFallbackCandidates, getAskPraxisModelRuntimePolicy, type ModelFallbackCandidate } from '@/lib/ai/model-runtime-policy';
+import { getModelMatrixEntry, type TaskKind } from '@/lib/ai/model-matrix';
 import { agentToolRequiresApproval, type AgentToolId } from '@/lib/agent-runtime/tool-registry';
 import { getPolicyAgent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 
@@ -10,6 +11,9 @@ export type TacitusWorkerMode =
   | 'output-formatter'
   | 'sourceability-reviewer'
   | 'red-team-analyst'
+  | 'difference-checker'
+  | 'media-summarizer'
+  | 'human-friction-analyst'
   | 'handover-builder'
   | 'capsule-factory';
 
@@ -21,6 +25,7 @@ export interface TacitusRoutingDecision {
     approvalRequiredToolIds: AgentToolId[];
   };
   modelTier: TacitusModelTier;
+  modelTaskKind: TaskKind;
   modelFamily: 'Gemini';
   selectedModelId: string;
   fallbackChain: ModelFallbackCandidate[];
@@ -57,6 +62,7 @@ export function buildTacitusRoutingDecision(input: {
     requestedOutputType: input.requestedOutputType,
   });
   const workerMode = workerModeFor(policyAgentId);
+  const policyAgent = getPolicyAgent(policyAgentId);
   const modelTier = selectModelTier({
     text,
     intent: input.intent,
@@ -64,20 +70,19 @@ export function buildTacitusRoutingDecision(input: {
     capsuleHealth: input.capsuleHealth,
     activeGapCount: input.activeGapCount,
   });
+  const modelTaskKind = policyAgent?.modelTaskKind ?? (modelTier === 'deep' || modelTier === 'sourceability' ? policy.frontierPrimary.deepTaskKind : policy.frontierPrimary.chatTaskKind);
   const depth = modelTier === 'deep' || modelTier === 'sourceability' ? 'deep' : modelTier === 'fast' ? 'chat' : 'chat';
-  const selectedModelId = depth === 'deep'
-    ? policy.frontierPrimary.deepModelId
-    : policy.frontierPrimary.chatModelId;
+  const selectedModelId = getModelMatrixEntry(modelTaskKind).model;
   const fallbackChain = buildModelFallbackCandidates({
     selectedModelId,
     depth,
   });
   const selectedToolIds = selectTools(text, input.intent, workerMode, modelTier);
   const approvalRequiredToolIds = selectedToolIds.filter((toolId) => agentToolRequiresApproval(toolId));
-  const policyAgent = getPolicyAgent(policyAgentId);
   const reasons = buildReasons({
     intent: input.intent,
     modelTier,
+    modelTaskKind,
     workerMode,
     capsuleHealth: input.capsuleHealth,
     sourcePreviewCount: input.sourcePreviewCount,
@@ -93,6 +98,7 @@ export function buildTacitusRoutingDecision(input: {
       approvalRequiredToolIds,
     },
     modelTier,
+    modelTaskKind,
     modelFamily: 'Gemini',
     selectedModelId,
     fallbackChain,
@@ -123,6 +129,9 @@ function selectPolicyAgent(input: {
   if (input.intent === 'sourceability_review') return 'sourceability-reviewer';
   if (input.intent === 'research_memo') return 'research-memo';
   if (/\b(context\s*capsule|contextcapsule|capsule factory|build (a )?capsule|improve (the )?capsule)\b/.test(input.text)) return 'capsule-factory';
+  if (/\b(compare|comparison|delta|deltas|difference|conflict|contradiction|versus|vs\.?)\b/.test(input.text)) return 'difference-checker';
+  if (/\b(transcript|recording|media|summari[sz]e (this )?(document|file|transcript|video|audio)|source-cited claims?)\b/.test(input.text)) return 'media-summarizer';
+  if (/\b(aco|human friction|spoiler|spoilers|leverage|commitments?|narratives?|escalation risk|conflict dynamics)\b/.test(input.text)) return 'human-friction-analyst';
   if (/\b(format|docx|pdf|markdown|export-ready|export ready|output format|turn this into)\b/.test(input.text) || input.requestedOutputType) return 'output-formatter';
   if (/\b(red[- ]?team|challenge assumptions|stress test)\b/.test(input.text)) return 'red-team-analyst';
   if (/\b(handover|successor|handoff)\b/.test(input.text)) return 'handover-builder';
@@ -137,6 +146,9 @@ function workerModeFor(policyAgentId: string | null): TacitusWorkerMode {
     case 'output-formatter':
     case 'sourceability-reviewer':
     case 'red-team-analyst':
+    case 'difference-checker':
+    case 'media-summarizer':
+    case 'human-friction-analyst':
     case 'handover-builder':
     case 'capsule-factory':
       return policyAgentId;
@@ -153,7 +165,15 @@ function selectModelTier(input: {
   activeGapCount: number;
 }): TacitusModelTier {
   if (input.workerMode === 'sourceability-reviewer') return 'sourceability';
-  if (input.workerMode === 'research-memo' || input.workerMode === 'red-team-analyst' || input.workerMode === 'handover-builder' || input.workerMode === 'capsule-factory') return 'deep';
+  if (
+    input.workerMode === 'research-memo' ||
+    input.workerMode === 'red-team-analyst' ||
+    input.workerMode === 'difference-checker' ||
+    input.workerMode === 'media-summarizer' ||
+    input.workerMode === 'human-friction-analyst' ||
+    input.workerMode === 'handover-builder' ||
+    input.workerMode === 'capsule-factory'
+  ) return 'deep';
   if (/\b(deep|latest|current|multi[- ]?source|investigate|comprehensive)\b/.test(input.text)) return 'deep';
   if (input.workerMode === 'output-formatter' || input.capsuleHealth !== 'ready' || input.activeGapCount > 0 || input.intent !== 'normal_answer') return 'standard';
   return 'fast';
@@ -172,8 +192,9 @@ function selectTools(
   }
   if (workerMode === 'capsule-factory') tools.add('capsule-repository-read');
   if (workerMode === 'research-memo' || /\b(memo|brief|write up|draft|options paper)\b/.test(text)) tools.add('policy-memo');
+  if (workerMode === 'difference-checker' || workerMode === 'media-summarizer') tools.add('document-retrieve');
   if (workerMode === 'sourceability-reviewer' || modelTier === 'deep' || /\b(cite|citation|verify|sourceability|sources?)\b/.test(text)) tools.add('sourceability-reviewer');
-  if (workerMode === 'red-team-analyst' || intent === 'red_team_review') tools.add('red-team-review');
+  if (workerMode === 'red-team-analyst' || workerMode === 'difference-checker' || workerMode === 'human-friction-analyst' || intent === 'red_team_review') tools.add('red-team-review');
   if (workerMode === 'handover-builder' || intent === 'handover') tools.add('handover-package');
   if (workerMode === 'output-formatter' || /\b(format|docx|pdf|markdown|export pack)\b/.test(text)) tools.add('memo-formatter');
   if (/\b(document|upload|attached|quote|chunk)\b/.test(text)) tools.add('document-retrieve');
@@ -184,6 +205,8 @@ function selectTools(
 
 function outputDestinationFor(workerMode: TacitusWorkerMode): PolicyAgentOutputDestination | null {
   if (workerMode === 'capsule-factory') return 'library';
+  if (workerMode === 'media-summarizer') return 'library';
+  if (workerMode === 'human-friction-analyst') return 'canvas';
   if (workerMode === 'handover-builder') return 'handover';
   if (workerMode === 'direct-answer') return null;
   return 'memo_studio';
@@ -192,6 +215,7 @@ function outputDestinationFor(workerMode: TacitusWorkerMode): PolicyAgentOutputD
 function buildReasons(input: {
   intent: AskIntent;
   modelTier: TacitusModelTier;
+  modelTaskKind: TaskKind;
   workerMode: TacitusWorkerMode;
   capsuleHealth: string;
   sourcePreviewCount: number;
@@ -201,6 +225,7 @@ function buildReasons(input: {
   const reasons = [
     `intent:${input.intent}`,
     `model-tier:${input.modelTier}`,
+    `model-task:${input.modelTaskKind}`,
     `worker:${input.workerMode}`,
     `capsule:${input.capsuleHealth}`,
   ];
@@ -222,6 +247,12 @@ function labelForWorker(workerMode: TacitusWorkerMode): string {
       return 'Sourceability reviewer worker';
     case 'red-team-analyst':
       return 'Red-team analyst worker';
+    case 'difference-checker':
+      return 'Difference checker worker';
+    case 'media-summarizer':
+      return 'Media summarizer worker';
+    case 'human-friction-analyst':
+      return 'Human-friction analyst worker';
     case 'handover-builder':
       return 'Handover builder worker';
     case 'capsule-factory':
