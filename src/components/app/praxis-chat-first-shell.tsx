@@ -413,6 +413,13 @@ function ContextDrawer({
           <p className="mt-3 rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
             No capsules attached yet. Ask PRAXIS can still answer directly.
           </p>
+          <Link
+            href="/login?mode=signup&redirect=%2Fapp%2Fcapsules"
+            className="mt-2 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <Boxes className="h-3.5 w-3.5" />
+            Start from a capsule
+          </Link>
         </div>
       </section>
     );
@@ -490,9 +497,18 @@ function ContextDrawer({
               </div>
             </div>
           )) : (
-            <p className="rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
-              No capsules attached yet. Ask PRAXIS can still answer directly.
-            </p>
+            <div className="rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2">
+              <p className="text-xs leading-5 text-slate-500">
+                No capsules attached yet. Ask PRAXIS can still answer directly.
+              </p>
+              <Link
+                href="/app/capsules"
+                className="mt-2 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                <Boxes className="h-3.5 w-3.5" />
+                Start from a capsule
+              </Link>
+            </div>
           )}
         </div>
       </div>

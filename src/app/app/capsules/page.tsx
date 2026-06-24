@@ -1,21 +1,40 @@
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
 
+const CapsuleLibraryWithTry = dynamic(
+  () => import('@/components/capsules/CapsuleLibrary').then((module) => module.CapsuleLibraryWithTry),
+  { loading: () => <LibraryLoadingSkeleton /> },
+);
+
 const TaskletPraxisWorkbench = dynamic(
   () => import('@/components/praxis/tasklet-praxis-workbench').then((module) => module.TaskletPraxisWorkbench),
   { loading: () => <WorkbenchLoadingSkeleton /> },
 );
 
 type CapsulesPageProps = {
-  searchParams: Promise<{ lane?: string; panel?: string; tab?: string }>;
+  searchParams: Promise<{ lane?: string; panel?: string; starter?: string; tab?: string }>;
 };
 
 export default async function CapsulesPage({ searchParams }: CapsulesPageProps) {
-  const { lane, panel, tab } = await searchParams;
+  const { lane, panel, starter, tab } = await searchParams;
   const initialFactoryLane = lane === 'repository' || lane === 'sources' ? 'sources' : undefined;
   const initialPanel = panel === 'ask' || tab === 'work' ? 'ask' : 'capsules';
 
-  return <TaskletPraxisWorkbench mode="app" initialPanel={initialPanel} initialFactoryLane={initialFactoryLane} />;
+  return (
+    <>
+      <div className="bg-emerald-50/30 px-4 pt-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-[1400px]">
+          <CapsuleLibraryWithTry initialCategory="all" />
+        </div>
+      </div>
+      <TaskletPraxisWorkbench
+        mode="app"
+        capsuleId={starter || 'default'}
+        initialPanel={initialPanel}
+        initialFactoryLane={lane === 'inspect' ? 'inspect' : initialFactoryLane}
+      />
+    </>
+  );
 }
 
 function WorkbenchLoadingSkeleton() {
@@ -27,5 +46,18 @@ function WorkbenchLoadingSkeleton() {
         <Skeleton className="hidden h-[32rem] w-full lg:block" />
       </div>
     </main>
+  );
+}
+
+function LibraryLoadingSkeleton() {
+  return (
+    <section className="rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]" data-testid="capsule-library-loading-skeleton">
+      <Skeleton className="h-6 w-40" />
+      <div className="mt-4 grid gap-3 md:grid-cols-3">
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    </section>
   );
 }
