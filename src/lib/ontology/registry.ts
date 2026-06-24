@@ -8,12 +8,42 @@ import { LEGAL_ONTOLOGY } from '@/lib/ontology/legal';
 import { MEDIATION_ONTOLOGY } from '@/lib/ontology/mediation';
 import { NARRATIVE_ONTOLOGY } from '@/lib/ontology/narrative';
 import { SECURITY_ONTOLOGY } from '@/lib/ontology/security';
+import {
+  UNIVERSAL_CONTESTATION_NODE_TYPES,
+  UNIVERSAL_EDGE_TYPES,
+  UNIVERSAL_READINESS_VALIDATORS,
+} from '@/lib/ontology/universal';
 import type {
   CaseOntologyDefinition,
   OntologyId,
   OntologyMappingIssue,
   OntologyMappingSummary,
 } from '@/lib/ontology/types';
+
+function withUniversalOntologyVocabulary(ontology: CaseOntologyDefinition): CaseOntologyDefinition {
+  const nodeTypes = [...ontology.nodeTypes];
+  for (const node of UNIVERSAL_CONTESTATION_NODE_TYPES) {
+    if (!nodeTypes.some((item) => item.id === node.id)) nodeTypes.push(node);
+  }
+
+  const edgeById = new Map(ontology.edgeTypes.map((edge) => [edge.id, edge]));
+  for (const edge of UNIVERSAL_EDGE_TYPES) {
+    const existing = edgeById.get(edge.id);
+    edgeById.set(edge.id, existing ? { ...edge, ...existing, category: edge.category, direction: edge.direction } : edge);
+  }
+
+  const validators = [...ontology.validators];
+  for (const validator of UNIVERSAL_READINESS_VALIDATORS) {
+    if (!validators.some((item) => item.id === validator.id)) validators.push(validator);
+  }
+
+  return {
+    ...ontology,
+    nodeTypes,
+    edgeTypes: Array.from(edgeById.values()),
+    validators,
+  };
+}
 
 export const CASE_ONTOLOGIES: CaseOntologyDefinition[] = [
   CONFLICT_ONTOLOGY,
@@ -25,7 +55,7 @@ export const CASE_ONTOLOGIES: CaseOntologyDefinition[] = [
   HUMANITARIAN_ONTOLOGY,
   LEGAL_ONTOLOGY,
   SECURITY_ONTOLOGY,
-];
+].map(withUniversalOntologyVocabulary);
 
 export function getOntology(id: OntologyId): CaseOntologyDefinition {
   const ontology = CASE_ONTOLOGIES.find((item) => item.id === id);

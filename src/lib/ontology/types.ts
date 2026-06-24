@@ -32,6 +32,13 @@ export interface OntologyNodeType {
   label: string;
   primitive: TacitusCorePrimitive;
   description: string;
+  gapObject?: boolean;
+  attributes?: Array<{
+    id: string;
+    label: string;
+    description: string;
+    required?: boolean;
+  }>;
 }
 
 export interface OntologyEdgeType {
@@ -40,6 +47,12 @@ export interface OntologyEdgeType {
   from: TacitusCorePrimitive[];
   to: TacitusCorePrimitive[];
   description: string;
+  category?: 'domain' | 'evidence' | 'temporal' | 'causal';
+  direction?: 'directed';
+  requiresEvidenceRefs?: boolean;
+  confidenceCap?: number;
+  directSourceStatementMayExceedCap?: boolean;
+  capsuleCausalRelation?: 'causes' | 'enables' | 'blocks' | 'escalates' | 'de-escalates' | 'correlates';
 }
 
 export interface OntologyValidator {
@@ -73,4 +86,19 @@ export interface OntologyMappingSummary {
   coveredPrimitives: TacitusCorePrimitive[];
   missingPrimitives: TacitusCorePrimitive[];
   issues: OntologyMappingIssue[];
+}
+
+export interface OntologyPathTemplateStep {
+  from: TacitusCorePrimitive[];
+  edgeTypeId: string;
+  to: TacitusCorePrimitive[];
+  note?: string;
+}
+
+export interface OntologyPathTemplate {
+  id: string;
+  label: string;
+  ontologyIds: OntologyId[];
+  description: string;
+  steps: OntologyPathTemplateStep[];
 }
