@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo } from 'react';
+import dynamic from 'next/dynamic';
+import { useMemo, useState } from 'react';
 import {
   buildCapsuleWorkbenchViewModel,
   type CapsuleWorkbenchAgentRunInput,
@@ -13,6 +14,11 @@ import { CapsuleOntologyWorkbench } from '@/components/capsules/CapsuleOntologyW
 import { CapsuleAdvancedDrawer } from '@/components/capsules/workbench/CapsuleAdvancedDrawer';
 import { CapsuleGraphSection } from '@/components/capsules/workbench/CapsuleGraphSection';
 import { StatePill } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+
+const CapsuleAgentView = dynamic(() => import('@/components/capsules/CapsuleAgentView'), {
+  ssr: false,
+  loading: () => <div className="h-48 rounded-md border border-slate-200 bg-slate-50" aria-label="Loading agent context" />,
+});
 
 export function CapsuleWorkbenchPanel({
   capsule,
@@ -34,6 +40,7 @@ export function CapsuleWorkbenchPanel({
   const sparse = model.evidence.sourceCount === 0;
   const capsuleTags = useMemo(() => (capsule as { community?: { tags?: string[] } }).community?.tags ?? [], [capsule]);
   const dialecticaLineage = capsuleTags.includes('dialectica');
+  const [workbenchView, setWorkbenchView] = useState<'graph' | 'agent'>('graph');
   const graphSection = useMemo(() => (
     <CapsuleGraphSection
       graph={model.graph}
@@ -63,6 +70,16 @@ export function CapsuleWorkbenchPanel({
         reviewQueue={model.reviewQueue}
       />
       <CapsuleEvidenceStrip evidence={model.evidence} />
+      <CapsuleWorkbenchViewToggle value={workbenchView} onChange={setWorkbenchView} />
+      {workbenchView === 'agent' ? (
+        <div data-testid="capsule-workbench-agent-context">
+          <CapsuleAgentView capsuleId={model.capsuleId} />
+        </div>
+      ) : (
+        <div data-testid="capsule-workbench-human-graph">
+          {graphSection}
+        </div>
+      )}
       <CapsuleAdvancedDrawer
         model={model}
         compact={compact}
@@ -71,6 +88,40 @@ export function CapsuleWorkbenchPanel({
         agentRuns={agentRuns}
       />
     </section>
+  );
+}
+
+function CapsuleWorkbenchViewToggle({
+  value,
+  onChange,
+}: {
+  value: 'graph' | 'agent';
+  onChange: (value: 'graph' | 'agent') => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2" data-testid="capsule-workbench-agent-toggle">
+      <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">Capsule proof surface</p>
+      <div className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-1" role="tablist" aria-label="Capsule proof surface">
+        {([
+          ['graph', 'Graph (human)'],
+          ['agent', 'Agent context'],
+        ] as const).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={value === id}
+            onClick={() => onChange(id)}
+            className={cn(
+              'rounded px-2.5 py-1.5 text-xs font-semibold',
+              value === id ? 'bg-slate-950 text-white' : 'text-slate-600 hover:text-slate-950',
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 
