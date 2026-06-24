@@ -102,7 +102,7 @@ export const CAPSULE_DOCK_SLOT_KINDS: readonly CapsuleDockSlotKind[] = ['user', 
 export const CAPSULE_DOCK_SLOT_LABELS: Record<CapsuleDockSlotKind, string> = {
   user: 'User',
   situation: 'Situation',
-  tool: 'Tool',
+  tool: 'Tools',
   output: 'Output',
 };
 
@@ -599,7 +599,7 @@ function roleLabel(role: ActiveCapsuleRole): string {
   if (role === 'comparison') return 'Comparison';
   if (role === 'user') return 'User core';
   if (role === 'situation') return 'Situation';
-  if (role === 'tool') return 'Tool';
+  if (role === 'tool') return 'Tools';
   if (role === 'output') return 'Output';
   return 'Reference';
 }

@@ -6,6 +6,7 @@ import type {
   CapsuleWorkbenchAgentRunInput,
   CapsuleWorkbenchViewModel,
 } from '@/lib/context/capsule-workbench-view-model';
+import type { CapsuleCategoryId } from '@/lib/constants/aco-colors';
 import { cn } from '@/lib/utils/cn';
 import { CapsuleAgentWorkflowSection } from '@/components/capsules/workbench/CapsuleAgentWorkflowSection';
 import { CapsuleAnatomySection } from '@/components/capsules/workbench/CapsuleAnatomySection';
@@ -40,15 +41,19 @@ export function CapsuleAdvancedDrawer({
   sparse,
   graphSection,
   agentRuns,
+  inspectionCategory,
 }: {
   model: CapsuleWorkbenchViewModel;
   compact: boolean;
   sparse: boolean;
   graphSection: ReactNode;
   agentRuns: CapsuleWorkbenchAgentRunInput[];
+  inspectionCategory?: CapsuleCategoryId | null;
 }) {
-  const [open, setOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<AdvancedTabId>('overview');
+  const [open, setOpen] = useState(Boolean(inspectionCategory));
+  const [activeTab, setActiveTab] = useState<AdvancedTabId>(
+    inspectionCategory ? categoryToTab(inspectionCategory) : 'overview',
+  );
   const tabs = useMemo(() => advancedTabs(), []);
   const active = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
 
@@ -61,8 +66,8 @@ export function CapsuleAdvancedDrawer({
         aria-expanded={open}
       >
         <span>
-          <span className="block text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Advanced</span>
-          <span className="block text-sm font-semibold text-slate-900">Graph, history, quality, claims, anatomy, runs, and outputs</span>
+          <span className="block text-xs font-bold uppercase tracking-[0.14em] text-slate-500">Inspect</span>
+          <span className="block text-sm font-semibold text-slate-900">Ontologies, graph, reasoning, receipts</span>
         </span>
         <ChevronDown className={cn('h-4 w-4 text-slate-500 transition-transform', open ? 'rotate-180' : '')} />
       </button>
@@ -95,6 +100,13 @@ export function CapsuleAdvancedDrawer({
       ) : null}
     </section>
   );
+}
+
+function categoryToTab(category: CapsuleCategoryId): AdvancedTabId {
+  if (category === 'user') return 'memory';
+  if (category === 'situation') return 'graph';
+  if (category === 'tools') return 'agents';
+  return 'outputs';
 }
 
 function advancedTabs(): Array<{ id: AdvancedTabId; label: string }> {

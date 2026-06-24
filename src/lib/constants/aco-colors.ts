@@ -12,6 +12,67 @@
 
 import { ENTITY_COLORS, ENTITY_TYPES, type EntityType } from './entity-colors';
 
+export const CAPSULE_CATEGORY_IDS = ['user', 'situation', 'tools', 'output'] as const;
+
+export type CapsuleCategoryId = (typeof CAPSULE_CATEGORY_IDS)[number];
+export type CapsuleCategoryInput = CapsuleCategoryId | 'users' | 'tool';
+export type CapsuleCategoryIconName = 'UserRound' | 'Target' | 'Wrench' | 'FileText';
+
+export interface CapsuleCategoryPalette {
+  label: 'User' | 'Situation' | 'Tools' | 'Output';
+  icon: CapsuleCategoryIconName;
+  accent: string;
+  bg: string;
+  border: string;
+  text: string;
+  soft: string;
+}
+
+export const CAPSULE_CATEGORY_PALETTE: Record<CapsuleCategoryId, CapsuleCategoryPalette> = {
+  user: {
+    label: 'User',
+    icon: 'UserRound',
+    accent: '#1D4ED8',
+    bg: '#EFF6FF',
+    border: '#BFDBFE',
+    text: '#1E3A8A',
+    soft: '#DBEAFE',
+  },
+  situation: {
+    label: 'Situation',
+    icon: 'Target',
+    accent: '#0F766E',
+    bg: '#F0FDFA',
+    border: '#99F6E4',
+    text: '#134E4A',
+    soft: '#CCFBF1',
+  },
+  tools: {
+    label: 'Tools',
+    icon: 'Wrench',
+    accent: '#7C3AED',
+    bg: '#F5F3FF',
+    border: '#DDD6FE',
+    text: '#4C1D95',
+    soft: '#EDE9FE',
+  },
+  output: {
+    label: 'Output',
+    icon: 'FileText',
+    accent: '#C2410C',
+    bg: '#FFF7ED',
+    border: '#FED7AA',
+    text: '#7C2D12',
+    soft: '#FFEDD5',
+  },
+} as const;
+
+export function getCapsuleCategoryPalette(category: CapsuleCategoryInput): CapsuleCategoryPalette {
+  if (category === 'users') return CAPSULE_CATEGORY_PALETTE.user;
+  if (category === 'tool') return CAPSULE_CATEGORY_PALETTE.tools;
+  return CAPSULE_CATEGORY_PALETTE[category];
+}
+
 export const ACO_COLORS: Record<string, string> = {
   // Core 8 primitives (lowercase keys for graph rendering)
   actor: '#4E79A7',

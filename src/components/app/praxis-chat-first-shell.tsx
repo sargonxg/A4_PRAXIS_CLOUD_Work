@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState, type ComponentType } from 'react';
+import { useEffect, useMemo, useState, type ComponentType, type CSSProperties } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
   CheckCircle2,
@@ -25,6 +25,7 @@ import {
   detachCapsuleRef,
   swapCapsuleRef,
 } from '@/lib/context/active-context-stack';
+import { getCapsuleCategoryPalette, type CapsuleCategoryId } from '@/lib/constants/aco-colors';
 import { HOME_SIDEBAR_DESTINATIONS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 
 const CapsuleListPicker = dynamic(
@@ -607,23 +608,28 @@ function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext:
 
         <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4" data-testid="capsule-dock-slots">
           {([
-            ['User', 'Who is asking — perspective, mandate, and voice'],
-            ['Situation', 'The case — actors, claims, sources, and graph context'],
-            ['Tool', 'How to think — methods, frameworks, and agent permissions'],
-            ['Output', 'What to produce — memo, brief, or handover contract'],
-          ] as const).map(([label, hint]) => (
-            <span
-              key={label}
-              data-testid="capsule-dock-chip"
-              title={`Sign in to attach a ${label} capsule. ${hint}.`}
-              className="flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-md)] border border-dashed border-slate-300 bg-white px-2 py-1.5 opacity-70"
-            >
-              <span className="min-w-0">
-                <span className="block text-[9px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</span>
-                <span className="block text-xs font-semibold text-slate-400">Sign in to add</span>
+            ['user', 'Who is asking — perspective, mandate, and voice'],
+            ['situation', 'The case — actors, claims, sources, and graph context'],
+            ['tools', 'How to think — methods, frameworks, and agent permissions'],
+            ['output', 'What to produce — memo, brief, or handover contract'],
+          ] as const satisfies ReadonlyArray<readonly [CapsuleCategoryId, string]>).map(([category, hint]) => {
+            const palette = getCapsuleCategoryPalette(category);
+            return (
+              <span
+                key={category}
+                data-testid="capsule-dock-chip"
+                title={`Sign in to attach a ${palette.label} capsule. ${hint}.`}
+                className="flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-md)] border border-dashed px-2 py-1.5 opacity-80"
+                style={{ backgroundColor: palette.bg, borderColor: palette.border } as CSSProperties}
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: palette.accent }} aria-hidden />
+                <span className="min-w-0">
+                  <span className="block text-[9px] font-bold uppercase tracking-[0.14em]" style={{ color: palette.text }}>{palette.label}</span>
+                  <span className="block text-xs font-semibold text-slate-500">Sign in to add</span>
+                </span>
               </span>
-            </span>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

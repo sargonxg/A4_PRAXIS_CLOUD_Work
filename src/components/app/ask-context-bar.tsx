@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import {
   Boxes,
   ChevronDown,
@@ -34,6 +34,7 @@ import {
   type CapsuleDockSlotKind,
   type CapsuleDockWarning,
 } from '@/lib/context/active-context-stack';
+import { getCapsuleCategoryPalette } from '@/lib/constants/aco-colors';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { cn } from '@/lib/utils/cn';
@@ -463,21 +464,21 @@ function CapsuleDockSlotCard({
   slot: CapsuleDockSlot;
 }) {
   const Icon = SLOT_ICONS[slot.kind];
+  const palette = getCapsuleCategoryPalette(slot.kind);
   const filled = Boolean(slot.item);
   return (
     <div
       data-testid={`capsule-dock-slot-${slot.kind}`}
       className={cn(
         'group relative flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-md)] border px-2 py-1.5 transition',
-        filled
-          ? dark
-            ? 'border-emerald-400/40 bg-emerald-400/10'
-            : 'border-emerald-500/40 bg-emerald-50/70'
-          : dark
-            ? 'border-dashed border-slate-700 bg-slate-950'
-            : 'border-dashed border-slate-300 bg-white',
-        active && (dark ? 'ring-1 ring-emerald-400' : 'ring-1 ring-emerald-500'),
+        filled ? '' : dark ? 'border-dashed border-slate-700 bg-slate-950' : 'border-dashed border-slate-300 bg-white',
+        active && 'ring-1',
       )}
+      style={{
+        backgroundColor: filled ? (dark ? `${palette.accent}22` : palette.bg) : undefined,
+        borderColor: filled || active ? palette.border : undefined,
+        ['--tw-ring-color' as string]: palette.accent,
+      } as CSSProperties}
     >
       <button
         type="button"
@@ -495,18 +496,15 @@ function CapsuleDockSlotCard({
           <Icon
             className={cn(
               'h-4 w-4',
-              filled
-                ? dark ? 'text-emerald-300' : 'text-emerald-700'
-                : dark ? 'text-slate-500' : 'text-slate-400',
+              filled ? '' : dark ? 'text-slate-500' : 'text-slate-400',
             )}
+            style={filled ? { color: dark ? palette.border : palette.accent } : undefined}
           />
           {filled ? (
             <span
               aria-hidden
-              className={cn(
-                'absolute -right-0.5 -top-0.5 h-1.5 w-1.5 animate-pulse rounded-full',
-                dark ? 'bg-emerald-300' : 'bg-emerald-500',
-              )}
+              className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 animate-pulse rounded-full"
+              style={{ backgroundColor: dark ? palette.border : palette.accent }}
             />
           ) : null}
         </span>
@@ -517,7 +515,10 @@ function CapsuleDockSlotCard({
           {filled ? (
             <span className={cn('flex items-center gap-1 text-xs font-semibold', dark ? 'text-slate-100' : 'text-slate-900')}>
               <span className="min-w-0 truncate">{slot.item?.label}</span>
-              <span className={cn('shrink-0 rounded-[var(--radius-sm)] px-1 font-mono text-[9px]', dark ? 'bg-slate-800 text-slate-300' : 'bg-emerald-100/70 text-emerald-800')}>
+              <span
+                className={cn('shrink-0 rounded-[var(--radius-sm)] px-1 font-mono text-[9px]', dark ? 'bg-slate-800' : '')}
+                style={dark ? { color: palette.border } : { backgroundColor: palette.soft, color: palette.text }}
+              >
                 {slot.item?.versionLabel}
               </span>
             </span>
