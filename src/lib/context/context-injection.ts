@@ -44,6 +44,12 @@ export interface DockCapsuleEntry {
   capsule: PraxisCapsule;
 }
 
+export interface ProtectedContextPromptBlock {
+  promptBlock: string;
+  dockTrimmed: boolean;
+  contextTrimmed: boolean;
+}
+
 const DOCK_ROLE_CONTRACT: Record<CapsuleDockSlotKind, string> = {
   user: 'calibrates who is asking: perspective, mandate, audience, and voice. It shapes tone and emphasis, never facts.',
   situation: 'governs the problem frame: actors, claims, sources, graph context, and constraints. It is the factual backbone of the answer.',
@@ -242,37 +248,181 @@ export function buildCapsulePromptBlock(
  * a distinct governance contract so the model composes them instead of blending
  * the docked capsules into one undifferentiated context blob.
  */
-export function buildCapsuleDockPromptBlock(entries: DockCapsuleEntry[], missingIds: string[] = []): string {
+export function buildCapsuleDockPromptBlock(
+  entries: DockCapsuleEntry[],
+  missingIds: string[] = [],
+  options: { maxChars?: number; summaryMaxChars?: number } = {},
+): string {
   if (!entries.length && !missingIds.length) return '';
   const byRole = new Map(entries.map((entry) => [entry.role, entry.capsule]));
+  const maxChars = options.maxChars ?? Number.POSITIVE_INFINITY;
+  const summaryBudgets = [options.summaryMaxChars ?? 400, 240, 120, 0];
+  for (const summaryMaxChars of summaryBudgets) {
+    const block = renderCapsuleDockPromptBlock(byRole, missingIds, summaryMaxChars);
+    if (block.length <= maxChars) return block;
+  }
+  const compactBlock = renderCapsuleDockPromptBlock(byRole, missingIds, 0, true);
+  if (compactBlock.length <= maxChars) return compactBlock;
+  const limit = Math.max(0, maxChars - 140);
+  return [
+    compactBlock.slice(0, limit).trimEnd(),
+    `dock_budget_note: capsule dock trimmed to ${Math.round(maxChars)} chars; preserved role, capsule id, and explicit truncation notice.`,
+    '',
+  ].join('\n');
+}
+
+export function buildProtectedContextPromptBlock(
+  rawPromptBlock: string,
+  dockCapsules: DockCapsuleEntry[],
+  missingDockCapsuleIds: string[] = [],
+  options: { maxChars?: number; dockMaxChars?: number } = {},
+): ProtectedContextPromptBlock {
+  const maxChars = Math.max(800, options.maxChars ?? 12_000);
+  const dockMaxChars = Math.min(Math.max(400, options.dockMaxChars ?? 4_000), maxChars - 240);
+  const fullDockBlock = buildCapsuleDockPromptBlock(dockCapsules, missingDockCapsuleIds);
+  const protectedDockBlock = buildCapsuleDockPromptBlock(dockCapsules, missingDockCapsuleIds, { maxChars: dockMaxChars });
+  const dockTrimmed = fullDockBlock.length > protectedDockBlock.length;
+  const promptWithoutDock = removeCapsuleDockPromptBlock(rawPromptBlock);
+  const noteLines = [
+    '[capsule_context_budget_note]',
+    `protected capsule_dock retained: yes; dock_chars=${protectedDockBlock.length}; dock_trimmed=${dockTrimmed ? 'yes' : 'no'}`,
+  ];
+  const baseWithDock = insertCapsuleDockPromptBlock(promptWithoutDock, protectedDockBlock);
+  const note = `${noteLines.join('\n')}\n`;
+  if (baseWithDock.length + note.length <= maxChars) {
+    return {
+      promptBlock: baseWithDock,
+      dockTrimmed,
+      contextTrimmed: false,
+    };
+  }
+
+  const contextTrimmed = true;
+  const budgetNote = [
+    ...noteLines,
+    `context_block_trimmed: yes; protected capsule_dock retained; lower-priority context was trimmed to fit ${maxChars} chars.`,
+    '',
+  ].join('\n');
+  const promptWithNote = insertBudgetNote(baseWithDock, budgetNote);
+  if (promptWithNote.length <= maxChars) {
+    return { promptBlock: promptWithNote, dockTrimmed, contextTrimmed };
+  }
+  return {
+    promptBlock: trimPromptPreservingClosingTag(promptWithNote, maxChars),
+    dockTrimmed,
+    contextTrimmed,
+  };
+}
+
+function renderCapsuleDockPromptBlock(
+  byRole: Map<CapsuleDockSlotKind, PraxisCapsule>,
+  missingIds: string[],
+  summaryMaxChars: number,
+  budgetTrimmed = false,
+): string {
   const lines = [
     '[capsule_dock]',
     'The Capsule Dock holds up to four typed capsules. Compose them as layers in this order; do not blend their responsibilities:',
   ];
+  if (budgetTrimmed) {
+    lines.push('dock_budget_note: capsule dock was compacted; summaries and lower-detail refs may be abbreviated, but slot identity and role contracts are preserved.');
+  }
   for (const role of CAPSULE_DOCK_SLOT_KINDS) {
     const capsule = byRole.get(role);
     if (!capsule) {
-      lines.push(`${role}_capsule: empty — treat the missing ${role} layer as an explicit gap, not something to invent.`);
+      lines.push(`${role}_capsule: empty - treat the missing ${role} layer as an explicit gap, not something to invent.`);
       continue;
     }
     lines.push(
-      `${role}_capsule: ${capsule.capsuleId} (v${capsule.version}, health ${capsule.health.score})`,
-      `  label: ${capsule.label}`,
+      `${role}_capsule: ${promptSafeLine(capsule.capsuleId)} (v${capsule.version}, health ${capsule.health.score})`,
+      `  label: ${promptSafeLine(capsule.label, 180)}`,
     );
-    if (capsule.summary) lines.push(`  summary: ${capsule.summary.slice(0, 400)}`);
+    if (capsule.summary && summaryMaxChars > 0) {
+      lines.push(`  summary: ${promptSafeLine(capsule.summary, summaryMaxChars)}`);
+    }
     lines.push(
       `  contract: This capsule ${DOCK_ROLE_CONTRACT[role]}`,
-      `  core_refs: ${formatReferenceCoreRefs(capsule.coreRefs)}`,
+      `  core_refs: ${budgetTrimmed ? formatCompactCoreRefs(capsule.coreRefs) : formatReferenceCoreRefs(capsule.coreRefs)}`,
     );
   }
   if (missingIds.length) {
-    lines.push(`unresolved_dock_capsules: ${missingIds.join(', ')} — these slots reference capsules that could not be loaded; surface this as a context gap.`);
+    lines.push(`unresolved_dock_capsules: ${missingIds.map((id) => promptSafeLine(id, 120)).join(', ')} - these slots reference capsules that could not be loaded; surface this as a context gap.`);
   }
   lines.push(
     'precedence: situation governs facts; user governs voice; tool governs method; output governs format. On conflict, follow that order and name the conflict.',
     '',
   );
   return lines.join('\n');
+}
+
+function removeCapsuleDockPromptBlock(promptBlock: string): string {
+  const start = promptBlock.indexOf('[capsule_dock]');
+  if (start === -1) return promptBlock;
+  const nextSection = promptBlock.slice(start + '[capsule_dock]'.length).search(/\n\[[a-z0-9_]+]/);
+  const end = nextSection === -1
+    ? promptBlock.indexOf('</praxis-context-capsule>', start)
+    : start + '[capsule_dock]'.length + nextSection;
+  if (end === -1) return promptBlock.slice(0, start).trimEnd();
+  return `${promptBlock.slice(0, start).trimEnd()}\n${promptBlock.slice(end).trimStart()}`;
+}
+
+function insertCapsuleDockPromptBlock(promptBlock: string, dockBlock: string): string {
+  if (!dockBlock) return promptBlock;
+  const coreRefs = '\n[core_refs]';
+  const coreRefsIndex = promptBlock.indexOf(coreRefs);
+  if (coreRefsIndex !== -1) {
+    const nextSection = promptBlock.slice(coreRefsIndex + coreRefs.length).search(/\n\[[a-z0-9_]+]/);
+    if (nextSection !== -1) {
+      const insertAt = coreRefsIndex + coreRefs.length + nextSection;
+      return `${promptBlock.slice(0, insertAt).trimEnd()}\n\n${dockBlock}\n${promptBlock.slice(insertAt).trimStart()}`;
+    }
+  }
+  const opening = '<praxis-context-capsule>';
+  if (promptBlock.startsWith(opening)) {
+    return `${opening}\n${dockBlock}\n${promptBlock.slice(opening.length).trimStart()}`;
+  }
+  return `${dockBlock}\n${promptBlock}`;
+}
+
+function insertBudgetNote(promptBlock: string, note: string): string {
+  const dockStart = promptBlock.indexOf('[capsule_dock]');
+  if (dockStart !== -1) {
+    const nextSection = promptBlock.slice(dockStart + '[capsule_dock]'.length).search(/\n\[[a-z0-9_]+]/);
+    if (nextSection !== -1) {
+      const insertAt = dockStart + '[capsule_dock]'.length + nextSection;
+      return `${promptBlock.slice(0, insertAt).trimEnd()}\n${note}${promptBlock.slice(insertAt)}`;
+    }
+  }
+  const closing = '</praxis-context-capsule>';
+  const closingIndex = promptBlock.lastIndexOf(closing);
+  if (closingIndex === -1) return `${promptBlock.trimEnd()}\n${note}`;
+  return `${promptBlock.slice(0, closingIndex).trimEnd()}\n${note}${promptBlock.slice(closingIndex)}`;
+}
+
+function trimPromptPreservingClosingTag(promptBlock: string, maxChars: number): string {
+  const closing = '</praxis-context-capsule>';
+  const hasClosing = promptBlock.includes(closing);
+  const suffix = hasClosing ? `\n${closing}` : '';
+  const budget = Math.max(0, maxChars - suffix.length);
+  const body = hasClosing ? promptBlock.replace(closing, '').trimEnd() : promptBlock;
+  return `${body.slice(0, budget).trimEnd()}${suffix}`;
+}
+
+function promptSafeLine(value: string, maxChars = 400): string {
+  const text = value.replace(/[<>{}]/g, (char) => ({ '<': '‹', '>': '›', '{': '(', '}': ')' }[char] ?? char)).replace(/\s+/g, ' ').trim();
+  if (text.length <= maxChars) return text;
+  return `${text.slice(0, Math.max(0, maxChars - 22)).trimEnd()} [trimmed]`;
+}
+
+function formatCompactCoreRefs(coreRefs: PraxisCapsule['coreRefs']): string {
+  return [
+    coreRefs.userCoreId ? `user=${coreRefs.userCoreId}` : null,
+    coreRefs.situationCoreId ? `situation=${coreRefs.situationCoreId}` : null,
+    coreRefs.sourceCoreIds.length ? `sources=${coreRefs.sourceCoreIds.length}` : null,
+    coreRefs.documentCoreIds.length ? `docs=${coreRefs.documentCoreIds.length}` : null,
+    coreRefs.outputCoreIds.length ? `outputs=${coreRefs.outputCoreIds.length}` : null,
+    coreRefs.toolCoreIds?.length ? `tools=${coreRefs.toolCoreIds.length}` : null,
+  ].filter(Boolean).join('; ') || 'none';
 }
 
 function buildGenerationContractPromptBlock(capsule: PraxisCapsule, associatedCapsules: PraxisCapsule[]): string {

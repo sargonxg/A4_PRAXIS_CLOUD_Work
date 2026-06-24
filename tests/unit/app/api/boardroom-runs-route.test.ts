@@ -33,6 +33,11 @@ vi.mock('@/lib/context/capsule-service', () => ({
 
 vi.mock('@/lib/context/context-injection', () => ({
   resolveInjectableContext: mocks.resolveInjectableContext,
+  buildProtectedContextPromptBlock: vi.fn((promptBlock: string) => ({
+    promptBlock,
+    dockTrimmed: false,
+    contextTrimmed: false,
+  })),
 }));
 
 describe('/api/boardroom/runs route', () => {
@@ -146,7 +151,7 @@ describe('/api/boardroom/runs route', () => {
         outputDestination: 'library',
         sourceReceiptIds: ['receipt-doc-1'],
         contextInjectionPromptBlock: expect.stringContaining('[capsule_dock]'),
-        dockCapsuleIds: ['cap-1', 'cap-user'],
+        dockCapsuleIds: expect.arrayContaining(['cap-1', 'cap-user']),
         selectedSources: [expect.objectContaining({
           documentId: 'doc-1',
           sourceReceiptId: 'receipt-doc-1',
@@ -168,6 +173,70 @@ describe('/api/boardroom/runs route', () => {
       runId: 'run-boardroom-1',
       attempt: 1,
     });
+  });
+
+  it('stores and executes the same submitted capsule dock payload without falling back to another stack', async () => {
+    mocks.getStoredContextStack.mockResolvedValue({
+      stackId: 'default',
+      capsuleId: 'wrong-situation',
+      capsuleRefs: [{ capsuleId: 'wrong-situation', role: 'situation', label: 'Wrong situation', primary: true, order: 0, version: 1 }],
+    });
+    mocks.resolveInjectableContext.mockResolvedValue({
+      promptBlock: '<praxis-context-capsule>\n[capsule_dock]\nuser_capsule: cap-user\nsituation_capsule: cap-1\n</praxis-context-capsule>',
+      dockCapsules: [
+        { role: 'user', capsule: { capsuleId: 'cap-user' } },
+        { role: 'situation', capsule: { capsuleId: 'cap-1' } },
+      ],
+    });
+    const submittedDockPayload = {
+      schemaVersion: 1,
+      stackId: 'default',
+      slots: [
+        { role: 'user', capsuleId: 'cap-user', label: 'Analyst profile', version: 3 },
+        { role: 'situation', capsuleId: 'cap-1', label: 'Operating posture', version: 2 },
+        { role: 'tool', capsuleId: null, label: null, version: null },
+        { role: 'output', capsuleId: 'cap-output', label: 'Board pack', version: 1 },
+      ],
+    };
+    const { POST } = await import('@/app/api/boardroom/runs/route');
+
+    const response = await POST(new Request('https://praxis.local/api/boardroom/runs', {
+      method: 'POST',
+      body: JSON.stringify({
+        question: 'Should the board approve the operating posture?',
+        capsuleId: 'cap-1',
+        contextStackId: 'default',
+        capsuleDockPayload: submittedDockPayload,
+        participantIds: ['legal', 'security'],
+      }),
+    }));
+
+    expect(response.status).toBe(201);
+    expect(mocks.resolveInjectableContext).toHaveBeenCalledWith(expect.objectContaining({
+      uid: 'user-1',
+      capsuleId: 'cap-1',
+      activeContextStack: expect.objectContaining({
+        stackId: 'default',
+        capsuleRefs: expect.arrayContaining([
+          expect.objectContaining({ capsuleId: 'cap-user', role: 'user', label: 'Analyst profile', version: 3 }),
+          expect.objectContaining({ capsuleId: 'cap-1', role: 'situation', label: 'Operating posture', version: 2 }),
+          expect.objectContaining({ capsuleId: 'cap-output', role: 'output', label: 'Board pack', version: 1 }),
+        ]),
+      }),
+    }));
+    expect(mocks.createAgentRun).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.objectContaining({
+        capsuleDockPayload: submittedDockPayload,
+        boardroomSpec: expect.objectContaining({
+          capsuleDockPayload: submittedDockPayload,
+        }),
+        contextInjectionPromptBlock: expect.stringContaining('[capsule_dock]'),
+      }),
+    }));
+    const storedMetadata = mocks.createAgentRun.mock.calls.at(-1)?.[0]?.metadata;
+    expect(storedMetadata.contextInjectionPromptBlock).toContain('user_capsule: cap-user');
+    expect(storedMetadata.contextInjectionPromptBlock).toContain('situation_capsule: cap-1');
+    expect(storedMetadata.contextInjectionPromptBlock).not.toContain('wrong-situation');
   });
 
   it('returns queued run metadata when dispatch is not configured locally', async () => {

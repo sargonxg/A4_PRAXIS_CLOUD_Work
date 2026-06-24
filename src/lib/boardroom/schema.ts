@@ -11,6 +11,11 @@ import {
   type BoardroomParticipantRole,
 } from '@/lib/boardroom/participants';
 import type { CreateAgentRunInput, SelectedCoreIds } from '@/lib/agent-runtime/types';
+import {
+  BoardroomCapsuleDockPayloadSchema,
+  normalizeBoardroomCapsuleDockPayload,
+  type BoardroomCapsuleDockPayload,
+} from '@/lib/boardroom/capsule-dock';
 
 export {
   BOARDROOM_DEFAULT_PARTICIPANT_IDS,
@@ -43,6 +48,7 @@ export const BoardroomRunRequestSchema = z.object({
   capsuleId: z.string().trim().min(1).max(240).optional(),
   contextStackId: z.string().trim().min(1).max(240).nullable().optional(),
   directContext: z.string().trim().max(24000).optional(),
+  capsuleDockPayload: BoardroomCapsuleDockPayloadSchema.optional(),
   selectedDocumentIds: z.array(z.string().trim().min(1).max(240)).max(12).default([]),
   selectedSources: z.array(BoardroomSourceRefSchema).max(24).default([]),
   participantIds: z.array(z.string().trim().min(1).max(80)).optional()
@@ -161,7 +167,7 @@ export function buildBoardroomAgentRunInput(input: {
   idempotencyKey?: string;
   /** Compiled capsule-dock prompt layer (same contract as Ask PRAXIS injection). */
   contextInjectionPromptBlock?: string | null;
-  dockCapsuleIds?: string[];
+  capsuleDockPayload?: BoardroomCapsuleDockPayload | null;
 }): CreateAgentRunInput {
   const documentCoreIds = uniqueStrings([
     ...(input.selectedCoreIds?.documentCoreIds ?? []),
@@ -173,6 +179,11 @@ export function buildBoardroomAgentRunInput(input: {
     ...input.request.selectedSources.flatMap((source) => source.sourceCoreId ? [source.sourceCoreId] : []),
   ]);
   const selectedSources = sanitizeSelectedSources(input.request.selectedSources);
+  const capsuleDockPayload = input.capsuleDockPayload
+    ? normalizeBoardroomCapsuleDockPayload(input.capsuleDockPayload)
+    : input.request.capsuleDockPayload
+      ? normalizeBoardroomCapsuleDockPayload(input.request.capsuleDockPayload)
+      : null;
   const sourceReceiptIds = uniqueStrings(selectedSources.flatMap((source) => [
     source.sourceReceiptId,
     source.receiptId,
@@ -207,7 +218,8 @@ export function buildBoardroomAgentRunInput(input: {
       selectedSources,
       sourceReceiptIds,
       contextInjectionPromptBlock: input.contextInjectionPromptBlock ?? null,
-      dockCapsuleIds: uniqueStrings(input.dockCapsuleIds ?? []),
+      capsuleDockPayload,
+      dockCapsuleIds: uniqueStrings(capsuleDockPayload?.slots.flatMap((slot) => slot.capsuleId ? [slot.capsuleId] : []) ?? []),
       sourcePosture: sourceReceiptIds.length
         ? `${sourceReceiptIds.length} source receipt(s) attached`
         : documentCoreIds.length
@@ -247,6 +259,7 @@ function sanitizeBoardroomSpec(request: BoardroomRunRequest) {
     capsuleId: request.capsuleId ?? null,
     contextStackId: request.contextStackId ?? null,
     directContext: request.directContext ?? null,
+    capsuleDockPayload: request.capsuleDockPayload ? normalizeBoardroomCapsuleDockPayload(request.capsuleDockPayload) : null,
     selectedDocumentIds: request.selectedDocumentIds,
     selectedSources: sanitizeSelectedSources(request.selectedSources),
     participantIds: request.participantIds,

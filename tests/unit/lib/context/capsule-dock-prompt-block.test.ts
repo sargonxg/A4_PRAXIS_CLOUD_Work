@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildCapsuleDockPromptBlock, type DockCapsuleEntry } from '@/lib/context/context-injection';
+import {
+  buildCapsuleDockPromptBlock,
+  buildProtectedContextPromptBlock,
+  type DockCapsuleEntry,
+} from '@/lib/context/context-injection';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 
 function capsuleFixture(overrides: Partial<PraxisCapsule>): PraxisCapsule {
@@ -91,5 +95,33 @@ describe('buildCapsuleDockPromptBlock', () => {
     expect(block).toContain('governs how to think');
     expect(block).toContain('governs what to produce');
     expect(block).toContain('user_capsule: empty');
+  });
+
+  it('protects capsule_dock from context truncation and notes lower-priority trimming', () => {
+    const entries: DockCapsuleEntry[] = [
+      { role: 'user', capsule: capsuleFixture({ capsuleId: 'cap-user', label: 'Analyst profile', summary: 'User perspective.'.repeat(80) }) },
+      { role: 'situation', capsule: capsuleFixture({ capsuleId: 'cap-situation', label: 'Situation frame', summary: 'Situation evidence.'.repeat(80) }) },
+      { role: 'output', capsule: capsuleFixture({ capsuleId: 'cap-output', label: 'Board pack', summary: 'Output contract.'.repeat(80) }) },
+    ];
+    const rawPrompt = [
+      '<praxis-context-capsule>',
+      '[core_refs]',
+      'situation_core: sit-1',
+      '[capsule_starter]',
+      'starter: ' + 'rich starter detail '.repeat(500),
+      '</praxis-context-capsule>',
+    ].join('\n');
+
+    const protectedPrompt = buildProtectedContextPromptBlock(rawPrompt, entries, [], { maxChars: 2400, dockMaxChars: 1400 });
+
+    expect(protectedPrompt.promptBlock.length).toBeLessThanOrEqual(2400);
+    expect(protectedPrompt.promptBlock).toContain('[capsule_dock]');
+    expect(protectedPrompt.promptBlock).toContain('user_capsule: cap-user');
+    expect(protectedPrompt.promptBlock).toContain('situation_capsule: cap-situation');
+    expect(protectedPrompt.promptBlock).toContain('output_capsule: cap-output');
+    expect(protectedPrompt.promptBlock).toContain('[capsule_context_budget_note]');
+    expect(protectedPrompt.promptBlock).toContain('protected capsule_dock retained');
+    expect(protectedPrompt.dockTrimmed).toBe(true);
+    expect(protectedPrompt.contextTrimmed).toBe(true);
   });
 });

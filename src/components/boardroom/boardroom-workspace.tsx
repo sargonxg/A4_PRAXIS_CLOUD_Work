@@ -19,7 +19,8 @@ import { useActiveContextStack } from '@/components/app/use-active-context-stack
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
 import { EmptyState } from '@/components/ui/empty-state';
-import { buildCapsuleDockSlots, type ActiveContextStackState } from '@/lib/context/active-context-stack';
+import { type ActiveContextStackState } from '@/lib/context/active-context-stack';
+import { buildBoardroomCapsuleDockPayloadFromStack, type BoardroomCapsuleDockPayload } from '@/lib/boardroom/capsule-dock';
 import { buildProofSummaryFromAgentRun, type UiProofSummary } from '@/lib/proof/proof-summary';
 import {
   BOARDROOM_DEFAULT_PARTICIPANT_IDS,
@@ -90,6 +91,7 @@ type BoardroomSelectedSource = {
 type BoardroomRuntimeContext = {
   capsuleId: string | null;
   contextStackId: string | null;
+  capsuleDockPayload: BoardroomCapsuleDockPayload;
   selectedDocumentIds: string[];
   selectedSources: BoardroomSelectedSource[];
 };
@@ -242,6 +244,7 @@ export function BoardroomWorkspace() {
           directContext: directContext || undefined,
           capsuleId: boardroomContext.capsuleId || undefined,
           contextStackId: boardroomContext.contextStackId || undefined,
+          capsuleDockPayload: boardroomContext.capsuleDockPayload,
           selectedDocumentIds: boardroomContext.selectedDocumentIds,
           selectedSources: boardroomContext.selectedSources,
           participantIds: BOARDROOM_AGENT_IDS,
@@ -447,17 +450,17 @@ export function BoardroomWorkspace() {
                 <div className="mt-3" data-testid="boardroom-capsule-dock">
                   <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Capsule Dock</p>
                   <div className="mt-1.5 grid gap-1">
-                    {buildCapsuleDockSlots(activeContextStack).slots.map((slot) => (
+                    {boardroomContext.capsuleDockPayload.slots.map((slot) => (
                       <div
-                        key={slot.kind}
-                        title={slot.item ? `${slot.label}: ${slot.item.label}` : `${slot.label} slot is empty. ${slot.hint}.`}
+                        key={slot.role}
+                        title={slot.capsuleId ? `${slot.role}: ${slot.label ?? slot.capsuleId}` : `${slot.role} slot is empty.`}
                         className={cn(
                           'flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px]',
-                          slot.item ? 'border-emerald-500/35 bg-emerald-50/70 text-slate-800' : 'border-dashed border-slate-300 bg-white text-slate-400',
+                          slot.capsuleId ? 'border-emerald-500/35 bg-emerald-50/70 text-slate-800' : 'border-dashed border-slate-300 bg-white text-slate-400',
                         )}
                       >
-                        <span className="font-bold uppercase tracking-[0.1em] text-slate-500">{slot.label}</span>
-                        <span className="min-w-0 truncate font-semibold">{slot.item?.label ?? 'empty'}</span>
+                        <span className="font-bold uppercase tracking-[0.1em] text-slate-500">{labelizeDockRole(slot.role)}</span>
+                        <span className="min-w-0 truncate font-semibold">{slot.label ?? slot.capsuleId ?? 'empty'}</span>
                       </div>
                     ))}
                   </div>
@@ -742,9 +745,14 @@ function buildBoardroomContext(urlContext: BoardroomUrlContext, stack: ActiveCon
   return {
     capsuleId: urlContext.capsuleId ?? stack.capsuleId,
     contextStackId: urlContext.contextStackId ?? stack.stackId,
+    capsuleDockPayload: buildBoardroomCapsuleDockPayloadFromStack(stack),
     selectedDocumentIds,
     selectedSources,
   };
+}
+
+function labelizeDockRole(role: string): string {
+  return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
 function parseSseEvents(text: string): RunEvent[] {

@@ -4,9 +4,14 @@ import { createAgentRun } from '@/lib/agent-runtime/postgres';
 import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { toAgentRunOutput } from '@/lib/agent-runtime/schema';
 import { normalizePointer } from '@/lib/agent-runtime/state';
+import {
+  activeContextStackFromBoardroomDockPayload,
+  normalizeBoardroomCapsuleDockPayload,
+  type BoardroomCapsuleDockPayload,
+} from '@/lib/boardroom/capsule-dock';
 import { buildBoardroomAgentRunInput, BoardroomRunRequestSchema } from '@/lib/boardroom/schema';
 import { getCapsule, getOrMigrateDefaultCapsule, getStoredContextStack } from '@/lib/context/capsule-service';
-import { resolveInjectableContext } from '@/lib/context/context-injection';
+import { buildProtectedContextPromptBlock, resolveInjectableContext } from '@/lib/context/context-injection';
 import type { SelectedCoreIds } from '@/lib/agent-runtime/types';
 
 export const dynamic = 'force-dynamic';
@@ -30,7 +35,12 @@ export const POST = withAuth(async (request, user) => {
   // Compile the capsule dock (User / Situation / Tool / Output) into the same
   // governed prompt layer Ask PRAXIS uses, so the board deliberates on the
   // full docked context, not just the primary capsule pointer.
-  const contextInjection = await resolveBoardroomContextInjection(user.uid, capsule.capsuleId, parsed.data.contextStackId);
+  const contextInjection = await resolveBoardroomContextInjection(
+    user.uid,
+    capsule.capsuleId,
+    parsed.data.contextStackId,
+    parsed.data.capsuleDockPayload,
+  );
 
   try {
     const run = await createAgentRun(buildBoardroomAgentRunInput({
@@ -41,7 +51,7 @@ export const POST = withAuth(async (request, user) => {
       selectedCoreIds: capsule.coreRefs as Partial<SelectedCoreIds>,
       request: { ...parsed.data, capsuleId: capsule.capsuleId },
       contextInjectionPromptBlock: contextInjection?.promptBlock ?? null,
-      dockCapsuleIds: contextInjection?.dockCapsuleIds ?? [],
+      capsuleDockPayload: contextInjection?.capsuleDockPayload ?? parsed.data.capsuleDockPayload ?? null,
     }));
 
     const runOutput = toAgentRunOutput(run);
@@ -77,19 +87,39 @@ async function resolveBoardroomContextInjection(
   uid: string,
   capsuleId: string,
   contextStackId?: string | null,
-): Promise<{ promptBlock: string; dockCapsuleIds: string[] } | null> {
+  submittedDockPayload?: BoardroomCapsuleDockPayload | null,
+): Promise<{ promptBlock: string; capsuleDockPayload: BoardroomCapsuleDockPayload } | null> {
   try {
     const storedStack = await getStoredContextStack(uid, contextStackId ?? undefined).catch(() => null)
       ?? await getStoredContextStack(uid).catch(() => null);
+    const capsuleDockPayload = submittedDockPayload
+      ? normalizeBoardroomCapsuleDockPayload(submittedDockPayload)
+      : null;
+    const activeContextStack = capsuleDockPayload
+      ? activeContextStackFromBoardroomDockPayload(capsuleDockPayload, storedStack ?? undefined)
+      : storedStack ?? undefined;
     const injectable = await resolveInjectableContext({
       uid,
       capsuleId,
-      activeContextStack: storedStack ?? undefined,
+      activeContextStack,
     });
+    const protectedPrompt = buildProtectedContextPromptBlock(
+      injectable.promptBlock,
+      injectable.dockCapsules,
+      injectable.missingDockCapsuleIds,
+    );
     return {
-      // Bounded copy for the run metadata ledger; the worker prepends it to the evidence block.
-      promptBlock: injectable.promptBlock.slice(0, 12_000),
-      dockCapsuleIds: injectable.dockCapsules.map((entry) => entry.capsule.capsuleId),
+      promptBlock: protectedPrompt.promptBlock,
+      capsuleDockPayload: capsuleDockPayload ?? normalizeBoardroomCapsuleDockPayload({
+        schemaVersion: 1,
+        stackId: injectable.stack?.stackId ?? contextStackId ?? null,
+        slots: injectable.dockCapsules.map((entry) => ({
+          role: entry.role,
+          capsuleId: entry.capsule.capsuleId,
+          label: entry.capsule.label,
+          version: entry.capsule.version,
+        })),
+      }),
     };
   } catch {
     return null;
