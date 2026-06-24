@@ -325,8 +325,34 @@ describe('withCalibration', () => {
     expect(buildCalibratedContext).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when non-sample user has no completed onboarding profile', async () => {
+  it('lets legacy users without an analyst profile run with default calibration', async () => {
     (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValueOnce(null);
+    const handler = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true })));
+    const route = withCalibration('chat', 'ai_chat', {
+      variant: 'streaming',
+      blockOnThinContext: false,
+    })(handler);
+    const req = new Request('http://x', { method: 'POST', body: JSON.stringify({}) });
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(req, { uid: 'u1', email: '', name: '', isDemo: false });
+    expect(res.status).toBe(200);
+    expect(buildCalibratedContext).toHaveBeenCalledWith(expect.objectContaining({
+      uid: 'u1',
+      toolId: 'chat',
+    }));
+    expect(handler).toHaveBeenCalledWith(expect.any(Request), expect.objectContaining({
+      calibration: expect.objectContaining({
+        provenance: expect.objectContaining({ profileVersion: 0 }),
+      }),
+    }));
+  });
+
+  it('returns 403 when a new user has a partial analyst profile', async () => {
+    (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      identity: { role: '', seniority: '', org: '', team: '' },
+      perspective: { mandate: '', lenses: [], regions: [], audience: '', primaryDomain: 'generic', secondaryDomains: [] },
+      workingStyle: { sourceCategories: [], language: '', redLines: [], analyticalStyle: '' },
+      meta: { version: 0, completedAt: null, lastEditedAt: null, skipCount: 0, createdAt: null, deletedAt: null },
+    });
     const handler = vi.fn();
     const route = withCalibration('risk-monitor', 'ai_risk_assessment')(handler);
     const req = new Request('http://x', { method: 'POST', body: JSON.stringify({}) });

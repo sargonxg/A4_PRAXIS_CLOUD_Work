@@ -19,6 +19,7 @@ import {
   buildContextCapsuleV3,
   getCapsule,
   getOrMigrateDefaultCapsule,
+  capsuleToStack,
   listCapsuleInventory,
   listCapsules,
   promoteCapsuleSourceGaps,
@@ -98,6 +99,28 @@ describe('capsule service', () => {
     expect(result.capsule.coreRefs.sourceCoreIds).toEqual(['src-1']);
     expect(result.capsule.activeForSituationIds).toContain('sit-1');
     expect(await getCapsule('u1', 'default', deps(db))).not.toBeNull();
+  });
+
+  it('loads a legacy default capsule with missing coreRefs without throwing', async () => {
+    const db = new FakeFirestore();
+    db.data.set('users/u1/capsules/default', {
+      capsuleId: 'default',
+      ownerUid: 'u1',
+      label: 'Legacy default capsule',
+      activeForSituationIds: ['workspace'],
+      version: 1,
+      createdAt: '2026-05-01T00:00:00.000Z',
+      updatedAt: '2026-05-01T00:00:00.000Z',
+    });
+
+    const result = await getOrMigrateDefaultCapsule('u1', deps(db));
+
+    expect(result.migrated).toBe(false);
+    expect(result.persisted).toBe(true);
+    expect(result.capsule.coreRefs.situationCoreId).toBeNull();
+    expect(result.capsule.coreRefs.sourceCoreIds).toEqual([]);
+    expect(() => capsuleToStack(result.capsule)).not.toThrow();
+    expect(capsuleToStack(result.capsule).sourceIds).toEqual([]);
   });
 
   it('keeps owner isolation by storing capsules under each user document', async () => {

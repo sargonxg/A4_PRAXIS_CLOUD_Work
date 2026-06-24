@@ -10,6 +10,7 @@ import {
   completeAnalystProfile,
   getAnalystProfile,
   hasUserSkippedOnboarding,
+  isUserOnboarded,
   upsertAnalystProfile,
 } from '@/lib/firebase/analyst-profile-admin';
 import { adminDb, getAdminDbOrThrow } from '@/lib/firebase/admin';
@@ -127,5 +128,53 @@ describe('analyst-profile-admin', () => {
     });
     expect(completionWrite).toBeDefined();
     expect(writes.every((w) => !('onboardingCompletedAt' in w.data))).toBe(true);
+  });
+
+  it('lazily migrates legacy onboarding completion before deleting root mirrors', async () => {
+    const operations: string[] = [];
+    const profileDoc = makeDocStub(null);
+    const rootUserDoc = makeDocStub({
+      onboardingCompletedAt: '2026-04-01T00:00:00.000Z',
+      onboardingSkipCount: 2,
+    });
+    const originalProfileSet = profileDoc.ref.set as (...args: unknown[]) => Promise<unknown>;
+    const originalProfileGet = profileDoc.ref.get as () => Promise<unknown>;
+    const originalRootUpdate = rootUserDoc.ref.update as (...args: unknown[]) => Promise<unknown>;
+    profileDoc.ref.set = vi.fn(async (...args: unknown[]) => {
+      operations.push('profile.set');
+      return originalProfileSet(...args);
+    });
+    profileDoc.ref.get = vi.fn(async () => {
+      operations.push('profile.get');
+      return originalProfileGet();
+    });
+    rootUserDoc.ref.update = vi.fn(async (...args: unknown[]) => {
+      operations.push('root.update');
+      return originalRootUpdate(...args);
+    });
+    const userDoc = {
+      collection: vi.fn((sub: string) => ({
+        doc: vi.fn(() => sub === 'profile' ? profileDoc.ref : makeDocStub(null).ref),
+      })),
+      get: rootUserDoc.ref.get,
+      update: rootUserDoc.ref.update,
+      set: rootUserDoc.ref.set,
+    };
+    const db = {
+      collection: vi.fn((name: string) => {
+        if (name === 'users') return { doc: vi.fn(() => userDoc) };
+        return { doc: vi.fn() };
+      }),
+    };
+    (getAdminDbOrThrow as unknown as ReturnType<typeof vi.fn>).mockReturnValue(db);
+
+    await expect(isUserOnboarded('u1')).resolves.toBe(true);
+
+    expect(operations.indexOf('profile.set')).toBeGreaterThan(-1);
+    expect(operations.indexOf('root.update')).toBeGreaterThan(operations.indexOf('profile.set'));
+    expect(rootUserDoc.ref.update).toHaveBeenCalledWith(expect.objectContaining({
+      onboardingCompletedAt: expect.anything(),
+      onboardingSkipCount: expect.anything(),
+    }));
   });
 });

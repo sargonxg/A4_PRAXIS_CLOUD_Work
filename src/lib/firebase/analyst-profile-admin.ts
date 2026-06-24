@@ -1,6 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { adminDb, getAdminDbOrThrow } from './admin';
-import { DEFAULT_ANALYST_PROFILE, type AnalystProfile } from '@/types/analyst-profile';
+import { DEFAULT_ANALYST_PROFILE, isProfileComplete, type AnalystProfile } from '@/types/analyst-profile';
 import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 
 const USERS = 'users';
@@ -127,6 +127,13 @@ export async function isUserOnboarded(uid: string): Promise<boolean> {
   const profileRef = db.collection(USERS).doc(uid).collection(PROFILE).doc(PROFILE_DOC);
   const profileSnap = await profileRef.get();
   if (profileSnap.exists && isOnboardingComplete(profileSnap.data() as AnalystProfile)) return true;
+  if (profileSnap.exists && isLegacyCompleteProfile(profileSnap.data())) {
+    await profileRef.set(
+      { meta: { completedAt: FieldValue.serverTimestamp(), lastEditedAt: FieldValue.serverTimestamp() } },
+      { merge: true },
+    );
+    return true;
+  }
 
   // Legacy fallback: pre-merge users have completion only on root doc.
   // Lazily mirror onto profile/analyst then drop the legacy field.
@@ -135,8 +142,9 @@ export async function isUserOnboarded(uid: string): Promise<boolean> {
     const userSnap = await userRef.get();
     const legacyCompleted = userSnap.data()?.onboardingCompletedAt;
     if (legacyCompleted) {
+      const legacyProfile = legacyOnboardingProfile(profileSnap.exists ? profileSnap.data() : null, legacyCompleted);
       await profileRef.set(
-        { meta: { completedAt: legacyCompleted, lastEditedAt: FieldValue.serverTimestamp() } },
+        legacyProfile,
         { merge: true },
       );
       const migratedSnap = await profileRef.get();
@@ -153,4 +161,56 @@ export async function isUserOnboarded(uid: string): Promise<boolean> {
     console.warn('[analyst-profile-admin] legacy onboarding fallback failed:', err);
   }
   return false;
+}
+
+function isLegacyCompleteProfile(profile: unknown): profile is AnalystProfile {
+  try {
+    return Boolean(profile) && isProfileComplete(profile as AnalystProfile);
+  } catch {
+    return false;
+  }
+}
+
+function legacyOnboardingProfile(profile: unknown, completedAt: unknown): AnalystProfile {
+  const existing = isRecord(profile) ? profile : {};
+  const identity = isRecord(existing.identity) ? existing.identity : {};
+  const perspective = isRecord(existing.perspective) ? existing.perspective : {};
+  const workingStyle = isRecord(existing.workingStyle) ? existing.workingStyle : {};
+  const meta = isRecord(existing.meta) ? existing.meta : {};
+  return {
+    ...DEFAULT_ANALYST_PROFILE,
+    ...(existing as Partial<AnalystProfile>),
+    identity: {
+      ...DEFAULT_ANALYST_PROFILE.identity,
+      ...identity,
+      role: typeof identity.role === 'string' && identity.role ? identity.role as AnalystProfile['identity']['role'] : 'researcher',
+      seniority: typeof identity.seniority === 'string' && identity.seniority ? identity.seniority as AnalystProfile['identity']['seniority'] : 'mid',
+    },
+    perspective: {
+      ...DEFAULT_ANALYST_PROFILE.perspective,
+      ...perspective,
+      mandate: typeof perspective.mandate === 'string' && perspective.mandate.trim().length >= 30
+        ? perspective.mandate
+        : 'Legacy profile migrated with default policy analysis calibration.',
+      regions: Array.isArray(perspective.regions) && perspective.regions.length > 0
+        ? perspective.regions as string[]
+        : ['global'],
+    },
+    workingStyle: {
+      ...DEFAULT_ANALYST_PROFILE.workingStyle,
+      ...workingStyle,
+      language: typeof workingStyle.language === 'string' && workingStyle.language ? workingStyle.language as AnalystProfile['workingStyle']['language'] : 'en',
+      analyticalStyle: typeof workingStyle.analyticalStyle === 'string' && workingStyle.analyticalStyle ? workingStyle.analyticalStyle as AnalystProfile['workingStyle']['analyticalStyle'] : 'rapid_brief',
+    },
+    meta: {
+      ...DEFAULT_ANALYST_PROFILE.meta,
+      ...meta,
+      completedAt,
+      lastEditedAt: FieldValue.serverTimestamp(),
+    },
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
