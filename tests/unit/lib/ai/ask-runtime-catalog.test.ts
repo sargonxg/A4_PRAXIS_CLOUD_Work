@@ -64,7 +64,7 @@ describe('Ask PRAXIS runtime catalog', () => {
     ]);
   });
 
-  it('builds Pro then Flash GA fallback candidates for deep preview selections', () => {
+  it('builds Pro then Flash GA fallback candidates for deep frontier selections', () => {
     expect(buildAskRuntimeFallbackCandidates({
       selectedModelId: getModelMatrixEntry('complex_reasoning').model,
       analysisDepth: 'deep',
