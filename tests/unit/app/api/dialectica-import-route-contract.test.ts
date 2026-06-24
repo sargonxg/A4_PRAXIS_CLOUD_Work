@@ -97,7 +97,7 @@ describe('DIALECTICA capsule import route contract', () => {
       sourceCount: 1,
       signaturePresent: true,
     });
-    expect(payload.preview.layersSkipped).toEqual(expect.arrayContaining(['graph/ladybug/*']));
+    expect(payload.preview.layersBuilt).toEqual(expect.arrayContaining(['graph/ladybug/*']));
     expect(payload.proposedRowsRetainedForReview).toBe(2);
   });
 
