@@ -111,16 +111,35 @@ describe('DIALECTICA spec-3.0 capsule import', () => {
     });
     expect(plan.capsuleInput.embeddedGraph).toMatchObject({
       provider: 'graphlite',
+      projectionId: 'dialectica-cap_conflict_situation_fixture_v3-ladybug-jsonld',
+      status: 'compiled-advisory',
+      advisoryOnly: true,
       source: 'dialectica:graph.jsonld',
     });
-    const embeddedGraph = plan.capsuleInput.embeddedGraph as { nodes?: Array<Record<string, unknown>> } | undefined;
+    const embeddedGraph = plan.capsuleInput.embeddedGraph as { nodes?: Array<Record<string, unknown>>; edges?: Array<Record<string, unknown>> } | undefined;
+    expect(embeddedGraph?.nodes?.every((node) => node.reviewState === 'advisory')).toBe(true);
+    expect(embeddedGraph?.edges?.every((edge) => edge.reviewState === 'advisory')).toBe(true);
+    expect(embeddedGraph?.nodes?.find((node) => node.id === 'clm_army_rejects_certification')).toMatchObject({
+      sourceReceiptIds: ['src_commission_statement'],
+      derivedFrom: ['clm_army_rejects_certification'],
+    });
+    expect(embeddedGraph?.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        source: 'ent_regional_army_command',
+        target: 'ent_election_commission',
+        relationshipType: 'contends_with',
+        reviewState: 'advisory',
+      }),
+    ]));
     expect(embeddedGraph?.nodes?.[0]?.generatedBy).toEqual({
       actorType: 'model',
       actorId: getModelIdForTask('balanced'),
       at: '2026-06-12T12:00:00.000Z',
       activity: 'import',
     });
-    expect(plan.importNotes.join('\n')).toMatch(/graph\/ladybug\/\*/);
+    expect(plan.preview.layersBuilt).toEqual(expect.arrayContaining(['graph/ladybug/*']));
+    expect(plan.preview.layersSkipped).not.toEqual(expect.arrayContaining(['graph/ladybug/*']));
+    expect(plan.importNotes.join('\n')).toMatch(/Built graph\/ladybug\/\* advisory projection from graph\.jsonld/);
     expect(plan.importNotes.join('\n')).toMatch(/fixture_owner/);
   });
 });

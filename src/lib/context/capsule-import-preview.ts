@@ -24,6 +24,7 @@ export interface CapsuleImportPreview {
   specVersion?: string;
   layersPresent?: string[];
   layersMissing?: string[];
+  layersBuilt?: string[];
   layersSkipped?: string[];
   unknownLayers?: string[];
   claimCount?: number;

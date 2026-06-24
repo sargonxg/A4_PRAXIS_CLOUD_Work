@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { z } from 'zod';
 import { getModelIdForTask } from '@/lib/ai/model-matrix';
+import { buildLadybugProjectionFromGraphJsonLd } from '@/lib/context/ladybug-projection';
 import type { CreateCapsuleInput } from '@/lib/context/capsule-service';
 import type {
   ContextCapsuleClaim,
@@ -106,6 +107,7 @@ export interface DialecticaParsedCapsulePackage {
   mimetype: string | null;
   layersPresent: string[];
   layersMissing: string[];
+  layersBuilt: string[];
   layersSkipped: string[];
   unknownLayers: string[];
   importNotes: string[];
@@ -131,6 +133,7 @@ export interface DialecticaCapsuleImportPreview {
   specVersion: string;
   layersPresent: string[];
   layersMissing: string[];
+  layersBuilt: string[];
   layersSkipped: string[];
   unknownLayers: string[];
   claimCount: number;
@@ -188,7 +191,9 @@ export function parseDialecticaCapsulePackageFromParts(parts: DialecticaCapsuleP
   const layersPresent = uniqueStrings(manifest.layers_present);
   const unknownLayers = layersPresent.filter((layer) => !KNOWN_LAYER_SET.has(layer));
   const layersMissing = DIALECTICA_KNOWN_LAYERS.filter((layer) => !layersPresent.includes(layer));
-  const layersSkipped = parts.hasLadybugProjection ? ['graph/ladybug/*'] : [];
+  const hasGraphJsonLd = parts.graphJsonld !== undefined && parts.graphJsonld !== null;
+  const layersBuilt = hasGraphJsonLd ? ['graph/ladybug/*'] : [];
+  const layersSkipped = parts.hasLadybugProjection && !hasGraphJsonLd ? ['graph/ladybug/*'] : [];
   const mimetype = stringOrNull(parts.mimetype);
 
   if (mimetype && mimetype !== DIALECTICA_CAPSULE_MIMETYPE) {
@@ -204,10 +209,12 @@ export function parseDialecticaCapsulePackageFromParts(parts: DialecticaCapsuleP
   if (layersMissing.length) {
     importNotes.push(`DIALECTICA layers not present in package: ${layersMissing.join(', ')}.`);
   }
-  if (parts.hasLadybugProjection) {
-    importNotes.push('Skipped graph/ladybug/* projection; binary Ladybug artifacts are read-only/rebuildable and are not imported.');
+  if (hasGraphJsonLd) {
+    importNotes.push('Built graph/ladybug/* advisory projection from graph.jsonld; .lbug artifacts remain read-only/rebuildable and are not imported as canonical data.');
+  } else if (parts.hasLadybugProjection) {
+    importNotes.push('Skipped graph/ladybug/* binary projection; graph.jsonld missing so the deterministic advisory projection could not be rebuilt.');
   } else {
-    importNotes.push('Skipped graph/ladybug/* projection; no Ladybug binary projection was present.');
+    importNotes.push('No graph/ladybug/* binary projection was present; no Ladybug projection layer was rebuilt.');
   }
   importNotes.push(`DIALECTICA manifest owner_uid "${manifest.owner_uid}" recorded as provenance only; PRAXIS owner is the importing user.`);
 
@@ -253,6 +260,7 @@ export function parseDialecticaCapsulePackageFromParts(parts: DialecticaCapsuleP
     mimetype,
     layersPresent,
     layersMissing,
+    layersBuilt,
     layersSkipped,
     unknownLayers,
     importNotes: uniqueStrings(importNotes),
@@ -320,10 +328,11 @@ export function buildDialecticaCapsuleImportPreview(pkg: DialecticaParsedCapsule
     evidenceGapCount: 0,
     sourceReceiptCount: sourceReceipts.length,
     sourceReceipts,
-    reviewGatedSummary: 'DIALECTICA claims, sources, timeline anchors, and graph projection stay review-visible after import; binary Ladybug artifacts are skipped.',
+    reviewGatedSummary: 'DIALECTICA claims, sources, timeline anchors, and advisory graph projection stay review-visible after import; binary Ladybug artifacts are never canonical data.',
     specVersion: pkg.manifest.spec_version,
     layersPresent: [...pkg.layersPresent],
     layersMissing: [...pkg.layersMissing],
+    layersBuilt: [...pkg.layersBuilt],
     layersSkipped: [...pkg.layersSkipped],
     unknownLayers: [...pkg.unknownLayers],
     claimCount: pkg.claims.length,
@@ -607,52 +616,20 @@ function mapGraphJsonLd(
     at: importedAt,
     activity: 'import',
   };
-  const nodes = extractJsonLdNodes(graphJsonld, generatedBy, importedAt);
+  const projection = buildLadybugProjectionFromGraphJsonLd(graphJsonld, { capsuleId });
   return {
-    provider: 'graphlite',
-    projectionId: `dialectica-${capsuleId}-jsonld`,
-    status: 'imported-advisory',
-    advisoryOnly: true,
-    canonicalStore: 'Firestore ContextCapsules',
-    promotionGate: 'Human review-card approval required before canonical graph promotion.',
-    source: 'dialectica:graph.jsonld',
-    nodes,
-    edges: [],
-    rawJsonLd: graphJsonld,
+    ...projection,
+    nodes: projection.nodes.map((node) => ({
+      ...node,
+      recordedAt: importedAt,
+      generatedBy,
+    })),
+    edges: projection.edges.map((edge) => ({
+      ...edge,
+      recordedAt: importedAt,
+      generatedBy,
+    })),
   };
-}
-
-function extractJsonLdNodes(
-  input: unknown,
-  generatedBy: DialecticaGraphGeneratedBy,
-  recordedAt: string,
-): Record<string, unknown>[] {
-  const nodes: Record<string, unknown>[] = [];
-  const visit = (value: unknown) => {
-    if (Array.isArray(value)) {
-      value.forEach(visit);
-      return;
-    }
-    if (!isRecord(value)) return;
-    if (Array.isArray(value['@graph'])) {
-      visit(value['@graph']);
-      return;
-    }
-    const id = stringOrNull(value['@id']);
-    if (id) {
-      nodes.push({
-        id: id.replace(/^.*[:/#]/, '') || id,
-        label: stringOrNull(value['dialectica:title']) ?? stringOrNull(value.label) ?? id,
-        entityType: stringOrNull(value['@type'])?.replace(/^.*[:/#]/, '') ?? 'JsonLdNode',
-        jsonldId: id,
-        confidenceKind: 'EXTRACTED',
-        recordedAt,
-        generatedBy,
-      });
-    }
-  };
-  visit(input);
-  return nodes;
 }
 
 function dialecticaCapsuleId(capsuleId: string, version: number): string {

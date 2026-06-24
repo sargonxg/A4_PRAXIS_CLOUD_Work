@@ -3,6 +3,7 @@ import {
   buildAgentContextPacket,
   shouldEnableAgentContextPacket,
 } from '@/lib/context/agent-context-packet';
+import { buildLadybugProjectionFromGraphJsonLd } from '@/lib/context/ladybug-projection';
 import { selectAgentContextSubgraph } from '@/lib/context/agent-context-salience';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 
@@ -199,6 +200,62 @@ describe('agent context graph packet', () => {
     expect(result.packetText).toContain('### 2. Active Ontology Contract');
     expect(result.selected.nodes).toEqual([]);
     expect(result.selected.edges).toEqual([]);
+  });
+
+  it('uses projected advisory graph rows in neighborhoods and reasoning paths', () => {
+    const projectedGraph = buildLadybugProjectionFromGraphJsonLd({
+      '@graph': [
+        {
+          '@id': 'actor-ministry',
+          '@type': 'dialectica:Actor',
+          'dialectica:title': 'Interior Ministry',
+          'dialectica:pressures': 'claim-border-controls',
+        },
+        {
+          '@id': 'claim-border-controls',
+          '@type': 'dialectica:Claim',
+          'dialectica:title': 'Border controls remain contested',
+          'dialectica:source': 'src-reliefweb',
+        },
+      ],
+    }, {
+      capsuleId: 'cap-agent-context',
+    });
+
+    const result = buildAgentContextPacket({
+      capsule: makeCapsule({
+        embeddedGraph: projectedGraph,
+      }),
+      userQuery: 'How does the Interior Ministry pressure the border controls claim?',
+      budgetTier: 'standard',
+      requestTime,
+      turnId: 'trace-projected',
+    });
+
+    expect(result.selected.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'actor-ministry',
+        reviewState: 'advisory',
+      }),
+      expect.objectContaining({
+        id: 'claim-border-controls',
+        reviewState: 'advisory',
+      }),
+    ]));
+    expect(result.selected.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        relationshipType: 'pressures',
+        reviewState: 'advisory',
+      }),
+    ]));
+    expect(result.selected.paths).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        edgeIds: expect.arrayContaining([expect.stringMatching(/^ladybug-edge-/)]),
+      }),
+    ]));
+    expect(result.packetText).toContain('Interior Ministry :: Actor/Actor; status=advisory');
+    expect(result.packetText).toContain('pressures ->');
+    expect(result.packetText).toContain('purpose=multi-hop');
   });
 
   it('defaults the injection flag on and accepts explicit disable values', () => {

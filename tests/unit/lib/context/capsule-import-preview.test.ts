@@ -68,8 +68,9 @@ describe('capsule import preview mapping', () => {
     expect(preview.sourceCount).toBe(1);
     expect(preview.signaturePresent).toBe(true);
     expect(preview.layersPresent).toEqual(expect.arrayContaining(['claims', 'evidence', 'runtime']));
-    expect(preview.layersSkipped).toEqual(expect.arrayContaining(['graph/ladybug/*']));
-    expect(preview.importNotes?.join('\n')).toMatch(/graph\/ladybug\/\*/);
+    expect(preview.layersBuilt).toEqual(expect.arrayContaining(['graph/ladybug/*']));
+    expect(preview.layersSkipped).not.toEqual(expect.arrayContaining(['graph/ladybug/*']));
+    expect(preview.importNotes?.join('\n')).toMatch(/Built graph\/ladybug\/\* advisory projection from graph\.jsonld/);
   });
 
   it('summarizes a Capsule+ bundle from zip metadata and graph rows', async () => {
