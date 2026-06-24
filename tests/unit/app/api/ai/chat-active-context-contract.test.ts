@@ -31,5 +31,13 @@ describe('/api/ai/chat active context contract', () => {
     expect(systemPromptBlockSource).toContain('allowed_actions:');
     expect(systemPromptBlockSource).toContain('source_requirements:');
     expect(systemPromptBlockSource).toContain('stop_conditions:');
+    expect(systemPromptBlockSource).toContain('<agent-context-packet-use>');
+    expect(systemPromptBlockSource).toContain('Reasoning Paths');
+  });
+
+  it('keeps Ask direct-answer and workflow prompts packet-aware without touching route boundaries', () => {
+    expect(chatRouteSource).toContain('Agent Context Packet');
+    expect(chatRouteSource).toContain('<agent-context-packet-use>');
+    expect(chatRouteSource).toContain('capsuleAgentExecutionContext');
   });
 });
