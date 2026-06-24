@@ -113,6 +113,15 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.graph.stats.boundaryNodes).toBeGreaterThanOrEqual(3);
     expect(model.graph.stats.provenanceCoveragePct).toBeGreaterThan(70);
     expect(model.ontology.active.some((item) => item.id === 'domestic-policy-analysis')).toBe(true);
+    expect(model.ontology.active.find((item) => item.id === 'domestic-policy-analysis')).toMatchObject({
+      primitiveCoverage: expect.arrayContaining(['Actor', 'Claim', 'Interest', 'Constraint', 'Leverage', 'Commitment', 'Event', 'Narrative']),
+      missingPrimitives: [],
+      coverageRatio: 1,
+      validatorSummary: expect.objectContaining({
+        warnings: 0,
+        total: expect.any(Number),
+      }),
+    });
     expect(model.tacitKnowledge.items[0]?.summary).toContain('primary-source caveats');
     expect(model.agents.recentRuns[0]?.status).toBe('completed');
     expect(model.reviewQueue[0]).toMatchObject({ target: 'graphProposal', state: 'proposed' });

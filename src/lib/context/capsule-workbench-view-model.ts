@@ -1,3 +1,5 @@
+import { TACITUS_CORE_PRIMITIVES, type TacitusCorePrimitive } from '@/lib/graph/core-primitives';
+import { summarizeOntologyMapping } from '@/lib/ontology/registry';
 import { getDomainOntologyCards, WORK_ONTOLOGIES, type WorkOntologyId } from '@/lib/ontology/work-ontologies';
 import { deriveCapsuleQuality, type CapsuleQualityBreakdownId } from '@/lib/context/capsule-quality';
 
@@ -274,9 +276,18 @@ export interface CapsuleOntologyItemDisplay {
   id: string;
   label: string;
   role: 'active' | 'proposed' | 'missing';
-  primitiveCoverage: string[];
+  primitiveCoverage: TacitusCorePrimitive[];
+  missingPrimitives: TacitusCorePrimitive[];
+  coverageRatio: number;
   requiredRelations: string[];
   reviewState: CapsuleWorkbenchReviewState;
+  validatorSummary: {
+    passed: number;
+    warnings: number;
+    total: number;
+    passRate: number;
+    labels: string[];
+  };
 }
 
 export interface CapsuleOntologyDisplay {
@@ -1031,44 +1042,95 @@ function buildOntology(
     .map((id) => workById.get(id as WorkOntologyId))
     .filter((item): item is NonNullable<typeof item> => Boolean(item))
     .slice(0, 3)
-    .map((ontology) => ({
-      id: ontology.id,
-      label: ontology.label,
-      role: 'active' as const,
-      primitiveCoverage: Object.keys(ontology.primitiveSubtypes).slice(0, 6),
-      requiredRelations: ontology.mandatoryRelations.map((relation) => relation.description).slice(0, 3),
-      reviewState: 'canonical' as CapsuleWorkbenchReviewState,
-    }));
+    .map((ontology) => {
+      const primitiveCoverage = TACITUS_CORE_PRIMITIVES.filter((primitive) => ontology.primitiveSubtypes[primitive]?.length);
+      const missingPrimitives = TACITUS_CORE_PRIMITIVES.filter((primitive) => !primitiveCoverage.includes(primitive));
+      const total = ontology.mandatoryRelations.length;
+      return {
+        id: ontology.id,
+        label: ontology.label,
+        role: 'active' as const,
+        primitiveCoverage,
+        missingPrimitives,
+        coverageRatio: primitiveCoverage.length / TACITUS_CORE_PRIMITIVES.length,
+        requiredRelations: ontology.mandatoryRelations.map((relation) => relation.description).slice(0, 3),
+        reviewState: 'canonical' as CapsuleWorkbenchReviewState,
+        validatorSummary: {
+          passed: missingPrimitives.length ? 0 : total,
+          warnings: missingPrimitives.length,
+          total,
+          passRate: total ? (missingPrimitives.length ? 0 : 1) : primitiveCoverage.length / TACITUS_CORE_PRIMITIVES.length,
+          labels: ontology.mandatoryRelations.map((relation) => relation.description).slice(0, 3),
+        },
+      };
+    });
   const domainCandidates = getDomainOntologyCards()
     .filter((ontology) => ids.some((id) => id.includes(ontology.id) || ontology.id.includes(id)))
     .slice(0, 2)
-    .map((ontology) => ({
-      id: ontology.id,
-      label: ontology.label,
-      role: 'active' as const,
-      primitiveCoverage: ontology.nodeTypes?.slice(0, 6).map(String) ?? [],
-      requiredRelations: ontology.validators?.map((validator) => validator.label).slice(0, 3) ?? [],
-      reviewState: 'canonical' as CapsuleWorkbenchReviewState,
-    }));
+    .map((ontology) => {
+      const mapping = summarizeOntologyMapping(ontology);
+      const warningCount = mapping.issues.filter((issue) => issue.severity === 'warn').length;
+      const total = ontology.validators.length + 1;
+      return {
+        id: ontology.id,
+        label: ontology.label,
+        role: 'active' as const,
+        primitiveCoverage: mapping.coveredPrimitives,
+        missingPrimitives: mapping.missingPrimitives,
+        coverageRatio: mapping.primitiveCoverage,
+        requiredRelations: ontology.validators?.map((validator) => validator.label).slice(0, 3) ?? [],
+        reviewState: 'canonical' as CapsuleWorkbenchReviewState,
+        validatorSummary: {
+          passed: Math.max(0, total - warningCount),
+          warnings: warningCount,
+          total,
+          passRate: total ? Math.max(0, total - warningCount) / total : mapping.primitiveCoverage,
+          labels: [
+            `${Math.round(mapping.primitiveCoverage * 100)}% ACO primitive coverage`,
+            ...ontology.validators.map((validator) => validator.label),
+          ].slice(0, 3),
+        },
+      };
+    });
   const active = uniqueBy([...activeWork, ...domainCandidates], (item) => item.id);
+  const fallbackProposedPrimitives: TacitusCorePrimitive[] = ['Actor', 'Claim', 'Interest', 'Constraint', 'Commitment', 'Narrative'];
+  const fallbackMissingPrimitives: TacitusCorePrimitive[] = ['Leverage', 'Event'];
   const proposed = active.length
     ? []
     : [{
-        id: 'policy-work-ontology',
-        label: 'Policy work ontology',
-        role: 'proposed' as const,
-        primitiveCoverage: ['Actor', 'Claim', 'Source', 'Decision', 'Memory'],
-        requiredRelations: ['Claims should link to supporting sources.', 'Decisions should link to assumptions and actors.'],
-        reviewState: 'proposed' as CapsuleWorkbenchReviewState,
-      }];
+      id: 'policy-work-ontology',
+      label: 'Policy work ontology',
+      role: 'proposed' as const,
+      primitiveCoverage: fallbackProposedPrimitives,
+      missingPrimitives: fallbackMissingPrimitives,
+      coverageRatio: 6 / TACITUS_CORE_PRIMITIVES.length,
+      requiredRelations: ['Claims should link to supporting sources.', 'Decisions should link to assumptions and actors.'],
+      reviewState: 'proposed' as CapsuleWorkbenchReviewState,
+      validatorSummary: {
+        passed: 1,
+        warnings: 2,
+        total: 3,
+        passRate: 1 / 3,
+        labels: ['Needs review-card approval before it becomes the active binding.'],
+      },
+    }];
   const missing = active.length && !capsule.coreRefs?.graphCoreId
     ? [{
         id: 'graph-core-missing',
         label: 'Graph core not attached',
         role: 'missing' as const,
         primitiveCoverage: [],
+        missingPrimitives: [...TACITUS_CORE_PRIMITIVES],
+        coverageRatio: 0,
         requiredRelations: ['Attach or review graph proposals before relying on graph analytics.'],
         reviewState: 'missing' as CapsuleWorkbenchReviewState,
+        validatorSummary: {
+          passed: 0,
+          warnings: 1,
+          total: 1,
+          passRate: 0,
+          labels: ['Graph core is required before relying on graph analytics.'],
+        },
       }]
     : [];
   return { active, proposed, missing };

@@ -5,6 +5,8 @@ import { describe, expect, it } from 'vitest';
 const componentPath = join(process.cwd(), 'src/components/capsules/CapsuleWorkbenchPanel.tsx');
 const componentSource = existsSync(componentPath) ? readFileSync(componentPath, 'utf8') : '';
 const sectionSource = [
+  'src/components/capsules/CapsuleOntologyWorkbench.tsx',
+  'src/components/capsules/workbench/CapsuleAdvancedDrawer.tsx',
   'src/components/capsules/workbench/CapsuleStudioOverviewSection.tsx',
   'src/components/capsules/workbench/CapsuleSourceabilityGatesSection.tsx',
   'src/components/capsules/workbench/CapsuleHistorySection.tsx',
@@ -56,11 +58,15 @@ describe('Capsule workbench UI contract', () => {
     expect(capsuleWorkbenchSource).toContain('Claim ledger');
     expect(capsuleWorkbenchSource).toContain('Source refs');
     expect(capsuleWorkbenchSource).toContain("import('vis-timeline/standalone')");
-    expect(componentSource).toContain('CapsulePillarsSection');
-    expect(componentSource).toContain('CapsuleTimelineSection');
-    expect(componentSource).toContain('CapsuleCausalChainSection');
-    expect(componentSource).toContain('CapsuleQualitySection');
-    expect(componentSource).toContain('CapsuleClaimReceiptsSection');
+    expect(componentSource).toContain('CapsuleOntologyWorkbench');
+    expect(componentSource).toContain('CapsuleAdvancedDrawer');
+    expect(capsuleWorkbenchSource).toContain('CapsulePillarsSection');
+    expect(capsuleWorkbenchSource).toContain('CapsuleTimelineSection');
+    expect(capsuleWorkbenchSource).toContain('CapsuleCausalChainSection');
+    expect(capsuleWorkbenchSource).toContain('CapsuleQualitySection');
+    expect(capsuleWorkbenchSource).toContain('CapsuleClaimReceiptsSection');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-ontology-workbench"');
+    expect(capsuleWorkbenchSource).toContain('data-testid="capsule-advanced-drawer"');
     expect(capsuleWorkbenchSource).toContain('proposals stay review-gated');
     expect(capsuleWorkbenchSource).toContain('Advisory memory');
     expect(capsuleWorkbenchSource).toContain('No source receipts attached yet.');

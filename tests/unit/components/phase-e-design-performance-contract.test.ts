@@ -115,6 +115,7 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
     const monaco = read('src/components/capsules/CapsuleJsonMonacoEditor.tsx');
     const capsuleWorkbench = read('src/components/capsules/CapsuleWorkbenchPanel.tsx');
+    const capsuleAdvancedDrawer = read('src/components/capsules/workbench/CapsuleAdvancedDrawer.tsx');
     const capsuleGraphSection = read('src/components/capsules/workbench/CapsuleGraphSection.tsx');
     const capsuleTimelineSection = read('src/components/capsules/workbench/CapsuleTimelineSection.tsx');
     const capsuleGraphViewer = read('src/components/capsules/viewers/CapsuleGraphViewer.tsx');
@@ -138,7 +139,8 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     expect(chatShell).toContain('PraxisChatLoadingSkeleton');
     expect(monaco).toContain("dynamic(() => import('@monaco-editor/react')");
     expect(capsuleWorkbench).toContain('CapsuleGraphSection');
-    expect(capsuleWorkbench).toContain('CapsuleTimelineSection');
+    expect(capsuleWorkbench).toContain('CapsuleAdvancedDrawer');
+    expect(capsuleAdvancedDrawer).toContain('CapsuleTimelineSection');
     expect(capsuleGraphSection).toContain("import('@/components/capsules/viewers/CapsuleGraphViewer')");
     expect(capsuleTimelineSection).toContain("import('@/components/capsules/viewers/CapsuleTemporalViewer')");
     expect(capsuleGraphViewer).toContain("dynamic(() => import('react-force-graph-2d')");

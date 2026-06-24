@@ -9,21 +9,10 @@ import {
   type CapsuleWorkbenchTacitMemoryInput,
 } from '@/lib/context/capsule-workbench-view-model';
 import { cn } from '@/lib/utils/cn';
-import { CapsuleAgentWorkflowSection } from '@/components/capsules/workbench/CapsuleAgentWorkflowSection';
-import { CapsuleAnatomySection } from '@/components/capsules/workbench/CapsuleAnatomySection';
-import { CapsuleCausalChainSection } from '@/components/capsules/workbench/CapsuleCausalChainSection';
-import { CapsuleClaimReceiptsSection } from '@/components/capsules/workbench/CapsuleClaimReceiptsSection';
+import { CapsuleOntologyWorkbench } from '@/components/capsules/CapsuleOntologyWorkbench';
+import { CapsuleAdvancedDrawer } from '@/components/capsules/workbench/CapsuleAdvancedDrawer';
 import { CapsuleGraphSection } from '@/components/capsules/workbench/CapsuleGraphSection';
-import { CapsuleHistorySection } from '@/components/capsules/workbench/CapsuleHistorySection';
-import { CapsuleOutputsSection } from '@/components/capsules/workbench/CapsuleOutputsSection';
-import { CapsulePillarsSection } from '@/components/capsules/workbench/CapsulePillarsSection';
-import { CapsuleQualitySection } from '@/components/capsules/workbench/CapsuleQualitySection';
-import { CapsuleReviewQueueSection } from '@/components/capsules/workbench/CapsuleReviewQueueSection';
-import { CapsuleSourceabilityGatesSection } from '@/components/capsules/workbench/CapsuleSourceabilityGatesSection';
-import { CapsuleStudioOverviewSection } from '@/components/capsules/workbench/CapsuleStudioOverviewSection';
-import { CapsuleTacitKnowledgeSection } from '@/components/capsules/workbench/CapsuleTacitKnowledgeSection';
-import { CapsuleTimelineSection } from '@/components/capsules/workbench/CapsuleTimelineSection';
-import { CapsuleWorkbenchHeader } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+import { StatePill } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
 
 export function CapsuleWorkbenchPanel({
   capsule,
@@ -60,55 +49,84 @@ export function CapsuleWorkbenchPanel({
       className={cn('rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-950/[0.03]', compact ? 'space-y-4' : 'space-y-5')}
       data-testid="capsule-workbench-panel"
     >
-      <CapsuleWorkbenchHeader
+      <CompactCapsuleHeader
         title={model.title}
-        summary={model.summary}
         readiness={model.readiness}
-        graphNodeCount={model.graph.nodes.length}
-        reviewQueueCount={model.reviewQueue.length}
-        compact={compact}
+        version={model.capsuleVersion}
         dialecticaLineage={dialecticaLineage}
       />
-      <CapsuleStudioOverviewSection
-        evidence={model.evidence}
-        outputs={model.outputs}
-        readiness={model.readiness}
-        summaryFacts={model.summaryFacts}
-        graphEdges={model.graph.edges}
+      <CapsuleOntologyWorkbench
+        capsuleId={model.capsuleId}
         capsuleVersion={model.capsuleVersion}
+        ontology={model.ontology}
+        graph={model.graph}
+        reviewQueue={model.reviewQueue}
       />
-      <CapsuleSourceabilityGatesSection coreSourceability={model.coreSourceability} />
-      <CapsuleHistorySection capsuleId={model.capsuleId} currentVersion={model.capsuleVersion} />
-      <CapsulePillarsSection pillars={model.pillars} />
-      <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]')}>
-        <CapsuleTimelineSection timeline={model.timeline} />
-        <CapsuleCausalChainSection causalChains={model.causalChains} />
-      </div>
-      <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-[minmax(320px,0.8fr)_minmax(0,1fr)]')}>
-        <CapsuleQualitySection
-          quality={model.quality}
-          capsuleId={model.capsuleId}
-          capsuleVersion={model.capsuleVersion}
-          agentRuns={agentRuns}
-        />
-        <CapsuleClaimReceiptsSection claims={model.claims} />
-      </div>
-      <CapsuleAnatomySection
+      <CapsuleEvidenceStrip evidence={model.evidence} />
+      <CapsuleAdvancedDrawer
+        model={model}
         compact={compact}
-        summaryFacts={model.summaryFacts}
-        evidence={model.evidence}
         sparse={sparse}
-        anatomy={model.anatomy}
         graphSection={graphSection}
+        agentRuns={agentRuns}
       />
-      <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-2')}>
-        <CapsuleTacitKnowledgeSection tacitKnowledge={model.tacitKnowledge} />
-        <CapsuleAgentWorkflowSection agents={model.agents} />
-      </div>
-      <div className={cn('grid gap-3', compact ? 'grid-cols-1' : 'xl:grid-cols-2')}>
-        <CapsuleOutputsSection outputs={model.outputs} />
-        <CapsuleReviewQueueSection reviewQueue={model.reviewQueue} />
-      </div>
     </section>
+  );
+}
+
+function CompactCapsuleHeader({
+  title,
+  readiness,
+  version,
+  dialecticaLineage,
+}: {
+  title: string;
+  readiness: ReturnType<typeof buildCapsuleWorkbenchViewModel>['readiness'];
+  version: number;
+  dialecticaLineage: boolean;
+}) {
+  return (
+    <header className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <h2 className="truncate text-base font-semibold text-slate-950">{title}</h2>
+        {dialecticaLineage ? (
+          <span className="rounded-md border border-teal-200 bg-teal-50 px-2 py-1 font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-teal-800" data-testid="capsule-dialectica-lineage">
+            DIALECTICA lineage
+          </span>
+        ) : null}
+      </div>
+      <div className="flex items-center gap-2">
+        <StatePill state={readiness.tier} label={`Ready ${readiness.score}`} />
+        <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">v{version}</span>
+      </div>
+    </header>
+  );
+}
+
+function CapsuleEvidenceStrip({ evidence }: { evidence: ReturnType<typeof buildCapsuleWorkbenchViewModel>['evidence'] }) {
+  const totalClaims = evidence.supportedClaims.length + evidence.weakClaims.length + evidence.unsupportedClaims.length;
+  const sourceBackedPct = totalClaims ? Math.round((evidence.supportedClaims.length / totalClaims) * 100) : 0;
+
+  return (
+    <section className="grid gap-2 rounded-md border border-slate-200 bg-white p-2 sm:grid-cols-3" aria-label="Evidence strip">
+      <EvidenceMetric label="Sources" value={`${evidence.sourceIds.length}`} />
+      <EvidenceMetric label="Documents" value={`${evidence.documentIds.length}`} />
+      <EvidenceMetric label="Source-backed claims" value={`${sourceBackedPct}%`} tone={sourceBackedPct >= 70 ? 'green' : sourceBackedPct ? 'amber' : 'red'} />
+    </section>
+  );
+}
+
+function EvidenceMetric({ label, value, tone = 'slate' }: { label: string; value: string; tone?: 'green' | 'amber' | 'red' | 'slate' }) {
+  const toneClass = {
+    green: 'text-emerald-800',
+    amber: 'text-amber-800',
+    red: 'text-rose-800',
+    slate: 'text-slate-900',
+  }[tone];
+  return (
+    <div className="rounded-md bg-slate-50 px-3 py-2">
+      <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{label}</p>
+      <p className={cn('text-lg font-semibold', toneClass)}>{value}</p>
+    </div>
   );
 }
