@@ -9,6 +9,7 @@ import {
   type InjectableContextInput,
 } from '@/lib/context/context-injection';
 import type { CapsuleServiceDeps, PraxisCapsule } from '@/lib/context/capsule-service';
+import { appendAgentContextPacketToPromptBlock } from '@/lib/context/agent-context-packet';
 import type {
   CapsuleContextCaptureProfile,
   CapsuleStarterSnapshot,
@@ -250,37 +251,50 @@ export async function buildTurnCapsule(
   deps?: CapsuleServiceDeps,
 ): Promise<TurnCapsule> {
   const injectableContext = await resolveInjectableContext(input, deps);
-  const refs = injectableContext.capsule.coreRefs;
-  const memory = groupVisibleMemory(input.memoryItems ?? [], injectableContext.capsule.capsuleId);
+  const requestTime = (deps?.now?.() ?? new Date()).toISOString();
+  const packetAugmentation = appendAgentContextPacketToPromptBlock({
+    capsule: injectableContext.capsule,
+    promptBlock: injectableContext.promptBlock,
+    userQuery: input.query ?? input.situationId ?? injectableContext.capsule.label,
+    budgetTier: 'standard',
+    requestTime,
+    turnId: input.traceId ?? injectableContext.injectionKey,
+  });
+  const augmentedInjectableContext: InjectableContext = {
+    ...injectableContext,
+    promptBlock: packetAugmentation.promptBlock,
+  };
+  const refs = augmentedInjectableContext.capsule.coreRefs;
+  const memory = groupVisibleMemory(input.memoryItems ?? [], augmentedInjectableContext.capsule.capsuleId);
   const tokenBudget = resolveTokenBudget(input);
-  const selectedCores = selectCoresForBudget(injectableContext.capsule, {
-    objective: input.query ?? input.situationId ?? injectableContext.capsule.label,
+  const selectedCores = selectCoresForBudget(augmentedInjectableContext.capsule, {
+    objective: input.query ?? input.situationId ?? augmentedInjectableContext.capsule.label,
   }, tokenBudget);
   const estimatedContextChars = [
-    injectableContext.promptBlock,
+    augmentedInjectableContext.promptBlock,
     input.query ?? '',
     ...Object.values(memory).flat().map((item) => item.text),
     ...(input.activeGaps ?? []),
     ...(input.recentToolOutputs ?? []),
   ].join('\n').length;
   const estimatedContextTokens = estimateTokens([
-    injectableContext.promptBlock,
+    augmentedInjectableContext.promptBlock,
     input.query ?? '',
     ...Object.values(memory).flat().map((item) => item.text),
   ].join('\n'));
 
   const baseCapsule = {
     traceId: input.traceId ?? `turn_${Date.now().toString(36)}`,
-    capsuleId: injectableContext.capsule.capsuleId,
-    capsuleVersion: injectableContext.capsule.version,
+    capsuleId: augmentedInjectableContext.capsule.capsuleId,
+    capsuleVersion: augmentedInjectableContext.capsule.version,
     stack: {
-      stackId: injectableContext.capsule.capsuleId,
-      label: injectableContext.capsule.label,
-      scope: injectableContext.capsule.scope,
-      parentCapsuleId: injectableContext.capsule.parentCapsuleId,
-      forkedFromVersion: injectableContext.capsule.forkedFromVersion,
-      activeForSituationIds: injectableContext.capsule.activeForSituationIds,
-      lockedCoreKinds: injectableContext.capsule.lockedCoreKinds,
+      stackId: augmentedInjectableContext.capsule.capsuleId,
+      label: augmentedInjectableContext.capsule.label,
+      scope: augmentedInjectableContext.capsule.scope,
+      parentCapsuleId: augmentedInjectableContext.capsule.parentCapsuleId,
+      forkedFromVersion: augmentedInjectableContext.capsule.forkedFromVersion,
+      activeForSituationIds: augmentedInjectableContext.capsule.activeForSituationIds,
+      lockedCoreKinds: augmentedInjectableContext.capsule.lockedCoreKinds,
     },
     userCore: refs.userCoreId ?? null,
     situationCore: refs.situationCoreId ?? null,
@@ -294,7 +308,7 @@ export async function buildTurnCapsule(
       accepted: input.graphProposalCounts?.accepted ?? 0,
       rejected: input.graphProposalCounts?.rejected ?? 0,
     },
-    activeGaps: input.activeGaps ?? injectableContext.capsule.health.warnings,
+    activeGaps: input.activeGaps ?? augmentedInjectableContext.capsule.health.warnings,
     recentToolOutputs: input.recentToolOutputs ?? [],
     tokenBudgetReport: {
       maxInputTokens: tokenBudget.maxInputTokens,
@@ -303,7 +317,7 @@ export async function buildTurnCapsule(
       estimatedContextTokens,
       droppedCores: selectedCores.droppedCores,
     },
-    injectableContext,
+    injectableContext: augmentedInjectableContext,
     memory,
   } satisfies Omit<TurnCapsule, 'retrievalPlan'>;
 
