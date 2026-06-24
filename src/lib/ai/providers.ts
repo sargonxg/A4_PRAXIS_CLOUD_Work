@@ -6,13 +6,12 @@
  *   2. Google AI Studio via GOOGLE_AI_API_KEY — dev fallback
  *
  * Models are selected from MODEL_MATRIX.json:
- *   - balanced / cheap_classify : Gemini 3.5 Flash
- *   - complex_reasoning / writing_quality / long_context : Gemini 3.1 Pro Preview
+ *   - Gemini task kinds: the sanctioned Gemini 3.5 family
  *   - embeddings_text / embeddings_long : text-embedding-005
  *
  * Zero-Config Fallback Chain (Part 3):
- *   getProModel():       Vertex Gemini 3.1 Pro Preview → Google AI Gemini 3.1 Pro Preview → Flash
- *   getAnalysisModel():  Gemini 3.1 Pro Preview
+ *   getProModel():       Matrix-selected Vertex model → Google AI fallback → Flash
+ *   getAnalysisModel():  Matrix-selected deep reasoning model
  *   getEmbeddingModel(): text-embedding-005 → null (vector disabled)
  *
  * All routes import from here — never hardcode model strings in route files.
@@ -99,7 +98,7 @@ export function getModel(modelId?: string): LanguageModel {
 
 /**
  * Pro model — structured tool generation, dossiers, reports.
- * 1M context window, 65K output tokens. Falls back to Flash if Pro unavailable.
+ * Falls back to Flash if the matrix-selected deep model is unavailable.
  */
 export function getProModel(): LanguageModel {
   if (isVertexProviderActive()) {
@@ -255,7 +254,7 @@ export function getAvailableProviders() {
       name:         'Google AI Studio',
       configured:   !!process.env.GOOGLE_AI_API_KEY,
       model:        MODEL_FLASH,
-      capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming', 'Gemini 3 preview', 'Embeddings (768-dim)'],
+      capabilities: ['Chat', 'Google Search Grounding', 'Tool Use', 'Streaming', 'Gemini 3.5 frontier', 'Embeddings (768-dim)'],
       note:         'Local fallback — production should use Vertex AI ADC',
     },
     vertex: {

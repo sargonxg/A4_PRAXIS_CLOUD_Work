@@ -79,7 +79,7 @@ export function isAskPraxisRuntimeModelId(value: unknown): value is string {
 export function getAskPraxisModelLabel(modelId: string): string {
   const policy = getAskPraxisModelRuntimePolicy();
   if (modelId === policy.frontierPrimary.chatModelId) return 'Gemini 3.5 Flash';
-  if (modelId === policy.frontierPrimary.deepModelId) return 'Gemini 3.1 Pro Preview';
+  if (modelId === policy.frontierPrimary.deepModelId) return 'Gemini 3.5 Flash';
   return policy.stableModelLabels[modelId] ?? modelId;
 }
 

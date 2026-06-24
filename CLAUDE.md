@@ -340,12 +340,12 @@ Tool page → useSituationGuard() → usePersistedToolData(toolId, sitId)
 
 **Never hardcode `gemini-*` strings outside `src/lib/ai/providers.ts` and `src/lib/ai/MODEL_MATRIX.json`.** Those are the single source of truth.
 
-**Current canonical family:** `gemini-2.5-flash` and `gemini-2.5-pro` (Vertex stable IDs). The previous `gemini-3-*-preview` family was withdrawn by Google; do not reintroduce it without flipping the model matrix and verifying Vertex availability in the target project.
+**Current canonical families:** Ask PRAXIS frontier primary uses the Gemini 3.5 family from `MODEL_MATRIX.json` on Vertex global, currently `gemini-3.5-flash` for both chat and deep Ask paths. Gemini 2.5 remains the stable fallback family (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`). Do not introduce new Gemini 3 IDs outside the matrix without owner approval, audit coverage, and Vertex availability proof in the target project.
 
 **Forbidden strings anywhere in `src/` or `backend/`:**
 - `gemini-2.0-*` (deprecated)
 - `gemini-3-pro-preview` (discontinued by Google March 26, 2026)
-- Any new `gemini-3-*` IDs unless `PRAXIS_ALLOW_GEMINI3_TARGETS=1` is set and `audit:model-matrix-coverage` is updated.
+- Any Gemini 3 ID outside the sanctioned `MODEL_MATRIX.json` Gemini 3.5 Ask family unless the owner explicitly approves the promotion and `audit:model-matrix-coverage` is updated.
 
 Verify with: `rg "gemini-2\.0|gemini-3-pro-preview" src/ backend/` — must return zero matches.
 
@@ -378,20 +378,21 @@ These files are security-critical. If a task seems to require changing them, **s
 - Loosen Firestore rules to allow cross-user reads
 - Hardcode service-account keys, API keys, or secrets in source
 
-## AI Model Tiers (Gemini 2.5 — current canon)
+## AI Model Tiers (Gemini 3.5 Ask primary + Gemini 2.5 fallbacks)
 
 | Function | Model | Used For |
 |---|---|---|
-| `getModel()` | `gemini-2.5-flash` | Chat, terminology, lightweight tasks, grounded search |
-| `getProModel()` | `gemini-2.5-pro` | Structured tool generation, reports, dossiers |
-| `getAnalysisModel()` | `claude-sonnet-4-*` → `gemini-2.5-pro` | Deep conflict analysis, diplomatic language (falls back to Pro) |
-| `getDeepThinkModel()` | `gemini-2.5-pro` + `thinking_level: 'high'` | Game Theory, Scenarios, treaty analysis |
+| `getModel()` | `gemini-3.5-flash` | Chat, terminology, lightweight tasks, grounded search |
+| `getProModel()` | `gemini-3.5-flash` | Structured tool generation, reports, dossiers |
+| `getAnalysisModel()` | `gemini-3.5-flash` | Deep conflict analysis, diplomatic language |
+| `getDeepThinkModel()` | `gemini-3.5-flash` + `thinking_level: 'high'` | Game Theory, Scenarios, treaty analysis |
 | `getEmbeddingModel()` | `text-embedding-005` (768-dim) | SKC Vector Layer, document embedding |
-| `getGroundedModel()` | `gemini-2.5-flash` + Google Search | Research tools, actor enrichment, source discovery |
+| `getGroundedModel()` | `gemini-3.5-flash` + Google Search | Research tools, actor enrichment, source discovery |
 
 The exact mapping per task kind lives in `src/lib/ai/MODEL_MATRIX.json`.
-`audit:model-matrix-coverage` enforces it. Gemini 3 promotion is gated by
-`PRAXIS_ALLOW_GEMINI3_TARGETS=1` and is currently OFF.
+`audit:model-matrix-coverage` enforces it. `PRAXIS_ALLOW_GEMINI3_TARGETS`
+is a legacy experiment switch and is not required for the sanctioned Gemini 3.5
+Ask primary path; it must not be used to silence audit failures for new model IDs.
 | Vertex ADK | Agent Engine | Deep Search Agent (falls back to Gemini 3 + Search) |
 
 ## Situation Knowledge Core (SKC)
@@ -554,3 +555,63 @@ docker-compose up
 # Backend health check
 curl http://localhost:8080/health
 ```
+
+## Fable ↔ Codex Pair Protocol (MANDATORY)
+
+Two models work together in this repo: **Claude Fable 5 is the brain, Codex
+GPT-5.5 (xhigh) is the arms.** Fable never writes the code itself; Codex never
+decides the design.
+
+### Fable (this session) — planner & reviewer
+
+- Breaks every task down: architecture decisions, file targets, constraints,
+  edge cases.
+- Writes a precise implementation brief for Codex (see template below),
+  embedding the project invariants from this file and AGENTS.md — model string
+  discipline, calibration contract, security boundaries, anti-patterns.
+- Critically reviews every Codex diff for correctness, contract adherence, and
+  test impact.
+- Runs verification and gates acceptance:
+  `npm run typecheck` → focused `npx vitest run <touched areas>` →
+  `npm run lint` → relevant `audit:*` gates.
+- Sends specific, file-and-line-level corrections back to Codex when review
+  finds issues.
+
+### Codex (via the `codex-rescue` agent) — executor
+
+- All file edits, feature implementation, refactors, and mechanical sweeps.
+- Works only from Fable's brief and returns a complete diff for review.
+- Handles fix-up rounds based on Fable's review feedback.
+
+### The loop
+
+1. Task arrives → Fable plans it and writes the brief.
+2. Fable delegates via the `codex-rescue` agent (Agent tool,
+   `subagent_type: codex-rescue`).
+3. Codex implements and hands the work back (report + diff).
+4. Fable reviews the diff, runs typecheck/tests, and either accepts or loops
+   Codex with specific corrections.
+5. Repeat until the work passes review. Correction briefs start with the line
+   `FIX-UP` — the agent then resumes the same Codex session
+   (`codex exec resume --last`) so Codex keeps its working context.
+
+### Brief template
+
+Every brief must contain: **Goal** (one paragraph) · **Files to touch**
+(explicit paths; anything else is scope creep) · **Constraints & invariants**
+(relevant rules from this file/AGENTS.md, copied in — Codex must not need to
+hunt for them) · **Edge cases** · **Acceptance criteria** (observable behavior,
+not vibes) · **Out of scope** (what NOT to do).
+
+### Hard rules
+
+- Fable does not use Edit/Write on source files. Exceptions: documentation,
+  `.claude/` config, and an emergency one-line fix when Codex is unavailable —
+  and the exception must be called out in the task summary.
+- Codex does not make design decisions; ambiguity comes back to Fable.
+- Nothing is accepted until typecheck + focused tests pass — run them, paste
+  the result, no "should pass".
+- Files under **Security Boundaries** (above) are never delegated to Codex and
+  never edited without explicit human approval.
+- Multi-step features: one brief per coherent slice, review between slices —
+  never one mega-brief.
