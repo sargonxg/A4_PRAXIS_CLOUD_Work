@@ -66,6 +66,17 @@ export interface CapsulePromptFrame {
   agentOperatingContract: CapsuleFrameAgentOperatingContract | null;
 }
 
+export const AGENT_CONTEXT_PACKET_USE_BLOCK = [
+  '<agent-context-packet-use>',
+  '  - Read order: Source Receipt Index -> Claim Cards -> Incident Neighborhoods -> Reasoning Paths -> Temporal/Causal sections.',
+  '  - Cite SR- receipt ids for decision-relevant claims.',
+  '  - Prefer canonical/reviewed source-backed rows; qualify confidence <0.75 or status not canonical/reviewed.',
+  '  - For multi-hop/causal questions, use Reasoning Paths and neighborhoods.',
+  '  - Surface conflicts with citations on both sides; advisory/inferred rows are hypotheses, never promoted.',
+  '  - Label model/world knowledge separately from capsule context.',
+  '</agent-context-packet-use>',
+].join('\n');
+
 function escapeTag(str: string): string {
   return String(str ?? '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -121,6 +132,7 @@ export function renderSystemPromptBlock(opts: {
   if (opts.retrievedChunks.length > 0) {
     parts.push(renderKnowledgeBlock(opts.retrievedChunks));
   }
+  parts.push(AGENT_CONTEXT_PACKET_USE_BLOCK);
   parts.push(renderConstraintsBlock(opts.profile));
   if (opts.preferences) {
     parts.push(renderPreferencesBlock(opts.preferences));

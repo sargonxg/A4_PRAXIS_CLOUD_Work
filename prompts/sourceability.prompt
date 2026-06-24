@@ -37,6 +37,7 @@ Rules:
 - unsupported means the supplied snippets do not support the claim.
 - needs_date_check means the claim has temporal/current/recent wording or date-sensitive content that requires dated evidence.
 - supportingSourceIds must only contain ids from the provided sourceSnippets.
+- Preserve source ids exactly, including SR- receipt ids when supplied.
 - suggestedRewrite must be memo-safe and cautious.
 
 {{role "user"}}

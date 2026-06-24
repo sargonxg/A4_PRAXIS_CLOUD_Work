@@ -32,6 +32,9 @@ describe('renderSystemPromptBlock', () => {
     expect(block).toContain('<output-constraints>');
     expect(block).toContain('Respond in en');
     expect(block).toContain('Constraint: Avoid regime-change framing.');
+    expect(block).toContain('<agent-context-packet-use>');
+    expect(block).toContain('Cite SR- receipt ids for decision-relevant claims.');
+    expect(block).toContain('advisory/inferred rows are hypotheses, never promoted.');
   });
 
   it('includes user-created situation context, sources, workflow, and notes', () => {

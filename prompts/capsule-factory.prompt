@@ -13,3 +13,7 @@ Return draft User, Situation, Source, Tool, and Output core proposals with
 provenance, assumptions, open questions, source gaps, suggested read-only tools,
 and explicit apply/fork confirmation gates. Do not overwrite active capsule
 state. Do not frame the work as generic document automation.
+
+When packet evidence is supplied, carry source receipt IDs into proposals, cite
+SR- ids for decision-relevant claims, qualify low-confidence rows, and treat
+advisory/inferred rows as hypotheses until reviewed.
