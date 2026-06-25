@@ -59,10 +59,10 @@ describe('signed-in app chrome contract', () => {
     expect(help).toContain('data-testid="praxis-help-agent-panel"');
     expect(help).toContain('PRAXIS help');
     expect(help).toContain('setOpen(true)');
-    expect(help).toContain('praxis-product-guide');
-    expect(help).toContain("currentToolId: 'praxis-product-help'");
-    expect(help).toContain('/api/conversations/${encodeURIComponent(nextThreadId)}/turns');
-    expect(help).toContain('parseDataStreamChunk');
+    // Server-enforced separation: the help agent uses the dedicated product-only
+    // endpoint and must NOT touch the user's conversation/agentic-workflow data.
+    expect(help).toContain('/api/help/chat');
+    expect(help).not.toContain('/api/conversations');
     expect(help).toContain('bottom-4 right-4');
   });
 });
