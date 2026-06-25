@@ -22,6 +22,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { AnalystProfileSchema, type AnalystProfile } from '@/types/analyst-profile';
 import type { SubscriptionTier } from '@/lib/firebase/firestore';
 import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
+import { loadProfileAfterAuthReady } from '@/lib/auth/profile-readiness';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -275,7 +276,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         const authUser = fbUserToAuthUser(fbUser);
-        setFirebaseUser(fbUser);
         setIsDemoMode(false);
 
         // First: sync the session cookie required by middleware. If this fails,
@@ -306,12 +306,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Then try to load/create Firestore profile (non-blocking).
         try {
           const { ensureUserProfile } = await import('@/lib/firebase/firestore');
-          const profile = await ensureUserProfile({
-            uid: fbUser.uid,
-            email: fbUser.email,
-            displayName: fbUser.displayName,
-            photoURL: fbUser.photoURL,
-          });
+          const profile = await loadProfileAfterAuthReady(fbUser, () =>
+            ensureUserProfile({
+              uid: fbUser.uid,
+              email: fbUser.email,
+              displayName: fbUser.displayName,
+              photoURL: fbUser.photoURL,
+            }),
+          );
           // Update with Firestore data (credits, role, org, plan tier)
           setUser({
             ...authUser,
@@ -331,6 +333,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Firestore failed — that's OK, user is still logged in with defaults
           console.warn('[auth] Firestore profile load failed (using defaults):', err);
         }
+        setFirebaseUser(fbUser);
       } else if (!isDemoModeRef.current) {
         const sessionUser = await serverSessionToAuthUser();
         if (sessionUser) {
