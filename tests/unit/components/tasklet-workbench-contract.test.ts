@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const capsuleLibraryCardSource = readFileSync(join(process.cwd(), 'src/components/capsules/CapsuleLibraryCard.tsx'), 'utf8');
 const workbenchHelpersSource = readFileSync(join(process.cwd(), 'src/components/praxis/workbench/helpers.ts'), 'utf8');
 const conversationHelperSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-workbench-conversation.ts'), 'utf8');
 const askStreamPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
@@ -12,9 +13,9 @@ const askQueuedAgentRunPanelPath = join(process.cwd(), 'src/components/ask/AskQu
 const askQueuedAgentRunPanelSource = existsSync(askQueuedAgentRunPanelPath)
   ? readFileSync(askQueuedAgentRunPanelPath, 'utf8')
   : '';
-const source = `${workbenchSource}\n${workbenchHelpersSource}\n${conversationHelperSource}`;
+const source = `${workbenchSource}\n${capsuleLibraryCardSource}\n${workbenchHelpersSource}\n${conversationHelperSource}`;
 const instrumentSource = readFileSync(join(process.cwd(), 'src/components/ui/instrument.tsx'), 'utf8');
-const visualSource = `${workbenchSource}\n${instrumentSource}`;
+const visualSource = `${workbenchSource}\n${capsuleLibraryCardSource}\n${instrumentSource}`;
 const sidebarSource = readFileSync(join(process.cwd(), 'src/components/app/app-sidebar.tsx'), 'utf8');
 const primaryNavSource = readFileSync(join(process.cwd(), 'src/lib/navigation/primary-nav.ts'), 'utf8');
 const repositoryPageSource = readFileSync(join(process.cwd(), 'src/app/app/repository/page.tsx'), 'utf8');
@@ -29,7 +30,7 @@ function extractSourceBlock(start: string, end: string, input = workbenchSource)
 }
 
 const suggestionWidgetSource = extractSourceBlock('function CapsuleSuggestionWidget', 'function AssistantMarkdown');
-const repositoryGridSource = extractSourceBlock('function CapsuleRepositoryGrid', 'function CapsuleRepositoryTile');
+const repositoryGridSource = extractSourceBlock('function CapsuleRepositoryGrid', 'function CapsuleRepositoryModal');
 const inspectorSheetSource = extractSourceBlock('function CapsuleInspectorSheet', 'function PraxisGuideChat');
 const contextBarSource = extractSourceBlock('data-testid="capsule-context-bar"', 'data-testid="ask-capsule-workflow-preview"');
 const humanGatedExampleSource = extractSourceBlock('function HumanGatedPolicyFamilyPanel', 'function PublicFullLibraryCta');
@@ -501,25 +502,14 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('graphLiteProjection');
     expect(source).toContain('Review card');
     expect(source).toContain('data-testid="capsule-v2-inspector-tabs"');
-    expect(source).toContain('Anatomy');
-    expect(source).toContain('Ontology Stack');
-    expect(source).toContain('Dynamic ontology');
-    expect(source).toContain('Embedded graph seed');
-    expect(source).toContain('GraphLite advisory projection');
-    expect(source).toContain('graphlite-starter-projection');
-    expect(source).toContain('Workflow');
-    expect(source).toContain('Reasoning scaffold');
-    expect(source).toContain('Cognee memory benefit');
-    expect(source).toContain('Ontology/graph seed');
-    expect(source).toContain('Generation contract');
-    expect(source).toContain('Human review gates');
-    expect(source).toContain('Why this improves answers');
+    expect(source).toContain('Graph model');
+    expect(source).toContain('Ontology coverage');
+    expect(source).toContain('Sources and gaps');
+    expect(source).toContain('projection pending or derived from sources and claims');
+    expect(source).toContain('CapsuleOntologyWorkbench');
+    expect(source).toContain('CapsuleAdvancedDrawer');
+    expect(source).toContain('CapsuleGraphSection');
     expect(source).toContain('ontologyOverlay');
-    expect(source).toContain('intelligenceProfile');
-    expect(source).toContain('cogneeProfile');
-    expect(source).toContain('Cognee mode');
-    expect(source).toContain('Agent Read');
-    expect(source).toContain('read contract');
     expect(source).not.toContain('/app/ontology');
     expect(source).not.toContain('/app/community-review');
   });
@@ -904,12 +894,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain("capsuleCategory(capsule) === 'output'");
     expect(source).toContain("capsuleCategory(capsule) === 'user'");
     expect(source).toContain("CapsuleEmptyState label=\"Loading capsules...\"");
-    expect(source).toContain('compact={isCapsuleRepositoryPage || !isRepositoryPage}');
-    expect(source).toContain('title={`Drag ${capsule.label} into context chain`}');
+    expect(source).toContain('variant="compact"');
+    expect(source).toContain('title: `Drag ${capsule.label} into context chain`');
     expect(source).toContain('text-base font-semibold leading-6 text-slate-950');
     expect(source).toContain('Categories');
     expect(source).toContain('Read more</button>');
-    expect(source).toContain('line-clamp-2 text-sm leading-6 text-slate-600');
+    expect(source).toContain("isCompact ? 'line-clamp-2'");
     expect(source).not.toContain('<span className="block truncate text-sm font-semibold text-slate-900">{capsule.label}</span>');
     expect(source).not.toContain('Add category');
     expect(source).not.toContain("CapsuleEmptyState label=\"No capsules found.\"");
@@ -1065,7 +1055,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="capsule-repository-grid"');
     expect(repositoryGridSource).toContain('[grid-template-columns:repeat(auto-fit,minmax(min(22rem,100%),1fr))]');
     expect(repositoryGridSource).toContain('data-testid="capsule-repository-create-card"');
-    expect(source).toContain('data-testid="capsule-repository-open"');
+    expect(source).toContain("openTestId={!compact ? 'capsule-repository-open' : undefined}");
     expect(source).toContain('Open capsule');
     expect(source).toContain('Create new capsule');
     expect(source).toContain('function openRepositoryCapsuleInspector');

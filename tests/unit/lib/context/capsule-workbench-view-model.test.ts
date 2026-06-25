@@ -341,6 +341,145 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     ]));
   });
 
+  it('prefers grounding embeddedGraph and exposes ontology binding coverage for inspection', () => {
+    const model = buildCapsuleWorkbenchViewModel({
+      capsule: {
+        ...capsule,
+        capsuleId: 'cap-syria-inspection',
+        label: 'Syria political-security watch',
+        sourceRefs: [
+          {
+            sourceId: 'un-ocha-syria',
+            label: 'OCHA Syria situation report lane',
+            publisher: 'UN OCHA',
+            provenance: 'starter source lane; refresh before reliance',
+          },
+        ],
+        claimLedger: [
+          {
+            claimId: 'access-constraint',
+            text: 'Humanitarian access constraints should be tracked separately from political transition claims.',
+            support: 'supported',
+            sourceRefIds: ['un-ocha-syria'],
+            confidence: 0.72,
+            provenance: 'starter claim ledger; source lane requires refresh',
+          },
+        ],
+        ontologyBinding: {
+          domainId: 'diplomacy',
+          taxonomyPath: ['policy', 'conflict', 'syria', 'humanitarian-access'],
+          ontologyIds: ['active-conflict', 'humanitarian-crisis'],
+          acoPrimitives: ['Actor', 'Claim', 'Event', 'Constraint'],
+          bindingRationale: 'Starter binding for a conflict and humanitarian-access inspection capsule.',
+        },
+        embeddedGraph: {
+          provider: 'graphlite',
+          projectionId: 'cap-syria-fallback-graph',
+          status: 'compiled-advisory',
+          nodes: [
+            { id: 'fallback-node', label: 'Fallback graph node', entityType: 'Actor', reviewState: 'advisory' },
+          ],
+          edges: [],
+        },
+        grounding: {
+          embeddedGraph: {
+            provider: 'graphlite',
+            projectionId: 'cap-syria-grounding-graph',
+            status: 'compiled-advisory',
+            nodes: [
+              {
+                id: 'actor:ocha',
+                label: 'UN OCHA',
+                entityType: 'Actor',
+                reviewState: 'advisory',
+                confidence: 0.78,
+                sourceReceiptIds: ['un-ocha-syria'],
+                rationale: 'Starter source lane identifies OCHA as the humanitarian reporting actor.',
+              },
+              {
+                id: 'claim:access',
+                label: 'Access constraint lane',
+                entityType: 'Claim',
+                reviewState: 'advisory',
+                confidence: 0.7,
+                sourceReceiptIds: ['un-ocha-syria'],
+              },
+            ],
+            edges: [
+              {
+                id: 'ocha-supports-access',
+                source: 'actor:ocha',
+                target: 'claim:access',
+                label: 'supports inspection of',
+                relationshipType: 'SUPPORTED_BY',
+                reviewState: 'advisory',
+                confidence: 0.7,
+                sourceReceiptIds: ['un-ocha-syria'],
+              },
+            ],
+          },
+        },
+      },
+    });
+
+    expect(model.graph.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'graphlite:cap-syria-grounding-graph',
+        label: 'GraphLite advisory projection',
+      }),
+      expect.objectContaining({
+        id: 'graphlite:actor:ocha',
+        label: 'UN OCHA',
+        sourceReceiptIds: ['un-ocha-syria'],
+      }),
+      expect.objectContaining({
+        id: 'claim:access-constraint',
+        sourceReceiptIds: ['un-ocha-syria'],
+      }),
+    ]));
+    expect(model.graph.nodes.some((node) => node.id === 'graphlite:fallback-node')).toBe(false);
+    expect(model.graph.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'graphlite-edge:ocha-supports-access',
+        relationshipType: 'SUPPORTED_BY',
+        sourceReceiptIds: ['un-ocha-syria'],
+      }),
+    ]));
+    expect(model.ontology.active).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'ontology-binding:diplomacy',
+        label: 'policy / conflict / syria / humanitarian-access',
+        primitiveCoverage: expect.arrayContaining(['Actor', 'Claim', 'Event', 'Constraint']),
+      }),
+    ]));
+  });
+
+  it('keeps an empty capsule honest without fabricating source-backed graph structure', () => {
+    const model = buildCapsuleWorkbenchViewModel({
+      capsule: {
+        capsuleId: 'cap-empty-inspector',
+        label: 'Empty inspection capsule',
+        scope: 'situation' as const,
+        version: 1,
+        updatedAt: '2026-06-25T00:00:00.000Z',
+        coreRefs: {},
+      },
+    });
+
+    expect(model.evidence.sourceCount).toBe(0);
+    expect(model.evidence.sourcePosture).toBe('No source receipts attached yet.');
+    expect(model.graph.stats.sourceBackedClaims).toBe(0);
+    expect(model.graph.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'gap:no-sources',
+        label: 'No attached sources',
+        reviewState: 'missing',
+      }),
+    ]));
+    expect(model.graph.nodes.some((node) => node.type === 'source')).toBe(false);
+    expect(model.graph.edges.some((edge) => edge.relationshipType === 'supports_claim')).toBe(false);
+  });
+
   it('builds the four-pillar legibility model with timeline, causal chains, quality fixes, and receipted claims', () => {
     const model = buildCapsuleWorkbenchViewModel({
       capsule: {

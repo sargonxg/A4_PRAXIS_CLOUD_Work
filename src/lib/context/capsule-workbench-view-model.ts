@@ -1032,6 +1032,7 @@ function buildOntology(
   capsule: CapsuleWorkbenchCapsuleInput,
   coreRefs: CapsuleWorkbenchCoreRefs,
 ): CapsuleOntologyDisplay {
+  const explicitBinding = ontologyBindingItemFromUnknown(capsule.ontologyBinding);
   const ids = uniqueStrings([
     cleanText(coreRefs.pathCoreId),
     cleanText(capsule.activeOntologyStackId),
@@ -1092,7 +1093,11 @@ function buildOntology(
         },
       };
     });
-  const active = uniqueBy([...activeWork, ...domainCandidates], (item) => item.id);
+  const active = uniqueBy([
+    ...(explicitBinding ? [explicitBinding] : []),
+    ...activeWork,
+    ...domainCandidates,
+  ], (item) => item.id);
   const fallbackProposedPrimitives: TacitusCorePrimitive[] = ['Actor', 'Claim', 'Interest', 'Constraint', 'Commitment', 'Narrative'];
   const fallbackMissingPrimitives: TacitusCorePrimitive[] = ['Leverage', 'Event'];
   const proposed = active.length
@@ -1134,6 +1139,50 @@ function buildOntology(
       }]
     : [];
   return { active, proposed, missing };
+}
+
+function ontologyBindingItemFromUnknown(value: unknown): CapsuleOntologyItemDisplay | null {
+  const record = asRecord(value);
+  if (!record) return null;
+  const taxonomyPath = cleanStrings(record.taxonomyPath);
+  const ontologyIds = cleanStrings(record.ontologyIds);
+  const primitiveCoverage = cleanStrings(record.acoPrimitives)
+    .filter((primitive): primitive is TacitusCorePrimitive =>
+      (TACITUS_CORE_PRIMITIVES as readonly string[]).includes(primitive),
+    );
+  if (!taxonomyPath.length && !ontologyIds.length && !primitiveCoverage.length) return null;
+  const missingPrimitives = TACITUS_CORE_PRIMITIVES.filter((primitive) => !primitiveCoverage.includes(primitive));
+  const total = Math.max(1, TACITUS_CORE_PRIMITIVES.length);
+  const label = taxonomyPath.length
+    ? taxonomyPath.join(' / ')
+    : ontologyIds.length
+      ? ontologyIds.join(', ')
+      : 'Explicit capsule ontology binding';
+  const rationale = cleanText(record.bindingRationale);
+  return {
+    id: `ontology-binding:${cleanText(record.domainId) || slugId(label, 'capsule-binding')}`,
+    label,
+    role: 'active',
+    primitiveCoverage,
+    missingPrimitives,
+    coverageRatio: primitiveCoverage.length / total,
+    requiredRelations: uniqueStrings([
+      rationale,
+      ontologyIds.length ? `Ontology ids: ${ontologyIds.join(', ')}` : '',
+      taxonomyPath.length ? `Taxonomy path: ${taxonomyPath.join(' / ')}` : '',
+    ]).slice(0, 3),
+    reviewState: 'canonical',
+    validatorSummary: {
+      passed: primitiveCoverage.length,
+      warnings: missingPrimitives.length,
+      total,
+      passRate: primitiveCoverage.length / total,
+      labels: uniqueStrings([
+        `${primitiveCoverage.length}/${total} ACO primitives covered by explicit binding`,
+        rationale,
+      ]).slice(0, 3),
+    },
+  };
 }
 
 function buildAgentWorkflow(
@@ -2236,9 +2285,10 @@ function graphLiteProjectionFromCapsule(capsule: CapsuleWorkbenchCapsuleInput): 
   const grounding = asRecord(capsule.grounding);
   const starterSnapshot = asRecord(capsule.starterSnapshot);
   const candidate = firstRecord(
-    capsule.graphLiteProjection,
-    capsule.embeddedGraph,
     grounding?.embeddedGraph,
+    capsule.embeddedGraph,
+    capsule.graphLiteProjection,
+    starterSnapshot?.embeddedGraph,
     starterSnapshot?.graphLiteProjection,
   );
   if (!candidate || cleanText(candidate.provider) !== 'graphlite') return null;

@@ -18,6 +18,23 @@ export interface ProofSourceabilitySummary {
   assumptionClaims: number;
 }
 
+export interface ProofGroundingVerificationFlag {
+  text: string;
+  reason: string;
+  claimCardIds: string[];
+  sourceReceiptIds: string[];
+  graphPathIds: string[];
+}
+
+export interface ProofGroundingVerificationSummary {
+  coverageScore: number;
+  groundedClaimCount: number;
+  totalClaimCount: number;
+  ungroundedSpanCount: number;
+  contradictedSpanCount: number;
+  flaggedSpans: ProofGroundingVerificationFlag[];
+}
+
 export interface UiProofSummary {
   contextHealth: ProofContextHealth;
   sourceCount: number;
@@ -32,6 +49,7 @@ export interface UiProofSummary {
   activeCapsule: string | null;
   appliedCapsules: string[];
   sourceability: ProofSourceabilitySummary;
+  groundingVerification: ProofGroundingVerificationSummary | null;
   degradedStates: string[];
   improvementActions: string[];
   exportBlocked: boolean;
@@ -64,6 +82,10 @@ export function modelPolicyLabelFor(input: {
     return 'standard policy reasoning (fallback)';
   }
 
+  if (tier === 'standard') {
+    return 'standard policy reasoning';
+  }
+
   if (
     tier === 'deep'
     || policyId?.includes('deep')
@@ -91,6 +113,7 @@ export function buildProofSummaryFromAskEnvelope(
   const sourceability = normalizeSourceabilitySummary(value?.claimLedgerSummary);
   const sourceAudit = asRecord(value?.sourceAudit);
   const generationReceipt = asRecord(value?.generationReceipt);
+  const groundingVerification = normalizeGroundingVerificationReport(value?.groundingVerification);
 
   return normalizeProofSummary({
     contextHealth: stringField(capsule?.contextHealth) ?? stringField(fallback.contextHealth),
@@ -105,6 +128,7 @@ export function buildProofSummaryFromAskEnvelope(
       || numberField(fallback.unsupportedClaimCount)
       || 0,
     sourceability,
+    groundingVerification,
     outputHref: safeAppHref(queuedRun?.outputHref) ?? safeAppHref(fallback.outputHref),
     outputTarget: stringField(readReceipt?.outputTarget)
       ?? stringField(supervisor?.outputDestination)
@@ -139,6 +163,7 @@ export function buildProofSummaryFromAgentRun(
   const outputHref = safeAppHref(value?.outputHref);
   const artifactIds = outputHref ? artifactIdsFromHref(outputHref) : {};
   const sourceability = normalizeSourceabilitySummary(value?.sourceabilityLedgerSummary);
+  const groundingVerification = normalizeGroundingVerificationReport(value?.groundingVerification);
 
   return normalizeProofSummary({
     contextHealth: stringField(contextReceipt?.contextHealth) ?? stringField(value?.contextHealth),
@@ -157,6 +182,7 @@ export function buildProofSummaryFromAgentRun(
       ?? numberField(value?.unsupportedClaimCount)
       ?? 0,
     sourceability,
+    groundingVerification,
     outputHref,
     outputTarget: stringField(contextReceipt?.outputDestination) ?? stringField(value?.outputDestination),
     memoId: stringField(value?.memoId) ?? artifactIds.memoId,
@@ -189,6 +215,7 @@ function normalizeProofSummary(input: {
   documentCount?: number | null;
   unsupportedClaimCount?: number | null;
   sourceability?: ProofSourceabilitySummary;
+  groundingVerification?: ProofGroundingVerificationSummary | null;
   outputHref?: string | null;
   outputTarget?: string | null;
   memoId?: string | null;
@@ -204,6 +231,7 @@ function normalizeProofSummary(input: {
   const sourceCount = clampCount(input.sourceCount);
   const documentCount = clampCount(input.documentCount);
   const sourceability = input.sourceability ?? emptySourceabilitySummary();
+  const groundingVerification = input.groundingVerification ?? null;
   const unsupportedClaimCount = clampCount(input.unsupportedClaimCount ?? sourceability.unsupportedClaims);
   const contextHealth = normalizeContextHealth(input.contextHealth, sourceCount, documentCount, unsupportedClaimCount);
   const degradedStates = buildDegradedStates({
@@ -211,6 +239,7 @@ function normalizeProofSummary(input: {
     sourceCount,
     documentCount,
     unsupportedClaimCount,
+    groundingVerification,
     groundingPosture: input.groundingPosture,
     degradedReason: input.degradedReason,
     outputHref: input.outputHref,
@@ -233,6 +262,7 @@ function normalizeProofSummary(input: {
     activeCapsule: input.activeCapsule ?? null,
     appliedCapsules: uniqueStrings(input.appliedCapsules ?? []),
     sourceability,
+    groundingVerification,
     degradedStates,
     improvementActions: buildImprovementActions({
       contextHealth,
@@ -252,6 +282,7 @@ function buildDegradedStates(input: {
   sourceCount: number;
   documentCount: number;
   unsupportedClaimCount: number;
+  groundingVerification?: ProofGroundingVerificationSummary | null;
   groundingPosture?: string | null;
   degradedReason?: string | null;
   outputHref?: string | null;
@@ -269,6 +300,8 @@ function buildDegradedStates(input: {
   if (input.status === 'queued' || input.status === 'dispatch_enqueued' || input.status === 'running') states.push('worker queued');
   if (input.outputTarget && !input.outputHref) states.push('artifact persistence pending');
   if (input.unsupportedClaimCount > 0) states.push(`${input.unsupportedClaimCount} unsupported claim${input.unsupportedClaimCount === 1 ? '' : 's'}`);
+  const groundingFlagCount = (input.groundingVerification?.ungroundedSpanCount ?? 0) + (input.groundingVerification?.contradictedSpanCount ?? 0);
+  if (groundingFlagCount > 0) states.push(`${groundingFlagCount} grounding verifier flag${groundingFlagCount === 1 ? '' : 's'}`);
   return uniqueStrings(states);
 }
 
@@ -332,6 +365,35 @@ function emptySourceabilitySummary(): ProofSourceabilitySummary {
   return normalizeSourceabilitySummary(null);
 }
 
+function normalizeGroundingVerificationReport(value: unknown): ProofGroundingVerificationSummary | null {
+  const record = asRecord(value);
+  if (!record) return null;
+  const groundedClaims = arrayOfRecords(record.groundedClaims);
+  const ungroundedSpans = arrayOfRecords(record.ungroundedSpans);
+  const contradictedSpans = arrayOfRecords(record.contradictedSpans);
+  const flaggedSpans = [...ungroundedSpans, ...contradictedSpans].map((span): ProofGroundingVerificationFlag => ({
+    text: stringField(span.text) ?? '',
+    reason: stringField(span.reason) ?? 'unknown',
+    claimCardIds: stringArray(span.claimCardIds),
+    sourceReceiptIds: stringArray(span.sourceReceiptIds),
+    graphPathIds: stringArray(span.graphPathIds),
+  })).filter((span) => span.text);
+  const totalClaimCount = groundedClaims.length + ungroundedSpans.length + contradictedSpans.length;
+  const coverageScore = typeof record.coverageScore === 'number' && Number.isFinite(record.coverageScore)
+    ? Math.max(0, Math.min(1, record.coverageScore))
+    : totalClaimCount > 0
+      ? groundedClaims.length / totalClaimCount
+      : 1;
+  return {
+    coverageScore: Math.round(coverageScore * 1000) / 1000,
+    groundedClaimCount: groundedClaims.length,
+    totalClaimCount,
+    ungroundedSpanCount: ungroundedSpans.length,
+    contradictedSpanCount: contradictedSpans.length,
+    flaggedSpans: flaggedSpans.slice(0, 12),
+  };
+}
+
 function deriveConfidenceDistribution(summary: ProofSourceabilitySummary): ProofConfidenceDistribution {
   return {
     high: summary.supportedClaims,
@@ -378,6 +440,14 @@ function safeAppHref(value: unknown): string | null {
 
 function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0) : [];
+}
+
+function arrayOfRecords(value: unknown): Array<Record<string, unknown>> {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    const record = asRecord(item);
+    return record ? [record] : [];
+  });
 }
 
 function uniqueStrings(values: string[]): string[] {

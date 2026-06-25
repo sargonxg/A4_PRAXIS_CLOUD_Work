@@ -131,4 +131,56 @@ describe('proof summary normalization', () => {
     expect(summary.degradedStates).toContain('1 unsupported claim');
     expect(summary.improvementActions).toContain('Resolve boardroom open questions before sharing externally.');
   });
+
+  it('includes grounding verifier coverage and flagged spans in proof metadata', () => {
+    const summary = buildProofSummaryFromAgentRun({
+      runId: 'run-grounding',
+      status: 'succeeded',
+      capsuleId: 'cap-1',
+      groundingVerification: {
+        groundedClaims: [{
+          text: 'Supported claim.',
+          start: 0,
+          end: 16,
+          claimCardIds: ['CL-1'],
+          sourceReceiptIds: ['SR-1'],
+          graphPathIds: [],
+          matchReasons: ['explicit_claim_id'],
+        }],
+        ungroundedSpans: [{
+          text: 'Unsupported claim.',
+          start: 17,
+          end: 35,
+          reason: 'no_packet_binding',
+          claimCardIds: [],
+          sourceReceiptIds: [],
+          graphPathIds: [],
+        }],
+        contradictedSpans: [{
+          text: 'Contradicted claim.',
+          start: 36,
+          end: 55,
+          reason: 'contradicted_by_capsule',
+          claimCardIds: ['CL-2'],
+          sourceReceiptIds: ['SR-2'],
+          graphPathIds: [],
+        }],
+        coverageScore: 0.333,
+        notes: ['1 of 3 decision-relevant claim spans grounded.'],
+      },
+    });
+
+    expect(summary.groundingVerification).toMatchObject({
+      coverageScore: 0.333,
+      groundedClaimCount: 1,
+      totalClaimCount: 3,
+      ungroundedSpanCount: 1,
+      contradictedSpanCount: 1,
+      flaggedSpans: [
+        { text: 'Unsupported claim.', reason: 'no_packet_binding' },
+        { text: 'Contradicted claim.', reason: 'contradicted_by_capsule', claimCardIds: ['CL-2'] },
+      ],
+    });
+    expect(summary.degradedStates).toContain('2 grounding verifier flags');
+  });
 });

@@ -267,6 +267,20 @@ describe('context capsule product contract', () => {
       expect(starter.graphLiteProjection.namedGraph, `${starter.starterId} GraphLite named graph`).toMatch(/^capsule_/);
       expect(starter.graphLiteProjection.nodeCount, `${starter.starterId} GraphLite node count`).toBe(starter.ontologyOverlay?.graphSeed.nodeTemplates.length ?? 0);
       expect(starter.graphLiteProjection.edgeCount, `${starter.starterId} GraphLite edge count`).toBe(starter.ontologyOverlay?.graphSeed.edgeTemplates.length ?? 0);
+      expect(starter.graphLiteProjection.nodes.length, `${starter.starterId} GraphLite nodes`).toBe(starter.graphLiteProjection.nodeCount);
+      expect(starter.graphLiteProjection.edges.length, `${starter.starterId} GraphLite edges`).toBe(starter.graphLiteProjection.edgeCount);
+      expect(starter.graphLiteProjection.nodes[0], `${starter.starterId} first GraphLite node`).toMatchObject({
+        reviewState: 'advisory',
+        confidenceKind: 'ASSESSED',
+        derivedFrom: expect.arrayContaining(['starter-ontology-overlay', 'starter-graph-seed']),
+      });
+      expect(starter.graphLiteProjection.nodes.some((node) => node.sourceReceiptIds.length > 0), `${starter.starterId} sourced GraphLite node`).toBe(true);
+      expect(starter.graphLiteProjection.edges[0], `${starter.starterId} first GraphLite edge`).toMatchObject({
+        reviewState: 'advisory',
+        confidenceKind: 'ASSESSED',
+        derivedFrom: expect.arrayContaining(['starter-ontology-overlay', 'starter-graph-seed']),
+      });
+      expect(starter.graphLiteProjection.edges.some((edge) => edge.sourceReceiptIds.length > 0), `${starter.starterId} sourced GraphLite edge`).toBe(true);
       expect(starter.graphLiteProjection.sourceIds, `${starter.starterId} GraphLite sources`).toEqual(expect.arrayContaining(starter.sourcePack.map((source) => source.id)));
       expect(starter.graphLiteProjection.sampleGql.join('\n'), `${starter.starterId} GraphLite GQL`).toContain('CREATE GRAPH IF NOT EXISTS');
       expect(starter.graphLiteProjection.sampleGql.join('\n'), `${starter.starterId} GraphLite GQL advisory`).toMatch(/advisory|Firestore|review/i);

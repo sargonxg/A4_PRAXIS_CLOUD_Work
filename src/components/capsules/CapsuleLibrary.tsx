@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Boxes, Eye, Loader2, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
+import { CapsuleLibraryCard } from '@/components/capsules/CapsuleLibraryCard';
 import {
   CAPSULE_LIBRARY_CATEGORIES,
   CAPSULE_LIBRARY_ENTRIES,
@@ -162,11 +163,56 @@ export function CapsuleLibrary({
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {group.entries.map((entry) => (
-                  <CapsuleRepositoryCard
+                  <CapsuleLibraryCard
                     key={entry.id}
+                    variant="full"
+                    capsuleId={entry.id}
+                    title={entry.title}
+                    summary={entry.valueProp}
+                    subtitle={`${entry.origin === 'user' ? 'Your capsule' : 'Starter library'} / ${entry.category.replace('-', ' ')}`}
+                    categoryLabel={entry.capsuleType}
+                    domainLabel={entry.starterDomain}
+                    roleLabel={entry.origin === 'user' ? 'Workspace capsule' : 'Starter capsule'}
+                    readiness={{
+                      tier: entry.readinessTier === 'review' ? 'near' : 'ready',
+                      score: Math.round(entry.ranking.score),
+                    }}
+                    qualityScore={entry.ranking.score}
+                    counts={{
+                      sources: entry.inside.sources,
+                      claims: entry.inside.claims,
+                      graphNodes: entry.inside.graphNodes,
+                      graphEdges: entry.inside.graphEdges,
+                    }}
+                    graph={{
+                      nodeCount: entry.inside.graphNodes,
+                      edgeCount: entry.inside.graphEdges,
+                    }}
+                    tags={entry.ontologyStack.slice(0, 4).map((item) => ({
+                      label: item,
+                      className: 'rounded-[var(--radius-full)]',
+                    }))}
                     busy={busyCapsuleId === entry.id}
-                    entry={entry}
-                    onTryCapsule={onTryCapsule}
+                    footerActions={(
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => onTryCapsule?.(entry)}
+                          disabled={!onTryCapsule || busyCapsuleId === entry.id}
+                          className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] bg-slate-950 px-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {busyCapsuleId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Boxes className="h-4 w-4" />}
+                          Attach
+                        </button>
+                        <Link
+                          href={`/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`}
+                          className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Inspect
+                        </Link>
+                      </>
+                    )}
                   />
                 ))}
               </div>
@@ -185,75 +231,6 @@ export function CapsuleLibrary({
   );
 }
 
-function CapsuleRepositoryCard({
-  busy,
-  entry,
-  onTryCapsule,
-}: {
-  busy: boolean;
-  entry: CapsuleLibraryEntry;
-  onTryCapsule?: (entry: CapsuleLibraryEntry) => void;
-}) {
-  return (
-    <article
-      className="flex min-h-[18rem] flex-col rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-4"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">
-            {entry.origin === 'user' ? 'Your capsule' : 'Starter library'} · {entry.category.replace('-', ' ')}
-          </p>
-          <h3 className="mt-1 text-base font-semibold leading-6 text-slate-950">{entry.title}</h3>
-        </div>
-        <span className={cn(
-          'shrink-0 rounded-[var(--radius-full)] border px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em]',
-          entry.readinessTier === 'verified' && 'border-emerald-200 bg-emerald-50 text-emerald-700',
-          entry.readinessTier === 'ready' && 'border-blue-200 bg-blue-50 text-blue-700',
-          entry.readinessTier === 'review' && 'border-amber-200 bg-amber-50 text-amber-700',
-        )}>
-          {entry.readinessTier}
-        </span>
-      </div>
-
-      <p className="mt-3 text-sm leading-6 text-slate-650">{entry.valueProp}</p>
-
-      <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
-        <InsideStat label="Sources" value={entry.inside.sources} />
-        <InsideStat label="Claims" value={entry.inside.claims} />
-        <InsideStat label="Graph" value={`${entry.inside.graphNodes}/${entry.inside.graphEdges}`} />
-        <InsideStat label="Quality" value={Math.round(entry.ranking.score)} />
-      </dl>
-
-      <div className="mt-4 flex flex-wrap gap-1.5">
-        {entry.ontologyStack.slice(0, 4).map((item) => (
-          <span key={item} className="rounded-[var(--radius-full)] border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600">
-            {item}
-          </span>
-        ))}
-      </div>
-
-      <div className="mt-auto flex flex-wrap items-center gap-2 pt-5">
-        <button
-          type="button"
-          onClick={() => onTryCapsule?.(entry)}
-          disabled={!onTryCapsule || busy}
-          className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] bg-slate-950 px-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Boxes className="h-4 w-4" />}
-          Attach
-        </button>
-        <Link
-          href={`/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`}
-          className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-        >
-          <Eye className="h-4 w-4" />
-          Inspect
-        </Link>
-      </div>
-    </article>
-  );
-}
-
 function CategoryChip({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) {
   return (
     <button
@@ -266,14 +243,5 @@ function CategoryChip({ active, label, onClick }: { active: boolean; label: stri
     >
       {label}
     </button>
-  );
-}
-
-function InsideStat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2">
-      <dt className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">{label}</dt>
-      <dd className="mt-1 font-mono text-sm font-semibold text-slate-900">{value}</dd>
-    </div>
   );
 }

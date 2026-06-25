@@ -915,6 +915,8 @@ export interface CapsuleStarterGraphLiteProjection {
   generatedFromGraphId: 'starter-seed';
   nodeCount: number;
   edgeCount: number;
+  nodes: CapsuleStarterGraphLiteNode[];
+  edges: CapsuleStarterGraphLiteEdge[];
   sourceIds: string[];
   sourceChecksum: string;
   compileStatus: 'gql-ready';
@@ -924,6 +926,44 @@ export interface CapsuleStarterGraphLiteProjection {
   promotionGate: string;
   buildNotes: string[];
   catalogVersion: string;
+}
+
+export interface CapsuleStarterGraphLiteNode {
+  id: string;
+  label: string;
+  entityType: string;
+  reviewState: 'advisory' | 'proposed' | 'reviewed';
+  confidence: number;
+  confidenceKind: 'ASSESSED';
+  sourceReceiptIds: string[];
+  rationale: string;
+  derivedFrom: string[];
+  generatedBy: {
+    actorType: 'model';
+    actorId: 'context-capsule-starter-catalog';
+    at: string;
+    activity: 'import';
+  };
+}
+
+export interface CapsuleStarterGraphLiteEdge {
+  id: string;
+  source: string;
+  target: string;
+  label: string;
+  relationshipType: string;
+  reviewState: 'advisory' | 'proposed' | 'reviewed';
+  confidence: number;
+  confidenceKind: 'ASSESSED';
+  sourceReceiptIds: string[];
+  rationale: string;
+  derivedFrom: string[];
+  generatedBy: {
+    actorType: 'model';
+    actorId: 'context-capsule-starter-catalog';
+    at: string;
+    activity: 'import';
+  };
 }
 
 export type CapsuleStarterDomain =
@@ -3313,6 +3353,8 @@ function buildStarterGraphLiteProjection(input: {
   const schemaName = graphLiteIdentifier(`praxis_${input.starterId}`, 64);
   const namedGraph = graphLiteIdentifier(`capsule_${input.starterId}`, 72);
   const sourceIds = input.sourcePack.map((source) => source.id);
+  const nodes = starterGraphLiteNodesFromTemplates(input.ontologyOverlay.graphSeed.nodeTemplates, sourceIds);
+  const edges = starterGraphLiteEdgesFromTemplates(input.ontologyOverlay.graphSeed.edgeTemplates, nodes, sourceIds);
   const sourceChecksum = graphLiteChecksum([
     input.starterId,
     ...sourceIds,
@@ -3331,8 +3373,10 @@ function buildStarterGraphLiteProjection(input: {
     schemaName,
     namedGraph,
     generatedFromGraphId: 'starter-seed',
-    nodeCount: input.ontologyOverlay.graphSeed.nodeTemplates.length,
-    edgeCount: input.ontologyOverlay.graphSeed.edgeTemplates.length,
+    nodeCount: nodes.length,
+    edgeCount: edges.length,
+    nodes,
+    edges,
     sourceIds,
     sourceChecksum,
     compileStatus: 'gql-ready',
@@ -3353,6 +3397,100 @@ function buildStarterGraphLiteProjection(input: {
     ],
     catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
   };
+}
+
+function starterGraphLiteNodesFromTemplates(
+  templates: string[],
+  sourceIds: string[],
+): CapsuleStarterGraphLiteNode[] {
+  return templates.flatMap((template, index): CapsuleStarterGraphLiteNode[] => {
+    const [rawId, rawKind, rawLabel, rawDetail] = template.split('|');
+    const id = rawId?.trim() || `starter-node-${index + 1}`;
+    const kind = rawKind?.trim() || 'Policy';
+    const label = rawLabel?.trim() || humanizeStarterGraphLabel(id);
+    const boundSourceIds = sourceIdsFromStarterGraphText(`${rawDetail ?? ''} ${template}`, sourceIds);
+    return [{
+      id,
+      label,
+      entityType: starterGraphEntityType(kind),
+      reviewState: 'advisory',
+      confidence: 0.6,
+      confidenceKind: 'ASSESSED',
+      sourceReceiptIds: boundSourceIds,
+      rationale: `Starter/example graph node derived from ${kind}; refresh source receipts before relying on it as evidence.`,
+      derivedFrom: ['starter-ontology-overlay', 'starter-graph-seed'],
+      generatedBy: starterGraphGeneratedBy(),
+    }];
+  });
+}
+
+function starterGraphLiteEdgesFromTemplates(
+  templates: string[],
+  nodes: CapsuleStarterGraphLiteNode[],
+  sourceIds: string[],
+): CapsuleStarterGraphLiteEdge[] {
+  const nodeIds = new Set(nodes.map((node) => node.id));
+  return templates.flatMap((template, index): CapsuleStarterGraphLiteEdge[] => {
+    const [rawId, rawType, rawEndpoints, _starterId, rawEvidence, rawRationale] = template.split('|');
+    const [rawSource, rawTarget] = (rawEndpoints ?? '').split('->');
+    const source = starterGraphEndpointId(rawSource);
+    const target = starterGraphEndpointId(rawTarget);
+    if (!source || !target || !nodeIds.has(source) || !nodeIds.has(target)) return [];
+    const relationshipType = (rawType?.trim() || 'RELATED_TO').toUpperCase();
+    const boundSourceIds = sourceIdsFromStarterGraphText(`${rawEvidence ?? ''} ${template}`, sourceIds);
+    return [{
+      id: rawId?.trim() || `starter-edge-${index + 1}`,
+      source,
+      target,
+      label: humanizeStarterGraphLabel(relationshipType),
+      relationshipType,
+      reviewState: 'advisory',
+      confidence: 0.58,
+      confidenceKind: 'ASSESSED',
+      sourceReceiptIds: boundSourceIds,
+      rationale: rawRationale?.trim() || 'Starter/example graph edge; verify source text before reliance.',
+      derivedFrom: ['starter-ontology-overlay', 'starter-graph-seed'],
+      generatedBy: starterGraphGeneratedBy(),
+    }];
+  });
+}
+
+function starterGraphEndpointId(value: string | undefined): string {
+  return (value ?? '').split(':')[0]?.trim() ?? '';
+}
+
+function sourceIdsFromStarterGraphText(text: string, sourceIds: string[]): string[] {
+  return sourceIds.filter((sourceId) => text.includes(sourceId)).slice(0, 4);
+}
+
+function starterGraphEntityType(kind: string): string {
+  const normalized = kind.toLowerCase();
+  if (normalized.includes('actor') || normalized.includes('owner') || normalized.includes('analyst')) return 'Actor';
+  if (normalized.includes('claim') || normalized.includes('development') || normalized.includes('situation') || normalized.includes('signal')) return 'Claim';
+  if (normalized.includes('source') || normalized.includes('info') || normalized.includes('document')) return 'Resource';
+  if (normalized.includes('event') || normalized.includes('deadline') || normalized.includes('time')) return 'Event';
+  if (normalized.includes('gate') || normalized.includes('boundary') || normalized.includes('constraint') || normalized.includes('risk')) return 'Constraint';
+  if (normalized.includes('commitment') || normalized.includes('review')) return 'Commitment';
+  if (normalized.includes('heuristic') || normalized.includes('narrative') || normalized.includes('reasoning')) return 'Narrative';
+  if (normalized.includes('ontology')) return 'Institution';
+  return 'Policy';
+}
+
+function starterGraphGeneratedBy(): CapsuleStarterGraphLiteNode['generatedBy'] {
+  return {
+    actorType: 'model',
+    actorId: 'context-capsule-starter-catalog',
+    at: CAPSULE_STARTER_CATALOG_VERSION,
+    activity: 'import',
+  };
+}
+
+function humanizeStarterGraphLabel(value: string): string {
+  return value
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase()) || 'Starter Graph Element';
 }
 
 function graphLiteIdentifier(value: string, maxLength: number): string {
