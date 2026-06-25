@@ -48,13 +48,8 @@ codex` comment at the top of the file and commit a one-line note here.
 | `src/app/globals.css` | Design tokens, capsule utilities, motion classes. **Extend, do not refactor.** |
 | `src/components/ui/button.tsx` | Capsule button variants. New variants only via additive cases in `buttonVariants`. |
 | `src/app/(landing)/layout.tsx` | Public navbar + paper-texture body. |
-| `src/components/landing/core-capsule-hero.tsx` | Glass capsule under museum lighting. |
-| `src/components/landing/capsule-anatomy-honeycomb.tsx` | 12-core honeycomb. |
-| `src/components/landing/output-catalog-carousel.tsx` | Postcard carousel (reads Codex's `OUTPUT_CAPSULE_TEMPLATES`). |
 | `src/components/landing/compose-capsules-demo.tsx` | Compose showcase. |
-| `src/components/landing/persona-cards.tsx` | Persona section. |
-| `src/components/landing/connector-strip.tsx` | Connector trust strip. |
-| `src/app/(landing)/learn/page.tsx` | Identity showcase page (`/learn`) — hosts the capsule hero + 5 marketing sections. |
+| `src/app/(landing)/learn/page.tsx` | Identity showcase page (`/learn`). |
 | `src/components/cockpit/capsule-strip.tsx` | 12-dot strip for cockpit header. Slot via prop. |
 | `src/lib/constants/capsule-cores.ts` | 12 canonical cores (key, label, description, color). Shared; extend by appending only. |
 | `scripts/audit-design.mjs` | Visual identity audit. |
@@ -76,11 +71,6 @@ codex` comment at the top of the file and commit a one-line note here.
 ---
 
 ## Cross-references between agents
-
-Claude's landing reads Codex's registry:
-- `OutputCatalogCarousel` imports `OUTPUT_CAPSULE_TEMPLATES` from
-  `src/lib/output-capsules/templates.ts`. **If Codex moves this file, the
-  carousel breaks.** Codex: please leave a re-export shim in place.
 
 Claude's cockpit strip exposes a prop slot:
 - `CapsuleStrip` is designed to be passed into Codex's
@@ -122,9 +112,10 @@ npm run audit:design:strict    # errors on raw hex literals too
 - 2026-05-15 — Codex landed output-capsule framework + Ask PRAXIS cockpit.
 - 2026-05-16 — Codex aligned signed-in cockpit with public cockpit; renamed
   `ComposeCapsulesDemo` → `ComposeCapsulesShowcase`.
-- 2026-05-16 — Claude rebuilt CoreCapsuleHero, added carousel + compose
-  showcase, then anatomy + personas + connector strip + cockpit strip + this
-  ownership map.
+- 2026-05-16 — Claude rebuilt the legacy landing sections, compose showcase,
+  cockpit strip, and this ownership map.
 - 2026-05-16 — Codex consolidated `phase8-wow-landing.tsx` to cockpit-only.
-  Claude moved the 5 marketing sections + CoreCapsuleHero to `/learn`
-  (`src/app/(landing)/learn/page.tsx`). Navbar's "Learn" link now resolves.
+  Claude moved the legacy marketing sections to `/learn`. Navbar's "Learn"
+  link now resolves.
+- 2026-06-25 — Codex removed the orphaned legacy landing sections from the
+  first cleanup slice after zero-inbound-reference proof.

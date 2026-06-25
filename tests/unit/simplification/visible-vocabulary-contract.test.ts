@@ -14,7 +14,6 @@ const TARGET_FILES = [
   'src/components/cores/CapsuleReadinessRail.tsx',
   'src/components/cores/ContextBuilderRoom.tsx',
   'src/components/cores/CoreLibraryWorkbench.tsx',
-  'src/components/landing/connector-strip.tsx',
   'src/components/onboarding/welcome-modal.tsx',
   'src/components/memo/memo-desk.tsx',
   'src/components/praxis/tasklet-praxis-workbench.tsx',
