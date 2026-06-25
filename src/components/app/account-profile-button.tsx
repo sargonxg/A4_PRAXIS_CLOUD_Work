@@ -3,13 +3,10 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import {
-  BarChart3,
   Building2,
   ChevronDown,
   CreditCard,
-  KeyRound,
   LogOut,
-  ShieldCheck,
   Settings,
   UserRound,
   UsersRound,
@@ -43,6 +40,7 @@ export function AccountProfileButton({ compact = false }: { compact?: boolean })
     <div className="relative">
       <button
         type="button"
+        data-testid="account-profile-button"
         onClick={() => setOpen((value) => !value)}
         className={cn(
           'inline-flex items-center gap-2 rounded-lg border border-[var(--color-app-border)] bg-white px-2.5 py-1.5 text-left text-sm shadow-sm transition hover:border-navy-300 hover:bg-slate-50',
@@ -73,6 +71,7 @@ export function AccountProfileButton({ compact = false }: { compact?: boolean })
           />
           <div
             role="menu"
+            data-testid="account-profile-menu"
             className="absolute right-0 z-50 mt-2 w-80 rounded-[var(--radius-xl)] border border-slate-200 bg-white p-3 shadow-[var(--shadow-float)]"
           >
             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -97,11 +96,8 @@ export function AccountProfileButton({ compact = false }: { compact?: boolean })
 
             <div className="mt-2 grid gap-1">
               <MenuLink href="/app/settings?tab=profile" icon={UserRound} label="Profile / User Core" onClick={() => setOpen(false)} />
-              <MenuLink href="/app/settings?tab=billing" icon={CreditCard} label="Billing and subscription" onClick={() => setOpen(false)} />
-              <MenuLink href="/app/settings?tab=usage" icon={BarChart3} label="Usage and free conversation" onClick={() => setOpen(false)} />
-              <MenuLink href="/app/settings?tab=security" icon={ShieldCheck} label="Security" onClick={() => setOpen(false)} />
-              <MenuLink href="/app/settings?tab=connectors" icon={KeyRound} label="API keys and connectors" onClick={() => setOpen(false)} />
-              <MenuLink href="/app/settings?tab=workspace" icon={Settings} label="Workspace settings" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=billing" icon={CreditCard} label="Billing" onClick={() => setOpen(false)} />
+              <MenuLink href="/app/settings?tab=workspace" icon={Settings} label="Preferences / settings" onClick={() => setOpen(false)} />
               <button
                 type="button"
                 onClick={() => void signOut()}

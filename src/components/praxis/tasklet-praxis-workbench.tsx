@@ -62,7 +62,6 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { AccountProfileButton } from '@/components/app/account-profile-button';
 import { AskContextBar } from '@/components/app/ask-context-bar';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { CapsuleWorkbenchPanel } from '@/components/capsules/CapsuleWorkbenchPanel';
@@ -3540,7 +3539,7 @@ export function TaskletPraxisWorkbench({
               </nav>
             )}
             <div className="flex items-center gap-2">
-              {isAuthenticated ? <AccountProfileButton compact /> : <Link href="/login" className="rounded-md px-3 py-2 text-sm font-semibold hover:bg-white">Sign in</Link>}
+              {!isAuthenticated ? <Link href="/login" className="rounded-md px-3 py-2 text-sm font-semibold hover:bg-white">Sign in</Link> : null}
             </div>
           </header> : null}
 

@@ -63,6 +63,12 @@ expectIncludes('src/components/ask/AskStreamPanel.tsx', [
   'Saving receipts',
 ]);
 
+// Signed-in cockpit routes get the top-right USER menu via shared chrome
+// (moved out of the workbench header to dedupe).
+expectIncludes('src/components/app/signed-in-chrome.tsx', [
+  'AccountProfileButton',
+]);
+
 expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'TACITUS routes model, worker, and tools',
   'data-testid="praxis-main-composer"',
@@ -77,7 +83,6 @@ expectIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
   'Active ContextCapsule stack',
   'ContextCapsule Lite',
   'action: \'combine\'',
-  'AccountProfileButton',
   'activeCapsules',
   'selectedToolIds',
   'selectedAgentId',

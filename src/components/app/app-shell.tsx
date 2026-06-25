@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
-import { PRIMARY_NAV } from '@/lib/navigation/primary-nav';
 import { AppSidebar } from '@/components/app/app-sidebar';
 import { Header } from '@/components/app/header';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -23,6 +22,7 @@ import { CalibrationTransparencyModal } from '@/components/app/calibration-trans
 import { useSituationStore } from '@/stores/situation-store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PraxisRouteTransition } from '@/components/ui/praxis-motion';
+import { SignedInChrome } from '@/components/app/signed-in-chrome';
 
 type SearchOpenEvent = CustomEvent<{ query?: string }>;
 
@@ -41,7 +41,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/app/conversations/');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');
-  const [helpOpen, setHelpOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
   // Detect mobile viewport
@@ -109,13 +108,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
   const closeOverlay = useCallback(() => {
     setSearchOpen(false);
-    setHelpOpen(false);
   }, []);
 
   useKeyboardShortcuts({
     openSearch: () => openSearch(),
     openAsk,
-    openHelp: () => setHelpOpen(true),
+    openHelp: () => window.dispatchEvent(new CustomEvent('open-praxis-help')),
     goHome: () => router.push('/app'),
     goCores: () => router.push('/app'),
     goLibrary: () => router.push('/app'),
@@ -191,26 +189,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </main>
         </div>
       </div>
-      {helpOpen && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-navy-950/25 px-4 pt-20 backdrop-blur-sm" onClick={() => setHelpOpen(false)}>
-          <div
-            className="praxis-shell-modal w-full max-w-md border border-[var(--color-app-border)] bg-white p-4"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="mb-3">
-              <h2 className="text-sm font-semibold text-navy-900">Shortcuts</h2>
-              <p className="text-xs text-navy-500">Use PRAXIS from the keyboard.</p>
-            </div>
-            <div className="space-y-2">
-              <ShortcutRow keys="Cmd+K" label="Ask PRAXIS or search" />
-              {PRIMARY_NAV.filter((item): item is typeof item & { shortcut: string } => Boolean(item.shortcut)).map((item) => (
-                <ShortcutRow key={item.id} keys={item.shortcut} label={item.label} />
-              ))}
-              <ShortcutRow keys="Esc" label="Close overlay" />
-            </div>
-          </div>
-        </div>
-      )}
       {/* Onboarding: welcome modal + guided walkthrough */}
       <OnboardingWrapper />
       {/* Calibration transparency modal — what's about to run */}
@@ -234,6 +212,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           initialQuery={searchInitialQuery}
         />
       )}
+      <SignedInChrome showAccountButton={isOnePageCockpit} />
       </>
     </TooltipProvider>
   );
@@ -272,13 +251,3 @@ function AppShellLoadingState({ label }: { label: string }) {
   );
 }
 
-function ShortcutRow({ keys, label }: { keys: string; label: string }) {
-  return (
-    <div className="flex items-center justify-between gap-3 rounded-lg bg-[var(--color-app-surface-alt)] px-3 py-2">
-      <span className="text-sm text-navy-700">{label}</span>
-      <kbd className="rounded border border-[var(--color-app-border)] bg-white px-2 py-0.5 text-[11px] font-medium text-navy-500">
-        {keys}
-      </kbd>
-    </div>
-  );
-}
