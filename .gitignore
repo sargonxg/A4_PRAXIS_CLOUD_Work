@@ -31,6 +31,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+debug.log
 .next-start-*.log
 .next-start-*.err.log
 .tmp-next-dev.*
@@ -84,6 +85,13 @@ docker-compose.override.yml
 Screenshot*.png
 Screenshot*.jpg
 Screenshot*.jpeg
+
+# Local browser/live-test artifacts — never commit auth state, account JSON, or screenshots
+docs/reviews/*-live-app-test-assets/
+**/auth-storage-state.json
+**/*auth-storage*.json
+**/*account-secret*.json
+**/signup-account.json
 
 # Graphify generated cache is local; committed graph outputs live in graphify-out/.
 graphify-out/cache/
