@@ -10,6 +10,7 @@ import {
 } from '@/lib/context/context-injection';
 import type { CapsuleServiceDeps, PraxisCapsule } from '@/lib/context/capsule-service';
 import { appendAgentContextPacketToPromptBlock, type AgentContextPacketResult } from '@/lib/context/agent-context-packet';
+import { isTemporalIntent } from '@/lib/context/temporal-timeline';
 import type {
   CapsuleContextCaptureProfile,
   CapsuleStarterSnapshot,
@@ -253,13 +254,15 @@ export async function buildTurnCapsule(
 ): Promise<TurnCapsule> {
   const injectableContext = await resolveInjectableContext(input, deps);
   const requestTime = (deps?.now?.() ?? new Date()).toISOString();
+  const temporalIntent = isTemporalIntent(input.query ?? input.situationId ?? injectableContext.capsule.label);
   const packetAugmentation = appendAgentContextPacketToPromptBlock({
     capsule: injectableContext.capsule,
     promptBlock: injectableContext.promptBlock,
     userQuery: input.query ?? input.situationId ?? injectableContext.capsule.label,
-    budgetTier: 'standard',
+    budgetTier: temporalIntent ? 'expanded' : 'standard',
     requestTime,
     turnId: input.traceId ?? injectableContext.injectionKey,
+    temporalIntent,
   });
   const augmentedInjectableContext: InjectableContext = {
     ...injectableContext,

@@ -3,6 +3,11 @@ import { getOntology } from '@/lib/ontology/registry';
 import { validateOntologyReadiness } from '@/lib/ontology/validator-pass-rate';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import {
+  buildTemporalTimeline,
+  isTemporalIntent,
+  type TemporalTimeline,
+} from '@/lib/context/temporal-timeline';
+import {
   agentContextBudgetForTier,
   capCausalConfidence,
   getActiveOntologyIds,
@@ -25,6 +30,7 @@ export interface BuildAgentContextPacketInput {
   budgetTier: AgentContextBudgetTier;
   requestTime: string;
   turnId?: string | null;
+  temporalIntent?: boolean;
 }
 
 export interface AgentContextGroundingMap {
@@ -40,6 +46,7 @@ export interface AgentContextPacketResult {
   selected: SelectedAgentContext;
   omitted: OmittedContextItem[];
   groundingMap: AgentContextGroundingMap;
+  temporalTimeline: TemporalTimeline;
 }
 
 interface RenderContext {
@@ -58,20 +65,27 @@ export function shouldEnableAgentContextPacket(value: string | undefined): boole
 }
 
 export function buildAgentContextPacket(input: BuildAgentContextPacketInput): AgentContextPacketResult {
+  const temporalIntent = input.temporalIntent ?? isTemporalIntent(input.userQuery);
   const selection = selectAgentContextSubgraph({
     capsule: input.capsule,
     userQuery: input.userQuery,
     budgetTier: input.budgetTier,
     requestTime: input.requestTime,
+    temporalIntent,
   });
   const selected = enforceRenderedTokenBudget(selection, input);
   const render = buildRenderContext(selected);
   const groundingMap = buildGroundingMap(selected, render);
+  const temporalTimeline = buildTemporalTimeline({
+    capsule: input.capsule,
+    requestTime: input.requestTime,
+  });
   return {
-    packetText: renderPacket(input, selected, render),
+    packetText: renderPacket({ ...input, temporalIntent }, selected, render, temporalTimeline),
     selected,
     omitted: selected.omitted,
     groundingMap,
+    temporalTimeline,
   };
 }
 
@@ -99,6 +113,7 @@ function renderPacket(
   input: BuildAgentContextPacketInput,
   selection: AgentContextSelectionResult,
   render: RenderContext,
+  temporalTimeline: TemporalTimeline,
 ): string {
   const capsule = input.capsule;
   const temporality = capsuleTemporality(capsule);
@@ -120,7 +135,7 @@ function renderPacket(
     renderClaimCards(selection.claims, render),
     renderIncidentNeighborhoods(selection, render),
     renderReasoningPaths(selection.paths, selection, render),
-    renderTemporalFrame(capsule, selection, input.requestTime, render),
+    renderTemporalFrame(capsule, selection, input.requestTime, render, temporalTimeline, Boolean(input.temporalIntent)),
     renderCausalChains(selection, render),
     renderAgentUseInstructions(),
   ].join('\n');
@@ -317,6 +332,8 @@ function renderTemporalFrame(
   selection: AgentContextSelectionResult,
   requestTime: string,
   render: RenderContext,
+  temporalTimeline: TemporalTimeline,
+  temporalIntent: boolean,
 ): string {
   const temporality = capsuleTemporality(capsule);
   const stale = [
@@ -328,13 +345,30 @@ function renderTemporalFrame(
     `query_time: ${requestTime}`,
     `capsule_as_of: ${temporality.asOf ?? 'unknown'}`,
     `valid_window: ${temporality.validFrom ?? 'unknown'}..${temporality.validUntil ?? 'open'}`,
+    `timeline_mode: ${temporalIntent ? 'expanded_temporal_reasoning' : 'standard_temporal_frame'}`,
+    `knowledge_product_shape: CapsuleTemporalViewerItem[] + ontology_edges`,
     'timeline:',
   ];
   if (!selection.timeline.length) {
     lines.push('- none: no timeline anchors selected.');
   } else {
     for (const [index, item] of selection.timeline.entries()) {
-      lines.push(`- [T-${index + 1}] ${item.date} ${item.kind}: ${item.label}; nodes=[]; sources=${formatIds(item.sourceReceiptIds, render.sourceIds)}; confidence=${formatConfidence(item.confidence)}`);
+      const ids = [
+        ...(item.nodeIds ?? []).map((id) => render.nodeIds.get(id) ?? id),
+        ...(item.claimIds ?? []).map((id) => render.claimIds.get(id) ?? id),
+      ];
+      const grounding = item.sourceReceiptIds.length ? 'receipt_grounded' : item.advisory ? 'advisory_uncertain' : 'unknown';
+      lines.push(`- [T-${index + 1}] ${item.date} ${item.kind}: ${item.label}; refs=${formatRawIds(ids)}; sources=${formatIds(item.sourceReceiptIds, render.sourceIds)}; valid=${item.validFrom ?? item.date}..${item.validTo ?? 'open'}; confidence=${formatConfidence(item.confidence)}; grounding=${grounding}`);
+    }
+  }
+  lines.push('timeline_edges:');
+  const selectedTimelineIds = new Set(selection.timeline.map((item) => item.id));
+  const edges = temporalTimeline.edges.filter((edge) => selectedTimelineIds.has(edge.source) && selectedTimelineIds.has(edge.target));
+  if (!edges.length) {
+    lines.push('- none: no temporal or causal timeline edges selected.');
+  } else {
+    for (const edge of edges.slice(0, temporalIntent ? 24 : 8)) {
+      lines.push(`- ${edge.source} -[${edge.relation}]-> ${edge.target}; sources=${formatIds(edge.sourceReceiptIds, render.sourceIds)}; confidence=${formatConfidence(edge.confidence)}; grounding=${edge.grounding}`);
     }
   }
   lines.push('stale_or_expired:');
@@ -381,9 +415,13 @@ function enforceRenderedTokenBudget(
   input: BuildAgentContextPacketInput,
 ): AgentContextSelectionResult {
   const budget = agentContextBudgetForTier(input.budgetTier);
+  const temporalTimeline = buildTemporalTimeline({
+    capsule: input.capsule,
+    requestTime: input.requestTime,
+  });
   let current: AgentContextSelectionResult = cloneSelection(selection);
   let render = buildRenderContext(current);
-  while (estimateTokens(renderPacket(input, current, render)) > budget.maxTokens) {
+  while (estimateTokens(renderPacket(input, current, render, temporalTimeline)) > budget.maxTokens) {
     const removed = removeLeastUsefulRow(current);
     if (!removed) break;
     current = {
@@ -490,6 +528,11 @@ function formatNodeRef(id: string, node: NormalizedGraphNode | undefined, render
 function formatIds(ids: string[], map: Map<string, string>): string {
   if (!ids.length) return '[]';
   return `[${ids.map((id) => map.get(id) ?? id).join(', ')}]`;
+}
+
+function formatRawIds(ids: string[]): string {
+  if (!ids.length) return '[]';
+  return `[${ids.join(', ')}]`;
 }
 
 function formatConfidence(value: number | null | undefined): string {

@@ -8,11 +8,12 @@ import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/
 import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 import { buildWorkIntentPlan, type WorkIntentCapsuleInput, type WorkIntentMode, type WorkIntentPlan } from '@/lib/ai/work-intent-router';
 import { buildAskTurnPlan, type AskTurnPlan } from '@/lib/ai/ask-turn-plan';
+import { isTemporalIntent } from '@/lib/context/temporal-timeline';
 
 export type AskAgenticMode = 'direct_with_receipts' | 'queue_agent_run';
 export type AskOrchestrationComplexity = 'simple' | 'standard' | 'deep';
 export type AskSupervisorAction = 'direct_answer' | 'queue_agent_run';
-export type AskOrchestrationStageName = 'capsule' | 'triage' | 'agent_router' | 'model_tier' | 'tool_router' | 'language_policy' | 'worker' | 'draft';
+export type AskOrchestrationStageName = 'capsule' | 'triage' | 'timeline' | 'agent_router' | 'model_tier' | 'tool_router' | 'language_policy' | 'worker' | 'draft';
 
 export interface AskOrchestrationStage {
   stage: AskOrchestrationStageName;
@@ -90,6 +91,12 @@ export interface AskConversationOrchestrationReceipt {
     groundingPosture: string;
     degradedReason: string | null;
   };
+  temporal: {
+    required: boolean;
+    knowledgeProduct: 'timeline' | null;
+    packetMode: 'expanded_temporal_frame' | 'standard_temporal_frame';
+    reasons: string[];
+  };
   generationBudget: AskGenerationBudgetReceipt;
   languagePolicyReview: AskLanguagePolicyReviewReceipt;
   researchModePresets: AskResearchModePreset[];
@@ -110,6 +117,7 @@ export interface AskConversationOrchestrationReceipt {
 export type AskOrchestrationStatusId =
   | 'context'
   | 'triage'
+  | 'timeline'
   | 'agent'
   | 'documents'
   | 'model-tier'
@@ -189,6 +197,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
     contextHealth: input.contextReceipt.health,
   });
   const complexity = classifyComplexity(input.prompt, input.intent, input.contextReceipt, input.activeGapCount ?? 0);
+  const temporal = buildTemporalTriageReceipt(input.prompt);
   const routingDecision = buildTacitusRoutingDecision({
     prompt: input.prompt,
     intent: input.intent,
@@ -255,6 +264,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
     sourcePreviewCount: input.sourcePreviewCount,
     activeGapCount,
     contextHealth: input.contextReceipt.health,
+    temporalRequired: temporal.required,
   });
   const triageDecision = {
     stepId: 'triage-decision' as const,
@@ -314,6 +324,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
       blockedToolIds,
     },
     grounding,
+    temporal,
     generationBudget,
     languagePolicyReview,
     researchModePresets: researchModePresetsFor(input.intent, complexity),
@@ -339,6 +350,11 @@ export function buildAskConversationOrchestrationReceipt(input: {
         status: 'ok',
         detail: `${input.intent.replace(/_/g, ' ')} request classified as ${complexity}; ${workflowPlan.workflowKind.replace(/_/g, ' ')} workflow selected.`,
       },
+      ...(temporal.required ? [{
+        stage: 'timeline' as const,
+        status: 'ok' as const,
+        detail: 'Temporal intent detected; build a source-cited ordered timeline before drafting.',
+      }] : []),
       {
         stage: 'agent_router',
         status: 'ok',
@@ -436,6 +452,16 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       detail: safeStatusDetail(`${receipt.triage.intent.replace(/_/g, ' ')} turn classified as ${receipt.triage.complexity}; ${receipt.triage.workflowKind.replace(/_/g, ' ')} workflow selected.`),
       agentLabel: policyAgent?.label ?? receipt.routingDecision.userSafeLabels.policyAgent,
     },
+    ...(receipt.temporal.required ? [{
+      type: 'orchestrationStatus' as const,
+      id: 'timeline' as const,
+      label: 'Building timeline',
+      status: 'complete' as const,
+      detail: safeStatusDetail('Source-cited temporal ontology requested; ordered timeline and causal links attached to the context packet.'),
+      sourceCount: receipt.capsule.sourcePreviewCount,
+      capsuleCount: receipt.capsule.capsuleId ? 1 : 0,
+      warningCount,
+    }] : []),
     {
       type: 'orchestrationStatus',
       id: 'agent',
@@ -556,6 +582,18 @@ function buildAskLanguagePolicyReview(input: {
   };
 }
 
+function buildTemporalTriageReceipt(prompt: string): AskConversationOrchestrationReceipt['temporal'] {
+  const required = isTemporalIntent(prompt);
+  return {
+    required,
+    knowledgeProduct: required ? 'timeline' : null,
+    packetMode: required ? 'expanded_temporal_frame' : 'standard_temporal_frame',
+    reasons: required
+      ? ['temporal_intent_detected', 'ordered_receipt_grounded_timeline_required']
+      : [],
+  };
+}
+
 function researchModePresetsFor(intent: AskIntent, complexity: AskOrchestrationComplexity): AskResearchModePreset[] {
   const presets: AskResearchModePreset[] = ['policy-language-check'];
   if (intent === 'sourceability_review' || complexity === 'deep') presets.push('sourceability-review', 'evidence-annex');
@@ -619,6 +657,7 @@ function buildTriageReasons(input: {
   sourcePreviewCount: number;
   activeGapCount: number;
   contextHealth: AskContextReceipt['health'];
+  temporalRequired?: boolean;
 }): string[] {
   const reasons = [
     `intent:${input.intent}`,
@@ -628,6 +667,7 @@ function buildTriageReasons(input: {
   if (input.sourcePreviewCount > 0) reasons.push(`sources:${input.sourcePreviewCount}`);
   if (input.activeGapCount > 0) reasons.push(`gaps:${input.activeGapCount}`);
   if (input.complexity === 'deep') reasons.push('deep/current/multi-source language detected');
+  if (input.temporalRequired) reasons.push('temporal:timeline_required');
   return reasons;
 }
 

@@ -75,6 +75,7 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
       packetText: packet.packetText,
       selectedCounts: selectedCounts(packet.selected),
       omitted: packet.omitted,
+      temporalTimeline: packet.temporalTimeline,
       groundingMap: buildUiGroundingMap(packet.groundingMap, packet.selected),
       riskFlags: deriveRiskFlags(packet.selected),
     });

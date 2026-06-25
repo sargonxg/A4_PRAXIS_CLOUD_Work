@@ -263,6 +263,36 @@ describe('Ask PRAXIS conversation orchestrator', () => {
     });
   });
 
+  it('triggers explicit temporal timeline mode for sequence and over-time asks', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Build a source-cited timeline showing when the ceasefire commitments expired and how access escalated over time.',
+      intent: 'normal_answer',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 5 }),
+      sourcePreviewCount: 3,
+      activeGapCount: 0,
+    });
+
+    expect(receipt.temporal).toMatchObject({
+      required: true,
+      knowledgeProduct: 'timeline',
+      packetMode: 'expanded_temporal_frame',
+    });
+    expect(receipt.triage.reasons).toContain('temporal:timeline_required');
+    expect(receipt.stages).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        stage: 'timeline',
+        detail: 'Temporal intent detected; build a source-cited ordered timeline before drafting.',
+      }),
+    ]));
+    expect(buildAskOrchestrationStatusEvents(receipt)).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        id: 'timeline',
+        label: 'Building timeline',
+        status: 'complete',
+      }),
+    ]));
+  });
+
   it('approval-gates high-risk tool routes while preserving the answer path', () => {
     const receipt = buildAskConversationOrchestrationReceipt({
       prompt: 'Update the graph and export this externally after the answer.',

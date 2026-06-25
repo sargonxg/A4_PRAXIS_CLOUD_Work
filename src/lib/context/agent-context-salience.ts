@@ -5,6 +5,7 @@ import { getPathTemplatesForOntology } from '@/lib/ontology/path-templates';
 import type { OntologyEdgeType, OntologyId } from '@/lib/ontology/types';
 import { isOntologyId } from '@/lib/ontology/types';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import { buildTemporalTimeline } from '@/lib/context/temporal-timeline';
 
 export type AgentContextBudgetTier = 'tiny' | 'standard' | 'expanded';
 export type OmittedContextReason = 'low_relevance' | 'stale' | 'unsupported' | 'duplicate' | 'budget';
@@ -92,6 +93,11 @@ export interface NormalizedTimelineAnchor {
   kind: string;
   sourceReceiptIds: string[];
   confidence: number | null;
+  validFrom?: string | null;
+  validTo?: string | null;
+  nodeIds?: string[];
+  claimIds?: string[];
+  advisory?: boolean;
 }
 
 export interface NormalizedCausalLink {
@@ -147,6 +153,7 @@ export interface AgentContextBudget {
   maxSources: number;
   maxPaths: number;
   maxCausalLinks: number;
+  maxTimelineItems: number;
   includeSourceIndex: boolean;
 }
 
@@ -155,6 +162,7 @@ export interface SelectAgentContextSubgraphInput {
   userQuery?: string | null;
   budgetTier: AgentContextBudgetTier;
   requestTime: string;
+  temporalIntent?: boolean;
 }
 
 const BUDGETS: Record<AgentContextBudgetTier, AgentContextBudget> = {
@@ -167,6 +175,7 @@ const BUDGETS: Record<AgentContextBudgetTier, AgentContextBudget> = {
     maxSources: 8,
     maxPaths: 3,
     maxCausalLinks: 3,
+    maxTimelineItems: 3,
     includeSourceIndex: false,
   },
   standard: {
@@ -178,6 +187,7 @@ const BUDGETS: Record<AgentContextBudgetTier, AgentContextBudget> = {
     maxSources: 20,
     maxPaths: 6,
     maxCausalLinks: 8,
+    maxTimelineItems: 8,
     includeSourceIndex: true,
   },
   expanded: {
@@ -189,6 +199,7 @@ const BUDGETS: Record<AgentContextBudgetTier, AgentContextBudget> = {
     maxSources: 40,
     maxPaths: 12,
     maxCausalLinks: 16,
+    maxTimelineItems: 16,
     includeSourceIndex: true,
   },
 };
@@ -275,12 +286,34 @@ export function selectAgentContextSubgraph(input: SelectAgentContextSubgraphInpu
     .map(capCausalConfidence)
     .sort((a, b) => compareNumber(b.confidence, a.confidence) || a.id.localeCompare(b.id))
     .slice(0, budget.maxCausalLinks);
+  const timelineLimit = input.temporalIntent
+    ? input.budgetTier === 'tiny' ? 8 : input.budgetTier === 'standard' ? 24 : 40
+    : budget.maxTimelineItems;
+  const timeline = buildTemporalTimeline({
+    capsule: input.capsule,
+    requestTime: input.requestTime,
+  }).items
+    .map((item): NormalizedTimelineAnchor => ({
+      id: item.id,
+      label: item.label,
+      date: item.date,
+      kind: item.kind,
+      sourceReceiptIds: item.sourceReceiptIds,
+      confidence: item.confidence,
+      validFrom: item.validFrom,
+      validTo: item.validTo,
+      nodeIds: item.nodeIds,
+      claimIds: item.claimIds,
+      advisory: item.advisory,
+    }))
+    .slice(0, timelineLimit);
   const sourceIds = uniqueStrings([
     ...selectedClaims.flatMap((claim) => [...claim.sourceReceiptIds, ...claim.contradicts]),
     ...selectedNodes.flatMap((node) => node.sourceReceiptIds),
     ...selectedEdges.flatMap((edge) => edge.sourceReceiptIds),
     ...paths.flatMap((path) => path.sourceReceiptIds),
     ...causalLinks.flatMap((link) => link.evidenceRefs),
+    ...timeline.flatMap((item) => item.sourceReceiptIds),
   ]);
   const selectedSources = sourceIds
     .map((id) => sourceById.get(id) ?? sourceFromId(id))
@@ -296,9 +329,7 @@ export function selectAgentContextSubgraph(input: SelectAgentContextSubgraphInpu
     claims: selectedClaims,
     sources: selectedSources,
     paths,
-    timeline: normalizeTimeline(input.capsule)
-      .sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id))
-      .slice(0, input.budgetTier === 'tiny' ? 3 : input.budgetTier === 'standard' ? 8 : 16),
+    timeline,
     causalLinks,
     omitted: dedupeOmitted(omitted),
     budget,
@@ -527,23 +558,6 @@ function normalizeClaims(
     });
   }
   return claims;
-}
-
-function normalizeTimeline(capsule: PraxisCapsule): NormalizedTimelineAnchor[] {
-  const grounding = firstRecord(firstRecord(capsule.v3)?.grounding);
-  const temporality = firstRecord(capsule.temporality, grounding?.temporality);
-  return arrayOfRecords(temporality?.timelineAnchors).flatMap((anchor, index) => {
-    const date = cleanString(anchor.date);
-    if (!date) return [];
-    return [{
-      id: cleanString(anchor.id) || `T-${stableHash(`${date}:${cleanString(anchor.label)}:${index}`)}`,
-      label: cleanString(anchor.label) || 'Timeline anchor',
-      date,
-      kind: cleanString(anchor.kind) || 'event',
-      sourceReceiptIds: arrayOfStrings(anchor.sourceRefs ?? anchor.sourceReceiptIds),
-      confidence: numberOrNull(anchor.confidence),
-    }];
-  });
 }
 
 function normalizeCausalLinks(capsule: PraxisCapsule): NormalizedCausalLink[] {
