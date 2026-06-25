@@ -382,7 +382,7 @@ function ContextDrawer({
               Attach context
             </Link>
             <Link
-              href="/login?mode=signup&redirect=%2Fapp%2Fcapsules"
+              href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository"
               className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               Import
@@ -414,11 +414,11 @@ function ContextDrawer({
             No capsules attached yet. Ask PRAXIS can still answer directly.
           </p>
           <Link
-            href="/login?mode=signup&redirect=%2Fapp%2Fcapsules"
+            href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository"
             className="mt-2 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
           >
             <Boxes className="h-3.5 w-3.5" />
-            Start from a capsule
+            Pick capsule
           </Link>
         </div>
       </section>
@@ -502,11 +502,11 @@ function ContextDrawer({
                 No capsules attached yet. Ask PRAXIS can still answer directly.
               </p>
               <Link
-                href="/app/capsules"
+                href="/app/capsules?lane=repository"
                 className="mt-2 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Boxes className="h-3.5 w-3.5" />
-                Start from a capsule
+                Pick capsule
               </Link>
             </div>
           )}

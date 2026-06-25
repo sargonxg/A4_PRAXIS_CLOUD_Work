@@ -248,9 +248,9 @@ export function AskContextBar({
                   <Wand2 className="h-3.5 w-3.5" />
                   Build context
                 </button>
-                <Link href="/app/capsules" className={actionClassName(dark)} title="Open saved context in the capsule repository">
+                <Link href="/app/capsules?lane=repository" className={actionClassName(dark)} title="Pick a capsule from the repository">
                   <LibraryBig className="h-3.5 w-3.5" />
-                  Open context
+                  Pick capsule
                 </Link>
                 <ApprovalInboxButton dark={dark} />
                 <button
@@ -314,9 +314,9 @@ export function AskContextBar({
                       <Wand2 className="h-3.5 w-3.5" />
                       Build context
                     </button>
-                    <Link href="/app/capsules" role="menuitem" onClick={() => setActionsOpen(false)} className={cn(actionClassName(dark), 'w-full justify-start')}>
+                    <Link href="/app/capsules?lane=repository" role="menuitem" onClick={() => setActionsOpen(false)} className={cn(actionClassName(dark), 'w-full justify-start')}>
                       <LibraryBig className="h-3.5 w-3.5" />
-                      Open context
+                      Pick capsule
                     </Link>
                     <ApprovalInboxButton dark={dark} />
                     <button type="button" role="menuitem" onClick={() => { setActionsOpen(false); void clearContext(); }} disabled={saving} className={cn(actionClassName(dark), 'w-full justify-start')}>

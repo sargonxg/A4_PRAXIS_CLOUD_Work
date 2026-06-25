@@ -7,6 +7,7 @@ import {
   resolveCapsuleTaxonomy,
   type CapsuleStarterDefinition,
 } from '@/lib/product/context-capsules';
+import type { PraxisCapsule } from '@/lib/context/capsule-service';
 
 export type CapsuleLibraryCategory =
   | 'conflict'
@@ -46,11 +47,14 @@ export interface CapsuleLibraryEntry {
   title: string;
   valueProp: string;
   category: CapsuleLibraryCategory;
+  origin: 'starter' | 'user';
+  version: number | null;
   capsuleType: CapsuleStarterDefinition['category'];
   starterDomain: CapsuleStarterDefinition['domain'];
   ontologyStack: string[];
   inside: CapsuleLibraryInside;
   readinessTier: CapsuleReadinessTier;
+  searchKeywords: string[];
   ranking: {
     rank: number;
     score: number;
@@ -79,6 +83,90 @@ export function filterCapsuleLibraryEntries(
   category: CapsuleLibraryCategory | 'all',
 ): CapsuleLibraryEntry[] {
   return category === 'all' ? entries : entries.filter((entry) => entry.category === category);
+}
+
+export function filterCapsuleRepositoryEntries(
+  entries: CapsuleLibraryEntry[],
+  category: CapsuleLibraryCategory | 'all',
+  query: string,
+): CapsuleLibraryEntry[] {
+  const categoryFiltered = filterCapsuleLibraryEntries(entries, category);
+  const tokens = tokenizeSearch(query);
+  if (!tokens.length) return categoryFiltered;
+  return categoryFiltered.filter((entry) => {
+    const haystack = repositorySearchText(entry);
+    return tokens.every((token) => haystack.includes(token));
+  });
+}
+
+export function buildCapsuleRepositoryEntries(input: {
+  userCapsules?: PraxisCapsule[];
+  starterEntries?: CapsuleLibraryEntry[];
+} = {}): CapsuleLibraryEntry[] {
+  const userEntries = (input.userCapsules ?? []).map(capsuleRepositoryEntryFromCapsule);
+  const userIds = new Set(userEntries.map((entry) => entry.id));
+  const starterEntries = (input.starterEntries ?? CAPSULE_LIBRARY_ENTRIES)
+    .filter((entry) => !userIds.has(entry.id));
+  return [...userEntries, ...starterEntries];
+}
+
+export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): CapsuleLibraryEntry {
+  const refs = capsule.coreRefs;
+  const tags = capsule.community?.tags ?? [];
+  const ontologyStack = uniqueStrings([
+    ...ontologyIdsForCapsule(capsule),
+    capsule.activeOntologyStackId ?? null,
+    ...tags.filter((tag) => /ontology|aco:|actor|claim|source|event|narrative/i.test(tag)),
+  ]).slice(0, 6);
+  const sourceRefs = Array.isArray(capsule.sourceRefs) ? capsule.sourceRefs.length : 0;
+  const claims = claimsCountForCapsule(capsule);
+  const graphNodes = capsule.graphStats?.nodeCount ?? 0;
+  const graphEdges = capsule.graphStats?.edgeCount ?? 0;
+  const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
+
+  return {
+    id: capsule.capsuleId,
+    title: capsule.label,
+    valueProp: cleanOneLine(capsule.summary || capsule.trust?.summary || 'Saved user capsule.'),
+    category: libraryCategoryForCapsule(capsule),
+    origin: 'user',
+    version: capsule.version ?? null,
+    capsuleType: capsuleTypeForCapsule(capsule),
+    starterDomain: domainForCapsule(capsule),
+    ontologyStack: ontologyStack.length ? ontologyStack : ['workspace context'],
+    inside: {
+      sources: refs.sourceCoreIds.length + refs.documentCoreIds.length + sourceRefs,
+      claims,
+      graphNodes,
+      graphEdges,
+    },
+    readinessTier: readinessTierForCapsule(capsule),
+    searchKeywords: uniqueStrings([
+      ...tags,
+      ...claimTextsForCapsule(capsule),
+      ...refs.sourceCoreIds,
+      ...refs.documentCoreIds,
+      ...(refs.toolCoreIds ?? []),
+      ...refs.outputCoreIds,
+      ...(refs.productCoreIds ?? []),
+    ]).slice(0, 80),
+    ranking: {
+      rank: 0,
+      score,
+    },
+    coreRefs: {
+      userCoreId: refs.userCoreId ?? null,
+      situationCoreId: refs.situationCoreId ?? null,
+      sourceCoreIds: refs.sourceCoreIds ?? [],
+      documentCoreIds: refs.documentCoreIds ?? [],
+      toolCoreIds: refs.toolCoreIds ?? [],
+      outputCoreIds: refs.outputCoreIds ?? [],
+      productCoreIds: refs.productCoreIds ?? [],
+      objectiveCoreIds: refs.objectiveCoreIds ?? [],
+      graphCoreId: refs.graphCoreId ?? null,
+      timeCoreId: refs.timeCoreId ?? null,
+    },
+  };
 }
 
 export function getCapsuleLibraryEntry(id: string): CapsuleLibraryEntry | null {
@@ -130,6 +218,8 @@ function libraryEntryFromStarter(
     title: starter.label,
     valueProp: cleanOneLine(starter.summary),
     category,
+    origin: 'starter',
+    version: null,
     capsuleType: starter.category,
     starterDomain: starter.domain,
     ontologyStack,
@@ -140,6 +230,13 @@ function libraryEntryFromStarter(
       graphEdges,
     },
     readinessTier: readinessTier(starter.readinessStars, ranking.score),
+    searchKeywords: uniqueStrings([
+      ...starter.tags,
+      ...starter.sourcePack.flatMap((source) => [source.id, source.label, source.publisher]),
+      ...starter.recommendedToolIds,
+      ...starter.outputProductIds,
+      starter.summary,
+    ]).slice(0, 80),
     ranking: {
       rank: ranking.rank,
       score: ranking.score,
@@ -171,6 +268,31 @@ function libraryEntryFromStarter(
   };
 }
 
+function libraryCategoryForCapsule(capsule: PraxisCapsule): CapsuleLibraryCategory {
+  const starterCategory = categoryFromUnknown(capsule.starterSnapshot);
+  if (starterCategory) return starterCategory;
+  const text = [
+    capsule.capsuleId,
+    capsule.label,
+    capsule.summary,
+    capsule.scope,
+    ...capsule.community.tags,
+    domainForCapsule(capsule),
+    ...ontologyIdsForCapsule(capsule),
+  ].join(' ').toLowerCase();
+  return libraryCategoryForText(text) ?? 'governance';
+}
+
+function categoryFromUnknown(value: unknown): CapsuleLibraryCategory | null {
+  if (!isRecord(value)) return null;
+  return libraryCategoryForText([
+    stringFromUnknown(value.category),
+    stringFromUnknown(value.domain),
+    stringFromUnknown(value.starterId),
+    stringFromUnknown(value.label),
+  ].join(' ').toLowerCase());
+}
+
 function libraryCategoryForStarter(starter: CapsuleStarterDefinition): CapsuleLibraryCategory | null {
   const haystack = [
     starter.starterId,
@@ -179,14 +301,18 @@ function libraryCategoryForStarter(starter: CapsuleStarterDefinition): CapsuleLi
     ...starter.tags,
   ].join(' ').toLowerCase();
 
+  return libraryCategoryForText(haystack);
+}
+
+function libraryCategoryForText(haystack: string): CapsuleLibraryCategory | null {
   if (matchesAny(haystack, ['mediation', 'mediator', 'negotiation', 'batna', 'zopa', 'ceasefire-monitoring'])) return 'mediation';
-  if (matchesAny(haystack, ['human-rights', 'accountability', 'rights', 'ihl', 'ohchr'])) return 'human-rights';
+  if (matchesAny(haystack, ['human-rights', 'human rights', 'accountability', 'rights', 'ihl', 'ohchr'])) return 'human-rights';
   if (matchesAny(haystack, ['humanitarian', 'access', 'displacement', 'ocha', 'reliefweb', 'protection'])) return 'humanitarian';
-  if (starter.domain === 'finance' || starter.domain === 'critical-minerals' || starter.domain === 'sustainability' || starter.domain === 'exposure-mapping' || matchesAny(haystack, ['economic', 'sanctions', 'debt', 'trade', 'cbam', 'market'])) return 'economic';
+  if (matchesAny(haystack, ['finance', 'critical-minerals', 'sustainability', 'exposure-mapping', 'economic', 'sanctions', 'debt', 'trade', 'cbam', 'market'])) return 'economic';
   if (matchesAny(haystack, ['legal', 'mandate', 'compliance', 'rule-of-law', 'treaty'])) return 'legal';
   if (matchesAny(haystack, ['narrative', 'media', 'information', 'disinformation', 'integrity', 'cyber'])) return 'narrative';
   if (matchesAny(haystack, ['security', 'defence', 'armed-conflict', 'war', 'escalation', 'houthi', 'baltic', 'resilience'])) return 'security';
-  if (starter.domain === 'ai-governance' || starter.domain === 'policy-review' || starter.domain === 'public-health' || starter.domain === 'election-integrity' || matchesAny(haystack, ['governance', 'public-sector', 'regulatory', 'implementation'])) return 'governance';
+  if (matchesAny(haystack, ['ai-governance', 'policy-review', 'public-health', 'election-integrity', 'governance', 'public-sector', 'regulatory', 'implementation'])) return 'governance';
   if (matchesAny(haystack, ['conflict', 'crisis', 'diplomacy', 'stabilization', 'transition', 'normalization'])) return 'conflict';
   return null;
 }
@@ -206,6 +332,92 @@ function cleanOneLine(value: string): string {
   return text.length > 150 ? `${text.slice(0, 147).trimEnd()}...` : text;
 }
 
+function repositorySearchText(entry: CapsuleLibraryEntry): string {
+  return [
+    entry.id,
+    entry.title,
+    entry.valueProp,
+    entry.category,
+    entry.origin,
+    entry.capsuleType,
+    entry.starterDomain,
+    entry.readinessTier,
+    ...entry.searchKeywords,
+    ...entry.ontologyStack,
+    entry.coreRefs.userCoreId,
+    entry.coreRefs.situationCoreId,
+    entry.coreRefs.graphCoreId,
+    entry.coreRefs.timeCoreId,
+    ...entry.coreRefs.sourceCoreIds,
+    ...entry.coreRefs.documentCoreIds,
+    ...entry.coreRefs.toolCoreIds,
+    ...entry.coreRefs.outputCoreIds,
+    ...entry.coreRefs.productCoreIds,
+    ...entry.coreRefs.objectiveCoreIds,
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function tokenizeSearch(value: string): string[] {
+  return value.toLowerCase().split(/\s+/).map((token) => token.trim()).filter(Boolean);
+}
+
+function ontologyIdsForCapsule(capsule: PraxisCapsule): string[] {
+  return uniqueStrings([
+    ...stringListFromUnknown(capsule.v3?.grounding?.ontologyBinding?.ontologyIds),
+    ...stringListFromUnknown(capsule.v3?.grounding?.ontologyBinding?.taxonomyPath),
+    stringFromUnknown(capsule.v3?.grounding?.ontologyBinding?.domainId),
+  ]);
+}
+
+function domainForCapsule(capsule: PraxisCapsule): CapsuleStarterDefinition['domain'] {
+  const domain = stringFromUnknown(capsule.v3?.grounding?.ontologyBinding?.domainId)
+    ?? stringFromUnknown(capsule.starterSnapshot && isRecord(capsule.starterSnapshot) ? capsule.starterSnapshot.domain : null)
+    ?? capsule.scope;
+  return domain as CapsuleStarterDefinition['domain'];
+}
+
+function capsuleTypeForCapsule(capsule: PraxisCapsule): CapsuleStarterDefinition['category'] {
+  if (capsule.scope === 'user' || capsule.coreRefs.userCoreId) return 'user';
+  if ((capsule.coreRefs.toolCoreIds?.length ?? 0) > 0 && !capsule.coreRefs.situationCoreId) return 'tool';
+  if ((capsule.coreRefs.outputCoreIds?.length ?? 0) + (capsule.coreRefs.productCoreIds?.length ?? 0) > 0 && !capsule.coreRefs.situationCoreId) return 'output';
+  return 'situation';
+}
+
+function claimsCountForCapsule(capsule: PraxisCapsule): number {
+  const v3Claims = capsule.v3?.claimLedger?.allClaims;
+  if (Array.isArray(v3Claims) && v3Claims.length) return v3Claims.length;
+  return Array.isArray(capsule.claimLedger) ? capsule.claimLedger.length : 0;
+}
+
+function claimTextsForCapsule(capsule: PraxisCapsule): string[] {
+  const v3Claims = capsule.v3?.claimLedger?.allClaims;
+  const claims = Array.isArray(v3Claims) && v3Claims.length ? v3Claims : capsule.claimLedger;
+  if (!Array.isArray(claims)) return [];
+  return claims.flatMap((claim) => {
+    if (!isRecord(claim)) return [];
+    return [stringFromUnknown(claim.text) ?? stringFromUnknown(claim.claim)].filter((value): value is string => Boolean(value));
+  });
+}
+
+function readinessTierForCapsule(capsule: PraxisCapsule): CapsuleReadinessTier {
+  const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
+  if (score >= 88) return 'verified';
+  if (score >= 70) return 'ready';
+  return 'review';
+}
+
 function uniqueStrings(values: Array<string | null | undefined>): string[] {
   return Array.from(new Set(values.filter((value): value is string => Boolean(value?.trim())).map((value) => value.trim())));
+}
+
+function stringFromUnknown(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
+function stringListFromUnknown(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0) : [];
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

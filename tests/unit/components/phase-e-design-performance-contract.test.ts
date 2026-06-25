@@ -19,7 +19,8 @@ describe('Phase E design, mobile, onboarding, and performance contract', () => {
     expect(source).toContain('sm:hidden');
     expect(source).toContain('hidden sm:flex');
     expect(source).toContain('Build context');
-    expect(source).toContain('Open context');
+    expect(source).toContain('Pick capsule');
+    expect(source).toContain('/app/capsules?lane=repository');
     expect(source).toContain('Clear context');
   });
 

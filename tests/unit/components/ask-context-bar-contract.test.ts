@@ -44,7 +44,7 @@ describe('Ask context bar contract', () => {
       'Readiness',
       'Attach {dockSlots.slots.find',
       'Build context',
-      'Open context',
+      'Pick capsule',
       'Clear context',
       'CapsuleListPicker',
       'InlineQuickContextBuilder',
@@ -62,7 +62,7 @@ describe('Ask context bar contract', () => {
 
     expect(barSource).toContain('data-testid="public-context-sign-in-affordance"');
     expect(barSource).toContain('/login?mode=signup&redirect=%2Fapp');
-    expect(barSource).toContain('/app/capsules');
+    expect(barSource).toContain('/app/capsules?lane=repository');
     expect(barSource).not.toContain('/app/context-bar');
     expect(barSource).not.toContain('/app/ask-context');
 

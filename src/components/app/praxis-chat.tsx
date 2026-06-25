@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
   Bot,
+  Boxes,
   ExternalLink,
   FileOutput,
   Loader2,
@@ -453,13 +454,27 @@ export function PraxisChat({
           variant === 'floating' ? 'px-3 py-3' : 'rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/80 p-3 shadow-[var(--shadow-card)]',
         )}>
           {messages.length === 0 ? (
-            <EmptyState
-              icon={ShieldCheck}
-              label={isPublic ? 'Ask first.' : 'Ready for the next serious question.'}
-              hint={isPublic ? 'Sign in to keep the brief.' : 'Answers can show sources, gaps, and draft-ready next steps.'}
-              testId="praxis-chat-empty-state"
-              className={cn('border-emerald-100', variant === 'floating' ? 'min-h-48 bg-slate-900 text-white' : 'min-h-40')}
-            />
+            <div>
+              <EmptyState
+                icon={ShieldCheck}
+                label={isPublic ? 'Ask first.' : 'Ready for the next serious question.'}
+                hint={isPublic ? 'Sign in to keep the brief.' : 'Pick a capsule when the answer needs saved sources, ontology, and output rules.'}
+                testId="praxis-chat-empty-state"
+                className={cn('border-emerald-100', variant === 'floating' ? 'min-h-48 bg-slate-900 text-white' : 'min-h-40')}
+              />
+              <div className="mt-3 flex justify-center">
+                <Link
+                  href={isPublic ? '/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository' : '/app/capsules?lane=repository'}
+                  className={cn(
+                    'inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border px-3 text-xs font-semibold',
+                    variant === 'floating' ? 'border-slate-700 bg-slate-900 text-slate-100 hover:border-emerald-400/50' : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50',
+                  )}
+                >
+                  <Boxes className="h-3.5 w-3.5" />
+                  Pick capsule
+                </Link>
+              </div>
+            </div>
           ) : (
             <div className="grid gap-3">
               {messages.map((message) => (

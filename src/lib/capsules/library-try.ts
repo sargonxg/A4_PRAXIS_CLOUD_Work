@@ -28,7 +28,13 @@ export async function tryLibraryCapsule(
       : { status: 'failed', capsuleId: entry.id, reason: available.reason };
   }
 
-  await deps.saveStack({
+  await deps.saveStack(activeContextPatchForLibraryEntry(entry));
+
+  return { status: 'attached', capsuleId: entry.id, seeded: available.seeded };
+}
+
+export function activeContextPatchForLibraryEntry(entry: CapsuleLibraryEntry): Partial<ActiveContextStackState> {
+  return {
     stackId: entry.id || DEFAULT_CONTEXT_STACK_ID,
     capsuleId: entry.id,
     capsuleRefs: [{
@@ -37,7 +43,7 @@ export async function tryLibraryCapsule(
       role: 'primary',
       primary: true,
       order: 0,
-      version: null,
+      version: entry.version,
     }],
     userModelId: entry.coreRefs.userCoreId,
     situationId: entry.coreRefs.situationCoreId,
@@ -96,9 +102,7 @@ export async function tryLibraryCapsule(
         order,
       })),
     },
-  });
-
-  return { status: 'attached', capsuleId: entry.id, seeded: available.seeded };
+  };
 }
 
 type StarterAvailability =
