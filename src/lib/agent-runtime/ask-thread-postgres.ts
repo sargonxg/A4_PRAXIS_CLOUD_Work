@@ -213,6 +213,7 @@ export async function listAskThreadTurnsSql(input: {
 
 function rowToThread(row: QueryResultRow): AskThreadRecord {
   return {
+    ownerUid: String(row.owner_uid),
     uid: String(row.owner_uid),
     capsuleId: String(row.capsule_id),
     threadId: String(row.thread_id),
@@ -229,6 +230,7 @@ function rowToThread(row: QueryResultRow): AskThreadRecord {
 function rowToTurn(row: QueryResultRow): AskThreadTurnRecord {
   return {
     id: String(row.id),
+    ownerUid: String(row.owner_uid),
     uid: String(row.owner_uid),
     capsuleId: String(row.capsule_id),
     threadId: String(row.thread_id),

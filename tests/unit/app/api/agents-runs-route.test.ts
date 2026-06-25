@@ -103,6 +103,7 @@ describe('/api/agents/runs route', () => {
   it('passes selected context-chain cores and receipt metadata into run creation', async () => {
     mocks.createAgentRun.mockResolvedValue({
       id: 'run-1',
+      ownerUid: 'user-1',
       status: 'queued',
       capsuleId: 'cap-1',
       createdAt: '2026-05-19T12:00:00.000Z',

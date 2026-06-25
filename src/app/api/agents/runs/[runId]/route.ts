@@ -17,6 +17,7 @@ export const GET = withAuth<{ params: Promise<{ runId: string }> }>(async (_requ
   try {
     const run = await getAgentRun(user.uid, parsed.data.runId);
     if (!run) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
+    if (run.ownerUid !== user.uid) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
     const [toolCalls, approvals] = await Promise.all([
       listAgentToolCalls({ ownerUid: user.uid, runId: run.id }),
       listAgentApprovals({ ownerUid: user.uid, runId: run.id }),

@@ -116,6 +116,7 @@ export const POST = withAuth<ConversationTurnRouteContext>(async (request, user,
   const existingTitle = typeof conversationSnap.data()?.title === 'string' ? conversationSnap.data()?.title : null;
   const derivedTitle = deriveConversationTitle(parsed.data.messages);
   await conversationRef.set({
+    ownerUid: user.uid,
     conversationId: cleanConversationId,
     capsuleId: parsed.data.capsuleId,
     appliedCapsules,

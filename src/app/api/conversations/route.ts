@@ -32,7 +32,9 @@ export const GET = withAuth(async (_request, user) => {
 
   return NextResponse.json({
     persisted: true,
-    conversations: snapshot.docs.map((doc) => ({ conversationId: doc.id, ...doc.data() })),
+    conversations: snapshot.docs
+      .filter((doc) => recordOwnedBy(doc.data(), user.uid))
+      .map((doc) => ({ conversationId: doc.id, ...doc.data(), ownerUid: ownerUidOrPath(doc.data(), user.uid) })),
   });
 });
 
@@ -52,6 +54,7 @@ export const POST = withAuth(async (request, user) => {
 
   const now = new Date().toISOString();
   await ref.set({
+    ownerUid: user.uid,
     conversationId: parsed.data.conversationId,
     capsuleId: parsed.data.capsuleId,
     appliedCapsules: parsed.data.appliedCapsules,
@@ -68,3 +71,12 @@ export const POST = withAuth(async (request, user) => {
     href: `/app/conversations/${encodeURIComponent(parsed.data.conversationId)}?capsuleId=${encodeURIComponent(parsed.data.capsuleId)}`,
   }, { status: 201 });
 });
+
+function recordOwnedBy(value: Record<string, unknown> | undefined, uid: string): boolean {
+  const ownerUid = typeof value?.ownerUid === 'string' && value.ownerUid.trim() ? value.ownerUid.trim() : null;
+  return !ownerUid || ownerUid === uid;
+}
+
+function ownerUidOrPath(value: Record<string, unknown> | undefined, uid: string): string {
+  return typeof value?.ownerUid === 'string' && value.ownerUid.trim() ? value.ownerUid.trim() : uid;
+}

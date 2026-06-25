@@ -76,7 +76,9 @@ export async function getOutputCapsule(
 ): Promise<OutputCapsuleRecord | null> {
   const snap = await outputCapsulesCollection(uid, deps).doc(cleanId(id, 'missing')).get();
   if (!snap.exists) return null;
-  return sanitizeOutputCapsule({ ...snap.data(), id: snap.id, ownerUid: uid });
+  const data = snap.data() ?? {};
+  if (!recordOwnedBy(data, uid)) return null;
+  return sanitizeOutputCapsule({ ...data, id: snap.id, ownerUid: ownerUidOrPath(data, uid) });
 }
 
 export async function listOutputCapsules(
@@ -86,9 +88,20 @@ export async function listOutputCapsules(
 ): Promise<OutputCapsuleRecord[]> {
   const snap = await outputCapsulesCollection(uid, deps).limit(Math.max(1, Math.min(100, Math.floor(input.limit ?? 50)))).get();
   return snap.docs
-    .map((doc) => sanitizeOutputCapsule({ ...doc.data(), id: doc.id, ownerUid: uid }))
+    .map((doc) => ({ data: doc.data() ?? {}, id: doc.id }))
+    .filter(({ data }) => recordOwnedBy(data, uid))
+    .map(({ data, id }) => sanitizeOutputCapsule({ ...data, id, ownerUid: ownerUidOrPath(data, uid) }))
     .filter((record) => !input.contextCapsuleId || record.contextCapsuleId === input.contextCapsuleId)
     .filter((record) => !input.status || record.status === input.status);
+}
+
+function recordOwnedBy(value: Record<string, unknown>, uid: string): boolean {
+  const ownerUid = cleanText(value.ownerUid, 160);
+  return !ownerUid || ownerUid === uid;
+}
+
+function ownerUidOrPath(value: Record<string, unknown>, uid: string): string {
+  return cleanText(value.ownerUid, 160) || uid;
 }
 
 function sanitizeOutputCapsule(value: Record<string, unknown>): OutputCapsuleRecord {

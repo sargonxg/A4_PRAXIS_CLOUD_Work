@@ -126,9 +126,20 @@ describe('capsule service', () => {
   it('keeps owner isolation by storing capsules under each user document', async () => {
     const db = new FakeFirestore();
     await createCapsule('u1', { capsuleId: 'cap-1', coreRefs: { situationCoreId: 'sit-1' } }, deps(db));
+    db.data.set('users/u1/capsules/poisoned-cap', {
+      capsuleId: 'poisoned-cap',
+      ownerUid: 'u2',
+      label: 'Other user capsule',
+      createdAt: '2026-05-01T00:00:00.000Z',
+      updatedAt: '2026-05-01T00:00:00.000Z',
+      version: 1,
+    });
 
     expect(await getCapsule('u1', 'cap-1', deps(db))).not.toBeNull();
     expect(await getCapsule('u2', 'cap-1', deps(db))).toBeNull();
+    expect(await getCapsule('u1', 'poisoned-cap', deps(db))).toBeNull();
+    expect((await listCapsules('u1', {}, deps(db))).map((capsule) => capsule.capsuleId)).toEqual(['cap-1']);
+    expect((await listCapsuleInventory('u1', {}, deps(db))).capsules.map((capsule) => capsule.capsuleId)).toEqual(['cap-1']);
   });
 
   it('omits absent provenance notes instead of storing Firestore-rejected undefined values', async () => {

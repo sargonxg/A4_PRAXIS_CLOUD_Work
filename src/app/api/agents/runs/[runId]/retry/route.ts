@@ -17,6 +17,7 @@ export const POST = withAuth<{ params: Promise<{ runId: string }> }>(async (_req
   try {
     const source = await getAgentRun(user.uid, parsed.data.runId);
     if (!source) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
+    if (source.ownerUid !== user.uid) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
     const retryStatus = source.metadata.dispatchEnqueueStatus === 'dispatch_failed' ? 'dispatch_failed' : source.status;
     if (!canRetryAgentRunStatus(retryStatus)) {
       return NextResponse.json({ error: `Agent run cannot be retried from ${retryStatus}` }, { status: 409 });
@@ -43,7 +44,7 @@ export const POST = withAuth<{ params: Promise<{ runId: string }> }>(async (_req
     }
 
     const run = await createAgentRun({
-      ownerUid: source.ownerUid,
+      ownerUid: user.uid,
       capsuleId: source.capsuleId,
       contextStackId: source.contextStackId,
       contextPackageId: source.contextPackageId,

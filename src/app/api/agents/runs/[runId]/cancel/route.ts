@@ -16,6 +16,7 @@ export const POST = withAuth<{ params: Promise<{ runId: string }> }>(async (_req
   try {
     const run = await getAgentRun(user.uid, parsed.data.runId);
     if (!run) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
+    if (run.ownerUid !== user.uid) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
     if (!canCancelAgentRunStatus(run.status)) {
       return NextResponse.json({ error: `Agent run cannot be cancelled from ${run.status}` }, { status: 409 });
     }

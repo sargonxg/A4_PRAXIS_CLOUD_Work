@@ -366,9 +366,7 @@ async function getCapsuleForOwner(
 }
 
 function canReadCapsule(uid: string, record: CapsuleRecord): boolean {
-  return record.ownerUid === uid
-    || record.market.visibility === 'public'
-    || record.market.visibility === 'unlisted';
+  return record.ownerUid === uid;
 }
 
 function evaluatePublishGate(record: CapsuleRecord): { allowed: true } | { allowed: false; reason: string } {

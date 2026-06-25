@@ -203,6 +203,7 @@ async function listMemoDraftWork(
       .get();
     for (const doc of snap.docs) {
       const data = doc.data() as Record<string, unknown>;
+      if (!recordOwnedBy(data, uid)) continue;
       const capsuleId = stringField(data.capsuleId) ?? situationId;
       if (input.capsuleId && capsuleId !== input.capsuleId && situationId !== input.capsuleId) continue;
       const memoId = stringField(data.id) ?? stringField(data.memoId) ?? doc.id;
@@ -240,6 +241,7 @@ async function listHandoverPackageWork(
   return snap.docs
     .map((doc) => {
       const data = doc.data() as Record<string, unknown>;
+      if (!recordOwnedBy(data, uid)) return null;
       const capsuleId = stringField(data.capsuleId);
       if (input.capsuleId && capsuleId !== input.capsuleId) return null;
       const memoId = stringField(data.memoId);
@@ -278,6 +280,7 @@ async function listToolArtifactWork(
       .get();
     for (const doc of snap.docs) {
       const data = doc.data() as Record<string, unknown>;
+      if (!recordOwnedBy(data, uid)) continue;
       const capsuleId = stringField(data.capsuleId) ?? situationId;
       if (input.capsuleId && capsuleId !== input.capsuleId && situationId !== input.capsuleId) continue;
       const updatedAt = isoField(data.updatedAt) ?? isoField(data.createdAt) ?? EPOCH_ISO;
@@ -313,6 +316,7 @@ async function listAskDocumentPackWork(
   const items: CreatedWorkInternal[] = [];
   for (const conversationDoc of conversationSnap.docs) {
     const conversation = conversationDoc.data() as Record<string, unknown>;
+    if (!recordOwnedBy(conversation, uid)) continue;
     const conversationId = stringField(conversation.conversationId) ?? conversationDoc.id;
     const conversationCapsuleId = stringField(conversation.capsuleId);
     if (input.capsuleId && conversationCapsuleId && conversationCapsuleId !== input.capsuleId) continue;
@@ -325,6 +329,7 @@ async function listAskDocumentPackWork(
       .get();
     for (const turnDoc of turnSnap.docs) {
       const turn = turnDoc.data() as Record<string, unknown>;
+      if (!recordOwnedBy(turn, uid)) continue;
       const pack = documentPackFromTurn(turn);
       if (!pack) continue;
       const provenance = isRecord(pack.provenance) ? pack.provenance : {};
@@ -359,6 +364,7 @@ async function listAgentRunWork(
 ): Promise<CreatedWorkInternal[]> {
   const runs = await (deps.listRecentAgentRuns ?? listRecentAgentRuns)(uid, input.limit ?? 20);
   return runs
+    .filter((run) => run.ownerUid === uid)
     .filter((run) => !input.capsuleId || run.capsuleId === input.capsuleId)
     .map(agentRunToCreatedWork);
 }
@@ -464,6 +470,11 @@ function isoField(value: unknown): string | null {
 
 function stringField(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
+}
+
+function recordOwnedBy(value: Record<string, unknown>, uid: string): boolean {
+  const ownerUid = stringField(value.ownerUid) ?? stringField(value.uid);
+  return !ownerUid || ownerUid === uid;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

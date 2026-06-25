@@ -32,6 +32,7 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     if (!approval) return NextResponse.json({ error: 'Pending approval not found' }, { status: 404 });
     const run = await getAgentRun(user.uid, parsed.data.runId);
     if (!run) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
+    if (run.ownerUid !== user.uid) return NextResponse.json({ error: 'Agent run not found' }, { status: 404 });
 
     if (decision === 'rejected') {
       const failed = run.status === 'waiting_approval'

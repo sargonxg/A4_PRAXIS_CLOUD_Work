@@ -46,6 +46,26 @@ describe('OutputCapsule storage', () => {
 
     expect(saved).toBeNull();
   });
+
+  it('does not return OutputCapsules whose stored owner disagrees with the requested user', async () => {
+    const db = new FakeFirestore();
+    db.data.set('users/u1/outputCapsules/poisoned-output', {
+      id: 'poisoned-output',
+      ownerUid: 'u2',
+      templateId: 'country-one-pager',
+      payload: { title: 'Wrong user output' },
+      citations: [],
+      gaps: [],
+      inputCapsules: [],
+      provenance: { createdBy: 'test', toolIds: [], agentIds: [] },
+      quality: { citationCoverage: 0, unsupportedClaimCount: 0, gapCount: 0, sourceabilityStatus: 'not-run', humanApproved: false, blockers: [] },
+      createdAt: '2026-05-16T00:00:00.000Z',
+      updatedAt: '2026-05-16T00:00:00.000Z',
+    });
+
+    await expect(getOutputCapsule('u1', 'poisoned-output', deps(db))).resolves.toBeNull();
+    await expect(listOutputCapsules('u1', {}, deps(db))).resolves.toEqual([]);
+  });
 });
 
 function deps(db: FakeFirestore) {

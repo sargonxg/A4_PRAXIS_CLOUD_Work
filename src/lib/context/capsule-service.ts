@@ -873,7 +873,9 @@ function importedCapsuleInputPatch(input: CreateCapsuleInput): Record<string, un
 export async function getCapsule(uid: string, capsuleId: string, deps?: CapsuleServiceDeps): Promise<PraxisCapsule | null> {
   const snap = await capsulesCollection(uid, deps).doc(cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID)).get();
   if (!snap.exists) return null;
-  return sanitizeCapsule(snap.data());
+  const data = snap.data() ?? {};
+  if (!recordOwnedBy(data, uid)) return null;
+  return sanitizeCapsule({ ...data, ownerUid: ownerUidOrPath(data, uid) });
 }
 
 export async function listCapsules(
@@ -883,7 +885,9 @@ export async function listCapsules(
 ): Promise<PraxisCapsule[]> {
   const snap = await capsulesCollection(uid, deps).get();
   const capsules = snap.docs
-    .map((doc) => sanitizeCapsule({ ...doc.data(), capsuleId: doc.id }))
+    .map((doc) => ({ data: { ...doc.data(), capsuleId: doc.id } }))
+    .filter(({ data }) => recordOwnedBy(data, uid))
+    .map(({ data }) => sanitizeCapsule({ ...data, ownerUid: ownerUidOrPath(data, uid) }))
     .filter((capsule) => input.includeArchived || !capsule.archivedAt);
   const sorted = sortCapsulesForLibrary(capsules);
   if (!input.situationId) return sorted;
@@ -905,6 +909,8 @@ export async function listCapsuleInventory(
       const raw = { ...doc.data(), capsuleId: doc.id };
       return { raw, capsule: sanitizeCapsule(raw) };
     })
+    .filter(({ raw }) => recordOwnedBy(raw, uid))
+    .map(({ raw }) => ({ raw: { ...raw, ownerUid: ownerUidOrPath(raw, uid) }, capsule: sanitizeCapsule({ ...raw, ownerUid: ownerUidOrPath(raw, uid) }) }))
     .filter(({ capsule }) => {
       if (!input.situationId) return true;
       return capsule.coreRefs.situationCoreId === input.situationId ||
@@ -917,6 +923,15 @@ export async function listCapsuleInventory(
   const capsules = sortCapsulesForLibrary(storedCapsules)
     .filter((capsule) => input.includeArchived || !capsule.archivedAt);
   return { capsules, summary };
+}
+
+function recordOwnedBy(value: Record<string, unknown>, uid: string): boolean {
+  const ownerUid = stringOrNull(value.ownerUid);
+  return !ownerUid || ownerUid === uid;
+}
+
+function ownerUidOrPath(value: Record<string, unknown>, uid: string): string {
+  return stringOrNull(value.ownerUid) ?? uid;
 }
 
 export function createEmptyCapsuleInventorySummary(): CapsuleInventorySummary {

@@ -3,6 +3,7 @@ import { getAdminDbOrThrow } from './admin';
 
 export interface AskThreadTurnRecord {
   id: string;
+  ownerUid?: string;
   uid: string;
   capsuleId: string;
   threadId: string;
@@ -19,6 +20,7 @@ export interface AskThreadTurnRecord {
 }
 
 export interface AskThreadRecord {
+  ownerUid?: string;
   uid: string;
   capsuleId: string;
   threadId: string;
@@ -74,6 +76,7 @@ export async function persistAskThreadTurn(input: PersistAskThreadTurnInput): Pr
 
   const turn: AskThreadTurnRecord = {
     id: turnId,
+    ownerUid: input.uid,
     uid: input.uid,
     capsuleId,
     threadId,
@@ -91,6 +94,7 @@ export async function persistAskThreadTurn(input: PersistAskThreadTurnInput): Pr
 
   await db.batch()
     .set(threadRef, {
+      ownerUid: input.uid,
       uid: input.uid,
       capsuleId,
       threadId,
@@ -130,11 +134,13 @@ export async function listAskThreadTurns(input: {
   ]);
 
   const thread = threadSnap.exists ? normalizeThread(threadSnap.data(), input.uid, capsuleId, threadId) : null;
+  const safeThread = threadSnap.exists && recordOwnedBy(threadSnap.data(), input.uid) ? thread : null;
   const turns = turnsSnap.docs
+    .filter((doc) => recordOwnedBy(doc.data(), input.uid))
     .map((doc) => normalizeTurn(doc.id, doc.data(), input.uid, capsuleId, threadId))
     .reverse();
 
-  return { thread, turns };
+  return { thread: safeThread, turns };
 }
 
 function normalizeThread(
@@ -144,6 +150,7 @@ function normalizeThread(
   threadId: string,
 ): AskThreadRecord {
   return {
+    ownerUid: uid,
     uid,
     capsuleId,
     threadId,
@@ -166,6 +173,7 @@ function normalizeTurn(
 ): AskThreadTurnRecord {
   return {
     id,
+    ownerUid: uid,
     uid,
     capsuleId,
     threadId,
@@ -189,4 +197,11 @@ function cleanDocId(value: string | null | undefined, fallback: string): string 
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function recordOwnedBy(data: DocumentData | undefined, uid: string): boolean {
+  const ownerUid = typeof data?.ownerUid === 'string' && data.ownerUid.trim() ? data.ownerUid.trim() : null;
+  const recordUid = typeof data?.uid === 'string' && data.uid.trim() ? data.uid.trim() : null;
+  const storedOwner = ownerUid ?? recordUid;
+  return !storedOwner || storedOwner === uid;
 }

@@ -24,6 +24,7 @@ import type { AutoStructuredDocument } from '@/lib/documents/auto-structure';
 
 export interface StoredDocument {
   id: string;
+  ownerUid?: string;
   title: string;
   fileType: string;
   size: number;
@@ -87,7 +88,7 @@ export async function saveDocument(
   doc: Omit<StoredDocument, 'id'>
 ): Promise<StoredDocument> {
   const ref = docsCollection(uid, situationId).doc();
-  const stored: StoredDocument = { ...doc, id: ref.id };
+  const stored: StoredDocument = { ...doc, id: ref.id, ownerUid: uid };
   await ref.set(stored);
 
   // Update situation document count
@@ -104,7 +105,9 @@ export async function getDocumentById(
   docId: string
 ): Promise<StoredDocument | null> {
   const snap = await docsCollection(uid, situationId).doc(docId).get();
-  return snap.exists ? (snap.data() as StoredDocument) : null;
+  if (!snap.exists) return null;
+  const data = snap.data() as StoredDocument;
+  return documentOwnedBy(data, uid) ? withPathOwner(data, uid) : null;
 }
 
 export async function listDocuments(
@@ -115,7 +118,10 @@ export async function listDocuments(
     .orderBy('uploadedAt', 'desc')
     .limit(100)
     .get();
-  return snap.docs.map((d) => d.data() as StoredDocument);
+  return snap.docs
+    .map((d) => d.data() as StoredDocument)
+    .filter((doc) => documentOwnedBy(doc, uid))
+    .map((doc) => withPathOwner(doc, uid));
 }
 
 export async function updateDocumentStatus(
@@ -125,6 +131,8 @@ export async function updateDocumentStatus(
   status: StoredDocument['status'],
   updates?: Partial<StoredDocument>
 ): Promise<void> {
+  const current = await getDocumentById(uid, situationId, docId);
+  if (!current) throw new Error('Document not found or owner mismatch.');
   await docsCollection(uid, situationId).doc(docId).update({ status, ...updates });
 }
 
@@ -327,4 +335,12 @@ export async function getAllDocumentText(
   }
 
   return result.trim();
+}
+
+function documentOwnedBy(doc: StoredDocument, uid: string): boolean {
+  return !doc.ownerUid || doc.ownerUid === uid;
+}
+
+function withPathOwner(doc: StoredDocument, uid: string): StoredDocument {
+  return { ...doc, ownerUid: doc.ownerUid ?? uid };
 }

@@ -172,6 +172,69 @@ describe('Created Work read model', () => {
     expect(result.items.map((item) => item.kind)).toContain('output_capsule');
     expect(result.items.every((item) => item.mode === 'demo')).toBe(true);
   });
+
+  it('filters Created Work recents to records owned by the signed-in user', async () => {
+    const db = new FakeFirestore();
+    db.set('users/u1/conversations/conv-owned', {
+      ownerUid: 'u1',
+      conversationId: 'conv-owned',
+      capsuleId: 'cap-1',
+      title: 'Owned conversation',
+      updatedAt: '2026-05-24T10:00:00.000Z',
+    });
+    db.set('users/u1/conversations/conv-owned/turns/turn-owned', {
+      ownerUid: 'u1',
+      prompt: 'Owned prompt.',
+      capsuleId: 'cap-1',
+      runtime: {
+        answerEnvelope: {
+          documentPackCandidate: {
+            title: 'Owned document pack',
+            provenance: {
+              capsuleId: 'cap-1',
+              conversationId: 'conv-owned',
+              generatedAt: '2026-05-24T10:01:00.000Z',
+            },
+          },
+        },
+      },
+      createdAt: '2026-05-24T10:01:00.000Z',
+    });
+    db.set('users/u1/conversations/conv-poisoned', {
+      ownerUid: 'u2',
+      conversationId: 'conv-poisoned',
+      capsuleId: 'cap-1',
+      title: 'Poisoned conversation',
+      updatedAt: '2026-05-24T10:02:00.000Z',
+    });
+    db.set('users/u1/conversations/conv-poisoned/turns/turn-poisoned', {
+      ownerUid: 'u2',
+      prompt: 'Other user prompt.',
+      capsuleId: 'cap-1',
+      runtime: {
+        answerEnvelope: {
+          documentPackCandidate: {
+            title: 'Other user document pack',
+            provenance: {
+              capsuleId: 'cap-1',
+              conversationId: 'conv-poisoned',
+              generatedAt: '2026-05-24T10:03:00.000Z',
+            },
+          },
+        },
+      },
+      createdAt: '2026-05-24T10:03:00.000Z',
+    });
+
+    const result = await listCreatedWork('u1', { capsuleId: 'cap-1', limit: 10 }, {
+      db: db as never,
+      listOutputCapsules: async () => [],
+      listRecentAgentRuns: async () => [],
+    });
+
+    expect(result.items.map((item) => item.title)).toEqual(['Owned document pack']);
+    expect(result.items.some((item) => item.conversationId === 'conv-poisoned')).toBe(false);
+  });
 });
 
 class FakeFirestore {

@@ -47,7 +47,7 @@ export const GET = withAuth(async (request, user) => {
   try {
     const runs = await listAgentRunsForCapsule(user.uid, capsule.capsuleId, parsed.data.limit);
     return NextResponse.json({
-      runs: runs.map(toAgentRunOutput),
+      runs: runs.filter((run) => run.ownerUid === user.uid).map(toAgentRunOutput),
       persisted: true,
       ...(capsuleResolved ? { capsuleResolved: true } : {}),
     });
@@ -98,6 +98,9 @@ export const POST = withAuth(async (request, user) => {
         executionMode: 'queued-only',
       },
     });
+    if (run.ownerUid !== user.uid) {
+      return NextResponse.json({ error: 'Agent run owner mismatch' }, { status: 500 });
+    }
     return NextResponse.json(toAgentRunOutput(run), { status: 201 });
   } catch (err) {
     return ledgerError(err);

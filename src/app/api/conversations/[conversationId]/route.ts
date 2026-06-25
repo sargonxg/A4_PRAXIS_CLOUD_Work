@@ -19,6 +19,9 @@ export const GET = withAuth<ConversationRouteContext>(async (_request, user, con
     .collection('users').doc(user.uid)
     .collection('conversations').doc(cleanConversationId);
   const conversationSnap = await conversationRef.get();
+  if (conversationSnap.exists && !recordOwnedBy(conversationSnap.data(), user.uid)) {
+    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 });
+  }
   const turnsSnap = await conversationRef
     .collection('turns')
     .orderBy('createdAt', 'asc')
@@ -28,7 +31,20 @@ export const GET = withAuth<ConversationRouteContext>(async (_request, user, con
 
   return NextResponse.json({
     persisted: true,
-    conversation: conversationSnap.exists ? { conversationId: conversationSnap.id, ...conversationSnap.data() } : null,
-    turns: turnsSnap?.docs.map((doc) => ({ turnId: doc.id, ...doc.data() })) ?? [],
+    conversation: conversationSnap.exists
+      ? { conversationId: conversationSnap.id, ...conversationSnap.data(), ownerUid: ownerUidOrPath(conversationSnap.data(), user.uid) }
+      : null,
+    turns: turnsSnap?.docs
+      .filter((doc) => recordOwnedBy(doc.data(), user.uid))
+      .map((doc) => ({ turnId: doc.id, ...doc.data(), ownerUid: ownerUidOrPath(doc.data(), user.uid) })) ?? [],
   });
 });
+
+function recordOwnedBy(value: Record<string, unknown> | undefined, uid: string): boolean {
+  const ownerUid = typeof value?.ownerUid === 'string' && value.ownerUid.trim() ? value.ownerUid.trim() : null;
+  return !ownerUid || ownerUid === uid;
+}
+
+function ownerUidOrPath(value: Record<string, unknown> | undefined, uid: string): string {
+  return typeof value?.ownerUid === 'string' && value.ownerUid.trim() ? value.ownerUid.trim() : uid;
+}

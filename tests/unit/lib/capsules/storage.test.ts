@@ -142,6 +142,26 @@ describe('capsule/v2 Firestore storage lifecycle', () => {
 
     await expect(publishCapsule('u1', 'thin-capsule', deps)).rejects.toThrow(/eval gate/i);
   });
+
+  it('does not expose another owner capsule through direct reads or list scopes', async () => {
+    const db = new FakeFirestore();
+    const deps = {
+      db: db as never,
+      now: () => new Date('2026-05-30T13:00:00.000Z'),
+      idFactory: () => 'uuid-1234',
+    };
+
+    await createCapsule('u2', {
+      id: 'other-public-capsule',
+      capsule: {
+        market: { visibility: 'public', category: 'diplomacy-negotiation', tags: ['shared'] },
+      },
+    }, deps);
+
+    await expect(getCapsule('u1', 'other-public-capsule', deps)).resolves.toBeNull();
+    await expect(listCapsules('u1', { scope: 'public' }, deps)).resolves.toEqual([]);
+    await expect(listCapsules('u1', { scope: 'org' }, deps)).resolves.toEqual([]);
+  });
 });
 
 class FakeFirestore {

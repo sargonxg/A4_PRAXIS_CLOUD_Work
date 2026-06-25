@@ -1657,6 +1657,7 @@ async function persistAskTurn(input: {
     .collection('turns').doc(`turn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
   await turnRef.set({
+    ownerUid: input.uid,
     prompt: input.prompt,
     capsuleId: input.capsule?.capsuleId ?? null,
     capsuleVersion: input.capsule?.version ?? null,
@@ -1702,6 +1703,7 @@ async function persistConversationTurn(input: {
       ? existingConversation.data()?.createdAt
       : now;
     tx.set(conversationRef, {
+      ownerUid: input.uid,
       conversationId: cleanConversationId,
       capsuleId: input.capsuleId,
       appliedCapsules: input.appliedCapsules,
@@ -1722,6 +1724,7 @@ async function persistConversationTurn(input: {
       updatedAt: now,
     }, { merge: true });
     tx.set(turnRef, {
+      ownerUid: input.uid,
       prompt: input.prompt,
       output: input.output,
       capsuleId: input.capsuleId,
