@@ -170,6 +170,20 @@ export const AgentRunOutputSchema = z.object({
       modelPriorClaims: z.number().int().nonnegative(),
       assumptionClaims: z.number().int().nonnegative(),
     }),
+    groundingVerification: z.object({
+      coverageScore: z.number().min(0).max(1),
+      groundedClaimCount: z.number().int().nonnegative(),
+      totalClaimCount: z.number().int().nonnegative(),
+      ungroundedSpanCount: z.number().int().nonnegative(),
+      contradictedSpanCount: z.number().int().nonnegative(),
+      flaggedSpans: z.array(z.object({
+        text: z.string(),
+        reason: z.string(),
+        claimCardIds: z.array(z.string()),
+        sourceReceiptIds: z.array(z.string()),
+        graphPathIds: z.array(z.string()),
+      })),
+    }).nullable(),
     degradedStates: z.array(z.string()),
     improvementActions: z.array(z.string()),
     exportBlocked: z.boolean(),
@@ -220,6 +234,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const capsuleReadReceipt = isRecord(run.metadata?.capsuleReadReceipt) ? run.metadata.capsuleReadReceipt as unknown as CapsuleReadReceipt : undefined;
   const workflowPlan = isRecord(run.metadata?.workflowPlan) ? run.metadata.workflowPlan as unknown as AgentWorkflowPlan : undefined;
   const sourceabilityLedgerSummary = normalizeSourceabilityLedgerSummary(run.metadata?.sourceabilityLedgerSummary);
+  const groundingVerification = isRecord(run.metadata?.groundingVerification) ? run.metadata.groundingVerification : undefined;
   const artifactIds = normalizeArtifactIds(run.metadata);
   const latestMirroredEvent = normalizeLatestMirroredEvent(run.metadata?.latestMirroredEvent);
   const failureSummary = normalizeAgentRunFailureSummary(run.metadata?.failureSummary);
@@ -248,7 +263,8 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     || boardroomOutput
     || capsuleReadReceipt
     || workflowPlan
-    || sourceabilityLedgerSummary,
+    || sourceabilityLedgerSummary
+    || groundingVerification,
   );
   return AgentRunOutputSchema.parse({
     runId: run.id,
@@ -300,6 +316,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
         capsuleReadReceipt,
         workflowPlan,
         sourceabilityLedgerSummary,
+        groundingVerification,
         sourcePosture,
         groundingPosture,
         degradedReason,

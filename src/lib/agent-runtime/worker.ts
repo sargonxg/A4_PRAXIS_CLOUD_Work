@@ -48,6 +48,8 @@ import {
 } from '@/lib/agent-runtime/mirror';
 import { buildAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
+import type { AgentContextPacketResult } from '@/lib/context/agent-context-packet';
+import { shouldEnableAgentContextVerifier, verifyAgentContextGrounding } from '@/lib/context/agent-context-verifier';
 import { createCapsuleReviewCard, getCapsule, type CreateCapsuleReviewCardInput, type CapsuleReviewCard } from '@/lib/context/capsule-service';
 import {
   buildCapsuleQualityReviewAnalysis,
@@ -859,6 +861,7 @@ async function executeResearchMemoAgentRun(
         outputTarget: workflowPlan.outputTarget,
       },
       outputHref,
+      outputText: liveMemoDraft.finalText,
       deps,
     });
 
@@ -3121,6 +3124,26 @@ function stableApprovalId(run: AgentRun, key: string, toolId: string): string {
   return `approval:${stableShortId(`${run.id}:${key}:${toolId}`)}`;
 }
 
+function buildAgentRunGroundingVerification(run: AgentRun, outputText?: string | null) {
+  const text = typeof outputText === 'string' ? outputText.trim() : '';
+  if (!text || !shouldEnableAgentContextVerifier(process.env.PRAXIS_GROUNDING_VERIFIER)) return null;
+  const packet = normalizeAgentContextPacket(run.metadata.agentContextPacket);
+  if (!packet) return null;
+  return verifyAgentContextGrounding({
+    outputText: text,
+    packet,
+  });
+}
+
+function normalizeAgentContextPacket(value: unknown): Pick<AgentContextPacketResult, 'selected' | 'groundingMap'> | null {
+  const record = isRecord(value) ? value : null;
+  if (!record || !isRecord(record.selected) || !isRecord(record.groundingMap)) return null;
+  return {
+    selected: record.selected as unknown as AgentContextPacketResult['selected'],
+    groundingMap: record.groundingMap as unknown as AgentContextPacketResult['groundingMap'],
+  };
+}
+
 async function completeAgentRunExecution(input: {
   updateStatus: typeof updateAgentRunStatus;
   running: AgentRun;
@@ -3129,25 +3152,26 @@ async function completeAgentRunExecution(input: {
   message: string;
   data: Record<string, unknown>;
   outputHref?: string | null;
+  outputText?: string | null;
   metadata?: Record<string, unknown>;
   deps: WorkerDeps;
 }): Promise<AgentRun | null> {
   const outputHref = cleanOutputHref(input.outputHref);
+  const groundingVerification = buildAgentRunGroundingVerification(input.running, input.outputText);
+  const metadataPatch = {
+    ...(input.metadata ?? {}),
+    ...(outputHref ? { outputHref } : {}),
+    ...(groundingVerification ? { groundingVerification } : {}),
+  };
   const succeeded = await input.updateStatus({
     ownerUid: input.running.ownerUid,
     runId: input.running.id,
     toStatus: 'succeeded',
     message: input.message,
-    data: input.data,
-    metadata: {
-      ...(input.metadata ?? {}),
-      ...(outputHref ? { outputHref } : {}),
-    },
+    data: groundingVerification ? { ...input.data, groundingVerification } : input.data,
+    metadata: metadataPatch,
   });
-  const terminalRun = mergeTerminalRun(input.running, succeeded, 'succeeded', {
-    ...(input.metadata ?? {}),
-    ...(outputHref ? { outputHref } : {}),
-  });
+  const terminalRun = mergeTerminalRun(input.running, succeeded, 'succeeded', metadataPatch);
   await postAgentRunThreadReturn({
     run: terminalRun,
     payload: input.payload,

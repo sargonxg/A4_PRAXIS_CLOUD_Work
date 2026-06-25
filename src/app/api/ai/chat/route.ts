@@ -70,6 +70,7 @@ import { destinationHref } from '@/lib/product/policy-agents';
 import { formatWorkIntentPromptBlock } from '@/lib/ai/work-intent-router';
 import { DEFAULT_SELECTED_CORE_IDS, type CapsuleAgentExecutionContext, type SelectedCoreIds } from '@/lib/agent-runtime/types';
 import { resolveGroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
+import { shouldEnableAgentContextVerifier, verifyAgentContextGrounding } from '@/lib/context/agent-context-verifier';
 import {
   buildBlockedResearchGraphReceipt,
   coerceResearchGraphReceipts,
@@ -644,6 +645,7 @@ You have access to the user's active situation data. When answering questions:
       },
       orchestrationReceipt,
       generationReceipt: runtimeReceipt.generationReceipt,
+      groundingVerification: buildGroundingVerificationForText(text, turnCapsule),
       capsuleSuggestions: normalizedSuggestedCapsules,
       researchGraphReceipts,
       contextEnrichment: turnCapsule?.enrichment?.receipt,
@@ -1341,6 +1343,12 @@ async function maybeQueueAskAgentRun(input: {
         groundingPosture,
         degradedReason,
         dispatchEnqueueStatus: 'queued',
+        ...(shouldEnableAgentContextVerifier(process.env.PRAXIS_GROUNDING_VERIFIER) && input.turnCapsule?.agentContextPacket ? {
+          agentContextPacket: {
+            selected: input.turnCapsule.agentContextPacket.selected,
+            groundingMap: input.turnCapsule.agentContextPacket.groundingMap,
+          },
+        } : {}),
       },
     });
     await appendAgentRunEvent(makeAgentRunEvent({
@@ -1481,6 +1489,15 @@ function buildAskAgentRunSearchPlan(prompt: string, selectedToolIds: string[]): 
           ? 'this month'
           : null,
   };
+}
+
+function buildGroundingVerificationForText(text: string, turnCapsule: TurnCapsule | null) {
+  if (!shouldEnableAgentContextVerifier(process.env.PRAXIS_GROUNDING_VERIFIER)) return undefined;
+  if (!turnCapsule?.agentContextPacket) return undefined;
+  return verifyAgentContextGrounding({
+    outputText: text,
+    packet: turnCapsule.agentContextPacket,
+  });
 }
 
 function buildCapsuleAgentExecutionContext(input: {

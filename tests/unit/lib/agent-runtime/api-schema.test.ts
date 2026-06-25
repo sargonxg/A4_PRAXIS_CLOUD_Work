@@ -405,4 +405,48 @@ describe('agent run API validation schema', () => {
     });
     expect(JSON.stringify(dto.proofSummary)).not.toMatch(/gemini|vertex|google|gpt|claude/i);
   });
+
+  it('exposes grounding verifier proof metadata from run metadata', () => {
+    const dto = toAgentRunOutput({
+      id: 'run-grounding-1',
+      status: 'succeeded',
+      capsuleId: 'cap-1',
+      createdAt: '2026-06-24T12:00:00.000Z',
+      updatedAt: '2026-06-24T12:05:00.000Z',
+      objective: 'Draft grounded output.',
+      metadata: {
+        groundingVerification: {
+          groundedClaims: [{
+            text: 'Supported claim.',
+            start: 0,
+            end: 16,
+            claimCardIds: ['CL-1'],
+            sourceReceiptIds: ['SR-1'],
+            graphPathIds: [],
+            matchReasons: ['claim_text_overlap'],
+          }],
+          ungroundedSpans: [{
+            text: 'Unsupported claim.',
+            start: 17,
+            end: 35,
+            reason: 'no_packet_binding',
+            claimCardIds: [],
+            sourceReceiptIds: [],
+            graphPathIds: [],
+          }],
+          contradictedSpans: [],
+          coverageScore: 0.5,
+          notes: ['1 of 2 decision-relevant claim spans grounded.'],
+        },
+      },
+    } as never);
+
+    expect(dto.proofSummary?.groundingVerification).toMatchObject({
+      coverageScore: 0.5,
+      groundedClaimCount: 1,
+      totalClaimCount: 2,
+      flaggedSpans: [{ text: 'Unsupported claim.', reason: 'no_packet_binding' }],
+    });
+    expect(AgentRunOutputSchema.safeParse(dto).success).toBe(true);
+  });
 });

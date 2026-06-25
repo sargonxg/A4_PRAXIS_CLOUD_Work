@@ -7,6 +7,7 @@ import {
 } from '@/lib/agent-runtime/sourceability-ledger';
 import type { AskIntent } from '@/lib/ai/ask-conversation';
 import type { AskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
+import type { AgentContextGroundingReport } from '@/lib/context/agent-context-verifier';
 import type { ContextEnrichmentReceipt } from '@/lib/knowledge/context-enrichment-adapter';
 import {
   inferPolicyOutputTargetFromText,
@@ -306,6 +307,7 @@ export interface AskAnswerEnvelope {
   followUps: string[];
   documentPackCandidate: ConversationDocumentPack;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
+  groundingVerification?: AgentContextGroundingReport;
 }
 
 export interface ConversationDocumentPack {
@@ -485,6 +487,7 @@ export function buildAskAnswerEnvelope(input: {
   provenance?: ConversationPackProvenance;
   orchestrationReceipt?: AskConversationOrchestrationReceipt;
   generationReceipt?: AskGenerationReceipt;
+  groundingVerification?: AgentContextGroundingReport;
   capsuleSuggestions?: AskCapsuleSuggestionReceipt[];
   researchGraphReceipts?: ResearchGraphReceipt[];
   contextEnrichment?: ContextEnrichmentReceipt;
@@ -611,6 +614,7 @@ export function buildAskAnswerEnvelope(input: {
     followUps: followUpsFor(input.intent, sourceCards.length, input.researchGraphReceipts?.length ?? 0),
     documentPackCandidate: pack,
     orchestrationReceipt: input.orchestrationReceipt,
+    groundingVerification: input.groundingVerification,
   };
 }
 

@@ -9,7 +9,7 @@ import {
   type InjectableContextInput,
 } from '@/lib/context/context-injection';
 import type { CapsuleServiceDeps, PraxisCapsule } from '@/lib/context/capsule-service';
-import { appendAgentContextPacketToPromptBlock } from '@/lib/context/agent-context-packet';
+import { appendAgentContextPacketToPromptBlock, type AgentContextPacketResult } from '@/lib/context/agent-context-packet';
 import type {
   CapsuleContextCaptureProfile,
   CapsuleStarterSnapshot,
@@ -65,6 +65,7 @@ export interface TurnCapsule {
     droppedCores: string[];
   };
   injectableContext: InjectableContext;
+  agentContextPacket?: AgentContextPacketResult;
   memory: Record<MemoryType, KernelMemoryItem[]>;
   retrievalPlan: CapsuleRetrievalPlan;
   enrichment?: {
@@ -318,6 +319,7 @@ export async function buildTurnCapsule(
       droppedCores: selectedCores.droppedCores,
     },
     injectableContext: augmentedInjectableContext,
+    agentContextPacket: packetAugmentation.packet,
     memory,
   } satisfies Omit<TurnCapsule, 'retrievalPlan'>;
 
