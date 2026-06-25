@@ -6,6 +6,7 @@ import {
   mirrorGenkitFlowEvent,
   mirrorWorkerEvent,
 } from '@/lib/agent-runtime/mirror';
+import { mirrorAdkResearchMemoDryRun } from '@/lib/agent-runtime/adk-bridge';
 
 const run: AgentRun = {
   id: 'run-1',
@@ -132,5 +133,61 @@ describe('agent runtime mirror', () => {
       },
     });
     expect((events[0] as { data: { textPreview: string } }).data.textPreview.length).toBeLessThanOrEqual(500);
+  });
+
+  it('mirrors Research Memo ADK bridge dry-run events without live Agent Engine execution', async () => {
+    const previousAgentEngineId = process.env.VERTEX_AGENT_ENGINE_ID;
+    process.env.VERTEX_AGENT_ENGINE_ID = 'configured-but-disabled';
+    const events: unknown[] = [];
+
+    try {
+      const result = await mirrorAdkResearchMemoDryRun({
+        run,
+        agentKind: 'research_memo',
+        objective: 'Draft a sourceable memo.',
+        context: {
+          userCore: 'User core summary.',
+          situationCore: 'Situation core summary.',
+          sourceCore: 'Source core summary.',
+          outputCore: 'Output core summary.',
+          memoryCore: 'Memory core summary.',
+        },
+        dispatchId: 'dispatch-1',
+        attempt: 2,
+      }, {
+        appendEvent: async (event) => {
+          events.push(event);
+          return event;
+        },
+      });
+
+      expect(result).toMatchObject({
+        sessionId: 'adk-dry-run-run-1',
+        eventCount: 4,
+        liveExecution: 'disabled',
+      });
+      expect(events.map((event) => (event as { eventType: string }).eventType)).toEqual([
+        'adk.research_memo.status',
+        'adk.research_memo.tool_call',
+        'adk.research_memo.text',
+        'adk.research_memo.done',
+      ]);
+      expect(events.every((event) => (event as { data: { substrate: string } }).data.substrate === 'adk')).toBe(true);
+      expect((events[0] as { data: { raw: Record<string, unknown> } }).data.raw).toMatchObject({
+        dryRun: true,
+        bridge: 'praxis-adk-bridge',
+        liveExecution: 'disabled',
+        agentEngineConfigured: true,
+        dispatchId: 'dispatch-1',
+        attempt: 2,
+      });
+      expect((events[1] as { message: string }).message).toContain('without invoking Agent Engine');
+    } finally {
+      if (previousAgentEngineId === undefined) {
+        delete process.env.VERTEX_AGENT_ENGINE_ID;
+      } else {
+        process.env.VERTEX_AGENT_ENGINE_ID = previousAgentEngineId;
+      }
+    }
   });
 });

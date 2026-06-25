@@ -34,6 +34,16 @@ export type AdkRunEvent = {
   raw?: unknown;
 };
 
+export type AdkDryRunMirrorDeps = {
+  appendEvent?: (event: AgentRunEvent) => Promise<AgentRunEvent>;
+};
+
+export type AdkDryRunMirrorResult = {
+  sessionId: string;
+  eventCount: number;
+  liveExecution: 'disabled';
+};
+
 export function validateAdkRunAllowed(input: AdkRunInput): void {
   if (!input.run.capsuleId?.trim()) {
     throw new Error('ADK run requires a capsule id.');
@@ -86,6 +96,67 @@ export function buildAdkPromptFromContextCapsule(input: AdkRunInput): string {
   return parts.join('\n');
 }
 
+export async function mirrorAdkResearchMemoDryRun(
+  input: AdkRunInput & {
+    dispatchId?: string | null;
+    attempt?: number | null;
+  },
+  deps: AdkDryRunMirrorDeps = {},
+): Promise<AdkDryRunMirrorResult> {
+  validateAdkRunAllowed(input);
+  const sessionId = `adk-dry-run-${input.run.id}`;
+  const prompt = buildAdkPromptFromContextCapsule(input);
+  const appendEvent = deps.appendEvent ?? (async (event: AgentRunEvent) => event);
+  const events: AdkRunEvent[] = [
+    {
+      type: 'status',
+      phase: 'bridge_dry_run_started',
+      message: 'ADK bridge dry run started; live Vertex Agent Engine execution is disabled.',
+      sessionId,
+      raw: dryRunRaw(input, prompt),
+    },
+    {
+      type: 'tool_call',
+      phase: 'context_capsule_read',
+      toolName: 'context-capsule',
+      toolRisk: 'low',
+      message: 'ADK bridge dry run mirrored the ContextCapsule read without invoking Agent Engine.',
+      sessionId,
+      raw: dryRunRaw(input, prompt),
+    },
+    {
+      type: 'text',
+      author: 'praxis-adk-bridge',
+      phase: 'fallback_memo_ready',
+      text: 'Deterministic Research Memo fallback remains local to PRAXIS receipts; ADK live execution is disabled.',
+      sessionId,
+      raw: dryRunRaw(input, prompt),
+    },
+    {
+      type: 'done',
+      phase: 'bridge_dry_run_completed',
+      message: 'ADK bridge dry run completed without live Agent Engine execution.',
+      sessionId,
+      raw: dryRunRaw(input, prompt),
+    },
+  ];
+
+  for (const event of events) {
+    await appendEvent(mapAdkEventToPraxisRunEvent({
+      run: input.run,
+      agentKind: 'research_memo',
+      event,
+      sessionId,
+    }));
+  }
+
+  return {
+    sessionId,
+    eventCount: events.length,
+    liveExecution: 'disabled',
+  };
+}
+
 export function mapAdkEventToPraxisRunEvent(input: {
   run: AgentRun;
   event: AdkRunEvent | AgentEvent;
@@ -114,6 +185,24 @@ export function mapAdkEventToPraxisRunEvent(input: {
     traceId: input.run.traceId,
     createdAt: input.createdAt,
   });
+}
+
+function dryRunRaw(
+  input: AdkRunInput & {
+    dispatchId?: string | null;
+    attempt?: number | null;
+  },
+  prompt: string,
+): Record<string, unknown> {
+  return {
+    dryRun: true,
+    bridge: 'praxis-adk-bridge',
+    liveExecution: 'disabled',
+    agentEngineConfigured: Boolean(process.env.VERTEX_AGENT_ENGINE_ID),
+    dispatchId: input.dispatchId ?? null,
+    attempt: input.attempt ?? null,
+    promptPreview: previewText(prompt),
+  };
 }
 
 function normalizeAdkEvent(event: AdkRunEvent | AgentEvent): AdkRunEvent {

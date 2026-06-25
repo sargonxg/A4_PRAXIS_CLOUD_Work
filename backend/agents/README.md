@@ -25,6 +25,9 @@ separate:
 - `requirements.txt` — pinned Python deps (Python 3.10–3.12).
 - `deep_research/` — earlier in-process agent code, kept for
   reference. The deploy.py above is the new authoritative path.
+- `praxis_data_controller/` — ADK App scaffold for the PRAXIS Google
+  data-controller lane: ContextCapsule snapshots, Vertex RAG repositories,
+  BigQuery analytics, and review-card proposals behind queued AgentRuns.
 
 ## TL;DR deploy
 

@@ -46,6 +46,7 @@ import {
   mirrorWorkerEvent,
   type AgentRuntimeMirrorDeps,
 } from '@/lib/agent-runtime/mirror';
+import { mirrorAdkResearchMemoDryRun } from '@/lib/agent-runtime/adk-bridge';
 import { buildAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
 import type { AgentContextPacketResult } from '@/lib/context/agent-context-packet';
@@ -528,6 +529,21 @@ async function executeResearchMemoAgentRun(
     executionStage = 'context-build';
     const workerContext = buildCapsuleWorkerContext(running);
     const loop = buildResearchMemoReasoningLoop(running);
+    await mirrorAdkResearchMemoDryRun({
+      run: running,
+      agentKind: 'research_memo',
+      objective: running.objective,
+      context: {
+        userCore: workerContext.selectedCoreIds.userCoreId,
+        situationCore: workerContext.selectedCoreIds.situationCoreId,
+        sourceCore: workerContext.selectedCoreIds.sourceCoreIds.join(', '),
+        outputCore: workerContext.selectedCoreIds.outputCoreIds.join(', '),
+        memoryCore: workerContext.selectedCoreIds.memoryCoreId,
+      },
+      allowedToolRisks: ['low', 'medium'],
+      dispatchId: payload.dispatchId,
+      attempt: payload.attempt,
+    }, deps);
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'context_resolved',

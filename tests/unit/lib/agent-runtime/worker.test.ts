@@ -544,7 +544,7 @@ describe('agent runtime no-op worker', () => {
 
   it('routes research-memo runs into memo and output capsule receipts', async () => {
     const transitions: AgentRun['status'][] = [];
-    const mirrored: string[] = [];
+    const mirrored: AgentRunEvent[] = [];
     const toolCalls: string[] = [];
     const result = await executeAgentRun(payload, {
       getRun: async () => makeRun('queued', { policyAgentId: 'research-memo' }),
@@ -593,14 +593,24 @@ describe('agent runtime no-op worker', () => {
         },
       }),
       appendEvent: async (event) => {
-        mirrored.push(String(event.data.phase ?? event.eventType));
+        mirrored.push(event);
         return event;
+      },
+      generateText: async () => {
+        throw new Error('live model disabled for ADK dry-run test');
       },
       saveMemoDraft: async (_uid, input) => {
         expect(input.templateId).toBe('policy-memo');
         expect(input.blocks.some((block) => block.id === 'source-receipt')).toBe(true);
         expect(input.blocks.some((block) => block.id === 'sourced-paragraphs')).toBe(true);
         expect(input.blocks.some((block) => block.id === 'gap-receipt')).toBe(true);
+        expect(input.blocks.find((block) => block.id === 'live-memo-draft')).toMatchObject({
+          metadata: {
+            modelPosture: 'fallback',
+            degradedReason: 'live model disabled for ADK dry-run test',
+          },
+          content: expect.stringContaining('Task: No-op run'),
+        });
         return { memo: { id: 'memo-1' } };
       },
       saveOutputCapsule: async (_uid, input) => {
@@ -623,15 +633,32 @@ describe('agent runtime no-op worker', () => {
     expect(toolCalls).toContain('policy-memo:succeeded');
     expect(toolCalls).toContain('output-capsule-save:succeeded');
     expect(toolCalls).toContain('sourceability-reviewer:succeeded');
-    expect(mirrored).toContain('context_resolved');
-    expect(mirrored).toContain('capsule.read_receipt_created');
-    expect(mirrored).toContain('workflow.plan_created');
-    expect(mirrored).toContain('sourceability.ledger_created');
-    expect(mirrored).toContain('reasoning.plan');
-    expect(mirrored).toContain('reasoning.act');
-    expect(mirrored).toContain('reasoning.reflect');
-    expect(mirrored).toContain('reasoning.complete');
-    expect(mirrored).toContain('memo_output_created');
+    const mirroredPhases = mirrored.map((event) => String(event.data.phase ?? event.eventType));
+    expect(mirroredPhases).toContain('context_resolved');
+    expect(mirroredPhases).toContain('capsule.read_receipt_created');
+    expect(mirroredPhases).toContain('workflow.plan_created');
+    expect(mirroredPhases).toContain('sourceability.ledger_created');
+    expect(mirroredPhases).toContain('reasoning.plan');
+    expect(mirroredPhases).toContain('reasoning.act');
+    expect(mirroredPhases).toContain('reasoning.reflect');
+    expect(mirroredPhases).toContain('reasoning.complete');
+    expect(mirroredPhases).toContain('memo_output_created');
+    expect(mirrored.map((event) => event.eventType)).toEqual(expect.arrayContaining([
+      'adk.research_memo.status',
+      'adk.research_memo.tool_call',
+      'adk.research_memo.text',
+      'adk.research_memo.done',
+    ]));
+    expect(mirrored.find((event) => event.eventType === 'adk.research_memo.status')?.data).toMatchObject({
+      substrate: 'adk',
+      agentKind: 'research_memo',
+      phase: 'bridge_dry_run_started',
+      raw: expect.objectContaining({
+        dryRun: true,
+        bridge: 'praxis-adk-bridge',
+        liveExecution: 'disabled',
+      }),
+    });
   });
 
   it('runs research memo as live plan, retrieval, source-check, draft, critique, and finalize phases', async () => {

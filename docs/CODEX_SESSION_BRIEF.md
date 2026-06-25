@@ -125,3 +125,56 @@ Live proof should include:
 - Use `dependency_curator` for package updates.
 - Use `reviewer` before finalizing risky code.
 - Use `release_manager` for ship/deploy/live proof.
+
+## Google Agent Platform Lane
+
+Use this lane when the user asks Codex to create, test, deploy, or verify
+Google ADK / Agent Runtime / RAG / BigQuery agents for PRAXIS.
+
+```powershell
+npm run auth:doctor -- --fix
+npm run doctor:google-agent-platform
+npm run audit:agent-runtime-proof
+npm run audit:google-agent-platform
+```
+
+Current read-only cloud state as of 2026-06-18: `gcloud`, ADC, required APIs,
+Cloud Tasks queue `agent-runs`, and `bq` are available for project
+`praxisbytacitus`. The live `praxis_analytics` dataset exists but still needs
+the extraction and agent analytics mirror tables from `infrastructure/setup-gcp.sh`.
+The Agent Runtime staging bucket, `VERTEX_AGENT_ENGINE_ID`, and `VERTEX_RAG_CORPUS`
+remain deploy/provisioning steps.
+
+For first-time ADK Agent Runtime deployment, use the predeploy gate. Cloud
+mutation still requires explicit approval:
+
+```powershell
+npm run audit:google-agent-platform -- --predeploy
+npm run deploy:google-agent-platform -- -ApproveCloudMutation
+```
+
+After `VERTEX_AGENT_ENGINE_ID`, `VERTEX_RAG_CORPUS`, AgentRun ledger env, and
+Cloud Tasks worker target/auth are mounted, use the production gate:
+
+```powershell
+npm run audit:google-agent-platform -- --production
+```
+
+The canonical runbook is
+`docs/runbooks/GOOGLE_AGENT_PLATFORM_FOR_PRAXIS.md`. Keep Cognee and graph-memory
+promotion separate from this lane; Google-agent deployment must not silently
+enable advisory memory or mutate canonical ContextCapsules.
+
+## Databricks Analytics Lane
+
+Use this lane when TACITUS wants optional Databricks analytics for PRAXIS and
+DIALECTICA quality metrics. Databricks is not a PRAXIS canonical store and must
+not write directly back into Firestore or silently promote capsule claims.
+
+```powershell
+databricks auth profiles
+cd C:\Users\giuli\A3_DIALECTICAbyTACITUS_v3\tools\python
+python -m dialectica_tools.databricks_connection --profile tacitus
+```
+
+The runbook is `docs/runbooks/DATABRICKS_TACITUS_ANALYTICS.md`.

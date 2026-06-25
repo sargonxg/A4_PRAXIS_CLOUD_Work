@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
+from uuid import uuid4
 
 from config import get_settings
 
@@ -35,6 +36,7 @@ def log_pipeline_run(
         client = _get_client()
         table_id = f"{_project()}.{_dataset()}.pipeline_runs"
         rows = [{
+            "run_id": str(uuid4()),
             "tenant_id": tenant_id,
             "situation_id": situation_id,
             "nodes_count": nodes_count,
@@ -57,13 +59,17 @@ def log_extraction(
     model: str,
     input_tokens: int,
     output_tokens: int,
+    situation_id: str = "",
+    duration_ms: int = 0,
 ) -> None:
     """Log an extraction operation to BigQuery."""
     try:
         client = _get_client()
         table_id = f"{_project()}.{_dataset()}.extractions"
         rows = [{
+            "extraction_id": str(uuid4()),
             "tenant_id": tenant_id,
+            "situation_id": situation_id,
             "source_file": source_file,
             "source_type": source_type,
             "nodes_count": nodes_count,
@@ -71,6 +77,7 @@ def log_extraction(
             "model": model,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
+            "duration_ms": duration_ms,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }]
         client.insert_rows_json(table_id, rows)
@@ -108,3 +115,42 @@ def get_usage_metrics(tenant_id: str, date_from: str, date_to: str) -> dict:
         return dict(rows[0]) if rows else {}
     except Exception:
         return {}
+
+
+def log_agent_run_analytics(row: dict) -> None:
+    """Mirror a PRAXIS AgentRun row into BigQuery analytics."""
+    _insert_analytics_row("agent_runs_analytics", row)
+
+
+def log_agent_run_event_analytics(row: dict) -> None:
+    """Mirror a PRAXIS AgentRun event into BigQuery analytics."""
+    _insert_analytics_row("agent_run_events_analytics", row)
+
+
+def log_agent_tool_call_analytics(row: dict) -> None:
+    """Mirror a PRAXIS agent tool call into BigQuery analytics."""
+    _insert_analytics_row("agent_tool_calls_analytics", row)
+
+
+def log_agent_approval_analytics(row: dict) -> None:
+    """Mirror a PRAXIS agent approval into BigQuery analytics."""
+    _insert_analytics_row("agent_approvals_analytics", row)
+
+
+def _insert_analytics_row(table_name: str, row: dict) -> None:
+    try:
+        client = _get_client()
+        table_id = f"{_project()}.{_dataset()}.{table_name}"
+        client.insert_rows_json(table_id, [_json_ready(row)])
+    except Exception as exc:
+        logger.warning("BigQuery %s log failed: %s", table_name, exc)
+
+
+def _json_ready(row: dict) -> dict:
+    clean: dict = {}
+    for key, value in row.items():
+        if isinstance(value, datetime):
+            clean[key] = value.astimezone(timezone.utc).isoformat()
+        else:
+            clean[key] = value
+    return clean

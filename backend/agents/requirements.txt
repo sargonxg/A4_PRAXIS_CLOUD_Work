@@ -7,5 +7,7 @@
 # Python: 3.10–3.12 only. Agent Engine does not support 3.13+ as of April 2026.
 
 google-cloud-aiplatform[adk,agent_engines]>=1.148.1
-google-adk==1.31.1
+google-adk[bigquery]==1.31.1
 google-genai>=1.0.0
+google-cloud-bigquery-storage>=2.26.0
+pyarrow>=16.0.0

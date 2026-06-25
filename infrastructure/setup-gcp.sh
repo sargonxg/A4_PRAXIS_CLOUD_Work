@@ -47,12 +47,28 @@ echo "Creating BigQuery dataset..."
 bq mk --dataset "${PROJECT_ID}:praxis_analytics" 2>/dev/null || echo "Dataset already exists"
 
 bq mk --table "${PROJECT_ID}:praxis_analytics.pipeline_runs" \
-  "run_id:STRING,user_id:STRING,situation_id:STRING,nodes:INTEGER,edges:INTEGER,duration_ms:INTEGER,status:STRING,timestamp:TIMESTAMP" \
+  "run_id:STRING,tenant_id:STRING,situation_id:STRING,nodes_count:INTEGER,edges_count:INTEGER,duration_ms:INTEGER,status:STRING,timestamp:TIMESTAMP" \
   2>/dev/null || echo "Table pipeline_runs already exists"
 
 bq mk --table "${PROJECT_ID}:praxis_analytics.extractions" \
-  "extraction_id:STRING,user_id:STRING,situation_id:STRING,source_type:STRING,source_file:STRING,nodes:INTEGER,edges:INTEGER,input_tokens:INTEGER,output_tokens:INTEGER,duration_ms:INTEGER,timestamp:TIMESTAMP" \
+  "extraction_id:STRING,tenant_id:STRING,situation_id:STRING,source_type:STRING,source_file:STRING,nodes_count:INTEGER,edges_count:INTEGER,model:STRING,input_tokens:INTEGER,output_tokens:INTEGER,duration_ms:INTEGER,timestamp:TIMESTAMP" \
   2>/dev/null || echo "Table extractions already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.agent_runs_analytics" \
+  "run_id:STRING,owner_uid:STRING,capsule_id:STRING,policy_agent_id:STRING,status:STRING,objective:STRING,trace_id:STRING,created_at:TIMESTAMP,updated_at:TIMESTAMP" \
+  2>/dev/null || echo "Table agent_runs_analytics already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.agent_run_events_analytics" \
+  "event_id:STRING,run_id:STRING,owner_uid:STRING,capsule_id:STRING,event_type:STRING,message:STRING,substrate:STRING,trace_id:STRING,created_at:TIMESTAMP,data_json:JSON" \
+  2>/dev/null || echo "Table agent_run_events_analytics already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.agent_tool_calls_analytics" \
+  "tool_call_id:STRING,run_id:STRING,owner_uid:STRING,tool_name:STRING,tool_risk:STRING,status:STRING,started_at:TIMESTAMP,completed_at:TIMESTAMP,metadata_json:JSON" \
+  2>/dev/null || echo "Table agent_tool_calls_analytics already exists"
+
+bq mk --table "${PROJECT_ID}:praxis_analytics.agent_approvals_analytics" \
+  "approval_id:STRING,run_id:STRING,owner_uid:STRING,tool_call_id:STRING,approval_status:STRING,risk:STRING,requested_at:TIMESTAMP,resolved_at:TIMESTAMP,metadata_json:JSON" \
+  2>/dev/null || echo "Table agent_approvals_analytics already exists"
 
 # ── Pub/Sub Topics ───────────────────────────────────────────────────────────
 echo "Creating Pub/Sub topics..."
