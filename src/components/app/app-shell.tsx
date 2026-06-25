@@ -37,7 +37,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     pathname === '/app/capsules' ||
     pathname === '/app/recent-work' ||
     pathname === '/app/settings' ||
-    pathname === '/app/repository' ||
     pathname.startsWith('/app/conversations/');
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchInitialQuery, setSearchInitialQuery] = useState('');

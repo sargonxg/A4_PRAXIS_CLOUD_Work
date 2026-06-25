@@ -5,6 +5,9 @@ import { join } from 'node:path';
 const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
 const capsuleRouteSource = readFileSync(join(process.cwd(), 'src/app/api/context/capsules/route.ts'), 'utf8');
 const capsuleServiceSource = readFileSync(join(process.cwd(), 'src/lib/context/capsule-service.ts'), 'utf8');
+const floatingPraxisSource = readFileSync(join(process.cwd(), 'src/components/app/floating-praxis.tsx'), 'utf8');
+const appShellSource = readFileSync(join(process.cwd(), 'src/components/app/app-shell.tsx'), 'utf8');
+const publicShellSource = readFileSync(join(process.cwd(), 'src/components/app/public-shell.tsx'), 'utf8');
 
 const navigation = vi.hoisted(() => ({
   redirect: vi.fn((href: string) => {
@@ -48,6 +51,14 @@ describe('Capsules route consolidation', () => {
       label: 'Open Workspace',
       href: '/app/capsules?lane=repository',
     });
+  });
+
+  it('keeps repository links on the canonical capsules lane and current public version copy', () => {
+    expect(floatingPraxisSource).not.toContain('/app/repository');
+    expect(appShellSource).not.toContain('/app/repository');
+    expect(workbenchSource).toContain('/app/capsules?lane=repository');
+    expect(publicShellSource).toContain('by TACITUS · v6.5.0');
+    expect(publicShellSource).not.toContain('by TACITUS · v6.4');
   });
 
   it('keeps new capsule creation private by default', () => {

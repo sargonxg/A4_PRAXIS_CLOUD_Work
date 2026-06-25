@@ -1,14 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowUp, HelpCircle, Loader2, Trash2, X } from 'lucide-react';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
-import {
-  buildConversationPath,
-  createConversationThreadId,
-  ensureConversationRecord,
-} from '@/components/praxis/tasklet-workbench-conversation';
 import { cn } from '@/lib/utils/cn';
 
 type HelpMessage = {
@@ -16,18 +11,12 @@ type HelpMessage = {
   text: string;
 };
 
-const HELP_CAPSULE_ID = 'praxis-product-guide';
-const HELP_CONTEXT_STACK = {
-  capsuleId: HELP_CAPSULE_ID,
-  capsuleRefs: [{ capsuleId: HELP_CAPSULE_ID, label: 'PRAXIS product guide', role: 'reference', primary: true }],
-};
 const DEFAULT_HELP_PROMPT = 'What is PRAXIS and how do I use capsules, the dock, and agentic workflow?';
 
 export function HelpAgent() {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<HelpMessage[]>([]);
-  const [threadId, setThreadId] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
 
   useEffect(() => {
@@ -45,20 +34,6 @@ export function HelpAgent() {
     return () => document.removeEventListener('keydown', onKeyDown);
   }, [open]);
 
-  const appliedCapsules = useMemo(() => [{
-    id: HELP_CAPSULE_ID,
-    label: 'PRAXIS product guide',
-    role: 'reference',
-  }], []);
-
-  function ensureHelpThread(): string {
-    if (threadId) return threadId;
-    const nextThreadId = createConversationThreadId();
-    setThreadId(nextThreadId);
-    void ensureConversationRecord(nextThreadId, HELP_CAPSULE_ID, appliedCapsules);
-    return nextThreadId;
-  }
-
   function buildHelpPrompt(cleanPrompt: string): string {
     return [
       cleanPrompt,
@@ -75,12 +50,11 @@ export function HelpAgent() {
     setOpen(true);
     setStreaming(true);
     setPrompt('');
-    const nextThreadId = ensureHelpThread();
     const userMessage: HelpMessage = { role: 'user', text: cleanPrompt };
     setMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
 
     try {
-      const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
+      const response = await fetch('/api/help/chat', {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
@@ -89,19 +63,6 @@ export function HelpAgent() {
             role: message.role,
             content: message.text,
           })),
-          capsuleId: HELP_CAPSULE_ID,
-          contextPackageId: `capsule:${HELP_CAPSULE_ID}:v1`,
-          appliedCapsules,
-          currentToolId: 'praxis-product-help',
-          currentPath: buildConversationPath(HELP_CAPSULE_ID, nextThreadId),
-          activeContextStack: HELP_CONTEXT_STACK,
-          turnMetadata: { productHelpOnly: true },
-          aiSettings: {
-            provider: 'vertex',
-            analysisDepth: 'quick',
-            agenticSearchPremium: false,
-            researchGraphExtra: false,
-          },
         }),
       });
       if (!response.ok || !response.body) {

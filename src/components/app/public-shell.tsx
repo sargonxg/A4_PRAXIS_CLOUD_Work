@@ -154,7 +154,7 @@ export function PublicShell({
                 PRAXIS
               </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-app-text-muted)]">
-                by TACITUS · v6.4
+                by TACITUS · v6.5.0
               </span>
             </Link>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-app-text-secondary)]">

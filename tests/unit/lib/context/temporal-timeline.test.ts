@@ -30,7 +30,7 @@ describe('temporal timeline builder', () => {
       advisory: false,
     });
     expect(timeline.items.find((item) => item.id === 'node:event-access-violation')).toMatchObject({
-      date: '2026-06-19T00:00:00.000Z',
+      date: '2026-06-19',
       kind: 'event',
       sourceReceiptIds: ['src-monitor'],
     });
@@ -95,6 +95,42 @@ describe('temporal timeline builder', () => {
       group: 'claim',
       sourceIds: ['src-treaty'],
     });
+  });
+
+  it('normalizes heterogeneous date formats before sorting and places unparseable dates last', () => {
+    const timeline = buildTemporalTimeline({
+      capsule: temporalCapsule({
+        temporality: {
+          timelineAnchors: [
+            { id: 'year-only', label: 'Year only', date: '2026', sourceRefs: ['src-treaty'] },
+            { id: 'full-iso', label: 'Full ISO', date: '2026-02-10T00:00:00.000Z', sourceRefs: ['src-treaty'] },
+            { id: 'partial-month', label: 'Partial month', date: '2026-02', sourceRefs: ['src-treaty'] },
+            { id: 'slash-date', label: 'Slash date', date: '03/05/2026', sourceRefs: ['src-monitor'] },
+            { id: 'unparseable', label: 'Unparseable', date: 'late monsoon season', sourceRefs: ['src-monitor'] },
+          ],
+        },
+        claimLedger: [],
+        embeddedGraph: { nodes: [], edges: [] },
+        causality: { causalLinks: [] },
+      }),
+      requestTime: '2026-06-24T12:00:00.000Z',
+    });
+
+    expect(timeline.items.map((item) => item.id)).toEqual([
+      'anchor:year-only',
+      'anchor:partial-month',
+      'anchor:full-iso',
+      'anchor:slash-date',
+      'anchor:unparseable',
+    ]);
+    expect(timeline.items.map((item) => item.date)).toEqual([
+      '2026-01-01',
+      '2026-02-01',
+      '2026-02-10',
+      '2026-03-05',
+      'late monsoon season',
+    ]);
+    expect(timeline.warnings).toContain('Some timeline dates could not be normalized and were placed at the end.');
   });
 
   it('falls back to an empty deterministic timeline when no dated facts exist', () => {

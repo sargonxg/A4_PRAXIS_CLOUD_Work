@@ -9,7 +9,7 @@ describe('post-login redirect', () => {
   it('preserves safe explicit app redirects', () => {
     expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/assistant'), false, true)).toBe('/app/assistant');
     expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/capsules'), false, true)).toBe('/app/capsules');
-    expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/repository'), false, true)).toBe('/app/repository');
+    expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/repository'), false, true)).toBe('/app/capsules?lane=repository');
   });
 
   it('rejects unsafe explicit app-like redirects', () => {

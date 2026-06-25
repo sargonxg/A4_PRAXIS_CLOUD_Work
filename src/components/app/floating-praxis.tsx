@@ -13,7 +13,6 @@ import { useSituationStore } from '@/stores/situation-store';
 const TOOL_BY_ROUTE: Array<{ match: string; toolId: string }> = [
   { match: '/app/boardroom', toolId: 'boardroom' },
   { match: '/app/capsules', toolId: 'capsule-workbench' },
-  { match: '/app/repository', toolId: 'capsule-repository' },
   { match: '/app/recent-work', toolId: 'recent-work' },
   { match: '/app/settings', toolId: 'settings' },
 ];

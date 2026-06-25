@@ -40,4 +40,14 @@ describe('/api/ai/chat active context contract', () => {
     expect(chatRouteSource).toContain('<agent-context-packet-use>');
     expect(chatRouteSource).toContain('capsuleAgentExecutionContext');
   });
+
+  it('persists the visible active context stack into Ask-created AgentRuns', () => {
+    expect(chatRouteSource).toContain('sanitizeActiveContextStack');
+    expect(chatRouteSource).toContain('stackToCoreRefs');
+    expect(chatRouteSource).toContain('activeContextStack,');
+    expect(chatRouteSource).toContain('const runContext = resolveAskAgentRunContext');
+    expect(chatRouteSource).toContain('contextStackId: runContext.contextStackId');
+    expect(chatRouteSource).toContain('selectedCoreIds: runContext.selectedCoreIds');
+    expect(chatRouteSource).toContain('activeContextStack: runContext.activeContextStack');
+  });
 });

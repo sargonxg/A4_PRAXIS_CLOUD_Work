@@ -20,8 +20,8 @@ import { resolveTier } from '@/lib/api/tier';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import type { InjectableContext } from '@/lib/context/context-injection';
 import { AGENT_CONTEXT_PACKET_USE_BLOCK } from '@/lib/context/system-prompt-block';
-import type { ActiveContextStackState } from '@/lib/context/active-context-stack';
-import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import { sanitizeActiveContextStack, type ActiveContextStackState } from '@/lib/context/active-context-stack';
+import { stackToCoreRefs, type PraxisCapsule } from '@/lib/context/capsule-service';
 import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
 import { buildAskRuntimeFallbackCandidates, getAskRuntimeOption, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
@@ -606,6 +606,7 @@ You have access to the user's active situation data. When answering questions:
       capsule: capsuleContext?.capsule ?? null,
       turnCapsule,
       contextPackageId,
+      activeContextStack,
       runtime: runtimeReceipt,
       evidencePackReceipt,
       orchestrationReceipt,
@@ -1233,6 +1234,7 @@ async function maybeQueueAskAgentRun(input: {
   capsule: PraxisCapsule | null;
   turnCapsule: TurnCapsule | null;
   contextPackageId?: string | null;
+  activeContextStack?: unknown;
   runtime: AskRuntimeReceipt;
   evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null;
   orchestrationReceipt: AskConversationOrchestrationReceipt;
@@ -1286,12 +1288,17 @@ async function maybeQueueAskAgentRun(input: {
         adkBridge: 'src/lib/agent-runtime/adk-bridge.ts',
       }
       : null;
+    const runContext = resolveAskAgentRunContext({
+      capsule: input.capsule,
+      contextPackageId: input.contextPackageId,
+      activeContextStack: input.activeContextStack,
+    });
     const run = await createAgentRun({
       ownerUid: input.uid,
       capsuleId: input.capsule.capsuleId,
-      contextStackId: input.capsule.capsuleId,
-      contextPackageId: input.contextPackageId ?? null,
-      selectedCoreIds: input.capsule.coreRefs,
+      contextStackId: runContext.contextStackId,
+      contextPackageId: runContext.contextPackageId,
+      selectedCoreIds: runContext.selectedCoreIds,
       agentSpecId: null,
       triggerType: 'manual',
       objective: input.prompt,
@@ -1309,13 +1316,15 @@ async function maybeQueueAskAgentRun(input: {
         conversationThreadId: input.threadId ?? null,
         sourceAskTurnId: null,
         askThreadRef,
+        activeContextStack: runContext.activeContextStack,
         orchestrationTraceId: receipt.traceId,
         capsuleAgentExecutionContext: buildCapsuleAgentExecutionContext({
           prompt: input.prompt,
           threadId: input.threadId,
           capsule: input.capsule,
           turnCapsule: input.turnCapsule,
-          contextPackageId: input.contextPackageId,
+          contextPackageId: runContext.contextPackageId,
+          selectedCoreIds: runContext.selectedCoreIds,
           runtime: input.runtime,
           evidencePackReceipt: input.evidencePackReceipt,
           orchestrationReceipt: receipt,
@@ -1487,7 +1496,37 @@ function buildAskAgentRunSearchPlan(prompt: string, selectedToolIds: string[]): 
         ? 'this week'
         : /\b(this month|monthly)\b/i.test(prompt)
           ? 'this month'
-          : null,
+      : null,
+  };
+}
+
+function resolveAskAgentRunContext(input: {
+  capsule: PraxisCapsule;
+  contextPackageId?: string | null;
+  activeContextStack?: unknown;
+}): {
+  contextStackId: string;
+  contextPackageId: string | null;
+  selectedCoreIds: SelectedCoreIds;
+  activeContextStack: ActiveContextStackState | null;
+} {
+  const activeContextStack = isRecord(input.activeContextStack)
+    ? sanitizeActiveContextStack(input.activeContextStack)
+    : null;
+  if (!activeContextStack) {
+    return {
+      contextStackId: input.capsule.capsuleId,
+      contextPackageId: input.contextPackageId ?? null,
+      selectedCoreIds: normalizeSelectedCoreIds(input.capsule.coreRefs),
+      activeContextStack: null,
+    };
+  }
+
+  return {
+    contextStackId: activeContextStack.stackId,
+    contextPackageId: input.contextPackageId ?? activeContextStack.contextPackageId ?? null,
+    selectedCoreIds: normalizeSelectedCoreIds(stackToCoreRefs(activeContextStack)),
+    activeContextStack,
   };
 }
 
@@ -1506,6 +1545,7 @@ function buildCapsuleAgentExecutionContext(input: {
   capsule: PraxisCapsule;
   turnCapsule: TurnCapsule | null;
   contextPackageId?: string | null;
+  selectedCoreIds: SelectedCoreIds;
   runtime: AskRuntimeReceipt;
   evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null;
   orchestrationReceipt: AskConversationOrchestrationReceipt;
@@ -1519,7 +1559,7 @@ function buildCapsuleAgentExecutionContext(input: {
     traceId: input.turnCapsule?.traceId ?? input.orchestrationReceipt.traceId,
     conversationThreadId: input.threadId ?? null,
     objectivePreview: input.prompt.slice(0, 800),
-    selectedCoreIds: normalizeSelectedCoreIds(input.capsule.coreRefs),
+    selectedCoreIds: input.selectedCoreIds,
     retrievalPlan: {
       layerIds: retrievalPlan?.layers.map((layer) => layer.id) ?? [],
       repositoryDocumentIds: retrievalPlan?.repository.documentIds ?? [],

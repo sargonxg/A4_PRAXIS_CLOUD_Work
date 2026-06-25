@@ -18,6 +18,9 @@ export type TemporalTimelineGrounding = 'receipt_grounded' | 'advisory_uncertain
 export interface TemporalTimelineItem {
   id: string;
   date: string;
+  normalizedDate: string | null;
+  dateSortKey: number | null;
+  dateUnparseable: boolean;
   kind: TemporalTimelineItemKind;
   label: string;
   sourceReceiptIds: string[];
@@ -85,6 +88,9 @@ export function buildTemporalTimeline(input: BuildTemporalTimelineInput): Tempor
   ], (edge) => edge.id).sort((left, right) => left.source.localeCompare(right.source) || left.target.localeCompare(right.target) || left.id.localeCompare(right.id));
   const warnings: string[] = [];
   if (!items.length) warnings.push('No dated capsule events, commitments, claims, or timeline anchors were available.');
+  if (items.some((item) => item.dateUnparseable)) {
+    warnings.push('Some timeline dates could not be normalized and were placed at the end.');
+  }
   return {
     capsuleId: input.capsule.capsuleId,
     asOf: temporality.asOf,
@@ -233,10 +239,15 @@ function itemIdFor(id: string, nodeItemIds: Map<string, string>, claimItemIds: M
   return nodeItemIds.get(id) ?? claimItemIds.get(id) ?? null;
 }
 
-function groundTimelineItem(input: Omit<TemporalTimelineItem, 'advisory' | 'grounding'>): TemporalTimelineItem {
+function groundTimelineItem(input: Omit<TemporalTimelineItem, 'advisory' | 'grounding' | 'normalizedDate' | 'dateSortKey' | 'dateUnparseable'>): TemporalTimelineItem {
   const advisory = input.sourceReceiptIds.length === 0;
+  const normalized = normalizeTimelineDate(input.date);
   return {
     ...input,
+    date: normalized.normalizedDate ?? input.date,
+    normalizedDate: normalized.normalizedDate,
+    dateSortKey: normalized.sortKey,
+    dateUnparseable: normalized.sortKey === null,
     advisory,
     grounding: advisory ? 'advisory_uncertain' : 'receipt_grounded',
   };
@@ -300,12 +311,15 @@ function claimConfidence(claim: Record<string, unknown>): number | null {
 }
 
 function firstDate(...values: unknown[]): string | null {
+  let firstUnparseable: string | null = null;
   for (const value of values) {
     const date = nullableString(value);
     if (!date) continue;
-    if (Number.isFinite(Date.parse(date))) return date;
+    const normalized = normalizeTimelineDate(date);
+    if (normalized.normalizedDate) return normalized.normalizedDate;
+    firstUnparseable ??= date;
   }
-  return null;
+  return firstUnparseable;
 }
 
 function sourceIdsFrom(...values: unknown[]): string[] {
@@ -313,7 +327,44 @@ function sourceIdsFrom(...values: unknown[]): string[] {
 }
 
 function compareTimelineItems(left: TemporalTimelineItem, right: TemporalTimelineItem): number {
-  return left.date.localeCompare(right.date) || kindRank(left.kind) - kindRank(right.kind) || left.id.localeCompare(right.id);
+  const leftSort = left.dateSortKey ?? Number.POSITIVE_INFINITY;
+  const rightSort = right.dateSortKey ?? Number.POSITIVE_INFINITY;
+  return leftSort - rightSort || kindRank(left.kind) - kindRank(right.kind) || left.id.localeCompare(right.id);
+}
+
+function normalizeTimelineDate(value: string): { normalizedDate: string | null; sortKey: number | null } {
+  const cleaned = value.trim();
+  const yearOnly = /^(\d{4})$/.exec(cleaned);
+  if (yearOnly) return normalizedUtcDate(Number(yearOnly[1]), 1, 1);
+
+  const yearMonth = /^(\d{4})-(\d{2})$/.exec(cleaned);
+  if (yearMonth) return normalizedUtcDate(Number(yearMonth[1]), Number(yearMonth[2]), 1);
+
+  const isoLike = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(cleaned);
+  if (isoLike) return normalizedUtcDate(Number(isoLike[1]), Number(isoLike[2]), Number(isoLike[3]));
+
+  const slashDate = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(cleaned);
+  if (slashDate) return normalizedUtcDate(Number(slashDate[3]), Number(slashDate[1]), Number(slashDate[2]));
+
+  const parsed = Date.parse(cleaned);
+  if (!Number.isFinite(parsed)) return { normalizedDate: null, sortKey: null };
+  const date = new Date(parsed);
+  return normalizedUtcDate(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate());
+}
+
+function normalizedUtcDate(year: number, month: number, day: number): { normalizedDate: string | null; sortKey: number | null } {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {
+    return { normalizedDate: null, sortKey: null };
+  }
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return { normalizedDate: null, sortKey: null };
+  }
+  const sortKey = Date.UTC(year, month - 1, day);
+  const date = new Date(sortKey);
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+    return { normalizedDate: null, sortKey: null };
+  }
+  return { normalizedDate: date.toISOString().slice(0, 10), sortKey };
 }
 
 function kindRank(kind: string): number {
