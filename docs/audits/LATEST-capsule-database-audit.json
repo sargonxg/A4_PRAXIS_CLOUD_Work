@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-06-17T03:40:52.234Z",
+  "generatedAt": "2026-06-25T02:16:16.608Z",
   "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
   "auditedScope": {
     "canonicalStore": "Firestore ContextCapsules",
