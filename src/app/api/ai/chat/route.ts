@@ -29,6 +29,7 @@ import { getAskPraxisModelRuntimePolicy, type ModelRuntimePolicy } from '@/lib/a
 import { modelPolicyLabelFor } from '@/lib/proof/proof-summary';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
 import { suggestNextActions, type TurnCapsule } from '@/lib/ai/context-kernel';
+import { buildInstantContextCapsule } from '@/lib/ai/instant-context';
 import { buildEnrichedTurnCapsule, type ContextEnrichmentReceipt } from '@/lib/knowledge/context-enrichment-adapter';
 import {
   buildAskPraxisAnswerPolicyBlock,
@@ -178,18 +179,12 @@ export const POST = withCalibration('chat', 'ai_chat', {
     const { messages, conflictContext, situation, currentToolId, currentPath, contextPackageId, capsuleId, appliedCapsules, suggestedCapsules, activeContextStack, turnMetadata, threadId, aiSettings } = validation.data;
     const normalizedAppliedCapsules = normalizeAppliedCapsules(appliedCapsules);
     const normalizedSuggestedCapsules = normalizeSuggestedCapsules(suggestedCapsules);
-    if (!hasConversationCapsuleSignal({
+    const instantContextMode = !hasConversationCapsuleSignal({
       capsuleId,
       contextPackageId,
       appliedCapsules: normalizedAppliedCapsules,
       activeContextStack,
-    })) {
-      return Response.json({
-        error: 'Active ContextCapsule is required before Ask PRAXIS can answer this turn.',
-        code: 'capsule_context_required',
-        category: 'capsule_resolution',
-      }, { status: 412 });
-    }
+    });
     const requestSituationId = (situation as Situation | undefined)?.id;
     const prompt = lastUserPrompt(messages);
     const deepResearchRequested = turnMetadata?.toggles?.deepResearch === true;
@@ -211,6 +206,13 @@ export const POST = withCalibration('chat', 'ai_chat', {
     let evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null = null;
     let answerEvidencePack: Awaited<ReturnType<typeof buildCapsuleEvidencePack>> | null = null;
     const contextHealthDegradations: AskContextHealthDegradation[] = [];
+    if (instantContextMode) {
+      recordContextHealthDegradation(
+        contextHealthDegradations,
+        'capsule_resolution',
+        'no capsule selected; answered with synthesized instant context (not saved)',
+      );
+    }
     const toolInvocations: AskToolInvocationReceipt[] = [];
     const requestedResearchGraphExtra = aiSettings?.researchGraphExtra === true;
     const researchGraphServerEnabled = isResearchGraphServerEnabled();
@@ -252,28 +254,30 @@ export const POST = withCalibration('chat', 'ai_chat', {
     // --- Live mode ---
     // Credits + profile gate already handled by withCalibration above.
     turnCapsule = _user.uid
-      ? await buildEnrichedTurnCapsule({
-          uid: _user.uid,
-          capsuleId,
-          contextPackageId,
-          activeContextStack: isRecord(activeContextStack) ? activeContextStack as Partial<ActiveContextStackState> : null,
-          situationId: requestSituationId,
-          query: prompt,
-        }).catch((err) => {
-          console.warn('[chat] full capsule resolution failed; using thin fallback context:', err);
-          recordContextHealthDegradation(
-            contextHealthDegradations,
-            'capsule_resolution',
-            'enriched capsule resolution failed; using thin fallback context',
-          );
-          return buildThinCapsuleFallback({
-            uid: _user.uid,
-            capsuleId,
-            contextPackageId,
-            appliedCapsules: normalizedAppliedCapsules,
-            activeContextStack,
-          });
-        })
+      ? (instantContextMode
+          ? (await buildInstantContextCapsule({ uid: _user.uid, prompt, situationId: requestSituationId })).turnCapsule
+          : await buildEnrichedTurnCapsule({
+              uid: _user.uid,
+              capsuleId,
+              contextPackageId,
+              activeContextStack: isRecord(activeContextStack) ? activeContextStack as Partial<ActiveContextStackState> : null,
+              situationId: requestSituationId,
+              query: prompt,
+            }).catch((err) => {
+              console.warn('[chat] full capsule resolution failed; using thin fallback context:', err);
+              recordContextHealthDegradation(
+                contextHealthDegradations,
+                'capsule_resolution',
+                'enriched capsule resolution failed; using thin fallback context',
+              );
+              return buildThinCapsuleFallback({
+                uid: _user.uid,
+                capsuleId,
+                contextPackageId,
+                appliedCapsules: normalizedAppliedCapsules,
+                activeContextStack,
+              });
+            }))
       : null;
     capsuleContext = turnCapsule?.injectableContext ?? null;
     effectiveSituationId = requestSituationId
@@ -294,7 +298,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
     }
     if (turnCapsule) {
       systemPrompt += '\n\n' + turnCapsule.retrievalPlan.promptBlock;
-      if (_user.uid && (capsuleContext?.capsule?.capsuleId ?? capsuleId)) {
+      if (!instantContextMode && _user.uid && (capsuleContext?.capsule?.capsuleId ?? capsuleId)) {
         const evidencePack = await buildCapsuleEvidencePack({
           ownerUid: _user.uid,
           capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? 'default',
@@ -555,6 +559,7 @@ You have access to the user's active situation data. When answering questions:
       retrievedSourceIds,
       evidencePackReceipt,
       memoryPersistence: isAskThreadSqlConfigured() ? 'cloud-sql' : 'firestore',
+      answerContextMode: instantContextMode ? 'instant' : 'capsule',
     });
     runtimeReceipt.suggestedCapsules = normalizedSuggestedCapsules;
     const askStartedAt = Date.now();
@@ -644,7 +649,10 @@ You have access to the user's active situation data. When answering questions:
         intelligenceProfileId: (capsuleContext?.capsule ?? turnCapsule?.injectableContext.capsule)?.starterSnapshot?.intelligenceProfile?.profileId ?? null,
         cogneeProfileId: (capsuleContext?.capsule ?? turnCapsule?.injectableContext.capsule)?.starterSnapshot?.cogneeProfile?.profileId ?? null,
       },
-      orchestrationReceipt,
+      orchestrationReceipt: ({
+        ...orchestrationReceipt,
+        answerContextMode: instantContextMode ? 'instant' : 'capsule',
+      } as AskConversationOrchestrationReceipt),
       generationReceipt: runtimeReceipt.generationReceipt,
       groundingVerification: buildGroundingVerificationForText(text, turnCapsule),
       capsuleSuggestions: normalizedSuggestedCapsules,
@@ -949,6 +957,7 @@ interface AskRuntimeReceipt extends Record<string, unknown> {
     parentCapsuleId: string | null;
   }>;
   contextMode?: 'praxis_lite' | 'thin_fallback';
+  answerContextMode?: 'instant' | 'capsule';
   memoryPersistence?: 'cloud-sql' | 'firestore';
   contextReceipt?: ReturnType<typeof buildAskContextReceipt>;
   contextEnrichment?: ContextEnrichmentReceipt;
@@ -1145,6 +1154,7 @@ function decorateAskRuntimeReceipt(
     retrievedSourceIds: string[];
     evidencePackReceipt: { packId: string; paragraphCount: number; gapCount: number } | null;
     memoryPersistence: 'cloud-sql' | 'firestore';
+    answerContextMode: 'instant' | 'capsule';
   },
 ): AskRuntimeReceipt {
   const resolvedCapsule = input.capsule ?? input.turnCapsule?.injectableContext.capsule ?? null;
@@ -1160,6 +1170,7 @@ function decorateAskRuntimeReceipt(
     effectiveSituationId: input.effectiveSituationId,
     // audit marker: contextMode: 'praxis_lite' remains the normal full-capsule path; thin_fallback is explicit when resolver recovery is used.
     contextMode,
+    answerContextMode: input.answerContextMode,
     memoryPersistence: input.memoryPersistence,
     contextEnrichment: input.turnCapsule?.enrichment?.receipt ?? {
       firestore: 'ready',
