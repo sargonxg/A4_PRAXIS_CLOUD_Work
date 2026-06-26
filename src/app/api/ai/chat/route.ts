@@ -541,6 +541,21 @@ You have access to the user's active situation data. When answering questions:
         ? '\n\nRESEARCH GRAPH: The user requested Research graph, but it is unavailable for this turn. Answer normally from the active capsule and available sources, and surface the degraded Research graph receipt without failing the turn.'
         : '\n\nRESEARCH GRAPH: The free GDELT + Wikidata Research graph extra is off for this turn. Do not use researchGraphSearch unless the user enables the Research graph button in the conversation composer.';
     systemPrompt += '\n\n' + askIntentDirective(askIntent);
+    systemPrompt += instantContextMode
+      ? `\n\n## LIVE GROUNDING POLICY (INSTANT CONTEXT)
+No saved ContextCapsule and no situation corpus back this turn. Do NOT answer checkable or current
+factual claims from memory. When the answer depends on external, current, or verifiable facts:
+1. Call groundedSearchFetch FIRST to gather sourced evidence (it is available now; use it
+   proactively, not as a last resort). Use researchGraphSearch when entity/event/graph grounding is
+   enabled and would help.
+2. Structure findings against the ontology primitives named in the instant-context block.
+3. Cite sources inline, mark any unverified statement explicitly, and list evidence gaps.
+4. Never fabricate sources, figures, dates, or identifiers.`
+      : `\n\n## LIVE GROUNDING POLICY
+When the answer depends on external, current, or verifiable facts that the active capsule, corpus,
+and evidence pack do not already cover, call groundedSearchFetch before asserting them rather than
+answering from memory. Cite sources inline, qualify low-confidence claims, surface gaps, and never
+fabricate sources, figures, dates, or identifiers.`;
 
     // TACITUS owns model routing for Ask PRAXIS. Legacy client settings are
     // tolerated for compatibility, but the selected provider model is derived
