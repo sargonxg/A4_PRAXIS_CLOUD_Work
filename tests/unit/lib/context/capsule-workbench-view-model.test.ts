@@ -125,6 +125,11 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.tacitKnowledge.items[0]?.summary).toContain('primary-source caveats');
     expect(model.agents.recentRuns[0]?.status).toBe('completed');
     expect(model.reviewQueue[0]).toMatchObject({ target: 'graphProposal', state: 'proposed' });
+    expect(model.reviewQueue[0]).toMatchObject({
+      why: expect.stringMatching(/graph|ontology|review/i),
+      impact: expect.stringMatching(/graph|ontology|canonical|proposal/i),
+      allowedActions: ['approve', 'reject'],
+    });
   });
 
   it('keeps sparse capsules legible and review-gated instead of rendering an empty mess', () => {
@@ -150,6 +155,10 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.coreSourceability.find((gate) => gate.kind === 'output')?.unsupportedClaimCount).toBeGreaterThanOrEqual(0);
     expect(model.graph.nodes.some((node) => node.type === 'gap')).toBe(true);
     expect(model.reviewQueue.some((item) => item.target === 'sourceGap')).toBe(true);
+    expect(model.reviewQueue.find((item) => item.target === 'sourceGap')).toMatchObject({
+      evidenceLabels: expect.arrayContaining(['source count: 0']),
+      allowedActions: ['approve', 'reject'],
+    });
     expect(model.summaryFacts.nextAction).toBe('Attach sources or create a source-gap review card.');
   });
 
@@ -283,6 +292,151 @@ describe('buildCapsuleWorkbenchViewModel', () => {
         target: 'graphlite:claim-review',
         reviewState: 'advisory',
       }),
+    ]));
+  });
+
+  it('projects starter research artifacts into an explicit inspect display', () => {
+    const model = buildCapsuleWorkbenchViewModel({
+      capsule: {
+        ...capsule,
+        starterSnapshot: {
+          researchDossier: {
+            dossierId: 'starter-cap-dossier',
+            status: 'starter-research-dossier',
+            humanJob: 'A policy analyst needs a reviewed research file before writing for principals.',
+            realWorldScenario: 'A team is preparing a same-day decision note and needs sourced caveats visible.',
+            howHumanUsesCapsule: 'Open the capsule, refresh sources, inspect claims, then draft with review gates.',
+            sourceSpine: [
+              {
+                sourceId: 'official-source',
+                label: 'Official source',
+                url: 'https://example.gov/source',
+                publisher: 'Example Agency',
+                date: '2026-06-01',
+                reliabilityTier: 1,
+                role: 'primary-authoritative',
+                rationale: 'Primary source lane.',
+              },
+              {
+                sourceId: 'method-source',
+                label: 'Method source',
+                url: 'https://example.org/method',
+                publisher: 'Method Publisher',
+                date: '2026',
+                reliabilityTier: 2,
+                role: 'method-sourceability',
+                rationale: 'Method lane.',
+              },
+            ],
+            knownEvidenceGaps: ['Live status has not been refreshed today.', 'Stakeholder position is missing.'],
+            refreshCadence: 'Refresh before external use.',
+            claimReviewPolicy: 'Unsupported and stale claims remain review cards until source receipts are refreshed.',
+            nextHumanActions: ['Refresh official source.', 'Resolve stakeholder position.'],
+            nonAffiliationSafety: 'Not affiliated with or endorsed by cited institutions.',
+            catalogVersion: 'test-version',
+          },
+          claimLedgerSeeds: {
+            ledgerId: 'starter-cap-claims',
+            supported: [{ claimId: 'supported-1', claim: 'Supported claim.', status: 'supported', sourceIds: ['official-source'], caveat: 'Starter caveat.', nextAction: 'Confirm receipt.' }],
+            weak: [{ claimId: 'weak-1', claim: 'Weak claim.', status: 'weak', sourceIds: ['method-source'], caveat: 'Weak caveat.', nextAction: 'Corroborate.' }],
+            missing: [{ claimId: 'missing-1', claim: 'Missing claim.', status: 'missing', sourceIds: [], caveat: 'Missing caveat.', nextAction: 'Find source.' }],
+            stale: [{ claimId: 'stale-1', claim: 'Stale claim.', status: 'stale', sourceIds: ['official-source'], caveat: 'Stale caveat.', nextAction: 'Refresh source.' }],
+            reviewGate: 'Human claim review is required before external use.',
+            catalogVersion: 'test-version',
+          },
+          humanWorkflowExample: {
+            workflowId: 'starter-workflow',
+            humanRole: 'Policy analyst',
+            scenario: 'Prepare a principals note.',
+            steps: ['Refresh sources.', 'Inspect claims.', 'Draft memo.'],
+            outputPath: 'Decision memo',
+            humanReviewGate: 'Principal review required.',
+            nextActions: ['Open refresh docket.'],
+            catalogVersion: 'test-version',
+          },
+          sourceRefreshDocket: {
+            docketId: 'starter-refresh',
+            status: 'needs-refresh',
+            cadence: 'Refresh daily while active.',
+            sourceIds: ['official-source', 'method-source'],
+            items: [],
+            staleSourceIds: ['official-source'],
+            missingEvidenceGaps: ['Stakeholder position is missing.'],
+            nextRepairActions: ['Refresh official source.'],
+            humanReviewRequired: true,
+            catalogVersion: 'test-version',
+          },
+          graphLiteProjection: {
+            provider: 'graphlite',
+            projectionId: 'starter-cap-graph',
+            status: 'compiled-advisory',
+            namedGraph: 'capsule_starter_cap',
+            advisoryOnly: true,
+            canonicalStore: 'Firestore ContextCapsules',
+            promotionGate: 'Human review required before graph promotion.',
+            nodeCount: 7,
+            edgeCount: 9,
+            nodes: [],
+            edges: [],
+          },
+          ontologyOverlay: {
+            baseOntologyIds: ['conflict'],
+            graphNodeTypes: ['Actor', 'Claim', 'Event'],
+            graphEdgeTypes: ['supports_claim'],
+            graphSeed: { nodeTemplates: ['Actor', 'Claim'], edgeTemplates: ['supports'], proposalLabel: 'Starter ACO graph' },
+          },
+          deviceProfile: {
+            reasoningOperation: 'test a policy claim against sourced caveats',
+            activationCriteria: ['claim is contested'],
+            outputGrammar: ['claim', 'receipt', 'caveat'],
+            humanReviewGate: 'Human review required.',
+          },
+        },
+      },
+    });
+
+    expect(model.research).toMatchObject({
+      dossierId: 'starter-cap-dossier',
+      status: 'starter-research-dossier',
+      sourceSpineCount: 2,
+      evidenceGapCount: 2,
+      unsupportedClaimCount: 1,
+      refresh: {
+        status: 'needs-refresh',
+        cadence: 'Refresh daily while active.',
+        staleSourceCount: 1,
+        humanReviewRequired: true,
+      },
+      claimPosture: {
+        supported: 1,
+        weak: 1,
+        missing: 1,
+        stale: 1,
+      },
+      graphProjection: {
+        provider: 'graphlite',
+        namedGraph: 'capsule_starter_cap',
+        nodeCount: 7,
+        edgeCount: 9,
+        advisoryOnly: true,
+      },
+      ontologyCoverage: {
+        activeOntologyIds: ['conflict'],
+        graphNodeTypes: ['Actor', 'Claim', 'Event'],
+      },
+      reasoningPolicy: {
+        operation: 'test a policy claim against sourced caveats',
+        reviewGate: 'Human review required.',
+      },
+    });
+    expect(model.research.sourceSpine[0]).toMatchObject({
+      sourceId: 'official-source',
+      role: 'primary-authoritative',
+      reliabilityTier: 1,
+    });
+    expect(model.research.reviewGates).toEqual(expect.arrayContaining([
+      'Human claim review is required before external use.',
+      'Human review required before graph promotion.',
     ]));
   });
 

@@ -61,7 +61,17 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('/api/conversations/${encodeURIComponent(nextThreadId)}/turns');
     expect(source).not.toContain("fetch('/api/ai/ask-praxis'");
     expect(source).toContain("currentToolId: 'ask-praxis'");
-    expect(source).toContain('appliedCapsules: activeCapsuleStack.map');
+    expect(source).toContain('appliedCapsules: requestAppliedCapsules.map');
+  });
+
+  it('supports true Instant Context by omitting capsule signals when no capsule is active', () => {
+    expect(source).toContain("const askContextMode: 'instant' | 'capsule'");
+    expect(source).toContain('const askUsesSavedCapsule = hasSavedAskContext');
+    expect(source).toContain('const requestCapsuleId = askUsesSavedCapsule ? currentCapsuleId : undefined');
+    expect(source).toContain('const requestAppliedCapsules = askUsesSavedCapsule ? activeCapsuleStack : []');
+    expect(source).toContain('activeContextStack: requestActiveContextStack');
+    expect(source).toContain('Instant context (not saved)');
+    expect(source).toContain('saveInstantContextDraft');
   });
 
   it('keeps authenticated Ask clients on the saved conversation route', () => {
@@ -190,6 +200,42 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('safeMarkdownHref(href)');
     expect(source).toContain("target={external ? '_blank' : undefined}");
     expect(source.indexOf('<AskTurnPlanPanel')).toBeLessThan(source.indexOf('<AnswerQualityStrip'));
+  });
+
+  it('turns answer sources into an actionable source and claim workbench without leaving Ask', () => {
+    expect(source).toContain('Source and claim workbench');
+    expect(source).toContain('data-testid="praxis-source-claim-workbench"');
+    expect(source).toContain('Promote source gap');
+    expect(source).toContain('Attach receipt to capsule');
+    expect(source).toContain('Rerun source check');
+    expect(source).toContain('Unsupported claims stay out of final outputs until receipts support them.');
+    expect(source).not.toContain("href=\"/app/source-workbench\"");
+  });
+
+  it('keeps workflow dry-run checks in the existing Ask composer', () => {
+    expect(source).toContain('type WorkflowDryRunCheck');
+    expect(source).toContain('runWorkflowDryRunCheck');
+    expect(source).toContain('data-testid="workflow-dry-run-checker"');
+    expect(source).toContain('Test workflow');
+    expect(source).toContain('Context readiness');
+    expect(source).toContain('Tool routing');
+    expect(source).toContain('Source posture');
+    expect(source).toContain('Review gates');
+    expect(source).not.toContain('/app/workflow-tester');
+  });
+
+  it('upgrades capsule attach into a full-library drawer with lane-aware attach controls', () => {
+    const browserSource = extractSourceBlock('function CapsuleBrowserDialog', 'function CapsuleRepositoryGrid');
+    expect(browserSource).toContain('data-testid="capsule-attach-drawer"');
+    expect(browserSource).toContain('Full library attach');
+    expect(browserSource).toContain('Attach lane');
+    expect(browserSource).toContain('Selected lane');
+    expect(browserSource).toContain('source spine');
+    expect(browserSource).toContain('evidence gaps');
+    expect(browserSource).toContain('unsupported claims');
+    expect(browserSource).toContain('graph');
+    expect(browserSource).toContain('Attach to selected lane');
+    expect(browserSource).toContain('Inspect first');
   });
 
   it('renders same-thread deep work queue proof from persisted answer envelopes', () => {

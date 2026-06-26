@@ -29,6 +29,15 @@ export interface CapsuleLibraryInside {
   graphEdges: number;
 }
 
+export interface CapsuleLibraryResearchSignals {
+  sourceSpineCount: number;
+  evidenceGapCount: number;
+  refreshStatus: string;
+  graphNodeCount: number;
+  graphEdgeCount: number;
+  unsupportedClaimCount: number;
+}
+
 export interface CapsuleLibraryCoreRefs {
   userCoreId: string | null;
   situationCoreId: string | null;
@@ -53,6 +62,7 @@ export interface CapsuleLibraryEntry {
   starterDomain: CapsuleStarterDefinition['domain'];
   ontologyStack: string[];
   inside: CapsuleLibraryInside;
+  researchSignals: CapsuleLibraryResearchSignals;
   readinessTier: CapsuleReadinessTier;
   searchKeywords: string[];
   ranking: {
@@ -122,6 +132,11 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
   const claims = claimsCountForCapsule(capsule);
   const graphNodes = capsule.graphStats?.nodeCount ?? 0;
   const graphEdges = capsule.graphStats?.edgeCount ?? 0;
+  const researchSignals = researchSignalsForCapsule(capsule, {
+    sourceCount: refs.sourceCoreIds.length + refs.documentCoreIds.length + sourceRefs,
+    graphNodes,
+    graphEdges,
+  });
   const score = capsule.trust?.score ?? capsule.health?.score ?? 0;
 
   return {
@@ -140,6 +155,7 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
       graphNodes,
       graphEdges,
     },
+    researchSignals,
     readinessTier: readinessTierForCapsule(capsule),
     searchKeywords: uniqueStrings([
       ...tags,
@@ -228,6 +244,14 @@ function libraryEntryFromStarter(
       claims,
       graphNodes,
       graphEdges,
+    },
+    researchSignals: {
+      sourceSpineCount: starter.researchDossier.sourceSpine.length,
+      evidenceGapCount: starter.researchDossier.knownEvidenceGaps.length,
+      refreshStatus: starter.sourceRefreshDocket.status,
+      graphNodeCount: starter.graphLiteProjection.nodeCount,
+      graphEdgeCount: starter.graphLiteProjection.edgeCount,
+      unsupportedClaimCount: starter.claimLedgerSeeds.missing.length + starter.claimLedgerSeeds.stale.length,
     },
     readinessTier: readinessTier(starter.readinessStars, ranking.score),
     searchKeywords: uniqueStrings([
@@ -389,6 +413,42 @@ function claimsCountForCapsule(capsule: PraxisCapsule): number {
   return Array.isArray(capsule.claimLedger) ? capsule.claimLedger.length : 0;
 }
 
+function researchSignalsForCapsule(
+  capsule: PraxisCapsule,
+  fallback: { sourceCount: number; graphNodes: number; graphEdges: number },
+): CapsuleLibraryResearchSignals {
+  const snapshot = isRecord(capsule.starterSnapshot) ? capsule.starterSnapshot : null;
+  const dossier = isRecord(snapshot?.researchDossier) ? snapshot.researchDossier : null;
+  const refreshDocket = isRecord(snapshot?.sourceRefreshDocket) ? snapshot.sourceRefreshDocket : null;
+  const graphLiteProjection = isRecord(snapshot?.graphLiteProjection) ? snapshot.graphLiteProjection : null;
+  const claimLedgerSeeds = isRecord(snapshot?.claimLedgerSeeds) ? snapshot.claimLedgerSeeds : null;
+  const evidenceGaps = stringListFromUnknown(dossier?.knownEvidenceGaps);
+  const staleSourceIds = stringListFromUnknown(refreshDocket?.staleSourceIds);
+  const missingClaims = Array.isArray(claimLedgerSeeds?.missing) ? claimLedgerSeeds.missing.length : 0;
+  const staleClaims = Array.isArray(claimLedgerSeeds?.stale) ? claimLedgerSeeds.stale.length : 0;
+  const unsupportedClaims = unsupportedClaimsCountForCapsule(capsule);
+
+  return {
+    sourceSpineCount: Array.isArray(dossier?.sourceSpine) ? dossier.sourceSpine.length : fallback.sourceCount,
+    evidenceGapCount: evidenceGaps.length || stringListFromUnknown(refreshDocket?.missingEvidenceGaps).length,
+    refreshStatus: stringFromUnknown(refreshDocket?.status) ?? (staleSourceIds.length ? 'needs-refresh' : 'workspace-capsule'),
+    graphNodeCount: numberFromUnknown(graphLiteProjection?.nodeCount) ?? fallback.graphNodes,
+    graphEdgeCount: numberFromUnknown(graphLiteProjection?.edgeCount) ?? fallback.graphEdges,
+    unsupportedClaimCount: missingClaims + staleClaims || unsupportedClaims,
+  };
+}
+
+function unsupportedClaimsCountForCapsule(capsule: PraxisCapsule): number {
+  const v3Claims = capsule.v3?.claimLedger?.allClaims;
+  const claims = Array.isArray(v3Claims) && v3Claims.length ? v3Claims : capsule.claimLedger;
+  if (!Array.isArray(claims)) return 0;
+  return claims.filter((claim) => {
+    if (!isRecord(claim)) return false;
+    const support = `${stringFromUnknown(claim.support) ?? stringFromUnknown(claim.status) ?? ''}`.toLowerCase();
+    return /unsupported|missing|stale|weak/.test(support);
+  }).length;
+}
+
 function claimTextsForCapsule(capsule: PraxisCapsule): string[] {
   const v3Claims = capsule.v3?.claimLedger?.allClaims;
   const claims = Array.isArray(v3Claims) && v3Claims.length ? v3Claims : capsule.claimLedger;
@@ -416,6 +476,10 @@ function stringFromUnknown(value: unknown): string | null {
 
 function stringListFromUnknown(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0) : [];
+}
+
+function numberFromUnknown(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

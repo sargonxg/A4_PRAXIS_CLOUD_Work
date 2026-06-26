@@ -188,6 +188,15 @@ export function CapsuleLibrary({
                       nodeCount: entry.inside.graphNodes,
                       edgeCount: entry.inside.graphEdges,
                     }}
+                    researchSignals={{
+                      sourceSpineCount: entry.researchSignals.sourceSpineCount,
+                      evidenceGapCount: entry.researchSignals.evidenceGapCount,
+                      refreshStatus: entry.researchSignals.refreshStatus,
+                      graphNodeCount: entry.researchSignals.graphNodeCount,
+                      graphEdgeCount: entry.researchSignals.graphEdgeCount,
+                      unsupportedClaimCount: entry.researchSignals.unsupportedClaimCount,
+                      inspectHref: `/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`,
+                    }}
                     tags={entry.ontologyStack.slice(0, 4).map((item) => ({
                       label: item,
                       className: 'rounded-[var(--radius-full)]',

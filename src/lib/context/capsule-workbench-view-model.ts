@@ -147,6 +147,8 @@ export interface CapsuleWorkbenchReviewCardInput {
   target?: string | null;
   state?: string | null;
   sourceType?: string | null;
+  evidence?: Array<{ id?: string | null; label?: string | null; sourceType?: string | null; advisory?: boolean | null }> | null;
+  proposedEnvelopePatch?: unknown;
 }
 
 export interface CapsuleWorkbenchViewModelInput {
@@ -338,6 +340,10 @@ export interface CapsuleReviewCardDisplay {
   state: string;
   sourceType: string;
   reviewState: CapsuleWorkbenchReviewState;
+  why: string;
+  evidenceLabels: string[];
+  impact: string;
+  allowedActions: Array<'approve' | 'reject'>;
 }
 
 export type CapsuleWorkbenchPillarId = 'situation' | 'users' | 'tools' | 'output';
@@ -434,6 +440,83 @@ export interface CapsuleClaimDisplay {
   reviewState: CapsuleWorkbenchReviewState;
 }
 
+export interface CapsuleResearchSourceDisplay {
+  sourceId: string;
+  label: string;
+  url: string | null;
+  publisher: string | null;
+  date: string | null;
+  reliabilityTier: number | string | null;
+  role: string;
+  rationale: string | null;
+}
+
+export interface CapsuleResearchDisplay {
+  dossierId: string;
+  status: string;
+  humanJob: string;
+  realWorldScenario: string;
+  howHumanUsesCapsule: string;
+  sourceSpine: CapsuleResearchSourceDisplay[];
+  sourceSpineCount: number;
+  evidenceGaps: string[];
+  evidenceGapCount: number;
+  nextHumanActions: string[];
+  unsupportedClaimCount: number;
+  claimPosture: {
+    supported: number;
+    weak: number;
+    missing: number;
+    stale: number;
+    reviewGate: string;
+  };
+  workflow: {
+    workflowId: string;
+    humanRole: string;
+    scenario: string;
+    steps: string[];
+    outputPath: string;
+    humanReviewGate: string;
+    nextActions: string[];
+  };
+  refresh: {
+    status: string;
+    cadence: string;
+    sourceCount: number;
+    staleSourceCount: number;
+    missingEvidenceGapCount: number;
+    nextRepairActions: string[];
+    humanReviewRequired: boolean;
+  };
+  graphProjection: {
+    provider: 'graphlite' | string;
+    status: string;
+    namedGraph: string;
+    nodeCount: number;
+    edgeCount: number;
+    advisoryOnly: boolean;
+    canonicalStore: string;
+    promotionGate: string;
+  };
+  ontologyCoverage: {
+    activeOntologyIds: string[];
+    graphNodeTypes: string[];
+    graphEdgeTypes: string[];
+    activeCount: number;
+    proposedCount: number;
+    missingCount: number;
+    coveredPrimitiveCount: number;
+    missingPrimitives: string[];
+  };
+  reasoningPolicy: {
+    operation: string;
+    activationCriteria: string[];
+    outputGrammar: string[];
+    reviewGate: string;
+  };
+  reviewGates: string[];
+}
+
 export interface CapsuleWorkbenchViewModel {
   capsuleId: string;
   capsuleVersion: number;
@@ -466,6 +549,7 @@ export interface CapsuleWorkbenchViewModel {
   causalChains: CapsuleCausalChainDisplay[];
   quality: CapsuleQualityDisplay;
   claims: CapsuleClaimDisplay[];
+  research: CapsuleResearchDisplay;
 }
 
 const CORE_ORDER: Array<{
@@ -539,6 +623,12 @@ export function buildCapsuleWorkbenchViewModel(input: CapsuleWorkbenchViewModelI
     ontology,
     agentRuns: input.agentRuns ?? [],
   });
+  const research = buildResearchDisplay({
+    capsule,
+    evidence,
+    claims,
+    ontology,
+  });
 
   return {
     capsuleId: capsule.capsuleId,
@@ -572,6 +662,7 @@ export function buildCapsuleWorkbenchViewModel(input: CapsuleWorkbenchViewModelI
     causalChains,
     quality,
     claims,
+    research,
   };
 }
 
@@ -625,6 +716,205 @@ function buildEvidence(capsule: CapsuleWorkbenchCapsuleInput, documents: Capsule
     gaps,
     sourceIds,
     documentIds,
+  };
+}
+
+function buildResearchDisplay(input: {
+  capsule: CapsuleWorkbenchCapsuleInput;
+  evidence: CapsuleEvidenceDisplay;
+  claims: CapsuleClaimDisplay[];
+  ontology: CapsuleOntologyDisplay;
+}): CapsuleResearchDisplay {
+  const { capsule, evidence, claims, ontology } = input;
+  const grounding = asRecord(capsule.grounding);
+  const starterSnapshot = asRecord(capsule.starterSnapshot);
+  const dossier = firstRecord(
+    grounding?.researchDossier,
+    starterSnapshot?.researchDossier,
+  );
+  const claimLedgerSeeds = firstRecord(
+    grounding?.claimLedgerSeeds,
+    starterSnapshot?.claimLedgerSeeds,
+  );
+  const workflow = firstRecord(
+    grounding?.humanWorkflowExample,
+    starterSnapshot?.humanWorkflowExample,
+    starterSnapshot?.intelligenceProfile && asRecord(starterSnapshot.intelligenceProfile)?.humanWorkflow,
+  );
+  const refreshDocket = firstRecord(
+    grounding?.sourceRefreshDocket,
+    starterSnapshot?.sourceRefreshDocket,
+  );
+  const projectionCandidate = firstRecord(
+    grounding?.embeddedGraph,
+    capsule.embeddedGraph,
+    capsule.graphLiteProjection,
+    starterSnapshot?.embeddedGraph,
+    starterSnapshot?.graphLiteProjection,
+  );
+  const ontologyOverlay = firstRecord(
+    grounding?.ontologyOverlay,
+    starterSnapshot?.ontologyOverlay,
+  );
+  const deviceProfile = firstRecord(
+    grounding?.deviceProfile,
+    starterSnapshot?.deviceProfile,
+  );
+  const sourceSpine = sourceSpineFromUnknown(dossier?.sourceSpine);
+  const claimPosture = claimPostureFromUnknown(claimLedgerSeeds, claims);
+  const dossierEvidenceGaps = uniqueStrings([
+    ...cleanStrings(dossier?.knownEvidenceGaps),
+    ...cleanStrings(refreshDocket?.missingEvidenceGaps),
+  ]);
+  const evidenceGaps = uniqueStrings([
+    ...dossierEvidenceGaps,
+    ...evidence.gaps,
+  ]);
+  const nextHumanActions = uniqueStrings([
+    ...cleanStrings(dossier?.nextHumanActions),
+    ...cleanStrings(refreshDocket?.nextRepairActions),
+    ...cleanStrings(workflow?.nextActions),
+    ...input.evidence.dateChecks,
+  ]);
+  const graphProjection = graphProjectionResearchFromUnknown(projectionCandidate);
+  const workflowDisplay = workflowResearchFromUnknown(workflow, nextHumanActions);
+  const refresh = refreshResearchFromUnknown(refreshDocket, dossier, sourceSpine, evidenceGaps);
+  const reasoningPolicy = reasoningPolicyFromUnknown(deviceProfile);
+
+  return {
+    dossierId: cleanText(dossier?.dossierId) || `${capsule.capsuleId}-research-dossier`,
+    status: cleanText(dossier?.status) || 'capsule-research-display',
+    humanJob: cleanText(dossier?.humanJob) || 'Human reviewer needs the capsule research posture, source receipts, claim gaps, and review gates before relying on the capsule.',
+    realWorldScenario: cleanText(dossier?.realWorldScenario) || cleanText(capsule.summary) || 'Inspect this capsule before using it for sourced policy work.',
+    howHumanUsesCapsule: cleanText(dossier?.howHumanUsesCapsule) || 'Open Inspect, review source receipts, check unsupported claims, refresh stale sources, and keep graph proposals review-gated.',
+    sourceSpine,
+    sourceSpineCount: sourceSpine.length,
+    evidenceGaps,
+    evidenceGapCount: dossierEvidenceGaps.length || evidenceGaps.length,
+    nextHumanActions,
+    unsupportedClaimCount: evidence.unsupportedClaims.length,
+    claimPosture,
+    workflow: workflowDisplay,
+    refresh,
+    graphProjection,
+    ontologyCoverage: ontologyCoverageFromUnknown(ontologyOverlay, ontology),
+    reasoningPolicy,
+    reviewGates: uniqueStrings(cleanStrings([
+      claimPosture.reviewGate,
+      workflowDisplay.humanReviewGate,
+      graphProjection.promotionGate,
+      reasoningPolicy.reviewGate,
+      cleanText(dossier?.claimReviewPolicy),
+      refresh.humanReviewRequired ? 'Human review required before accepting the source refresh docket.' : null,
+    ])),
+  };
+}
+
+function sourceSpineFromUnknown(value: unknown): CapsuleResearchSourceDisplay[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item): CapsuleResearchSourceDisplay[] => {
+    const record = asRecord(item);
+    const sourceId = cleanText(record?.sourceId) || cleanText(record?.id);
+    if (!sourceId) return [];
+    return [{
+      sourceId,
+      label: cleanText(record?.label) || cleanText(record?.title) || humanizeId(sourceId),
+      url: cleanText(record?.url),
+      publisher: cleanText(record?.publisher),
+      date: cleanText(record?.date),
+      reliabilityTier: scalarStringOrNumber(record?.reliabilityTier),
+      role: cleanText(record?.role) || 'source-receipt',
+      rationale: cleanText(record?.rationale),
+    }];
+  });
+}
+
+function claimPostureFromUnknown(value: Record<string, unknown> | null | undefined, claims: CapsuleClaimDisplay[]): CapsuleResearchDisplay['claimPosture'] {
+  const supported = arrayUnknown(value?.supported).length || claims.filter((claim) => supportSeverity(claim.support) === 'supported').length;
+  const weak = arrayUnknown(value?.weak).length || claims.filter((claim) => supportSeverity(claim.support) === 'weak').length;
+  const missing = arrayUnknown(value?.missing).length || claims.filter((claim) => supportSeverity(claim.support) === 'unsupported').length;
+  const stale = arrayUnknown(value?.stale).length;
+  return {
+    supported,
+    weak,
+    missing,
+    stale,
+    reviewGate: cleanText(value?.reviewGate) || 'Human review required before using unresolved, weak, missing, or stale claims externally.',
+  };
+}
+
+function workflowResearchFromUnknown(value: Record<string, unknown> | null | undefined, fallbackActions: string[]): CapsuleResearchDisplay['workflow'] {
+  return {
+    workflowId: cleanText(value?.workflowId) || 'capsule-inspect-workflow',
+    humanRole: cleanText(value?.humanRole) || 'Capsule reviewer',
+    scenario: cleanText(value?.scenario) || 'Review the capsule before drafting, exporting, or promoting graph/source changes.',
+    steps: cleanStrings(value?.steps).length ? cleanStrings(value?.steps) : ['Inspect sources.', 'Check claim posture.', 'Refresh gaps.', 'Approve or reject review cards.'],
+    outputPath: cleanText(value?.outputPath) || 'Review-gated policy work product',
+    humanReviewGate: cleanText(value?.humanReviewGate) || 'Human review required before external use.',
+    nextActions: cleanStrings(value?.nextActions).length ? cleanStrings(value?.nextActions) : fallbackActions.slice(0, 4),
+  };
+}
+
+function refreshResearchFromUnknown(
+  docket: Record<string, unknown> | null | undefined,
+  dossier: Record<string, unknown> | null | undefined,
+  sourceSpine: CapsuleResearchSourceDisplay[],
+  evidenceGaps: string[],
+): CapsuleResearchDisplay['refresh'] {
+  return {
+    status: cleanText(docket?.status) || (evidenceGaps.length ? 'needs-refresh' : 'starter-seeded'),
+    cadence: cleanText(docket?.cadence) || cleanText(dossier?.refreshCadence) || 'Refresh before external use or high-stakes reliance.',
+    sourceCount: cleanStrings(docket?.sourceIds).length || sourceSpine.length,
+    staleSourceCount: cleanStrings(docket?.staleSourceIds).length,
+    missingEvidenceGapCount: cleanStrings(docket?.missingEvidenceGaps).length || evidenceGaps.length,
+    nextRepairActions: cleanStrings(docket?.nextRepairActions),
+    humanReviewRequired: docket?.humanReviewRequired === true || evidenceGaps.length > 0,
+  };
+}
+
+function graphProjectionResearchFromUnknown(value: Record<string, unknown> | null | undefined): CapsuleResearchDisplay['graphProjection'] {
+  const nodes = graphLiteNodesFromUnknown(value?.nodes);
+  const edges = graphLiteEdgesFromUnknown(value?.edges);
+  const projectionId = cleanText(value?.projectionId) || 'graphlite-advisory-projection';
+  return {
+    provider: cleanText(value?.provider) || 'graphlite',
+    status: cleanText(value?.status) || 'compiled-advisory',
+    namedGraph: cleanText(value?.namedGraph) || projectionId,
+    nodeCount: typeof value?.nodeCount === 'number' ? value.nodeCount : nodes.length,
+    edgeCount: typeof value?.edgeCount === 'number' ? value.edgeCount : edges.length,
+    advisoryOnly: value?.advisoryOnly !== false,
+    canonicalStore: cleanText(value?.canonicalStore) || 'Firestore ContextCapsules',
+    promotionGate: cleanText(value?.promotionGate) || 'Human review-card approval required before canonical graph promotion.',
+  };
+}
+
+function ontologyCoverageFromUnknown(
+  overlay: Record<string, unknown> | null | undefined,
+  ontology: CapsuleOntologyDisplay,
+): CapsuleResearchDisplay['ontologyCoverage'] {
+  const primitiveCoverage = uniqueStrings(ontology.active.flatMap((item) => item.primitiveCoverage));
+  const missingPrimitives = uniqueStrings([
+    ...ontology.missing.flatMap((item) => item.missingPrimitives),
+    ...ontology.active.flatMap((item) => item.missingPrimitives),
+  ]);
+  return {
+    activeOntologyIds: cleanStrings(overlay?.baseOntologyIds),
+    graphNodeTypes: cleanStrings(overlay?.graphNodeTypes),
+    graphEdgeTypes: cleanStrings(overlay?.graphEdgeTypes),
+    activeCount: ontology.active.length,
+    proposedCount: ontology.proposed.length,
+    missingCount: ontology.missing.length,
+    coveredPrimitiveCount: primitiveCoverage.length,
+    missingPrimitives,
+  };
+}
+
+function reasoningPolicyFromUnknown(value: Record<string, unknown> | null | undefined): CapsuleResearchDisplay['reasoningPolicy'] {
+  return {
+    operation: cleanText(value?.reasoningOperation) || 'inspect sources, claims, graph proposals, and caveats before drafting',
+    activationCriteria: cleanStrings(value?.activationCriteria),
+    outputGrammar: cleanStrings(value?.outputGrammar),
+    reviewGate: cleanText(value?.humanReviewGate) || 'Human review required before external advice, final outputs, memory capture, or graph promotion.',
   };
 }
 
@@ -829,14 +1119,24 @@ function buildReviewQueue(
   cards: CapsuleWorkbenchReviewCardInput[],
   evidence: CapsuleEvidenceDisplay,
 ): CapsuleReviewCardDisplay[] {
-  const explicit = cards.map((card, index) => ({
-    id: card.id ?? card.reviewCardId ?? `review-card-${index + 1}`,
-    title: cleanText(card.title) || humanizeId(card.target ?? 'review card'),
-    target: cleanText(card.target) || 'capsuleEnvelope',
-    state: cleanText(card.state) || 'proposed',
-    sourceType: cleanText(card.sourceType) || 'user',
-    reviewState: reviewStateFrom(card.state),
-  }));
+  const explicit = cards.map((card, index) => {
+    const target = cleanText(card.target) || 'capsuleEnvelope';
+    const sourceType = cleanText(card.sourceType) || 'user';
+    const title = cleanText(card.title) || humanizeId(target);
+    const evidenceLabels = reviewEvidenceLabels(card.evidence);
+    return {
+      id: card.id ?? card.reviewCardId ?? `review-card-${index + 1}`,
+      title,
+      target,
+      state: cleanText(card.state) || 'proposed',
+      sourceType,
+      reviewState: reviewStateFrom(card.state),
+      why: reviewWhyFor(target, sourceType, evidenceLabels),
+      evidenceLabels,
+      impact: reviewImpactFor(target),
+      allowedActions: ['approve', 'reject'] as Array<'approve' | 'reject'>,
+    };
+  });
   const derived: CapsuleReviewCardDisplay[] = [];
   if (!evidence.sourceCount) {
     derived.push({
@@ -846,6 +1146,10 @@ function buildReviewQueue(
       state: 'proposed',
       sourceType: 'source-gap',
       reviewState: 'proposed',
+      why: 'The capsule has no attached source or document receipts, so factual claims should not be promoted.',
+      evidenceLabels: ['source count: 0', ...evidence.gaps.slice(0, 2)],
+      impact: 'Blocks sourced drafting until receipts or a visible evidence gap are added.',
+      allowedActions: ['approve', 'reject'],
     });
   }
   if (evidence.unsupportedClaims.length) {
@@ -856,6 +1160,10 @@ function buildReviewQueue(
       state: 'proposed',
       sourceType: 'source-gap',
       reviewState: 'proposed',
+      why: 'Unsupported claims need source receipts, explicit caveats, or rejection before final outputs.',
+      evidenceLabels: evidence.unsupportedClaims.slice(0, 3),
+      impact: 'Keeps weak claims out of canonical capsule context until reviewed.',
+      allowedActions: ['approve', 'reject'],
     });
   }
   if ((capsule.readinessSummary?.graphProposalCount ?? 0) > 0 || !capsule.coreRefs?.graphCoreId) {
@@ -866,6 +1174,10 @@ function buildReviewQueue(
       state: 'proposed',
       sourceType: 'graph',
       reviewState: 'proposed',
+      why: 'Graph structure is advisory until a human accepts the node and edge proposal.',
+      evidenceLabels: evidence.sourceIds.slice(0, 3),
+      impact: 'Prevents GraphLite or embedded graph suggestions from mutating canonical capsule state silently.',
+      allowedActions: ['approve', 'reject'],
     });
   }
   if ((capsule.readinessSummary?.advisoryMemoryHitCount ?? 0) > 0) {
@@ -876,9 +1188,43 @@ function buildReviewQueue(
       state: 'proposed',
       sourceType: 'cognee',
       reviewState: 'advisory',
+      why: 'Advisory memory can guide the turn but must be reviewed before becoming durable context.',
+      evidenceLabels: [`${capsule.readinessSummary?.advisoryMemoryHitCount ?? 0} advisory memory hit(s)`],
+      impact: 'Keeps tacit memory useful without treating probabilistic recall as canonical evidence.',
+      allowedActions: ['approve', 'reject'],
     });
   }
   return uniqueBy([...explicit, ...derived], (item) => item.id).slice(0, 12);
+}
+
+function reviewEvidenceLabels(value: CapsuleWorkbenchReviewCardInput['evidence']): string[] {
+  if (!Array.isArray(value)) return [];
+  return uniqueStrings(value.flatMap((item) => [
+    cleanText(item?.label),
+    cleanText(item?.id),
+    cleanText(item?.sourceType),
+    item?.advisory ? 'advisory' : null,
+  ].filter(Boolean) as string[])).slice(0, 4);
+}
+
+function reviewWhyFor(target: string, sourceType: string, evidenceLabels: string[]): string {
+  const normalizedTarget = target.toLowerCase();
+  if (normalizedTarget.includes('source')) return 'Source changes affect claim support and must be accepted before agents rely on them.';
+  if (normalizedTarget.includes('claim')) return 'Claim ledger changes alter what the capsule treats as supported, weak, or missing.';
+  if (normalizedTarget.includes('graph')) return 'Graph and ontology changes stay advisory until reviewed.';
+  if (normalizedTarget.includes('memory')) return 'Memory capture can preserve useful tacit knowledge but needs owner review.';
+  if (evidenceLabels.length) return `Review generated from ${evidenceLabels.slice(0, 2).join(', ')}.`;
+  return `${humanizeId(sourceType)} proposal requires human approval before canonical promotion.`;
+}
+
+function reviewImpactFor(target: string): string {
+  const normalizedTarget = target.toLowerCase();
+  if (normalizedTarget.includes('source')) return 'May change source posture, refresh status, or evidence gaps.';
+  if (normalizedTarget.includes('claim')) return 'May change unsupported-claim counts and output readiness.';
+  if (normalizedTarget.includes('graph')) return 'May add or reject advisory graph nodes, edges, or ontology bindings.';
+  if (normalizedTarget.includes('memory')) return 'May promote or discard advisory tacit knowledge.';
+  if (normalizedTarget.includes('output')) return 'May change memo, briefing, or handover readiness.';
+  return 'May update capsule context after explicit approval.';
 }
 
 function buildTimeline(

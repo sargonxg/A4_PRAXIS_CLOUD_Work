@@ -31,6 +31,7 @@ GROUPS.capsules = [
   { label: 'Capsule V3', script: 'audit:capsule-v3' },
   { label: 'Capsule context capture', script: 'audit:capsule-context-capture' },
   { label: 'Capsule research dossiers', script: 'audit:capsule-research-dossiers' },
+  { label: 'Capsule inspect visibility', script: 'audit:capsule-inspect-visibility' },
   { label: 'Capsule backfill readiness', script: 'audit:capsule-backfill-readiness' },
   { label: 'Capsule graphlite projections', script: 'audit:capsule-graphlite-projections' },
   { label: 'Output capsule storage', script: 'audit:output-capsule-storage' },

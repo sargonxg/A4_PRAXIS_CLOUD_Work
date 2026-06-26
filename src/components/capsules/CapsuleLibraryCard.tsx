@@ -32,6 +32,16 @@ export interface CapsuleLibraryCardGraph {
   entityTypeCounts?: Record<string, number> | null;
 }
 
+export interface CapsuleLibraryCardResearchSignals {
+  sourceSpineCount?: number | null;
+  evidenceGapCount?: number | null;
+  refreshStatus?: string | null;
+  graphNodeCount?: number | null;
+  graphEdgeCount?: number | null;
+  unsupportedClaimCount?: number | null;
+  inspectHref?: string | null;
+}
+
 export interface CapsuleLibraryCardMetric {
   label: string;
   value: string | number | null | undefined;
@@ -68,6 +78,7 @@ export interface CapsuleLibraryCardProps {
   qualityScore?: number | null;
   counts?: CapsuleLibraryCardCounts | null;
   graph?: CapsuleLibraryCardGraph | null;
+  researchSignals?: CapsuleLibraryCardResearchSignals | null;
   tags?: CapsuleLibraryCardBadge[];
   badges?: CapsuleLibraryCardBadge[];
   badgeRail?: ReactNode;
@@ -106,6 +117,7 @@ export function CapsuleLibraryCard({
   qualityScore,
   counts,
   graph,
+  researchSignals,
   tags = [],
   badges = [],
   badgeRail,
@@ -142,7 +154,11 @@ export function CapsuleLibraryCard({
   const claimCount = safeCount(counts?.claims);
   const graphNodes = safeCount(graph?.nodeCount ?? counts?.graphNodes);
   const graphEdges = safeCount(graph?.edgeCount ?? counts?.graphEdges);
-  const unsupportedClaims = safeCount(counts?.unsupportedClaims);
+  const unsupportedClaims = safeCount(researchSignals?.unsupportedClaimCount ?? counts?.unsupportedClaims);
+  const researchSourceSpineCount = safeCount(researchSignals?.sourceSpineCount);
+  const researchEvidenceGapCount = safeCount(researchSignals?.evidenceGapCount);
+  const researchGraphNodes = safeCount(researchSignals?.graphNodeCount ?? graphNodes);
+  const researchGraphEdges = safeCount(researchSignals?.graphEdgeCount ?? graphEdges);
   const qualityLabel = typeof qualityScore === 'number' && Number.isFinite(qualityScore)
     ? `quality ${Math.round(qualityScore)}/100`
     : null;
@@ -240,6 +256,23 @@ export function CapsuleLibraryCard({
         {updatedLabel ? (
           <span className="mt-2 inline-flex rounded-md border border-cyan-200 bg-cyan-50 px-2 py-1 text-[11px] font-semibold text-cyan-800">
             {updatedLabel}
+          </span>
+        ) : null}
+
+        {researchSignals ? (
+          <span
+            className="mt-2 grid gap-1.5 rounded-md border border-emerald-100 bg-emerald-50/70 p-2 text-[11px] font-semibold text-emerald-900 sm:grid-cols-2"
+            data-testid="capsule-research-signals"
+            aria-label={`${title} research signals`}
+          >
+            <span>{researchSourceSpineCount} source spine</span>
+            <span>{researchEvidenceGapCount} evidence gap{researchEvidenceGapCount === 1 ? '' : 's'}</span>
+            <span>refresh {researchSignals.refreshStatus || 'unknown'}</span>
+            <span>graph {researchGraphNodes}/{researchGraphEdges}</span>
+            <span className={unsupportedClaims ? 'text-amber-800' : 'text-emerald-800'}>{unsupportedClaims} unsupported</span>
+            {researchSignals.inspectHref ? (
+              <span className="sr-only">Inspect {researchSignals.inspectHref}</span>
+            ) : null}
           </span>
         ) : null}
 

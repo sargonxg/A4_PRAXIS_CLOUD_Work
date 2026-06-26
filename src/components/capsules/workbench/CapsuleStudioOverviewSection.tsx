@@ -6,6 +6,7 @@ import { CompactList } from '@/components/capsules/workbench/CapsuleWorkbenchSec
 
 export const CapsuleStudioOverviewSection = memo(function CapsuleStudioOverviewSection({
   evidence,
+  research,
   outputs,
   readiness,
   summaryFacts,
@@ -13,6 +14,7 @@ export const CapsuleStudioOverviewSection = memo(function CapsuleStudioOverviewS
   capsuleVersion,
 }: {
   evidence: CapsuleWorkbenchViewModel['evidence'];
+  research: CapsuleWorkbenchViewModel['research'];
   outputs: CapsuleWorkbenchViewModel['outputs'];
   readiness: CapsuleWorkbenchViewModel['readiness'];
   summaryFacts: CapsuleWorkbenchViewModel['summaryFacts'];
@@ -43,6 +45,7 @@ export const CapsuleStudioOverviewSection = memo(function CapsuleStudioOverviewS
           items={[
             `Trust ${readiness.tier} / ${readiness.score}`,
             ...(readiness.diagnostics.length ? readiness.diagnostics.slice(0, 2) : [summaryFacts.nextAction]),
+            `${research.sourceSpineCount} source-spine receipt(s); ${research.evidenceGapCount} evidence gap(s)`,
           ]}
         />
       </div>

@@ -78,6 +78,7 @@ import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolic
 import { KnowledgeStructurePanel, knowledgeStructureFromAskEnvelope } from '@/components/policy-work-file/KnowledgeStructurePanel';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { RuntimeHealthSemaphore } from '@/components/praxis/runtime-health-semaphore';
+import { PraxisCapabilityLauncher } from '@/components/praxis/PraxisCapabilityLauncher';
 import { InstrumentSkeleton, SourcePostureChip, WorkActionMenu } from '@/components/ui/instrument';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
@@ -244,6 +245,12 @@ type WorkbenchDiagnosticFlag = {
   status: string;
   detail: string;
   tone: 'ok' | 'watch' | 'warn';
+};
+type WorkflowDryRunCheck = {
+  id: 'context' | 'tools' | 'sources' | 'review-gates' | 'output';
+  label: string;
+  status: 'ready' | 'watch' | 'blocked';
+  detail: string;
 };
 type RepositoryDocument = {
   id: string;
@@ -988,6 +995,7 @@ export function TaskletPraxisWorkbench({
   const [selectedSpanMessage, setSelectedSpanMessage] = useState('');
   const [agenticSearchPremiumEnabled, setAgenticSearchPremiumEnabled] = useState(false);
   const [researchGraphExtraEnabled, setResearchGraphExtraEnabled] = useState(false);
+  const [workflowDryRunChecks, setWorkflowDryRunChecks] = useState<WorkflowDryRunCheck[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
@@ -1136,6 +1144,59 @@ export function TaskletPraxisWorkbench({
     'sourceability reviewer before memo/PDF output',
   ];
 
+  function runWorkflowDryRunCheck() {
+    const checks: WorkflowDryRunCheck[] = [
+      {
+        id: 'context',
+        label: 'Context readiness',
+        status: hasSavedAskContext || prompt.trim().length >= 24 ? 'ready' : 'watch',
+        detail: hasSavedAskContext
+          ? `${activeCapsuleSummaryForStrip?.label ?? 'Active capsule'} is attached to the current turn.`
+          : 'Instant context can run, but saving it as a capsule will make the work reusable.',
+      },
+      {
+        id: 'tools',
+        label: 'Tool routing',
+        status: selectedToolIds.length || selectedAgent.id ? 'ready' : 'watch',
+        detail: selectedToolIds.length
+          ? `${selectedToolIds.length} capsule tool${selectedToolIds.length === 1 ? '' : 's'} selected.`
+          : `${selectedAgent.label} will start from capsule context before optional tools.`,
+      },
+      {
+        id: 'sources',
+        label: 'Source posture',
+        status: activeCapsuleSourceCount > 0 || repositoryDocuments.length > 0 ? 'ready' : 'blocked',
+        detail: activeCapsuleSourceCount > 0
+          ? `${activeCapsuleSourceCount} source or document receipt${activeCapsuleSourceCount === 1 ? '' : 's'} available.`
+          : 'No source receipts are attached yet; PRAXIS should mark source gaps instead of upgrading confidence.',
+      },
+      {
+        id: 'review-gates',
+        label: 'Review gates',
+        status: activeCapabilityReviewQueueCount > 0 ? 'watch' : 'ready',
+        detail: activeCapabilityReviewQueueCount > 0
+          ? `${activeCapabilityReviewQueueCount} source, graph, ontology, memory, or output review card${activeCapabilityReviewQueueCount === 1 ? '' : 's'} should remain approval-gated.`
+          : 'No open review cards are blocking the next turn.',
+      },
+      {
+        id: 'output',
+        label: 'Output target',
+        status: prompt.trim() || createdWork.length ? 'ready' : 'watch',
+        detail: prompt.trim()
+          ? 'The current prompt gives PRAXIS an output target for this run.'
+          : createdWork.length
+            ? 'Existing Created Work can be continued or attached after the turn.'
+            : 'Add a desired memo, briefing, actor map, or handover target for a cleaner run.',
+      },
+    ];
+    setWorkflowDryRunChecks(checks);
+    const blocked = checks.filter((check) => check.status === 'blocked').length;
+    const watch = checks.filter((check) => check.status === 'watch').length;
+    setStatus(blocked
+      ? `Workflow dry run found ${blocked} blocker${blocked === 1 ? '' : 's'} and ${watch} watch item${watch === 1 ? '' : 's'}.`
+      : `Workflow dry run ready with ${watch} watch item${watch === 1 ? '' : 's'}.`);
+  }
+
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       const nextPrompt = prompt.trim();
@@ -1178,6 +1239,11 @@ export function TaskletPraxisWorkbench({
     : activeCapsuleSummaryForStrip?.health?.score
       ? `${activeCapsuleSummaryForStrip.health.score}/100`
       : activeCapsuleSummaryForStrip?.trust?.label ?? contextHealth.label;
+  const hasSavedAskContext = Boolean(activeCapsuleSummaryForStrip && activeCapsuleStack.length);
+  const askContextMode: 'instant' | 'capsule' = hasSavedAskContext ? 'capsule' : 'instant';
+  const activeCapabilityReviewQueueCount = (activeCapsuleSummaryForStrip?.readinessSummary?.reviewCardCount ?? 0)
+    + factoryReviewDiffs.filter((diff) => diff.reviewState === 'draft' || diff.reviewState === 'reviewed').length
+    + (activeCapsuleSourceCount === 0 ? 1 : 0);
   const conversationUrl = conversationThreadId ? buildConversationUrl(currentCapsuleId, conversationThreadId) : null;
   const focusedRunStream = useOrchestratorEvents(
     focusedRunId ? `/api/agents/runs/${encodeURIComponent(focusedRunId)}/stream` : null,
@@ -1654,8 +1720,14 @@ export function TaskletPraxisWorkbench({
       return;
     }
 
+    const askUsesSavedCapsule = hasSavedAskContext;
+    const requestCapsuleId = askUsesSavedCapsule ? currentCapsuleId : undefined;
+    const requestAppliedCapsules = askUsesSavedCapsule ? activeCapsuleStack : [];
+    const requestActiveContextStack = askUsesSavedCapsule ? activeContextStack : undefined;
     setIsStreaming(true);
-    setStatus('PRAXIS is reading the active capsule and conversation memory...');
+    setStatus(askUsesSavedCapsule
+      ? 'PRAXIS is reading the active capsule and conversation memory...'
+      : 'PRAXIS is building Instant context for this turn...');
     const nextThreadId = ensureConversationThread();
     await ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
@@ -1663,7 +1735,7 @@ export function TaskletPraxisWorkbench({
 
     try {
       const currentConversationPath = buildConversationPath(currentCapsuleId, nextThreadId);
-      const turnMetadata = buildStructuredAskTurnMetadata(cleanPrompt, agent, nextThreadId, currentConversationPath);
+      const turnMetadata = buildStructuredAskTurnMetadata(cleanPrompt, agent, nextThreadId, currentConversationPath, askUsesSavedCapsule);
       const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
         method: 'POST',
         credentials: 'include',
@@ -1673,9 +1745,9 @@ export function TaskletPraxisWorkbench({
             role: message.role,
             content: message.text,
           })),
-          capsuleId: currentCapsuleId,
-          contextPackageId: selectedCapsule?.capsuleId ? `capsule:${selectedCapsule.capsuleId}:v${selectedCapsule.version}` : undefined,
-          appliedCapsules: activeCapsuleStack.map((capsule) => ({
+          capsuleId: requestCapsuleId,
+          contextPackageId: askUsesSavedCapsule && selectedCapsule?.capsuleId ? `capsule:${selectedCapsule.capsuleId}:v${selectedCapsule.version}` : undefined,
+          appliedCapsules: requestAppliedCapsules.map((capsule) => ({
             id: capsule.id,
             label: capsule.label,
             role: capsule.role,
@@ -1692,10 +1764,10 @@ export function TaskletPraxisWorkbench({
           currentToolId: 'ask-praxis',
           currentPath: currentConversationPath,
           turnMetadata,
-          activeContextStack,
+          activeContextStack: requestActiveContextStack,
           aiSettings: {
             provider: 'vertex',
-            analysisDepth: selectedAgent.id === 'research-memo' || selectedAgent.id === 'capsule-factory' ? 'deep' : 'standard',
+            analysisDepth: agent.id === 'research-memo' || agent.id === 'capsule-factory' ? 'deep' : 'standard',
             agenticSearchPremium: agenticSearchPremiumEnabled && canUseAgenticSearchPremium,
             researchGraphExtra: researchGraphExtraEnabled && canUseResearchGraphExtra,
           },
@@ -1748,7 +1820,7 @@ export function TaskletPraxisWorkbench({
       if (!answer.trim()) throw new Error('Ask PRAXIS returned no answer text.');
       const contextLabel = answer.toLowerCase().includes('thin capsule fallback')
         ? 'thin capsule fallback'
-        : `capsule ${currentCapsuleId}`;
+        : askUsesSavedCapsule ? `capsule ${currentCapsuleId}` : 'Instant context (not saved)';
       setStatus(`Conversation saved at this link with ${contextLabel}.`);
       void refreshCapsules();
       void refreshSavedConversations();
@@ -1780,12 +1852,13 @@ export function TaskletPraxisWorkbench({
     agent: PolicyAgentDefinition,
     threadId: string,
     currentConversationPath: string,
+    askUsesSavedCapsule = true,
   ) {
     return {
       selectedAgentId: agent.id,
       selectedAgentLabel: agent.label,
-      capsuleId: currentCapsuleId,
-      capsuleVersion: selectedCapsule?.version ?? null,
+      capsuleId: askUsesSavedCapsule ? currentCapsuleId : null,
+      capsuleVersion: askUsesSavedCapsule ? selectedCapsule?.version ?? null : null,
       requestedOutputTarget: agent.outputDestination ?? null,
       analysisDepth: agent.id === 'research-memo' || agent.id === 'capsule-factory' ? 'deep' : 'standard',
       toggles: {
@@ -1793,11 +1866,11 @@ export function TaskletPraxisWorkbench({
         researchGraphExtra: researchGraphExtraEnabled && canUseResearchGraphExtra,
       },
       availableToolIds,
-      activeCapsules: activeCapsuleStack.map((capsule) => ({
+      activeCapsules: askUsesSavedCapsule ? activeCapsuleStack.map((capsule) => ({
         id: capsule.id,
         label: capsule.label,
         role: capsule.role,
-      })),
+      })) : [],
       conversationId: threadId,
       currentPath: currentConversationPath,
       promptPreview: cleanPrompt.slice(0, 500),
@@ -3070,6 +3143,67 @@ export function TaskletPraxisWorkbench({
     setBuilderOpen(true);
   }
 
+  function saveInstantContextDraft() {
+    const seedPrompt = prompt.trim() || debouncedSuggestionPrompt || 'Ask PRAXIS with instant context, then save the useful source posture and review gates as a ContextCapsule.';
+    if (!isAuthenticated) {
+      sendPublicToLogin(`Save this Instant Context as a PRAXIS ContextCapsule:\n\n${seedPrompt}`);
+      return;
+    }
+    setBuilderLabel('Instant context capsule');
+    setBuilderNotes([
+      seedPrompt,
+      '',
+      'Created from Instant context (not saved). Add source receipts, output goal, and review gates before relying on it.',
+    ].join('\n'));
+    setBuilderLinks('');
+    setBuilderOpen(true);
+    setStatus('Instant context copied into the capsule builder. Review it before saving.');
+  }
+
+  function askWithCurrentOrInstantContext() {
+    const fallbackPrompt = askContextMode === 'instant'
+      ? 'Use Instant context to answer this: what changed, what sources are needed, what claims are unsupported, and what should become a saved capsule?'
+      : `Use "${activeCapsuleSummaryForStrip?.label ?? 'the active capsule'}" to answer with sources, claim posture, and next review actions.`;
+    const nextPrompt = prompt.trim() || fallbackPrompt;
+    setPrompt(nextPrompt);
+    void sendToPraxis(selectedAgent, nextPrompt);
+  }
+
+  function createWorkProductFromLauncher() {
+    const target = activeCapsuleSummaryForStrip?.label ?? 'the current issue';
+    const nextPrompt = [
+      `Create a PRAXIS work product from ${target}.`,
+      'Offer four output choices in the answer: policy memo, executive briefing, actor map, and handover pack.',
+      'Preserve capsule id, conversation id, source receipts, unsupported claims, assumptions, and review gates.',
+      'Do not publish externally; create a reviewable draft or Output Capsule candidate.',
+    ].join('\n');
+    setSelectedAgentId('research-memo');
+    setPrompt(nextPrompt);
+    void sendToPraxis(PRAXIS_POLICY_AGENTS.find((agent) => agent.id === 'research-memo') ?? selectedAgent, nextPrompt);
+  }
+
+  function createWatchlistFromLauncher() {
+    const target = activeCapsuleSummaryForStrip?.label ?? 'this issue';
+    const nextPrompt = [
+      `Build a source intelligence watchlist for ${target}.`,
+      'Track: what changed, what became stale, what needs review, and which primary or official sources should be checked next.',
+      'Return a manual/daily/weekly cadence recommendation and review-gated source refresh cards only.',
+      'If freshness cannot be verified, mark it as an evidence gap instead of increasing confidence.',
+    ].join('\n');
+    setPrompt(nextPrompt);
+    void sendToPraxis(selectedAgent, nextPrompt);
+  }
+
+  function openUnifiedReviewQueue() {
+    setActiveTab('capsules');
+    setStatus('Review queue opened. Source, claim, graph, ontology, memory, and work-product proposals stay approval-gated.');
+    if (typeof window !== 'undefined') {
+      window.setTimeout(() => {
+        document.getElementById('capsule-review-queue')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }, 80);
+    }
+  }
+
   function reviewFactoryLane(lane: (typeof factoryBuilderLanes)[number]) {
     const capsuleFactoryAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === 'capsule-factory') ?? selectedAgent;
     const target = selectedCapsule ?? userCapsules[0] ?? starterCapsuleSummaries[0];
@@ -3870,6 +4004,39 @@ export function TaskletPraxisWorkbench({
                       ))}
                     </div>
                   </div>
+                  <div className="border-t border-slate-100 pt-2 md:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="font-semibold uppercase tracking-[0.14em] text-slate-400">Workflow dry run</p>
+                        <p className="mt-1 text-[11px] leading-4 text-slate-500">Check context, tools, sources, review gates, and output target before a real agent run.</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={runWorkflowDryRunCheck}
+                        className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        <ShieldCheck className="h-3.5 w-3.5" />
+                        Test workflow
+                      </button>
+                    </div>
+                    {workflowDryRunChecks.length ? (
+                      <div className="mt-2 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-5" data-testid="workflow-dry-run-checker">
+                        {workflowDryRunChecks.map((check) => (
+                          <div key={check.id} className={cn(
+                            'rounded-md border px-2 py-1.5',
+                            check.status === 'ready'
+                              ? 'border-emerald-200 bg-emerald-50 text-emerald-950'
+                              : check.status === 'blocked'
+                                ? 'border-amber-200 bg-amber-50 text-amber-950'
+                                : 'border-slate-200 bg-slate-50 text-slate-700',
+                          )}>
+                            <p className="font-semibold">{check.label}</p>
+                            <p className="mt-0.5 line-clamp-2 text-[10px] leading-4">{check.detail}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
               </div>
               <AnimatePresence initial={false}>
@@ -3939,6 +4106,21 @@ export function TaskletPraxisWorkbench({
                 </motion.div>
               ) : null}
               </AnimatePresence>
+              <div className="mx-4 mt-4 sm:mx-5">
+                <PraxisCapabilityLauncher
+                  contextMode={askContextMode}
+                  activeCapsuleLabel={activeCapsuleSummaryForStrip?.label ?? null}
+                  sourceCount={activeCapsuleSourceCount}
+                  reviewQueueCount={activeCapabilityReviewQueueCount}
+                  createdWorkCount={createdWork.length}
+                  onAskInstant={askWithCurrentOrInstantContext}
+                  onSaveInstantContext={saveInstantContextDraft}
+                  onImproveCapsule={() => improveCapsule(activeCapsuleSummaryForStrip ?? selectedCapsule ?? undefined)}
+                  onCreateWorkProduct={createWorkProductFromLauncher}
+                  onCreateWatchlist={createWatchlistFromLauncher}
+                  onOpenReviewQueue={openUnifiedReviewQueue}
+                />
+              </div>
               <div className="praxis-composer-input-well mx-4 my-4 sm:mx-5">
                 <label className="block px-4 pt-3 font-mono text-[11px] font-semibold uppercase text-[color:var(--color-oxide)]" htmlFor="praxis-main-prompt">
                   Write your prompt here
@@ -4797,6 +4979,7 @@ export function TaskletPraxisWorkbench({
             key="capsule-browser"
             capsules={visibleCapsuleCards}
             loading={capsulesLoading}
+            targetRole={capsuleBrowserTargetRole}
             filterBar={
               <CapsuleTaxonomyFilterBar
                 stats={activeCapsuleTaxonomyStats}
@@ -4821,7 +5004,16 @@ export function TaskletPraxisWorkbench({
               setCapsuleBrowserOpen(false);
               setCapsuleBrowserTargetRole(null);
             }}
-            onSelect={(capsule) => applyCapsuleCard(capsule, capsuleBrowserTargetRole ?? capsuleDefaultRole(capsule))}
+            onSelect={(capsule, role) => {
+              applyCapsuleCard(capsule, role ?? capsuleBrowserTargetRole ?? capsuleDefaultRole(capsule));
+              setCapsuleBrowserOpen(false);
+              setCapsuleBrowserTargetRole(null);
+            }}
+            onInspect={(capsule) => {
+              viewCapsuleCard(capsule);
+              setCapsuleBrowserOpen(false);
+              setCapsuleBrowserTargetRole(null);
+            }}
           />
         ) : null}
         {memoArtifact ? (
@@ -5259,6 +5451,40 @@ function ConversationSourcePreviewPanel({ envelope, messageId, onFollowUp }: { e
               </article>
             ))}
           </div>
+          <div className="mt-2 rounded-md border border-amber-200 bg-white p-2" data-testid="praxis-source-claim-workbench">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-amber-800">Source and claim workbench</p>
+                <p className="mt-1 text-[11px] leading-4 text-slate-600">Unsupported claims stay out of final outputs until receipts support them.</p>
+              </div>
+              <span className="rounded-md bg-amber-50 px-1.5 py-0.5 font-mono text-[10px] text-amber-800">
+                {sourceCards.length} receipt{sourceCards.length === 1 ? '' : 's'}
+              </span>
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => onFollowUp('Promote source gap: identify the weakest or unsupported claims in this answer, list the missing receipts, and create review-gated source refresh cards.')}
+                className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-900 hover:bg-amber-100"
+              >
+                Promote source gap
+              </button>
+              <button
+                type="button"
+                onClick={() => onFollowUp('Attach receipt to capsule: map these source receipts to the active ContextCapsule claim ledger without mutating canonical capsule state until review.')}
+                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Attach receipt to capsule
+              </button>
+              <button
+                type="button"
+                onClick={() => onFollowUp('Rerun source check for this answer. Separate supported, weak, stale, and unsupported claims, and recommend next human actions.')}
+                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Rerun source check
+              </button>
+            </div>
+          </div>
         </section>
       ) : null}
       {followUps.length > 0 ? (
@@ -5574,37 +5800,78 @@ function MobileCapsuleLane({
 function CapsuleBrowserDialog({
   capsules,
   loading,
+  targetRole,
   filterBar,
   onClose,
   onSelect,
+  onInspect,
 }: {
   capsules: PraxisCapsuleSummary[];
   loading: boolean;
+  targetRole: CapsuleRole | null;
   filterBar: ReactNode;
   onClose: () => void;
-  onSelect: (capsule: PraxisCapsuleSummary) => void;
+  onSelect: (capsule: PraxisCapsuleSummary, role?: CapsuleRole) => void;
+  onInspect: (capsule: PraxisCapsuleSummary) => void;
 }) {
   const reduceMotion = useReducedMotion();
+  const [selectedRole, setSelectedRole] = useState<CapsuleRole | null>(targetRole);
+  const attachRole = selectedRole ?? targetRole;
+  const attachRoleLabel = attachRole ? capsuleRoleLabel(attachRole) : 'saved category';
   return (
     <motion.div
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-4 py-6 backdrop-blur-sm"
       role="dialog"
       aria-modal="true"
-      aria-label="Browse capsules"
+      aria-label="Full library attach"
+      data-testid="capsule-browser-modal"
       initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={reduceMotion ? { opacity: 1 } : { opacity: 0 }}
       transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: PRAXIS_MOTION_EASE }}
     >
-      <motion.section className="praxis-enter max-h-[88vh] w-full max-w-4xl overflow-hidden rounded-[var(--radius-xl)] border border-slate-200 bg-white shadow-[var(--shadow-modal)]" data-testid="capsule-browser-modal" {...fadeRiseMotionProps(reduceMotion)}>
+      <motion.section className="praxis-enter max-h-[88vh] w-full max-w-5xl overflow-hidden rounded-[var(--radius-xl)] border border-slate-200 bg-white shadow-[var(--shadow-modal)]" data-testid="capsule-attach-drawer" {...fadeRiseMotionProps(reduceMotion)}>
         <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
           <div>
-            <p className="text-sm font-semibold text-slate-950">Browse capsules</p>
-            <p className="mt-1 text-xs text-slate-500">Choose a capsule to add it by its saved category.</p>
+            <p className="text-sm font-semibold text-slate-950">Full library attach</p>
+            <p className="mt-1 text-xs text-slate-500">Pick from the full visible capsule library and attach it to the active ContextChain lane.</p>
           </div>
           <button type="button" aria-label="Close capsule browser" onClick={onClose} className="rounded p-1 text-slate-500 hover:bg-slate-100">
             <X className="h-4 w-4" />
           </button>
+        </div>
+        <div className="border-b border-slate-200 bg-white px-5 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Attach lane</p>
+              <p className="mt-1 text-xs font-semibold text-slate-800">Selected lane: {attachRoleLabel}</p>
+            </div>
+            <div className="flex max-w-full gap-1 overflow-x-auto pb-1" aria-label="Choose attach lane">
+              <button
+                type="button"
+                onClick={() => setSelectedRole(null)}
+                className={cn(
+                  'whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs font-semibold',
+                  !attachRole ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                )}
+              >
+                Saved category
+              </button>
+              {capsuleCardRoleOptions.map((option) => (
+                <button
+                  key={option.role}
+                  type="button"
+                  onClick={() => setSelectedRole(option.role)}
+                  className={cn(
+                    'whitespace-nowrap rounded-md border px-2.5 py-1.5 text-xs font-semibold',
+                    attachRole === option.role ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3">
           {filterBar}
@@ -5614,26 +5881,76 @@ function CapsuleBrowserDialog({
           <div className="grid gap-3 md:grid-cols-2">
             {capsules.map((capsule) => {
               const meta = capsuleCategoryMeta(capsule);
-              const role = capsuleDefaultRole(capsule);
+              const defaultRole = capsuleDefaultRole(capsule);
+              const role = attachRole ?? defaultRole;
               const readiness = deriveCapsuleReadinessSummary(capsule, { now: STARTER_CAPSULE_UPDATED_AT });
+              const counts = capsuleCounts(capsule);
+              const graphCounts = capsuleGraphSeedCounts(capsule);
+              const researchArtifacts = starterResearchArtifacts(capsule);
+              const unsupportedClaims = capsuleUnsupportedClaimCount(capsule);
               return (
-                <button
+                <CapsuleLibraryCard
                   key={capsule.capsuleId}
-                  type="button"
-                  onClick={() => onSelect(capsule)}
-                  className="rounded-lg border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-[color:var(--color-oxide)] hover:shadow-md"
-                >
-                  <span className="flex items-start justify-between gap-3">
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-slate-950">{capsule.label}</span>
-                      <span className="mt-1 line-clamp-2 block text-xs leading-5 text-slate-500">{meta.summary}</span>
-                    </span>
-                    <span className={cn('shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold', meta.soft)}>
-                      {capsuleRoleLabel(role)}
-                    </span>
-                    <CapsuleReadinessBadge size="sm" {...readiness} />
-                  </span>
-                </button>
+                  variant="compact"
+                  capsuleId={capsule.capsuleId}
+                  title={capsule.label}
+                  summary={meta.summary}
+                  color={meta.color}
+                  categoryLabel={meta.taxonomy.types[0]?.label ?? capsuleRoleLabel(defaultRole)}
+                  domainLabel={meta.taxonomy.domains[0]?.label ?? capsule.scope}
+                  roleLabel={capsuleRoleLabel(role)}
+                  readiness={readiness}
+                  qualityScore={deriveCapsuleQuality(capsuleV2ForSummary(capsule), { now: STARTER_CAPSULE_UPDATED_AT }).score}
+                  badgeRail={<span className="mt-2 inline-flex"><CapsuleReadinessBadge size="sm" {...readiness} /></span>}
+                  counts={{
+                    sources: counts.sources,
+                    documents: counts.documents,
+                    tools: counts.tools,
+                    outputs: counts.outputs,
+                    graphNodes: graphCounts.graphNodeCount,
+                    graphEdges: graphCounts.graphEdgeCount,
+                    unsupportedClaims,
+                  }}
+                  graph={{
+                    nodeCount: graphCounts.graphNodeCount,
+                    edgeCount: graphCounts.graphEdgeCount,
+                    entityTypeCounts: graphCounts.entityTypeCounts,
+                  }}
+                  researchSignals={{
+                    sourceSpineCount: researchArtifacts.sourceSpine.length,
+                    evidenceGapCount: researchArtifacts.knownEvidenceGaps.length,
+                    refreshStatus: capsuleFreshnessStatus(capsule),
+                    graphNodeCount: graphCounts.graphNodeCount,
+                    graphEdgeCount: graphCounts.graphEdgeCount,
+                    unsupportedClaimCount: unsupportedClaims,
+                  }}
+                  signalBadges={[
+                    `${researchArtifacts.sourceSpine.length} source spine`,
+                    `${researchArtifacts.knownEvidenceGaps.length} evidence gaps`,
+                    `${unsupportedClaims} unsupported claims`,
+                    `graph ${graphCounts.graphNodeCount}/${graphCounts.graphEdgeCount}`,
+                  ]}
+                  bestNextAction={`Attach to ${capsuleRoleLabel(role)} lane`}
+                  onSelect={() => onInspect(capsule)}
+                  footerActions={(
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => onSelect(capsule, role)}
+                        className="rounded-md bg-slate-950 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-slate-800"
+                      >
+                        Attach to selected lane
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onInspect(capsule)}
+                        className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        Inspect first
+                      </button>
+                    </>
+                  )}
+                />
               );
             })}
           </div>
@@ -6957,7 +7274,7 @@ function CapsuleLibraryStatsBand({ overview }: { overview: CapsuleLibraryOvervie
   ] as const;
   return (
     <section
-      className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-white/85 p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+      className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-white p-3 shadow-sm sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
       data-testid="capsule-library-stats"
       aria-label="Context Capsules library statistics"
     >

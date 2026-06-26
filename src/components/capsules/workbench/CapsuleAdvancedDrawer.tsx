@@ -16,6 +16,7 @@ import { CapsuleHistorySection } from '@/components/capsules/workbench/CapsuleHi
 import { CapsuleOutputsSection } from '@/components/capsules/workbench/CapsuleOutputsSection';
 import { CapsulePillarsSection } from '@/components/capsules/workbench/CapsulePillarsSection';
 import { CapsuleQualitySection } from '@/components/capsules/workbench/CapsuleQualitySection';
+import { CapsuleResearchSection } from '@/components/capsules/workbench/CapsuleResearchSection';
 import { CapsuleReviewQueueSection } from '@/components/capsules/workbench/CapsuleReviewQueueSection';
 import { CapsuleSourceabilityGatesSection } from '@/components/capsules/workbench/CapsuleSourceabilityGatesSection';
 import { CapsuleStudioOverviewSection } from '@/components/capsules/workbench/CapsuleStudioOverviewSection';
@@ -141,12 +142,14 @@ function renderTab(
       <div className="grid gap-3">
         <CapsuleStudioOverviewSection
           evidence={model.evidence}
+          research={model.research}
           outputs={model.outputs}
           readiness={model.readiness}
           summaryFacts={model.summaryFacts}
           graphEdges={model.graph.edges}
           capsuleVersion={model.capsuleVersion}
         />
+        <CapsuleResearchSection research={model.research} />
         <CapsuleSourceabilityGatesSection coreSourceability={model.coreSourceability} />
       </div>
     );

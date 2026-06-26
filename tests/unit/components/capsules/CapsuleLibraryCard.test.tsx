@@ -58,4 +58,37 @@ describe('CapsuleLibraryCard', () => {
     expect(html).toContain('Claims');
     expect(html).toContain('Graph');
   });
+
+  it('renders explicit capsule research signals for inspect decisions', () => {
+    const html = renderToStaticMarkup(
+      <CapsuleLibraryCard
+        variant="full"
+        capsuleId="cap-research"
+        title="Research-ready capsule"
+        summary="A fuller repository summary."
+        color="#0f766e"
+        categoryLabel="Starter library"
+        readiness={{ tier: 'near', score: 81 }}
+        counts={{ sources: 4, claims: 7, graphNodes: 12, graphEdges: 15, unsupportedClaims: 2 }}
+        researchSignals={{
+          sourceSpineCount: 6,
+          evidenceGapCount: 3,
+          refreshStatus: 'needs-refresh',
+          graphNodeCount: 12,
+          graphEdgeCount: 15,
+          unsupportedClaimCount: 2,
+          inspectHref: '/app/capsules?starter=cap-research&lane=inspect',
+        }}
+      />,
+    );
+
+    expect(html).toContain('data-testid="capsule-research-signals"');
+    expect(html).toContain('6 source spine');
+    expect(html).toContain('3 evidence gaps');
+    expect(html).toContain('refresh needs-refresh');
+    expect(html).toContain('graph 12/15');
+    expect(html).toContain('2 unsupported');
+    expect(html).toContain('Inspect');
+    expect(html).toContain('/app/capsules?starter=cap-research&amp;lane=inspect');
+  });
 });

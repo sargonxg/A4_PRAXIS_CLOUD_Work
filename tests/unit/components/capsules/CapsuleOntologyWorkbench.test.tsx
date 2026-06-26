@@ -93,6 +93,10 @@ describe('CapsuleOntologyWorkbench', () => {
           state: 'proposed',
           sourceType: 'ontology',
           reviewState: 'proposed',
+          why: 'Graph and ontology changes stay advisory until reviewed.',
+          evidenceLabels: ['Budget Leverage'],
+          impact: 'May add or reject advisory graph nodes, edges, or ontology bindings.',
+          allowedActions: ['approve', 'reject'],
         }]}
       />,
     );

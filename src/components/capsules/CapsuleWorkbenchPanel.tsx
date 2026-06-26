@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils/cn';
 import { CapsuleOntologyWorkbench } from '@/components/capsules/CapsuleOntologyWorkbench';
 import { CapsuleAdvancedDrawer } from '@/components/capsules/workbench/CapsuleAdvancedDrawer';
 import { CapsuleGraphSection } from '@/components/capsules/workbench/CapsuleGraphSection';
+import { CapsuleResearchSection } from '@/components/capsules/workbench/CapsuleResearchSection';
 import { StatePill } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
 
 const CapsuleAgentView = dynamic(() => import('@/components/capsules/CapsuleAgentView'), {
@@ -116,6 +117,7 @@ export function CapsuleWorkbenchPanel({
           ontology={model.ontology}
           reviewQueue={model.reviewQueue}
           graphModel={model.graph}
+          research={model.research}
           workbenchView={workbenchView}
         />
       ) : null}
@@ -244,6 +246,7 @@ function CapsuleInspectionDepth({
   inspectedCategory,
   ontology,
   reviewQueue,
+  research,
   workbenchView,
 }: {
   capsuleId: string;
@@ -252,6 +255,7 @@ function CapsuleInspectionDepth({
   inspectedCategory: CapsuleCategoryId;
   ontology: CapsuleWorkbenchViewModel['ontology'];
   reviewQueue: CapsuleWorkbenchViewModel['reviewQueue'];
+  research: CapsuleWorkbenchViewModel['research'];
   workbenchView: 'graph' | 'agent';
 }) {
   const palette = getCapsuleCategoryPalette(inspectedCategory);
@@ -286,6 +290,7 @@ function CapsuleInspectionDepth({
         graph={graphModel}
         reviewQueue={reviewQueue}
       />
+      <CapsuleResearchSection research={research} />
       <div className="sr-only">{workbenchView === 'agent' ? 'Agent context selected' : 'Graph human view selected'}</div>
     </section>
   );

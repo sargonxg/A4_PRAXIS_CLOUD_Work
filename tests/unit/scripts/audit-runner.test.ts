@@ -9,6 +9,7 @@ const deepPreship = readFileSync('scripts/audit-deep-preship.ts', 'utf8');
 const capsuleDepth = readFileSync('scripts/audit-capsule-depth.ts', 'utf8');
 const capsuleConsolidation = readFileSync('scripts/audit-capsule-consolidation.ts', 'utf8');
 const capsuleResearchDossiers = readFileSync('scripts/audit-capsule-research-dossiers.ts', 'utf8');
+const capsuleInspectVisibility = readFileSync('scripts/audit-capsule-inspect-visibility.ts', 'utf8');
 const capsuleBackfill = readFileSync('scripts/audit-capsule-backfill-readiness.ts', 'utf8');
 const capsuleGraphLite = readFileSync('scripts/audit-capsule-graphlite-projections.ts', 'utf8');
 
@@ -35,6 +36,7 @@ describe('audit runner consolidation', () => {
     expect(runner).toContain("script: 'audit:public-surface'");
     expect(runner).toContain("script: 'audit:agent-runtime-proof'");
     expect(runner).toContain("script: 'audit:capsule-v3'");
+    expect(runner).toContain("script: 'audit:capsule-inspect-visibility'");
   });
 
   it('keeps generated audit output on rolling LATEST files', () => {
@@ -45,6 +47,7 @@ describe('audit runner consolidation', () => {
       capsuleDepth,
       capsuleConsolidation,
       capsuleResearchDossiers,
+      capsuleInspectVisibility,
       capsuleBackfill,
       capsuleGraphLite,
     ]) {

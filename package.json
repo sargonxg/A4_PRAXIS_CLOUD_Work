@@ -79,6 +79,7 @@
     "audit:capsule-v3": "tsx scripts/audit-capsule-v3.ts",
     "audit:capsule-context-capture": "tsx scripts/audit-capsule-context-capture.ts",
     "audit:capsule-research-dossiers": "tsx scripts/audit-capsule-research-dossiers.ts",
+    "audit:capsule-inspect-visibility": "tsx scripts/audit-capsule-inspect-visibility.ts",
     "audit:capsule-backfill-readiness": "tsx scripts/audit-capsule-backfill-readiness.ts",
     "audit:capsule-graphlite-projections": "tsx scripts/audit-capsule-graphlite-projections.ts",
     "audit:output-capsule-storage": "tsx scripts/audit-output-capsule-storage.ts",
