@@ -3730,8 +3730,8 @@
     "semantic_hash": ""
   },
   "src/components/praxis/tasklet-praxis-workbench.tsx": {
-    "mtime": 1782509091.1240897,
-    "ast_hash": "f90e20ab60bd7c8ef6f2a35930a551f8",
+    "mtime": 1783036037.6758668,
+    "ast_hash": "7a1afbd122d3d56449d00813f297b23f",
     "semantic_hash": ""
   },
   "src/components/praxis/tasklet-workbench-conversation.ts": {
@@ -6245,8 +6245,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/capsule-studio.spec.ts": {
-    "mtime": 1783033911.0303352,
-    "ast_hash": "9353f48393af6e22feacdabbd03cbe7d",
+    "mtime": 1783035925.0771215,
+    "ast_hash": "253a5a4cbb9780313ce2c817c2d78c60",
     "semantic_hash": ""
   },
   "tests/e2e/capsule-workspace-visual-diagnostics.spec.ts": {
@@ -9645,8 +9645,8 @@
     "semantic_hash": ""
   },
   "firestore.indexes.json": {
-    "mtime": 1780854774.989278,
-    "ast_hash": "c6406e9554d8e7a064a41146c922533e",
+    "mtime": 1783035835.1464255,
+    "ast_hash": "af50590fce55de52c0afa8caf825aade",
     "semantic_hash": ""
   },
   "infrastructure/bigquery/deploy-views.sh": {

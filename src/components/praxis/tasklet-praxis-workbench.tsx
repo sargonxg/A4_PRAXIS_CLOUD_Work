@@ -958,7 +958,7 @@ export function TaskletPraxisWorkbench({
   const [diagnosticsOpen, setDiagnosticsOpen] = useState(false);
   const [capsuleDetailTab, setCapsuleDetailTab] = useState<CapsuleDetailTab>('overview');
   const [builderOpen, setBuilderOpen] = useState(false);
-  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorOpen, setInspectorOpen] = useState(resolvedInitialFactoryLane === 'inspect');
   const [capsuleMemories, setCapsuleMemories] = useState<CapsuleWorkbenchTacitMemoryInput[]>([]);
   const [repositoryDocuments, setRepositoryDocuments] = useState<RepositoryDocument[]>([]);
   const [repositoryLoading, setRepositoryLoading] = useState(false);
@@ -2809,6 +2809,13 @@ export function TaskletPraxisWorkbench({
     if (panel === 'account') setStatus('Account and runtime settings now live inside the PRAXIS cockpit.');
     if (memoIdParam) void openMemoArtifactById(memoIdParam);
   }, [currentCapsuleId, initialMemoId, isAuthenticated, persistActiveCapsuleStack, refreshRepository]);
+
+  useEffect(() => {
+    if (resolvedInitialFactoryLane !== 'inspect') return;
+    setInspectorOpen(true);
+    setCapsuleDetailTab('overview');
+    setStatus('Inspecting capsule graph, ontology, sources, review gates, and output contract.');
+  }, [resolvedInitialFactoryLane]);
 
   function selectUserCapsule(capsule: PraxisCapsuleSummary) {
     const chip = capsuleToChip(capsule);

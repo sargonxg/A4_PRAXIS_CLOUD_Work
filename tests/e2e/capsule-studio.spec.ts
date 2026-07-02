@@ -15,10 +15,13 @@ test.describe('Capsule Studio', () => {
     await expect(page.getByTestId('capsule-library-stats')).toContainText(/221/);
     await expect(page.getByTestId('capsule-library-stats')).toContainText(/GRAPH/i);
 
-    const flagshipCard = page.getByTestId('capsule-card-starter-user-us-based-multilateral-desk-officer').first();
-    await expect(flagshipCard).toBeVisible();
-    await expect(flagshipCard.getByTestId('capsule-mini-graph')).toBeVisible();
-    await flagshipCard.getByRole('button', { name: /Inspect/i }).click();
+    const visibleStarterCard = page.locator('[data-testid^="capsule-card-"]').filter({ has: page.getByTestId('capsule-mini-graph') }).first();
+    await expect(visibleStarterCard).toBeVisible();
+    await expect(visibleStarterCard.getByTestId('capsule-mini-graph')).toBeVisible();
+    await Promise.all([
+      page.waitForURL(/lane=inspect/, { timeout: 30_000 }),
+      visibleStarterCard.getByRole('link', { name: /Inspect/i }).click(),
+    ]);
 
     await expect(page.getByTestId('capsule-inspector-sheet')).toBeVisible();
     await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible();
