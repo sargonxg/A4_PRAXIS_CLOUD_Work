@@ -8,6 +8,7 @@ import remarkGfm from 'remark-gfm';
 import {
   Bot,
   Boxes,
+  CheckCircle2,
   ExternalLink,
   FileOutput,
   Loader2,
@@ -53,6 +54,7 @@ type ChatMessage = {
   availableActions?: ResponseActionKind[];
   answerEnvelope?: AskAnswerEnvelope;
   sourceabilityVerdicts?: SourceabilityClaimVerdict[];
+  onboardingRecoveryPrompt?: string;
 };
 
 export interface PraxisChatProps {
@@ -322,7 +324,15 @@ export function PraxisChat({
         });
 
         if (!response.ok || !response.body) {
-          const payload = await response.json().catch(() => null) as { error?: string; code?: string } | null;
+          const payload = await response.json().catch(() => null) as { error?: string; code?: string; message?: string; redirectTo?: string } | null;
+          if (response.status === 403 && (payload?.code === 'onboarding_required' || payload?.redirectTo === '/onboarding')) {
+            updateAssistant({
+              content: payload?.message ?? 'Complete your analyst profile to personalise PRAXIS, or continue without onboarding for this turn.',
+              onboardingRecoveryPrompt: text,
+            });
+            setError(null);
+            return;
+          }
           updateAssistant({
             content: payload?.error ?? `Ask PRAXIS could not start (${response.status}).`,
           });
@@ -400,6 +410,23 @@ export function PraxisChat({
     setInput('');
     if (typeof window !== 'undefined') window.localStorage.removeItem(localStorageKey);
   };
+
+  const continueWithoutOnboarding = useCallback(async (prompt: string) => {
+    if (!prompt.trim()) return;
+    setError(null);
+    try {
+      const res = await fetch('/api/onboarding/skip', { method: 'POST', credentials: 'include' });
+      if (!res.ok) {
+        setError('Could not skip onboarding. Open onboarding or try again.');
+        return;
+      }
+      setMessages((prev) => prev.filter((message) => !message.onboardingRecoveryPrompt));
+      messagesRef.current = messagesRef.current.filter((message) => !message.onboardingRecoveryPrompt);
+      await sendWithText(prompt);
+    } catch {
+      setError('Network error while skipping onboarding.');
+    }
+  }, [sendWithText]);
 
   const exportMessageToEditor = useCallback(async (message: ChatMessage): Promise<string | null> => {
     const pack = message.answerEnvelope?.documentPackCandidate;
@@ -484,6 +511,7 @@ export function PraxisChat({
                   activeSituation={activeSituation}
                   isStreaming={isStreaming && message.id === messages[messages.length - 1]?.id}
                   onExportToEditor={isPublic ? undefined : exportMessageToEditor}
+                  onContinueWithoutOnboarding={continueWithoutOnboarding}
                   variant={variant}
                 />
               ))}
@@ -619,12 +647,14 @@ function ChatBubble({
   isStreaming,
   message,
   onExportToEditor,
+  onContinueWithoutOnboarding,
   variant,
 }: {
   activeSituation?: Situation | null;
   isStreaming: boolean;
   message: ChatMessage;
   onExportToEditor?: (message: ChatMessage) => Promise<string | null>;
+  onContinueWithoutOnboarding?: (prompt: string) => Promise<void>;
   variant: 'home' | 'floating';
 }) {
   const isAssistant = message.role === 'assistant';
@@ -651,6 +681,27 @@ function ChatBubble({
           {message.answerEnvelope?.sourceCards?.length ? <SourceCards sourceCards={message.answerEnvelope.sourceCards} /> : null}
           {message.proposal ? (
             <MutationConfirmCard summary={message.proposal.summary} patch={message.proposal.patch} />
+          ) : null}
+          {message.onboardingRecoveryPrompt ? (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border border-amber-200 bg-amber-50 px-3 py-2">
+              <Link
+                href="/onboarding?resume=1"
+                className="inline-flex min-h-9 items-center gap-1.5 rounded-[var(--radius-md)] bg-slate-950 px-3 text-xs font-semibold text-white hover:bg-slate-800"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Complete onboarding
+              </Link>
+              {onContinueWithoutOnboarding ? (
+                <button
+                  type="button"
+                  onClick={() => void onContinueWithoutOnboarding(message.onboardingRecoveryPrompt ?? '')}
+                  className="inline-flex min-h-9 items-center gap-1.5 rounded-[var(--radius-md)] border border-amber-300 bg-white px-3 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+                >
+                  <SendHorizontal className="h-3.5 w-3.5" />
+                  Continue without onboarding
+                </button>
+              ) : null}
+            </div>
           ) : null}
           {!isStreaming && message.content.trim() ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">

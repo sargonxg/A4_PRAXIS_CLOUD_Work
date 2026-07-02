@@ -81,9 +81,10 @@ function checkAiRequestLimits(body: Record<string, unknown>): Response | null {
   return null;
 }
 
-function canUseLegacyDefaultCalibration(profile: Awaited<ReturnType<typeof getAnalystProfile>>): boolean {
+function canUseDefaultCalibration(profile: Awaited<ReturnType<typeof getAnalystProfile>>): boolean {
   if (!profile) return true;
   if (isOnboardingComplete(profile)) return true;
+  if (typeof profile.meta?.skipCount === 'number' && profile.meta.skipCount > 0) return true;
   try {
     return isProfileComplete(profile);
   } catch {
@@ -189,9 +190,10 @@ export function withCalibration(
       // profiles still stay in the onboarding path.
       if (!user.isDemo) {
         const profile = await getAnalystProfile(user.uid).catch(() => null);
-        if (!canUseLegacyDefaultCalibration(profile)) {
+        if (!canUseDefaultCalibration(profile)) {
           return NextResponse.json({
             error: 'Onboarding required',
+            code: 'onboarding_required',
             message: 'Complete your analyst profile before using PRAXIS tools.',
             redirectTo: '/onboarding',
           }, { status: 403 });

@@ -3295,8 +3295,8 @@
     "semantic_hash": ""
   },
   "src/components/app/praxis-chat.tsx": {
-    "mtime": 1782350163.3878577,
-    "ast_hash": "856b3fec8e0e95bccc6a01ed90b32c69",
+    "mtime": 1783009985.0215,
+    "ast_hash": "b798592b6c99f3357c69d239515f8212",
     "semantic_hash": ""
   },
   "src/components/app/public-shell.tsx": {
@@ -4295,8 +4295,8 @@
     "semantic_hash": ""
   },
   "src/lib/api/with-calibration.ts": {
-    "mtime": 1782319126.806125,
-    "ast_hash": "5014e17a5844a7c264fefb1a449ee4ec",
+    "mtime": 1783009960.3730023,
+    "ast_hash": "e9e58f897f6a445a67baf6be56ece274",
     "semantic_hash": ""
   },
   "src/lib/api/with-context-aware.ts": {
@@ -7110,8 +7110,8 @@
     "semantic_hash": ""
   },
   "tests/unit/lib/api/with-calibration.test.ts": {
-    "mtime": 1782319023.5059922,
-    "ast_hash": "73d5173691a7ca55877332e5d095621f",
+    "mtime": 1783010120.791131,
+    "ast_hash": "335e38f2941c1d651c920c02ceff5e30",
     "semantic_hash": ""
   },
   "tests/unit/lib/api/with-firewall.test.ts": {
@@ -10327,6 +10327,11 @@
   "tests/unit/components/praxis/PraxisCapabilityLauncher.test.tsx": {
     "mtime": 1782506169.025506,
     "ast_hash": "fa992b4ca1d19fe3abb07f8369475679",
+    "semantic_hash": ""
+  },
+  "tests/unit/app/praxis-chat-onboarding-recovery-contract.test.ts": {
+    "mtime": 1783010022.6993487,
+    "ast_hash": "7104e6e5bb80cce8b5c9a6a6d4b0b75e",
     "semantic_hash": ""
   }
 }

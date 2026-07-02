@@ -358,10 +358,34 @@ describe('withCalibration', () => {
     const req = new Request('http://x', { method: 'POST', body: JSON.stringify({}) });
     const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(req, { uid: 'u1', email: '', name: '', isDemo: false });
     expect(res.status).toBe(403);
-    const body = await res.json() as { error: string; redirectTo: string };
+    const body = await res.json() as { error: string; code: string; redirectTo: string };
     expect(body.error).toBe('Onboarding required');
+    expect(body.code).toBe('onboarding_required');
     expect(body.redirectTo).toBe('/onboarding');
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('lets users who explicitly skipped onboarding run with default calibration', async () => {
+    (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      identity: { role: '', seniority: '', org: '', team: '' },
+      perspective: { mandate: '', lenses: [], regions: [], audience: '', primaryDomain: 'generic', secondaryDomains: [] },
+      workingStyle: { sourceCategories: [], language: '', redLines: [], analyticalStyle: '' },
+      meta: { version: 0, completedAt: null, lastEditedAt: null, skipCount: 1, createdAt: null, deletedAt: null },
+    });
+    const handler = vi.fn().mockResolvedValue(new Response(JSON.stringify({ ok: true })));
+    const route = withCalibration('chat', 'ai_chat', {
+      variant: 'streaming',
+      blockOnThinContext: false,
+    })(handler);
+    const req = new Request('http://x', { method: 'POST', body: JSON.stringify({ messages: [{ role: 'user', content: 'Draft a memo.' }] }) });
+    const res = await (route as unknown as (r: Request, u: { uid: string; email: string; name: string; isDemo: boolean }) => Promise<Response>)(req, { uid: 'u1', email: '', name: '', isDemo: false });
+
+    expect(res.status).toBe(200);
+    expect(buildCalibratedContext).toHaveBeenCalledWith(expect.objectContaining({
+      uid: 'u1',
+      toolId: 'chat',
+    }));
+    expect(handler).toHaveBeenCalled();
   });
 
   it('bypasses onboarding gate for sample users', async () => {
