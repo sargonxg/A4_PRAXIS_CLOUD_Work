@@ -40,7 +40,7 @@ describe('tryLibraryCapsule', () => {
     const entry = CAPSULE_LIBRARY_ENTRIES[0];
     const fetcher = vi.fn()
       .mockResolvedValueOnce(Response.json({ capsules: [], persisted: true }))
-      .mockResolvedValueOnce(Response.json({ created: 211 }, { status: 201 }));
+      .mockResolvedValueOnce(Response.json({ created: 221 }, { status: 201 }));
     const saveStack = vi.fn(async (patch) => sanitizeActiveContextStack(patch));
 
     const result = await tryLibraryCapsule(entry, { fetch: fetcher, saveStack });

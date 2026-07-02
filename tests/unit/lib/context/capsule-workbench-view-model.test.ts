@@ -130,6 +130,24 @@ describe('buildCapsuleWorkbenchViewModel', () => {
       impact: expect.stringMatching(/graph|ontology|canonical|proposal/i),
       allowedActions: ['approve', 'reject'],
     });
+    expect(model.pillars.map((pillar) => pillar.id)).toEqual(['user', 'situation', 'tools', 'output']);
+    expect(model.pillars.map((pillar) => pillar.title)).toEqual(['User', 'Situation', 'Tools', 'Output']);
+    expect(model.pillars.find((pillar) => pillar.id === 'user')).toMatchObject({
+      mappedCoreKinds: expect.arrayContaining(['user', 'memory']),
+      inspectionFocus: expect.stringMatching(/tone|reasoning|assumptions/i),
+    });
+    expect(model.pillars.find((pillar) => pillar.id === 'situation')).toMatchObject({
+      mappedCoreKinds: expect.arrayContaining(['situation', 'source', 'document', 'graph']),
+      inspectionFocus: expect.stringMatching(/source receipts|ontology|graph/i),
+    });
+    expect(model.pillars.find((pillar) => pillar.id === 'tools')).toMatchObject({
+      mappedCoreKinds: ['tool'],
+      inspectionFocus: expect.stringMatching(/methods|evidence|human-gated/i),
+    });
+    expect(model.pillars.find((pillar) => pillar.id === 'output')).toMatchObject({
+      mappedCoreKinds: expect.arrayContaining(['product', 'output']),
+      inspectionFocus: expect.stringMatching(/generate|structure|review/i),
+    });
   });
 
   it('keeps sparse capsules legible and review-gated instead of rendering an empty mess', () => {
@@ -708,11 +726,11 @@ describe('buildCapsuleWorkbenchViewModel', () => {
       },
     });
 
-    expect(model.pillars.map((pillar) => pillar.id)).toEqual(['situation', 'users', 'tools', 'output']);
+    expect(model.pillars.map((pillar) => pillar.id)).toEqual(['user', 'situation', 'tools', 'output']);
     expect(model.pillars.find((pillar) => pillar.id === 'situation')?.sections).toEqual(expect.arrayContaining([
-      'Claim ledger',
+      'Claims',
       'Timeline',
-      'Causal chain',
+      'Ontology and graph',
     ]));
     expect(model.timeline.items).toEqual(expect.arrayContaining([
       expect.objectContaining({

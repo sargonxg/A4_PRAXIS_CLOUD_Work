@@ -13,15 +13,16 @@ const root = process.cwd();
 const failures: string[] = [];
 
 const expectedCounts = {
-  situation: 86,
-  tool: 75,
-  output: 36,
-  user: 14,
+  situation: 89,
+  tool: 78,
+  output: 38,
+  user: 16,
 };
 const acceptedPostConsolidationCatalogWaves = [
   /capsule-consolidation/,
   /research-dossier-firestore-proof/,
   /graphlite-advisory-projection/,
+  /canonical-four-category-v19/,
 ];
 
 const counts = CAPSULE_STARTER_DEFINITIONS.reduce<Record<string, number>>((acc, starter) => {
@@ -29,7 +30,7 @@ const counts = CAPSULE_STARTER_DEFINITIONS.reduce<Record<string, number>>((acc, 
   return acc;
 }, {});
 
-check(CAPSULE_STARTER_DEFINITIONS.length === 211, `expected 211 starters, found ${CAPSULE_STARTER_DEFINITIONS.length}`);
+check(CAPSULE_STARTER_DEFINITIONS.length === 221, `expected 221 starters, found ${CAPSULE_STARTER_DEFINITIONS.length}`);
 for (const [category, count] of Object.entries(expectedCounts)) {
   check((counts[category] ?? 0) === count, `expected ${count} ${category} starters, found ${counts[category] ?? 0}`);
 }

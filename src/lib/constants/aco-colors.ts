@@ -11,11 +11,17 @@
  */
 
 import { ENTITY_COLORS, ENTITY_TYPES, type EntityType } from './entity-colors';
+import {
+  CANONICAL_CAPSULE_CATEGORY_IDS,
+  type CapsuleCategoryAlias,
+  type CanonicalCapsuleCategoryId,
+  normalizeCapsuleCategoryId,
+} from '@/lib/context/capsule-categories';
 
-export const CAPSULE_CATEGORY_IDS = ['user', 'situation', 'tools', 'output'] as const;
+export const CAPSULE_CATEGORY_IDS = CANONICAL_CAPSULE_CATEGORY_IDS;
 
-export type CapsuleCategoryId = (typeof CAPSULE_CATEGORY_IDS)[number];
-export type CapsuleCategoryInput = CapsuleCategoryId | 'users' | 'tool';
+export type CapsuleCategoryId = CanonicalCapsuleCategoryId;
+export type CapsuleCategoryInput = CapsuleCategoryAlias;
 export type CapsuleCategoryIconName = 'UserRound' | 'Target' | 'Wrench' | 'FileText';
 
 export interface CapsuleCategoryPalette {
@@ -68,9 +74,7 @@ export const CAPSULE_CATEGORY_PALETTE: Record<CapsuleCategoryId, CapsuleCategory
 } as const;
 
 export function getCapsuleCategoryPalette(category: CapsuleCategoryInput): CapsuleCategoryPalette {
-  if (category === 'users') return CAPSULE_CATEGORY_PALETTE.user;
-  if (category === 'tool') return CAPSULE_CATEGORY_PALETTE.tools;
-  return CAPSULE_CATEGORY_PALETTE[category];
+  return CAPSULE_CATEGORY_PALETTE[normalizeCapsuleCategoryId(category)];
 }
 
 export const ACO_COLORS: Record<string, string> = {

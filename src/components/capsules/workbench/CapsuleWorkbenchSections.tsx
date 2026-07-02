@@ -6,9 +6,9 @@ import { AlertTriangle, CheckCircle2 } from 'lucide-react';
 import type { CapsuleWorkbenchReviewState, CapsuleWorkbenchViewModel } from '@/lib/context/capsule-workbench-view-model';
 import { cn } from '@/lib/utils/cn';
 
-export const PILLAR_TITLES: Record<CapsuleWorkbenchViewModel['pillars'][number]['id'], 'Situation' | 'Users' | 'Tools' | 'Output'> = {
+export const PILLAR_TITLES: Record<CapsuleWorkbenchViewModel['pillars'][number]['id'], 'User' | 'Situation' | 'Tools' | 'Output'> = {
+  user: 'User',
   situation: 'Situation',
-  users: 'Users',
   tools: 'Tools',
   output: 'Output',
 };

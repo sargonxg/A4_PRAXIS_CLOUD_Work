@@ -1,20 +1,20 @@
 {
   "ok": true,
-  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
-  "total": 211,
+  "catalogVersion": "2026-07-02-canonical-four-category-v19",
+  "total": 221,
   "counts": {
-    "situation": 86,
-    "user": 14,
-    "tool": 75,
-    "output": 36
+    "situation": 89,
+    "user": 16,
+    "tool": 78,
+    "output": 38
   },
   "expected": {
-    "total": 211,
+    "total": 221,
     "counts": {
-      "output": 36,
-      "situation": 86,
-      "tool": 75,
-      "user": 14
+      "output": 38,
+      "situation": 89,
+      "tool": 78,
+      "user": 16
     }
   },
   "failures": [],
@@ -1157,6 +1157,116 @@
       "category": "output",
       "domain": "output-brief",
       "sourceCount": 5,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-user-humanitarian-policy-desk-lead",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 4,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-user-institutional-decision-principal",
+      "category": "user",
+      "domain": "analyst-role",
+      "sourceCount": 4,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-ceasefire-monitoring-verification-package",
+      "category": "situation",
+      "domain": "diplomacy",
+      "sourceCount": 5,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-sanctions-humanitarian-carveout-risk",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "sourceCount": 5,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-situation-critical-minerals-community-consent-watch",
+      "category": "situation",
+      "domain": "critical-minerals",
+      "sourceCount": 4,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-tool-stakeholder-power-interest-assumption-check",
+      "category": "tool",
+      "domain": "options-mapping",
+      "sourceCount": 5,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-tool-claim-assumption-sourceability-auditor",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 4,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-tool-executive-brief-red-team-conclusion-check",
+      "category": "tool",
+      "domain": "audit-review",
+      "sourceCount": 4,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-output-executive-summary-options-brief",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 4,
+      "excerptCount": 4,
+      "compatibleCount": 3,
+      "richProfile": true,
+      "intelligenceProfile": true,
+      "cogneeProfile": true
+    },
+    {
+      "starterId": "starter-output-decision-handover-review-pack",
+      "category": "output",
+      "domain": "output-brief",
+      "sourceCount": 4,
       "excerptCount": 4,
       "compatibleCount": 3,
       "richProfile": true,

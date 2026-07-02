@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-26T21:13:40.116Z",
-  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
-  "total": 211,
+  "generatedAt": "2026-07-02T23:16:13.305Z",
+  "catalogVersion": "2026-07-02-canonical-four-category-v19",
+  "total": 221,
   "weakestCount": 20,
   "summary": {
-    "averageScore": 83.474,
+    "averageScore": 83.44,
     "minimumScore": 80.381,
     "maximumScore": 86.715,
     "reviewProposalCount": 40,
@@ -44,6 +44,26 @@
     },
     {
       "rank": 2,
+      "starterId": "starter-tool-claim-assumption-sourceability-auditor",
+      "label": "Claim assumption sourceability auditor tool capsule",
+      "category": "tool",
+      "domain": "audit-review",
+      "score": 80.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-sourceSpine",
+        "relative-claimLedger",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 3,
       "starterId": "starter-tool-epistemic-trust-ledger",
       "label": "Epistemic Trust Ledger",
       "category": "tool",
@@ -63,7 +83,7 @@
       ]
     },
     {
-      "rank": 3,
+      "rank": 4,
       "starterId": "starter-tool-joint-fact-finding-source-protocol",
       "label": "Joint fact-finding source protocol",
       "category": "tool",
@@ -83,7 +103,27 @@
       ]
     },
     {
-      "rank": 4,
+      "rank": 5,
+      "starterId": "starter-output-decision-handover-review-pack",
+      "label": "Decision handover review pack output capsule",
+      "category": "output",
+      "domain": "output-brief",
+      "score": 81.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-sourceSpine",
+        "relative-claimLedger",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 6,
       "starterId": "starter-output-diplomatic-note",
       "label": "Diplomatic note artifact capsule",
       "category": "output",
@@ -103,7 +143,7 @@
       ]
     },
     {
-      "rank": 5,
+      "rank": 7,
       "starterId": "starter-output-diplomatic-options-memo",
       "label": "Diplomatic options memo output capsule",
       "category": "output",
@@ -123,7 +163,7 @@
       ]
     },
     {
-      "rank": 6,
+      "rank": 8,
       "starterId": "starter-output-evidence-sourceability-annex",
       "label": "Evidence and sourceability annex artifact capsule",
       "category": "output",
@@ -143,7 +183,7 @@
       ]
     },
     {
-      "rank": 7,
+      "rank": 9,
       "starterId": "starter-output-finance-exposure-note",
       "label": "Finance exposure note output capsule",
       "category": "output",
@@ -163,7 +203,7 @@
       ]
     },
     {
-      "rank": 8,
+      "rank": 10,
       "starterId": "starter-output-hr-rollout-recommendation",
       "label": "HR rollout recommendation output capsule",
       "category": "output",
@@ -183,7 +223,7 @@
       ]
     },
     {
-      "rank": 9,
+      "rank": 11,
       "starterId": "starter-output-humanitarian-access-brief",
       "label": "Humanitarian access brief output capsule",
       "category": "output",
@@ -203,7 +243,7 @@
       ]
     },
     {
-      "rank": 10,
+      "rank": 12,
       "starterId": "starter-output-legal-mandate-compliance-note",
       "label": "Legal/mandate compliance note artifact capsule",
       "category": "output",
@@ -223,7 +263,7 @@
       ]
     },
     {
-      "rank": 11,
+      "rank": 13,
       "starterId": "starter-output-meeting-talking-points",
       "label": "Meeting talking points artifact capsule",
       "category": "output",
@@ -243,7 +283,7 @@
       ]
     },
     {
-      "rank": 12,
+      "rank": 14,
       "starterId": "starter-output-negotiation-prep-book",
       "label": "Negotiation prep book artifact capsule",
       "category": "output",
@@ -263,7 +303,7 @@
       ]
     },
     {
-      "rank": 13,
+      "rank": 15,
       "starterId": "starter-output-principals-decision-memo",
       "label": "Principals decision memo artifact capsule",
       "category": "output",
@@ -283,7 +323,7 @@
       ]
     },
     {
-      "rank": 14,
+      "rank": 16,
       "starterId": "starter-output-scenario-risk-dashboard-card",
       "label": "Scenario and risk dashboard card artifact capsule",
       "category": "output",
@@ -303,7 +343,7 @@
       ]
     },
     {
-      "rank": 15,
+      "rank": 17,
       "starterId": "starter-output-sustainability-risk-brief",
       "label": "Sustainability risk brief output capsule",
       "category": "output",
@@ -323,7 +363,7 @@
       ]
     },
     {
-      "rank": 16,
+      "rank": 18,
       "starterId": "starter-output-two-page-brief",
       "label": "Two-page brief artifact capsule",
       "category": "output",
@@ -343,7 +383,7 @@
       ]
     },
     {
-      "rank": 17,
+      "rank": 19,
       "starterId": "starter-tool-assumption-audit",
       "label": "Assumption audit thinking device",
       "category": "tool",
@@ -363,7 +403,7 @@
       ]
     },
     {
-      "rank": 18,
+      "rank": 20,
       "starterId": "starter-tool-assumption-stress-test",
       "label": "Assumption Stress Test",
       "category": "tool",
@@ -383,7 +423,7 @@
       ]
     },
     {
-      "rank": 19,
+      "rank": 21,
       "starterId": "starter-tool-category-error-detector",
       "label": "Category Error Detector",
       "category": "tool",
@@ -403,7 +443,7 @@
       ]
     },
     {
-      "rank": 20,
+      "rank": 22,
       "starterId": "starter-tool-competing-hypotheses-matrix",
       "label": "Competing Hypotheses Matrix",
       "category": "tool",
@@ -423,7 +463,7 @@
       ]
     },
     {
-      "rank": 21,
+      "rank": 23,
       "starterId": "starter-tool-estimative-confidence-calibration-table",
       "label": "Estimative confidence calibration table",
       "category": "tool",
@@ -443,7 +483,7 @@
       ]
     },
     {
-      "rank": 22,
+      "rank": 24,
       "starterId": "starter-tool-evidence-freshness-staleness-clock",
       "label": "Evidence freshness and staleness clock",
       "category": "tool",
@@ -463,7 +503,7 @@
       ]
     },
     {
-      "rank": 23,
+      "rank": 25,
       "starterId": "starter-tool-pre-mortem-failure-review",
       "label": "Pre-Mortem Failure Review",
       "category": "tool",
@@ -483,7 +523,7 @@
       ]
     },
     {
-      "rank": 24,
+      "rank": 26,
       "starterId": "starter-tool-second-order-effects-map",
       "label": "Second-Order Effects Map",
       "category": "tool",
@@ -503,7 +543,7 @@
       ]
     },
     {
-      "rank": 25,
+      "rank": 27,
       "starterId": "starter-tool-source-gap-triage",
       "label": "Source-gap triage thinking device",
       "category": "tool",
@@ -523,7 +563,7 @@
       ]
     },
     {
-      "rank": 26,
+      "rank": 28,
       "starterId": "starter-tool-source-pack-builder",
       "label": "Source pack builder tool capsule",
       "category": "tool",
@@ -543,7 +583,7 @@
       ]
     },
     {
-      "rank": 27,
+      "rank": 29,
       "starterId": "starter-tool-source-reliability-triangulation-ladder",
       "label": "Source reliability triangulation ladder",
       "category": "tool",
@@ -563,7 +603,7 @@
       ]
     },
     {
-      "rank": 28,
+      "rank": 30,
       "starterId": "starter-tool-sourceability-audit-reviewer",
       "label": "Sourceability and audit reviewer tool capsule",
       "category": "tool",
@@ -583,7 +623,7 @@
       ]
     },
     {
-      "rank": 29,
+      "rank": 31,
       "starterId": "starter-tool-sourceability-matrix",
       "label": "Sourceability Matrix thinking device",
       "category": "tool",
@@ -603,7 +643,7 @@
       ]
     },
     {
-      "rank": 30,
+      "rank": 32,
       "starterId": "starter-tool-temporal-causal-map",
       "label": "Temporal-Causal Map thinking device",
       "category": "tool",
@@ -623,7 +663,7 @@
       ]
     },
     {
-      "rank": 31,
+      "rank": 33,
       "starterId": "starter-user-investigative-research-analyst",
       "label": "Investigative research analyst user capsule",
       "category": "user",
@@ -643,7 +683,7 @@
       ]
     },
     {
-      "rank": 32,
+      "rank": 34,
       "starterId": "starter-tool-data-gap-interrogatory-builder",
       "label": "Data gap interrogatory builder",
       "category": "tool",
@@ -663,7 +703,7 @@
       ]
     },
     {
-      "rank": 33,
+      "rank": 35,
       "starterId": "starter-situation-gerd-nile-water-diplomacy",
       "label": "GERD and Nile water diplomacy capsule",
       "category": "situation",
@@ -683,7 +723,7 @@
       ]
     },
     {
-      "rank": 34,
+      "rank": 36,
       "starterId": "starter-output-board-decision-memo-pack",
       "label": "Board decision memo pack output capsule",
       "category": "output",
@@ -703,7 +743,27 @@
       ]
     },
     {
-      "rank": 35,
+      "rank": 37,
+      "starterId": "starter-situation-critical-minerals-community-consent-watch",
+      "label": "Critical minerals community consent watch situation capsule",
+      "category": "situation",
+      "domain": "critical-minerals",
+      "score": 82.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-sourceSpine",
+        "relative-claimLedger",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 38,
       "starterId": "starter-situation-election-observation-information-integrity",
       "label": "Election observation and information integrity capsule",
       "category": "situation",
@@ -723,7 +783,7 @@
       ]
     },
     {
-      "rank": 36,
+      "rank": 39,
       "starterId": "starter-situation-power-grid-flexibility-critical-infrastructure",
       "label": "Power grid flexibility and critical infrastructure capsule",
       "category": "situation",
@@ -743,7 +803,7 @@
       ]
     },
     {
-      "rank": 37,
+      "rank": 40,
       "starterId": "starter-tool-board-assurance-question-set",
       "label": "Board assurance question set",
       "category": "tool",
@@ -763,7 +823,7 @@
       ]
     },
     {
-      "rank": 38,
+      "rank": 41,
       "starterId": "starter-tool-ceasefire-monitoring-verification-matrix",
       "label": "Ceasefire monitoring and verification matrix",
       "category": "tool",
@@ -783,7 +843,27 @@
       ]
     },
     {
-      "rank": 39,
+      "rank": 42,
+      "starterId": "starter-tool-executive-brief-red-team-conclusion-check",
+      "label": "Executive brief red-team conclusion check tool capsule",
+      "category": "tool",
+      "domain": "audit-review",
+      "score": 82.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-sourceSpine",
+        "relative-claimLedger",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 43,
       "starterId": "starter-user-corporate-supply-chain-esg-lead",
       "label": "Corporate supply-chain ESG lead user capsule",
       "category": "user",
@@ -803,7 +883,7 @@
       ]
     },
     {
-      "rank": 40,
+      "rank": 44,
       "starterId": "starter-user-diplomatic-desk-officer",
       "label": "Diplomatic desk officer user capsule",
       "category": "user",
@@ -823,7 +903,7 @@
       ]
     },
     {
-      "rank": 41,
+      "rank": 45,
       "starterId": "starter-user-esg-sustainability-lead",
       "label": "ESG and sustainability lead user capsule",
       "category": "user",
@@ -843,7 +923,7 @@
       ]
     },
     {
-      "rank": 42,
+      "rank": 46,
       "starterId": "starter-user-field-program-manager",
       "label": "Field program manager user capsule",
       "category": "user",
@@ -863,7 +943,7 @@
       ]
     },
     {
-      "rank": 43,
+      "rank": 47,
       "starterId": "starter-user-finance-risk-analyst",
       "label": "Finance risk analyst user capsule",
       "category": "user",
@@ -883,7 +963,7 @@
       ]
     },
     {
-      "rank": 44,
+      "rank": 48,
       "starterId": "starter-user-hr-policy-owner",
       "label": "HR policy owner user capsule",
       "category": "user",
@@ -903,7 +983,7 @@
       ]
     },
     {
-      "rank": 45,
+      "rank": 49,
       "starterId": "starter-user-humanitarian-legal-investigator",
       "label": "Humanitarian and legal investigator user capsule",
       "category": "user",
@@ -923,7 +1003,27 @@
       ]
     },
     {
-      "rank": 46,
+      "rank": 50,
+      "starterId": "starter-user-humanitarian-policy-desk-lead",
+      "label": "Humanitarian policy desk lead user capsule",
+      "category": "user",
+      "domain": "analyst-role",
+      "score": 82.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-sourceSpine",
+        "relative-claimLedger",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 51,
       "starterId": "starter-user-sanctions-compliance-counsel",
       "label": "Sanctions compliance counsel user capsule",
       "category": "user",
@@ -943,7 +1043,7 @@
       ]
     },
     {
-      "rank": 47,
+      "rank": 52,
       "starterId": "starter-user-un-humanitarian-access-officer",
       "label": "UN humanitarian access officer user capsule",
       "category": "user",
@@ -963,7 +1063,7 @@
       ]
     },
     {
-      "rank": 48,
+      "rank": 53,
       "starterId": "starter-tool-institutional-logic-lens",
       "label": "Institutional Logic Lens",
       "category": "tool",
@@ -983,7 +1083,7 @@
       ]
     },
     {
-      "rank": 49,
+      "rank": 54,
       "starterId": "starter-tool-moral-tradeoff-matrix",
       "label": "Moral Tradeoff Matrix",
       "category": "tool",
@@ -1003,7 +1103,7 @@
       ]
     },
     {
-      "rank": 50,
+      "rank": 55,
       "starterId": "starter-tool-reflective-equilibrium-workbench",
       "label": "Reflective Equilibrium Workbench",
       "category": "tool",
@@ -1023,7 +1123,7 @@
       ]
     },
     {
-      "rank": 51,
+      "rank": 56,
       "starterId": "starter-output-current-affairs-source-refresh-docket",
       "label": "Current-affairs source refresh docket",
       "category": "output",
@@ -1043,7 +1143,7 @@
       ]
     },
     {
-      "rank": 52,
+      "rank": 57,
       "starterId": "starter-tool-analogy-fitness-test",
       "label": "Analogy Fitness Test",
       "category": "tool",
@@ -1063,7 +1163,7 @@
       ]
     },
     {
-      "rank": 53,
+      "rank": 58,
       "starterId": "starter-tool-argument-scheme-critical-questions",
       "label": "Argument Scheme Critical Questions",
       "category": "tool",
@@ -1083,7 +1183,7 @@
       ]
     },
     {
-      "rank": 54,
+      "rank": 59,
       "starterId": "starter-tool-conceptual-distinction-builder",
       "label": "Conceptual Distinction Builder",
       "category": "tool",
@@ -1103,7 +1203,7 @@
       ]
     },
     {
-      "rank": 55,
+      "rank": 60,
       "starterId": "starter-tool-corporate-exposure-heatmap",
       "label": "Corporate exposure heatmap",
       "category": "tool",
@@ -1123,7 +1223,7 @@
       ]
     },
     {
-      "rank": 56,
+      "rank": 61,
       "starterId": "starter-tool-hermeneutic-circle-reader",
       "label": "Hermeneutic Circle Reader",
       "category": "tool",
@@ -1143,7 +1243,7 @@
       ]
     },
     {
-      "rank": 57,
+      "rank": 62,
       "starterId": "starter-tool-narrative-frame-audit",
       "label": "Narrative Frame Audit",
       "category": "tool",
@@ -1163,7 +1263,7 @@
       ]
     },
     {
-      "rank": 58,
+      "rank": 63,
       "starterId": "starter-tool-scenario-indicator-watchlist",
       "label": "Scenario indicator watchlist",
       "category": "tool",
@@ -1183,7 +1283,7 @@
       ]
     },
     {
-      "rank": 59,
+      "rank": 64,
       "starterId": "starter-tool-stasis-question-ladder",
       "label": "Stasis Question Ladder",
       "category": "tool",
@@ -1203,7 +1303,7 @@
       ]
     },
     {
-      "rank": 60,
+      "rank": 65,
       "starterId": "starter-tool-steelman-ironman-red-team-triad",
       "label": "Steelman / Ironman / Red-Team Triad",
       "category": "tool",
@@ -1223,7 +1323,7 @@
       ]
     },
     {
-      "rank": 61,
+      "rank": 66,
       "starterId": "starter-tool-toulmin-argument-scaffold",
       "label": "Toulmin Argument Scaffold",
       "category": "tool",
@@ -1243,7 +1343,7 @@
       ]
     },
     {
-      "rank": 62,
+      "rank": 67,
       "starterId": "starter-situation-south-china-sea-ayungin-resupply",
       "label": "South China Sea Ayungin resupply watch",
       "category": "situation",
@@ -1265,7 +1365,7 @@
       ]
     },
     {
-      "rank": 63,
+      "rank": 68,
       "starterId": "starter-situation-libya-ceasefire-elections-institutions",
       "label": "Libya ceasefire, elections, and institutions watch",
       "category": "situation",
@@ -1285,7 +1385,7 @@
       ]
     },
     {
-      "rank": 64,
+      "rank": 69,
       "starterId": "starter-situation-yemen-roadmap-ceasefire-economy",
       "label": "Yemen roadmap, ceasefire, and economy watch",
       "category": "situation",
@@ -1305,7 +1405,7 @@
       ]
     },
     {
-      "rank": 65,
+      "rank": 70,
       "starterId": "starter-output-ai-governance-risk-brief",
       "label": "AI governance risk brief output capsule",
       "category": "output",
@@ -1325,7 +1425,7 @@
       ]
     },
     {
-      "rank": 66,
+      "rank": 71,
       "starterId": "starter-output-corporate-board-risk-committee-pack",
       "label": "Corporate board risk committee pack output capsule",
       "category": "output",
@@ -1345,7 +1445,7 @@
       ]
     },
     {
-      "rank": 67,
+      "rank": 72,
       "starterId": "starter-output-crisis-daily-senior-brief",
       "label": "Crisis daily senior brief output capsule",
       "category": "output",
@@ -1365,7 +1465,27 @@
       ]
     },
     {
-      "rank": 68,
+      "rank": 73,
+      "starterId": "starter-output-executive-summary-options-brief",
+      "label": "Executive summary options brief output capsule",
+      "category": "output",
+      "domain": "output-brief",
+      "score": 83.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-claimLedger",
+        "relative-sourceSpine",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 74,
       "starterId": "starter-output-ministerial-question-period-brief",
       "label": "Ministerial question period brief output capsule",
       "category": "output",
@@ -1385,7 +1505,7 @@
       ]
     },
     {
-      "rank": 69,
+      "rank": 75,
       "starterId": "starter-output-ministerial-submission-style",
       "label": "Ministerial submission style output capsule",
       "category": "output",
@@ -1405,7 +1525,7 @@
       ]
     },
     {
-      "rank": 70,
+      "rank": 76,
       "starterId": "starter-output-sanctions-compliance-brief-style",
       "label": "Sanctions compliance brief style output capsule",
       "category": "output",
@@ -1425,7 +1545,7 @@
       ]
     },
     {
-      "rank": 71,
+      "rank": 77,
       "starterId": "starter-situation-2026-election-security-administration-watch",
       "label": "2026 election security and administration watch",
       "category": "situation",
@@ -1445,7 +1565,7 @@
       ]
     },
     {
-      "rank": 72,
+      "rank": 78,
       "starterId": "starter-situation-ai-governance-procurement",
       "label": "AI governance procurement capsule",
       "category": "situation",
@@ -1465,7 +1585,7 @@
       ]
     },
     {
-      "rank": 73,
+      "rank": 79,
       "starterId": "starter-situation-arctic-shipping-minerals-governance",
       "label": "Arctic shipping, minerals, and governance capsule",
       "category": "situation",
@@ -1485,7 +1605,7 @@
       ]
     },
     {
-      "rank": 74,
+      "rank": 80,
       "starterId": "starter-situation-corporate-ai-procurement-assurance",
       "label": "Corporate AI procurement assurance capsule",
       "category": "situation",
@@ -1505,7 +1625,7 @@
       ]
     },
     {
-      "rank": 75,
+      "rank": 81,
       "starterId": "starter-situation-critical-minerals-domestic-supply-chain-2026",
       "label": "Critical minerals domestic supply-chain watch 2026",
       "category": "situation",
@@ -1525,7 +1645,7 @@
       ]
     },
     {
-      "rank": 76,
+      "rank": 82,
       "starterId": "starter-situation-critical-minerals-supply-chain",
       "label": "Critical minerals supply-chain capsule",
       "category": "situation",
@@ -1545,7 +1665,7 @@
       ]
     },
     {
-      "rank": 77,
+      "rank": 83,
       "starterId": "starter-situation-data-center-grid-load-interconnection",
       "label": "Data center grid load and interconnection pressure",
       "category": "situation",
@@ -1565,7 +1685,7 @@
       ]
     },
     {
-      "rank": 78,
+      "rank": 84,
       "starterId": "starter-situation-eastern-drc-minerals-protection-risk",
       "label": "Eastern DRC minerals and protection risk capsule",
       "category": "situation",
@@ -1585,7 +1705,7 @@
       ]
     },
     {
-      "rank": 79,
+      "rank": 85,
       "starterId": "starter-situation-election-integrity-information",
       "label": "Election integrity information capsule",
       "category": "situation",
@@ -1605,7 +1725,7 @@
       ]
     },
     {
-      "rank": 80,
+      "rank": 86,
       "starterId": "starter-situation-essequibo-legal-diplomatic-dispute",
       "label": "Guyana-Venezuela Essequibo dispute tracker",
       "category": "situation",
@@ -1625,7 +1745,7 @@
       ]
     },
     {
-      "rank": 81,
+      "rank": 87,
       "starterId": "starter-situation-eu-ai-act-2026-implementation-simplification",
       "label": "EU AI Act 2026 implementation and simplification watch",
       "category": "situation",
@@ -1645,7 +1765,7 @@
       ]
     },
     {
-      "rank": 82,
+      "rank": 88,
       "starterId": "starter-situation-eu-cbam-definitive-regime-exporter-risk",
       "label": "EU CBAM definitive-regime exporter risk",
       "category": "situation",
@@ -1665,7 +1785,7 @@
       ]
     },
     {
-      "rank": 83,
+      "rank": 89,
       "starterId": "starter-situation-eu-sustainability-omnibus-csrd-csddd",
       "label": "EU sustainability omnibus, CSRD, and CSDDD scope watch",
       "category": "situation",
@@ -1685,7 +1805,7 @@
       ]
     },
     {
-      "rank": 84,
+      "rank": 90,
       "starterId": "starter-situation-gaza-ceasefire-aid-reconstruction",
       "label": "Gaza ceasefire, aid, and reconstruction track",
       "category": "situation",
@@ -1705,7 +1825,7 @@
       ]
     },
     {
-      "rank": 85,
+      "rank": 91,
       "starterId": "starter-situation-haiti-gang-mss-access-watch",
       "label": "Haiti gang violence and MSS access watch",
       "category": "situation",
@@ -1725,7 +1845,7 @@
       ]
     },
     {
-      "rank": 86,
+      "rank": 92,
       "starterId": "starter-situation-kids-online-safety-coppa-age-assurance",
       "label": "Kids online safety, COPPA, and age-assurance watch",
       "category": "situation",
@@ -1745,7 +1865,7 @@
       ]
     },
     {
-      "rank": 87,
+      "rank": 93,
       "starterId": "starter-situation-lebanon-israel-unifil-ceasefire-monitoring",
       "label": "Lebanon-Israel UNIFIL ceasefire monitoring capsule",
       "category": "situation",
@@ -1765,7 +1885,7 @@
       ]
     },
     {
-      "rank": 88,
+      "rank": 94,
       "starterId": "starter-situation-myanmar-humanitarian-access-asean",
       "label": "Myanmar humanitarian access and ASEAN track capsule",
       "category": "situation",
@@ -1785,7 +1905,7 @@
       ]
     },
     {
-      "rank": 89,
+      "rank": 95,
       "starterId": "starter-situation-public-sector-ransomware-service-continuity",
       "label": "Public sector ransomware and service continuity capsule",
       "category": "situation",
@@ -1805,7 +1925,7 @@
       ]
     },
     {
-      "rank": 90,
+      "rank": 96,
       "starterId": "starter-situation-sustainability-transition",
       "label": "Sustainability transition capsule",
       "category": "situation",
@@ -1825,7 +1945,7 @@
       ]
     },
     {
-      "rank": 91,
+      "rank": 97,
       "starterId": "starter-situation-taiwan-strait-semiconductor-supply-chain-risk",
       "label": "Taiwan Strait semiconductor supply-chain risk capsule",
       "category": "situation",
@@ -1845,7 +1965,7 @@
       ]
     },
     {
-      "rank": 92,
+      "rank": 98,
       "starterId": "starter-situation-us-ai-export-control-compute-diffusion",
       "label": "US AI export control and compute diffusion watch",
       "category": "situation",
@@ -1865,7 +1985,7 @@
       ]
     },
     {
-      "rank": 93,
+      "rank": 99,
       "starterId": "starter-situation-us-federal-ai-governance-baseline",
       "label": "U.S. federal AI governance baseline",
       "category": "situation",
@@ -1885,7 +2005,7 @@
       ]
     },
     {
-      "rank": 94,
+      "rank": 100,
       "starterId": "starter-situation-water-stress-transboundary-allocation",
       "label": "Water stress and transboundary allocation capsule",
       "category": "situation",
@@ -1905,7 +2025,7 @@
       ]
     },
     {
-      "rank": 95,
+      "rank": 101,
       "starterId": "starter-tool-burden-of-proof-allocator",
       "label": "Burden-of-Proof Allocator",
       "category": "tool",
@@ -1925,7 +2045,7 @@
       ]
     },
     {
-      "rank": 96,
+      "rank": 102,
       "starterId": "starter-tool-corporate-value-chain-due-diligence-map",
       "label": "Corporate value-chain due diligence map",
       "category": "tool",
@@ -1945,7 +2065,7 @@
       ]
     },
     {
-      "rank": 97,
+      "rank": 103,
       "starterId": "starter-tool-hr-policy-impact-reviewer",
       "label": "HR policy impact reviewer tool capsule",
       "category": "tool",
@@ -1965,7 +2085,7 @@
       ]
     },
     {
-      "rank": 98,
+      "rank": 104,
       "starterId": "starter-tool-implementation-feasibility-gate",
       "label": "Implementation Feasibility Gate",
       "category": "tool",
@@ -1985,7 +2105,7 @@
       ]
     },
     {
-      "rank": 99,
+      "rank": 105,
       "starterId": "starter-tool-indicator-shift-detector",
       "label": "Indicator shift detector thinking device",
       "category": "tool",
@@ -2005,7 +2125,7 @@
       ]
     },
     {
-      "rank": 100,
+      "rank": 106,
       "starterId": "starter-tool-infrastructure-load-permitting-watchlist",
       "label": "Infrastructure load and permitting watchlist",
       "category": "tool",
@@ -2025,7 +2145,7 @@
       ]
     },
     {
-      "rank": 101,
+      "rank": 107,
       "starterId": "starter-tool-legal-mandate-compliance-lens",
       "label": "Legal mandate and compliance lens",
       "category": "tool",
@@ -2045,7 +2165,7 @@
       ]
     },
     {
-      "rank": 102,
+      "rank": 108,
       "starterId": "starter-tool-mediator-batna-zopa-ripeness-map",
       "label": "Mediator BATNA-ZOPA ripeness map",
       "category": "tool",
@@ -2065,7 +2185,7 @@
       ]
     },
     {
-      "rank": 103,
+      "rank": 109,
       "starterId": "starter-tool-policy-drafting-style-selector",
       "label": "Policy drafting style selector",
       "category": "tool",
@@ -2085,7 +2205,7 @@
       ]
     },
     {
-      "rank": 104,
+      "rank": 110,
       "starterId": "starter-tool-policy-tradeoff-ledger",
       "label": "Policy Tradeoff Ledger",
       "category": "tool",
@@ -2105,7 +2225,7 @@
       ]
     },
     {
-      "rank": 105,
+      "rank": 111,
       "starterId": "starter-tool-public-narrative-risk-premortem",
       "label": "Public narrative risk premortem",
       "category": "tool",
@@ -2125,7 +2245,7 @@
       ]
     },
     {
-      "rank": 106,
+      "rank": 112,
       "starterId": "starter-tool-wicked-problem-boundary-map",
       "label": "Wicked Problem Boundary Map",
       "category": "tool",
@@ -2145,7 +2265,7 @@
       ]
     },
     {
-      "rank": 107,
+      "rank": 113,
       "starterId": "starter-user-cabinet-policy-advisor",
       "label": "Cabinet policy advisor user capsule",
       "category": "user",
@@ -2165,7 +2285,27 @@
       ]
     },
     {
-      "rank": 108,
+      "rank": 114,
+      "starterId": "starter-user-institutional-decision-principal",
+      "label": "Institutional decision principal user capsule",
+      "category": "user",
+      "domain": "analyst-role",
+      "score": 83.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-claimLedger",
+        "relative-sourceSpine",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 115,
       "starterId": "starter-output-board-public-affairs-risk-watch",
       "label": "Board and public-affairs risk watch",
       "category": "output",
@@ -2185,7 +2325,7 @@
       ]
     },
     {
-      "rank": 109,
+      "rank": 116,
       "starterId": "starter-output-humanitarian-donor-sitrep",
       "label": "Humanitarian donor sitrep output capsule",
       "category": "output",
@@ -2205,7 +2345,7 @@
       ]
     },
     {
-      "rank": 110,
+      "rank": 117,
       "starterId": "starter-output-pdf-policy-memo-style",
       "label": "PDF policy memo style output capsule",
       "category": "output",
@@ -2225,7 +2365,7 @@
       ]
     },
     {
-      "rank": 111,
+      "rank": 118,
       "starterId": "starter-output-sanctions-exposure-note",
       "label": "Sanctions exposure note output capsule",
       "category": "output",
@@ -2245,7 +2385,27 @@
       ]
     },
     {
-      "rank": 112,
+      "rank": 119,
+      "starterId": "starter-situation-ceasefire-monitoring-verification-package",
+      "label": "Ceasefire monitoring verification package situation capsule",
+      "category": "situation",
+      "domain": "diplomacy",
+      "score": 83.581,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-claimLedger",
+        "relative-sourceSpine",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 120,
       "starterId": "starter-situation-disaster-recovery-loss-damage-finance",
       "label": "Disaster recovery and loss-damage finance capsule",
       "category": "situation",
@@ -2265,7 +2425,7 @@
       ]
     },
     {
-      "rank": 113,
+      "rank": 121,
       "starterId": "starter-situation-mediation-process-memory",
       "label": "Mediation Process Memory Capsule",
       "category": "situation",
@@ -2285,7 +2445,7 @@
       ]
     },
     {
-      "rank": 114,
+      "rank": 122,
       "starterId": "starter-situation-narrative-legitimacy-audit",
       "label": "Narrative and Legitimacy Audit Capsule",
       "category": "situation",
@@ -2305,7 +2465,7 @@
       ]
     },
     {
-      "rank": 115,
+      "rank": 123,
       "starterId": "starter-situation-south-china-sea-maritime-incident-law",
       "label": "South China Sea maritime incident and law capsule",
       "category": "situation",
@@ -2325,7 +2485,7 @@
       ]
     },
     {
-      "rank": 116,
+      "rank": 124,
       "starterId": "starter-situation-us-appropriations-continuing-resolution-risk",
       "label": "US appropriations and continuing resolution risk",
       "category": "situation",
@@ -2345,7 +2505,7 @@
       ]
     },
     {
-      "rank": 117,
+      "rank": 125,
       "starterId": "starter-tool-humanitarian-access-negotiation-checklist",
       "label": "Humanitarian access negotiation checklist",
       "category": "tool",
@@ -2365,7 +2525,27 @@
       ]
     },
     {
-      "rank": 118,
+      "rank": 126,
+      "starterId": "starter-tool-stakeholder-power-interest-assumption-check",
+      "label": "Stakeholder power-interest assumption check tool capsule",
+      "category": "tool",
+      "domain": "options-mapping",
+      "score": 83.581,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-claimLedger",
+        "relative-sourceSpine",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 127,
       "starterId": "starter-tool-audience-adherence-map",
       "label": "Audience Adherence Map",
       "category": "tool",
@@ -2385,7 +2565,7 @@
       ]
     },
     {
-      "rank": 119,
+      "rank": 128,
       "starterId": "starter-tool-decision-rhetoric-converter",
       "label": "Decision Rhetoric Converter",
       "category": "tool",
@@ -2405,7 +2585,7 @@
       ]
     },
     {
-      "rank": 120,
+      "rank": 129,
       "starterId": "starter-tool-ethos-logos-pathos-kairos-lens",
       "label": "Ethos-Logos-Pathos-Kairos Lens",
       "category": "tool",
@@ -2425,7 +2605,7 @@
       ]
     },
     {
-      "rank": 121,
+      "rank": 130,
       "starterId": "starter-tool-pragma-dialectical-discussion-map",
       "label": "Pragma-Dialectical Discussion Map",
       "category": "tool",
@@ -2445,7 +2625,7 @@
       ]
     },
     {
-      "rank": 122,
+      "rank": 131,
       "starterId": "starter-situation-baltic-undersea-infrastructure-resilience",
       "label": "Baltic undersea infrastructure resilience watch",
       "category": "situation",
@@ -2467,7 +2647,7 @@
       ]
     },
     {
-      "rank": 123,
+      "rank": 132,
       "starterId": "starter-situation-moldova-energy-hybrid-resilience",
       "label": "Moldova energy and hybrid resilience watch",
       "category": "situation",
@@ -2489,7 +2669,7 @@
       ]
     },
     {
-      "rank": 124,
+      "rank": 133,
       "starterId": "starter-situation-kosovo-serbia-normalization-implementation",
       "label": "Kosovo-Serbia normalization implementation watch",
       "category": "situation",
@@ -2509,7 +2689,7 @@
       ]
     },
     {
-      "rank": 125,
+      "rank": 134,
       "starterId": "starter-situation-armenia-azerbaijan-peace-connectivity",
       "label": "Armenia-Azerbaijan peace and connectivity watch",
       "category": "situation",
@@ -2529,7 +2709,7 @@
       ]
     },
     {
-      "rank": 126,
+      "rank": 135,
       "starterId": "starter-output-congressional-testimony-mode",
       "label": "Congressional testimony mode output capsule",
       "category": "output",
@@ -2549,7 +2729,7 @@
       ]
     },
     {
-      "rank": 127,
+      "rank": 136,
       "starterId": "starter-output-critical-minerals-exposure-map",
       "label": "Critical minerals exposure map output capsule",
       "category": "output",
@@ -2569,7 +2749,7 @@
       ]
     },
     {
-      "rank": 128,
+      "rank": 137,
       "starterId": "starter-output-cyber-resilience-action-memo",
       "label": "Cyber resilience action memo output capsule",
       "category": "output",
@@ -2589,7 +2769,7 @@
       ]
     },
     {
-      "rank": 129,
+      "rank": 138,
       "starterId": "starter-output-domestic-policy-impact-one-pager",
       "label": "Domestic policy impact one-pager",
       "category": "output",
@@ -2609,7 +2789,7 @@
       ]
     },
     {
-      "rank": 130,
+      "rank": 139,
       "starterId": "starter-output-evidence-dashboard-brief",
       "label": "Evidence dashboard brief artifact capsule",
       "category": "output",
@@ -2629,7 +2809,7 @@
       ]
     },
     {
-      "rank": 131,
+      "rank": 140,
       "starterId": "starter-output-health-risk-communications-plan",
       "label": "Health risk communications plan output capsule",
       "category": "output",
@@ -2649,7 +2829,7 @@
       ]
     },
     {
-      "rank": 132,
+      "rank": 141,
       "starterId": "starter-output-legislative-deadline-decision-brief",
       "label": "Legislative deadline decision brief",
       "category": "output",
@@ -2669,7 +2849,7 @@
       ]
     },
     {
-      "rank": 133,
+      "rank": 142,
       "starterId": "starter-output-policy-implementation-roadmap",
       "label": "Policy implementation roadmap output capsule",
       "category": "output",
@@ -2689,7 +2869,7 @@
       ]
     },
     {
-      "rank": 134,
+      "rank": 143,
       "starterId": "starter-output-regulatory-implementation-playbook",
       "label": "Regulatory implementation playbook",
       "category": "output",
@@ -2709,7 +2889,7 @@
       ]
     },
     {
-      "rank": 135,
+      "rank": 144,
       "starterId": "starter-output-statistical-annex",
       "label": "Statistical annex artifact capsule",
       "category": "output",
@@ -2729,7 +2909,7 @@
       ]
     },
     {
-      "rank": 136,
+      "rank": 145,
       "starterId": "starter-situation-aca-marketplace-subsidy-affordability-2026",
       "label": "ACA marketplace subsidy and affordability watch 2026",
       "category": "situation",
@@ -2749,7 +2929,7 @@
       ]
     },
     {
-      "rank": 137,
+      "rank": 146,
       "starterId": "starter-situation-china-overcapacity-tariff-industrial-policy",
       "label": "China overcapacity, tariffs, and industrial policy capsule",
       "category": "situation",
@@ -2769,7 +2949,7 @@
       ]
     },
     {
-      "rank": 138,
+      "rank": 147,
       "starterId": "starter-situation-crisis-strategy-room-human-gated",
       "label": "Crisis Strategy Room - Human-Gated Decision Frame",
       "category": "situation",
@@ -2789,7 +2969,7 @@
       ]
     },
     {
-      "rank": 139,
+      "rank": 148,
       "starterId": "starter-situation-cyber-infrastructure-resilience",
       "label": "Cyber infrastructure resilience capsule",
       "category": "situation",
@@ -2809,7 +2989,7 @@
       ]
     },
     {
-      "rank": 140,
+      "rank": 149,
       "starterId": "starter-situation-data-quality-statistics",
       "label": "Data quality and statistics situation capsule",
       "category": "situation",
@@ -2829,7 +3009,7 @@
       ]
     },
     {
-      "rank": 141,
+      "rank": 150,
       "starterId": "starter-situation-debt-distress-imf-program-watch",
       "label": "Debt distress and IMF program watch capsule",
       "category": "situation",
@@ -2849,7 +3029,7 @@
       ]
     },
     {
-      "rank": 142,
+      "rank": 151,
       "starterId": "starter-situation-diplomatic-options",
       "label": "Diplomatic options capsule",
       "category": "situation",
@@ -2869,7 +3049,7 @@
       ]
     },
     {
-      "rank": 143,
+      "rank": 152,
       "starterId": "starter-situation-displacement-border-protection",
       "label": "Displacement and protection capsule",
       "category": "situation",
@@ -2889,7 +3069,7 @@
       ]
     },
     {
-      "rank": 144,
+      "rank": 153,
       "starterId": "starter-situation-eastern-drc-m23-mandate-watch",
       "label": "Eastern DRC/M23 mandate watch",
       "category": "situation",
@@ -2909,7 +3089,7 @@
       ]
     },
     {
-      "rank": 145,
+      "rank": 154,
       "starterId": "starter-situation-ethiopia-protection-conflict-watch",
       "label": "Ethiopia protection and conflict watch capsule",
       "category": "situation",
@@ -2929,7 +3109,7 @@
       ]
     },
     {
-      "rank": 146,
+      "rank": 155,
       "starterId": "starter-situation-federal-student-loan-repayment-transition",
       "label": "Federal student loan repayment transition watch",
       "category": "situation",
@@ -2949,7 +3129,7 @@
       ]
     },
     {
-      "rank": 147,
+      "rank": 156,
       "starterId": "starter-situation-finance-country-risk",
       "label": "Finance and country risk capsule",
       "category": "situation",
@@ -2969,7 +3149,7 @@
       ]
     },
     {
-      "rank": 148,
+      "rank": 157,
       "starterId": "starter-situation-food-security-commodity-shock-watch",
       "label": "Food security and commodity shock watch capsule",
       "category": "situation",
@@ -2989,7 +3169,7 @@
       ]
     },
     {
-      "rank": 149,
+      "rank": 158,
       "starterId": "starter-situation-forced-labor-import-supply-chain-risk",
       "label": "Forced labor import and supply-chain risk capsule",
       "category": "situation",
@@ -3009,7 +3189,7 @@
       ]
     },
     {
-      "rank": 150,
+      "rank": 159,
       "starterId": "starter-situation-haiti-security-humanitarian-corridor",
       "label": "Haiti security and humanitarian corridor capsule",
       "category": "situation",
@@ -3029,7 +3209,7 @@
       ]
     },
     {
-      "rank": 151,
+      "rank": 160,
       "starterId": "starter-situation-hr-harassment-policy",
       "label": "HR harassment policy capsule",
       "category": "situation",
@@ -3049,7 +3229,7 @@
       ]
     },
     {
-      "rank": 152,
+      "rank": 161,
       "starterId": "starter-situation-humanitarian-access-analysis",
       "label": "Humanitarian access analysis capsule",
       "category": "situation",
@@ -3069,7 +3249,7 @@
       ]
     },
     {
-      "rank": 153,
+      "rank": 162,
       "starterId": "starter-situation-humanitarian-access-negotiation",
       "label": "Humanitarian Access Negotiation Capsule",
       "category": "situation",
@@ -3089,7 +3269,7 @@
       ]
     },
     {
-      "rank": 154,
+      "rank": 163,
       "starterId": "starter-situation-humanitarian-access-update",
       "label": "Humanitarian access update situation capsule",
       "category": "situation",
@@ -3109,7 +3289,7 @@
       ]
     },
     {
-      "rank": 155,
+      "rank": 164,
       "starterId": "starter-situation-humanitarian-rights-access",
       "label": "Humanitarian access and rights capsule",
       "category": "situation",
@@ -3129,7 +3309,7 @@
       ]
     },
     {
-      "rank": 156,
+      "rank": 165,
       "starterId": "starter-situation-mediation-track",
       "label": "Mediation track situation capsule",
       "category": "situation",
@@ -3149,7 +3329,7 @@
       ]
     },
     {
-      "rank": 157,
+      "rank": 166,
       "starterId": "starter-situation-migration-border-reception-capacity",
       "label": "Migration border reception capacity capsule",
       "category": "situation",
@@ -3169,7 +3349,7 @@
       ]
     },
     {
-      "rank": 158,
+      "rank": 167,
       "starterId": "starter-situation-procurement-integrity-major-projects",
       "label": "Procurement integrity for major projects capsule",
       "category": "situation",
@@ -3189,7 +3369,7 @@
       ]
     },
     {
-      "rank": 159,
+      "rank": 168,
       "starterId": "starter-situation-public-health-infodemic-emergency-trust",
       "label": "Public health infodemic and emergency trust capsule",
       "category": "situation",
@@ -3209,7 +3389,7 @@
       ]
     },
     {
-      "rank": 160,
+      "rank": 169,
       "starterId": "starter-situation-public-health-risk-communication",
       "label": "Public health risk communication capsule",
       "category": "situation",
@@ -3229,7 +3409,7 @@
       ]
     },
     {
-      "rank": 161,
+      "rank": 170,
       "starterId": "starter-situation-red-sea-houthi-shipping-risk",
       "label": "Red Sea/Houthi maritime risk watch",
       "category": "situation",
@@ -3249,7 +3429,7 @@
       ]
     },
     {
-      "rank": 162,
+      "rank": 171,
       "starterId": "starter-situation-red-sea-maritime-logistics-risk",
       "label": "Red Sea maritime logistics risk capsule",
       "category": "situation",
@@ -3269,7 +3449,7 @@
       ]
     },
     {
-      "rank": 163,
+      "rank": 172,
       "starterId": "starter-situation-sahel-aes-ecowas-transition-watch",
       "label": "Sahel AES-ECOWAS transition watch",
       "category": "situation",
@@ -3289,7 +3469,7 @@
       ]
     },
     {
-      "rank": 164,
+      "rank": 173,
       "starterId": "starter-situation-sahel-transition-regional-security",
       "label": "Sahel transition and regional security capsule",
       "category": "situation",
@@ -3309,7 +3489,7 @@
       ]
     },
     {
-      "rank": 165,
+      "rank": 174,
       "starterId": "starter-situation-sanctions-exposure",
       "label": "Sanctions exposure situation capsule",
       "category": "situation",
@@ -3329,7 +3509,27 @@
       ]
     },
     {
-      "rank": 166,
+      "rank": 175,
+      "starterId": "starter-situation-sanctions-humanitarian-carveout-risk",
+      "label": "Sanctions humanitarian carveout risk situation capsule",
+      "category": "situation",
+      "domain": "humanitarian-rights",
+      "score": 84.381,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-claimLedger",
+        "relative-sourceSpine",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ]
+    },
+    {
+      "rank": 176,
       "starterId": "starter-situation-sourceable-country-risk-judgment",
       "label": "Sourceable Country Risk Judgment Capsule",
       "category": "situation",
@@ -3349,7 +3549,7 @@
       ]
     },
     {
-      "rank": 167,
+      "rank": 177,
       "starterId": "starter-situation-sudan-darfur-atrocity-access",
       "label": "Sudan and Darfur atrocity-risk access watch",
       "category": "situation",
@@ -3369,7 +3569,7 @@
       ]
     },
     {
-      "rank": 168,
+      "rank": 178,
       "starterId": "starter-situation-sudan-famine-access-civilian-protection",
       "label": "Sudan famine, access, and civilian protection capsule",
       "category": "situation",
@@ -3389,7 +3589,7 @@
       ]
     },
     {
-      "rank": 169,
+      "rank": 179,
       "starterId": "starter-situation-ukraine-reconstruction-integrity-finance",
       "label": "Ukraine reconstruction integrity finance capsule",
       "category": "situation",
@@ -3409,7 +3609,7 @@
       ]
     },
     {
-      "rank": 170,
+      "rank": 180,
       "starterId": "starter-situation-un-mandate-renewal-strategy",
       "label": "UN Mandate Renewal Strategy Capsule",
       "category": "situation",
@@ -3429,7 +3629,7 @@
       ]
     },
     {
-      "rank": 171,
+      "rank": 181,
       "starterId": "starter-situation-un-sanctions-context",
       "label": "UN sanctions context capsule",
       "category": "situation",
@@ -3449,7 +3649,7 @@
       ]
     },
     {
-      "rank": 172,
+      "rank": 182,
       "starterId": "starter-situation-us-border-asylum-encounters-2026",
       "label": "US border, asylum, and encounters watch 2026",
       "category": "situation",
@@ -3469,7 +3669,7 @@
       ]
     },
     {
-      "rank": 173,
+      "rank": 183,
       "starterId": "starter-situation-us-china-section-301-tariff-forced-labor",
       "label": "US-China Section 301 tariff and forced-labor exposure",
       "category": "situation",
@@ -3489,7 +3689,7 @@
       ]
     },
     {
-      "rank": 174,
+      "rank": 184,
       "starterId": "starter-situation-us-fy2027-budget-sequestration-watch",
       "label": "US FY2027 budget and sequestration watch",
       "category": "situation",
@@ -3509,7 +3709,7 @@
       ]
     },
     {
-      "rank": 175,
+      "rank": 185,
       "starterId": "starter-situation-us-h1b-workforce-selection-modernization",
       "label": "US H-1B workforce selection and modernization watch",
       "category": "situation",
@@ -3529,7 +3729,7 @@
       ]
     },
     {
-      "rank": 176,
+      "rank": 186,
       "starterId": "starter-situation-us-housing-affordability-supply-homelessness",
       "label": "US housing affordability, supply, and homelessness watch",
       "category": "situation",
@@ -3549,7 +3749,7 @@
       ]
     },
     {
-      "rank": 177,
+      "rank": 187,
       "starterId": "starter-situation-us-measles-outbreak-vaccine-confidence-2026",
       "label": "US measles outbreak and vaccine-confidence watch 2026",
       "category": "situation",
@@ -3569,7 +3769,7 @@
       ]
     },
     {
-      "rank": 178,
+      "rank": 188,
       "starterId": "starter-situation-us-stablecoin-digital-asset-legislation",
       "label": "US stablecoin and digital-asset legislation watch",
       "category": "situation",
@@ -3589,7 +3789,7 @@
       ]
     },
     {
-      "rank": 179,
+      "rank": 189,
       "starterId": "starter-situation-venezuela-oil-sanctions-election-risk",
       "label": "Venezuela oil sanctions and election risk capsule",
       "category": "situation",
@@ -3609,7 +3809,7 @@
       ]
     },
     {
-      "rank": 180,
+      "rank": 190,
       "starterId": "starter-tool-actor-leverage-veto-map",
       "label": "Actor leverage and veto player map",
       "category": "tool",
@@ -3629,7 +3829,7 @@
       ]
     },
     {
-      "rank": 181,
+      "rank": 191,
       "starterId": "starter-tool-counterfactual-pivot-check",
       "label": "Counterfactual Pivot Check",
       "category": "tool",
@@ -3649,7 +3849,7 @@
       ]
     },
     {
-      "rank": 182,
+      "rank": 192,
       "starterId": "starter-tool-counterparty-ownership-escalation-tree",
       "label": "Counterparty ownership escalation tree",
       "category": "tool",
@@ -3669,7 +3869,7 @@
       ]
     },
     {
-      "rank": 183,
+      "rank": 193,
       "starterId": "starter-tool-decision-clock-monitor",
       "label": "Decision Clock Capsule+",
       "category": "tool",
@@ -3689,7 +3889,7 @@
       ]
     },
     {
-      "rank": 184,
+      "rank": 194,
       "starterId": "starter-tool-diplomacy-options-mapper",
       "label": "Diplomacy options mapper tool capsule",
       "category": "tool",
@@ -3709,7 +3909,7 @@
       ]
     },
     {
-      "rank": 185,
+      "rank": 195,
       "starterId": "starter-tool-escalation-ladder-deescalation-path",
       "label": "Escalation Ladder and De-escalation Path",
       "category": "tool",
@@ -3729,7 +3929,7 @@
       ]
     },
     {
-      "rank": 186,
+      "rank": 196,
       "starterId": "starter-tool-financial-exposure-mapper",
       "label": "Financial exposure mapper tool capsule",
       "category": "tool",
@@ -3749,7 +3949,7 @@
       ]
     },
     {
-      "rank": 187,
+      "rank": 197,
       "starterId": "starter-tool-fiscal-distributional-impact-screen",
       "label": "Fiscal and distributional impact screen",
       "category": "tool",
@@ -3769,7 +3969,7 @@
       ]
     },
     {
-      "rank": 188,
+      "rank": 198,
       "starterId": "starter-tool-fiscal-space-debt-stress-screen",
       "label": "Fiscal space and debt stress screen",
       "category": "tool",
@@ -3789,7 +3989,7 @@
       ]
     },
     {
-      "rank": 189,
+      "rank": 199,
       "starterId": "starter-tool-geoeconomic-chokepoint-map",
       "label": "Geoeconomic chokepoint map",
       "category": "tool",
@@ -3809,7 +4009,7 @@
       ]
     },
     {
-      "rank": 190,
+      "rank": 200,
       "starterId": "starter-tool-legal-mandate-redline-check",
       "label": "Legal mandate redline check",
       "category": "tool",
@@ -3829,7 +4029,7 @@
       ]
     },
     {
-      "rank": 191,
+      "rank": 201,
       "starterId": "starter-tool-legislative-authority-deadline-tracker",
       "label": "Legislative authority and deadline tracker",
       "category": "tool",
@@ -3849,7 +4049,7 @@
       ]
     },
     {
-      "rank": 192,
+      "rank": 202,
       "starterId": "starter-tool-negotiation-ripeness-decision-clock",
       "label": "Negotiation ripeness and decision clock",
       "category": "tool",
@@ -3869,7 +4069,7 @@
       ]
     },
     {
-      "rank": 193,
+      "rank": 203,
       "starterId": "starter-tool-policy-option-triage-matrix",
       "label": "Policy option triage matrix",
       "category": "tool",
@@ -3889,7 +4089,7 @@
       ]
     },
     {
-      "rank": 194,
+      "rank": 204,
       "starterId": "starter-tool-principal-ask-payrise-negotiation-prep",
       "label": "Principal ask and pay-rise negotiation prep",
       "category": "tool",
@@ -3909,7 +4109,7 @@
       ]
     },
     {
-      "rank": 195,
+      "rank": 205,
       "starterId": "starter-tool-public-health-trust-signal-map",
       "label": "Public-health trust signal map",
       "category": "tool",
@@ -3929,7 +4129,7 @@
       ]
     },
     {
-      "rank": 196,
+      "rank": 206,
       "starterId": "starter-tool-regulatory-compliance-deadline-matrix",
       "label": "Regulatory compliance deadline matrix",
       "category": "tool",
@@ -3949,7 +4149,7 @@
       ]
     },
     {
-      "rank": 197,
+      "rank": 207,
       "starterId": "starter-tool-sanctions-exposure-triage-matrix",
       "label": "Sanctions exposure triage matrix",
       "category": "tool",
@@ -3969,7 +4169,7 @@
       ]
     },
     {
-      "rank": 198,
+      "rank": 208,
       "starterId": "starter-tool-spoiler-blocker-scan",
       "label": "Spoiler and Blocker Scan",
       "category": "tool",
@@ -3989,7 +4189,7 @@
       ]
     },
     {
-      "rank": 199,
+      "rank": 209,
       "starterId": "starter-tool-stakeholder-incentive-map",
       "label": "Stakeholder Incentive Map",
       "category": "tool",
@@ -4009,7 +4209,7 @@
       ]
     },
     {
-      "rank": 200,
+      "rank": 210,
       "starterId": "starter-tool-stakeholder-veto-leverage-map",
       "label": "Stakeholder veto and leverage map",
       "category": "tool",
@@ -4029,7 +4229,7 @@
       ]
     },
     {
-      "rank": 201,
+      "rank": 211,
       "starterId": "starter-tool-statistical-baseline-builder",
       "label": "Statistical baseline builder thinking device",
       "category": "tool",
@@ -4049,7 +4249,7 @@
       ]
     },
     {
-      "rank": 202,
+      "rank": 212,
       "starterId": "starter-user-corporate-public-affairs-risk-lead",
       "label": "Corporate public affairs risk lead user capsule",
       "category": "user",
@@ -4069,7 +4269,7 @@
       ]
     },
     {
-      "rank": 203,
+      "rank": 213,
       "starterId": "starter-user-multilateral-desk-officer",
       "label": "Multilateral desk officer user capsule",
       "category": "user",
@@ -4089,7 +4289,7 @@
       ]
     },
     {
-      "rank": 204,
+      "rank": 214,
       "starterId": "starter-situation-h5n1-dairy-food-safety-2026",
       "label": "H5N1 dairy, livestock, and food-safety watch 2026",
       "category": "situation",
@@ -4109,7 +4309,7 @@
       ]
     },
     {
-      "rank": 205,
+      "rank": 215,
       "starterId": "starter-situation-ukraine-ceasefire-reconstruction-war-economy-2026",
       "label": "Ukraine ceasefire, reconstruction, and war-economy watch 2026",
       "category": "situation",
@@ -4129,7 +4329,7 @@
       ]
     },
     {
-      "rank": 206,
+      "rank": 216,
       "starterId": "starter-output-two-page-syria-media-roundup",
       "label": "Two-page Syria media roundup output capsule",
       "category": "output",
@@ -4149,7 +4349,7 @@
       ]
     },
     {
-      "rank": 207,
+      "rank": 217,
       "starterId": "starter-situation-syria-political-security-humanitarian-watch",
       "label": "Syria political, security, humanitarian, and rights watch capsule",
       "category": "situation",
@@ -4169,7 +4369,7 @@
       ]
     },
     {
-      "rank": 208,
+      "rank": 218,
       "starterId": "starter-tool-briefing-synthesis-sourceability-protocol",
       "label": "Briefing synthesis sourceability protocol tool capsule",
       "category": "tool",
@@ -4189,7 +4389,7 @@
       ]
     },
     {
-      "rank": 209,
+      "rank": 219,
       "starterId": "starter-tool-media-source-prioritization-docket",
       "label": "Media source prioritization docket tool capsule",
       "category": "tool",
@@ -4209,7 +4409,7 @@
       ]
     },
     {
-      "rank": 210,
+      "rank": 220,
       "starterId": "starter-tool-multilateral-source-trust-ledger",
       "label": "Multilateral source trust ledger tool capsule",
       "category": "tool",
@@ -4229,7 +4429,7 @@
       ]
     },
     {
-      "rank": 211,
+      "rank": 221,
       "starterId": "starter-user-us-based-multilateral-desk-officer",
       "label": "US-based multilateral organization desk officer capsule",
       "category": "user",
@@ -4361,6 +4561,116 @@
       "rank": 1
     },
     {
+      "starterId": "starter-tool-claim-assumption-sourceability-auditor",
+      "label": "Claim assumption sourceability auditor tool capsule",
+      "category": "tool",
+      "domain": "audit-review",
+      "score": 80.381,
+      "auditAverage": 1,
+      "sourceCount": 4,
+      "dossierSourceCount": 4,
+      "externalSourceRatio": 0.75,
+      "freshSourceRatio": 0.25,
+      "tierOneOrTwoSourceRatio": 0.75,
+      "primaryAuthoritativeSourceRatio": 0.5,
+      "supportedClaimCount": 2,
+      "weakClaimCount": 1,
+      "missingClaimCount": 3,
+      "staleClaimCount": 1,
+      "graphNodeCount": 137,
+      "graphEdgeCount": 158,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-sourceSpine",
+        "relative-claimLedger",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "metrics": [
+        {
+          "id": "audit",
+          "label": "Quality audit",
+          "score": 1,
+          "weight": 0.24,
+          "detail": "taxonomy 1; sourceability 1; expertMethod 1; agentUsability 1; reviewGate 1; contentDepth 1; findings 0; source gaps 0."
+        },
+        {
+          "id": "sourceSpine",
+          "label": "Source spine",
+          "score": 0.5416666666666666,
+          "weight": 0.24,
+          "detail": "4 source-pack entries; 4 dossier sources; 75% external; 25% fresh."
+        },
+        {
+          "id": "claimLedger",
+          "label": "Claim ledger",
+          "score": 0.6354166666666666,
+          "weight": 0.15,
+          "detail": "supported 2; weak 1; missing 3; stale 1."
+        },
+        {
+          "id": "embeddedGraph",
+          "label": "Embedded graph",
+          "score": 1,
+          "weight": 0.11,
+          "detail": "137 node templates; 158 edge templates; 23 node types."
+        },
+        {
+          "id": "tacitKnowledge",
+          "label": "Tacit knowledge",
+          "score": 0.9333333333333332,
+          "weight": 0.11,
+          "detail": "15 tacit notes; average note length 118 chars."
+        },
+        {
+          "id": "agentContract",
+          "label": "Agent contract",
+          "score": 1,
+          "weight": 0.1,
+          "detail": "sourceability-reviewer; approval gate Human review required before external use, canonical graph promotion, Cognee rem."
+        },
+        {
+          "id": "freshness",
+          "label": "Refresh posture",
+          "score": 0.5166666666666667,
+          "weight": 0.05,
+          "detail": "starter-seeded; stale 0; gaps 6."
+        }
+      ],
+      "reviewProposals": [
+        {
+          "proposalId": "ranking:starter-tool-claim-assumption-sourceability-auditor-researchdossier-sourcespine-sourcespine",
+          "starterId": "starter-tool-claim-assumption-sourceability-auditor",
+          "target": "researchDossier.sourceSpine",
+          "rationale": "Source spine is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
+          "evidenceSourceIds": [
+            "quality-ranking:starter-tool-claim-assumption-sourceability-auditor"
+          ],
+          "riskLevel": "medium",
+          "reviewStatus": "proposed",
+          "generatedBy": "capsule-quality-ranking"
+        },
+        {
+          "proposalId": "ranking:starter-tool-claim-assumption-sourceability-auditor-claimledgerseeds-claimledger",
+          "starterId": "starter-tool-claim-assumption-sourceability-auditor",
+          "target": "claimLedgerSeeds",
+          "rationale": "Claim ledger is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
+          "evidenceSourceIds": [
+            "quality-ranking:starter-tool-claim-assumption-sourceability-auditor"
+          ],
+          "riskLevel": "medium",
+          "reviewStatus": "proposed",
+          "generatedBy": "capsule-quality-ranking"
+        }
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ],
+      "rank": 2
+    },
+    {
       "starterId": "starter-tool-epistemic-trust-ledger",
       "label": "Epistemic Trust Ledger",
       "category": "tool",
@@ -4468,7 +4778,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 2
+      "rank": 3
     },
     {
       "starterId": "starter-tool-joint-fact-finding-source-protocol",
@@ -4578,7 +4888,117 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 3
+      "rank": 4
+    },
+    {
+      "starterId": "starter-output-decision-handover-review-pack",
+      "label": "Decision handover review pack output capsule",
+      "category": "output",
+      "domain": "output-brief",
+      "score": 81.381,
+      "auditAverage": 1,
+      "sourceCount": 4,
+      "dossierSourceCount": 4,
+      "externalSourceRatio": 0.75,
+      "freshSourceRatio": 0.5,
+      "tierOneOrTwoSourceRatio": 0.75,
+      "primaryAuthoritativeSourceRatio": 0.5,
+      "supportedClaimCount": 2,
+      "weakClaimCount": 1,
+      "missingClaimCount": 3,
+      "staleClaimCount": 1,
+      "graphNodeCount": 134,
+      "graphEdgeCount": 165,
+      "weakestSignals": [
+        "relative-freshness",
+        "relative-sourceSpine",
+        "relative-claimLedger",
+        "below-gate-sourceSpine",
+        "below-gate-claimLedger",
+        "below-gate-freshness"
+      ],
+      "metrics": [
+        {
+          "id": "audit",
+          "label": "Quality audit",
+          "score": 1,
+          "weight": 0.24,
+          "detail": "taxonomy 1; sourceability 1; expertMethod 1; agentUsability 1; reviewGate 1; contentDepth 1; findings 0; source gaps 0."
+        },
+        {
+          "id": "sourceSpine",
+          "label": "Source spine",
+          "score": 0.5833333333333334,
+          "weight": 0.24,
+          "detail": "4 source-pack entries; 4 dossier sources; 75% external; 50% fresh."
+        },
+        {
+          "id": "claimLedger",
+          "label": "Claim ledger",
+          "score": 0.6354166666666666,
+          "weight": 0.15,
+          "detail": "supported 2; weak 1; missing 3; stale 1."
+        },
+        {
+          "id": "embeddedGraph",
+          "label": "Embedded graph",
+          "score": 1,
+          "weight": 0.11,
+          "detail": "134 node templates; 165 edge templates; 22 node types."
+        },
+        {
+          "id": "tacitKnowledge",
+          "label": "Tacit knowledge",
+          "score": 0.9333333333333332,
+          "weight": 0.11,
+          "detail": "15 tacit notes; average note length 116 chars."
+        },
+        {
+          "id": "agentContract",
+          "label": "Agent contract",
+          "score": 1,
+          "weight": 0.1,
+          "detail": "output-formatter; approval gate Human review required before external use, canonical graph promotion, Cognee rem."
+        },
+        {
+          "id": "freshness",
+          "label": "Refresh posture",
+          "score": 0.5166666666666667,
+          "weight": 0.05,
+          "detail": "starter-seeded; stale 0; gaps 6."
+        }
+      ],
+      "reviewProposals": [
+        {
+          "proposalId": "ranking:starter-output-decision-handover-review-pack-researchdossier-sourcespine-sourcespine",
+          "starterId": "starter-output-decision-handover-review-pack",
+          "target": "researchDossier.sourceSpine",
+          "rationale": "Source spine is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
+          "evidenceSourceIds": [
+            "quality-ranking:starter-output-decision-handover-review-pack"
+          ],
+          "riskLevel": "medium",
+          "reviewStatus": "proposed",
+          "generatedBy": "capsule-quality-ranking"
+        },
+        {
+          "proposalId": "ranking:starter-output-decision-handover-review-pack-claimledgerseeds-claimledger",
+          "starterId": "starter-output-decision-handover-review-pack",
+          "target": "claimLedgerSeeds",
+          "rationale": "Claim ledger is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
+          "evidenceSourceIds": [
+            "quality-ranking:starter-output-decision-handover-review-pack"
+          ],
+          "riskLevel": "medium",
+          "reviewStatus": "proposed",
+          "generatedBy": "capsule-quality-ranking"
+        }
+      ],
+      "reviewProposalTargets": [
+        "researchDossier.sourceSpine",
+        "claimLedgerSeeds"
+      ],
+      "rank": 5
     },
     {
       "starterId": "starter-output-diplomatic-note",
@@ -4688,7 +5108,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 4
+      "rank": 6
     },
     {
       "starterId": "starter-output-diplomatic-options-memo",
@@ -4798,7 +5218,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 5
+      "rank": 7
     },
     {
       "starterId": "starter-output-evidence-sourceability-annex",
@@ -4908,7 +5328,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 6
+      "rank": 8
     },
     {
       "starterId": "starter-output-finance-exposure-note",
@@ -5018,7 +5438,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 7
+      "rank": 9
     },
     {
       "starterId": "starter-output-hr-rollout-recommendation",
@@ -5128,7 +5548,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 8
+      "rank": 10
     },
     {
       "starterId": "starter-output-humanitarian-access-brief",
@@ -5238,7 +5658,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 9
+      "rank": 11
     },
     {
       "starterId": "starter-output-legal-mandate-compliance-note",
@@ -5348,7 +5768,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 10
+      "rank": 12
     },
     {
       "starterId": "starter-output-meeting-talking-points",
@@ -5458,7 +5878,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 11
+      "rank": 13
     },
     {
       "starterId": "starter-output-negotiation-prep-book",
@@ -5568,7 +5988,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 12
+      "rank": 14
     },
     {
       "starterId": "starter-output-principals-decision-memo",
@@ -5678,7 +6098,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 13
+      "rank": 15
     },
     {
       "starterId": "starter-output-scenario-risk-dashboard-card",
@@ -5788,7 +6208,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 14
+      "rank": 16
     },
     {
       "starterId": "starter-output-sustainability-risk-brief",
@@ -5898,7 +6318,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 15
+      "rank": 17
     },
     {
       "starterId": "starter-output-two-page-brief",
@@ -6008,7 +6428,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 16
+      "rank": 18
     },
     {
       "starterId": "starter-tool-assumption-audit",
@@ -6118,7 +6538,7 @@
         "researchDossier.sourceSpine",
         "claimLedgerSeeds"
       ],
-      "rank": 17
+      "rank": 19
     },
     {
       "starterId": "starter-tool-assumption-stress-test",
@@ -6218,226 +6638,6 @@
           "rationale": "Claim ledger is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
           "evidenceSourceIds": [
             "quality-ranking:starter-tool-assumption-stress-test"
-          ],
-          "riskLevel": "medium",
-          "reviewStatus": "proposed",
-          "generatedBy": "capsule-quality-ranking"
-        }
-      ],
-      "reviewProposalTargets": [
-        "researchDossier.sourceSpine",
-        "claimLedgerSeeds"
-      ],
-      "rank": 18
-    },
-    {
-      "starterId": "starter-tool-category-error-detector",
-      "label": "Category Error Detector",
-      "category": "tool",
-      "domain": "audit-review",
-      "score": 81.381,
-      "auditAverage": 1,
-      "sourceCount": 4,
-      "dossierSourceCount": 4,
-      "externalSourceRatio": 0.75,
-      "freshSourceRatio": 0.5,
-      "tierOneOrTwoSourceRatio": 0.75,
-      "primaryAuthoritativeSourceRatio": 0.5,
-      "supportedClaimCount": 2,
-      "weakClaimCount": 1,
-      "missingClaimCount": 3,
-      "staleClaimCount": 1,
-      "graphNodeCount": 159,
-      "graphEdgeCount": 156,
-      "weakestSignals": [
-        "relative-freshness",
-        "relative-sourceSpine",
-        "relative-claimLedger",
-        "below-gate-sourceSpine",
-        "below-gate-claimLedger",
-        "below-gate-freshness"
-      ],
-      "metrics": [
-        {
-          "id": "audit",
-          "label": "Quality audit",
-          "score": 1,
-          "weight": 0.24,
-          "detail": "taxonomy 1; sourceability 1; expertMethod 1; agentUsability 1; reviewGate 1; contentDepth 1; findings 0; source gaps 0."
-        },
-        {
-          "id": "sourceSpine",
-          "label": "Source spine",
-          "score": 0.5833333333333334,
-          "weight": 0.24,
-          "detail": "4 source-pack entries; 4 dossier sources; 75% external; 50% fresh."
-        },
-        {
-          "id": "claimLedger",
-          "label": "Claim ledger",
-          "score": 0.6354166666666666,
-          "weight": 0.15,
-          "detail": "supported 2; weak 1; missing 3; stale 1."
-        },
-        {
-          "id": "embeddedGraph",
-          "label": "Embedded graph",
-          "score": 1,
-          "weight": 0.11,
-          "detail": "159 node templates; 156 edge templates; 23 node types."
-        },
-        {
-          "id": "tacitKnowledge",
-          "label": "Tacit knowledge",
-          "score": 0.9333333333333332,
-          "weight": 0.11,
-          "detail": "15 tacit notes; average note length 108 chars."
-        },
-        {
-          "id": "agentContract",
-          "label": "Agent contract",
-          "score": 1,
-          "weight": 0.1,
-          "detail": "research-memo; approval gate Human review required before external use, graph promotion, or confidence escala."
-        },
-        {
-          "id": "freshness",
-          "label": "Refresh posture",
-          "score": 0.5166666666666667,
-          "weight": 0.05,
-          "detail": "starter-seeded; stale 0; gaps 6."
-        }
-      ],
-      "reviewProposals": [
-        {
-          "proposalId": "ranking:starter-tool-category-error-detector-researchdossier-sourcespine-sourcespine",
-          "starterId": "starter-tool-category-error-detector",
-          "target": "researchDossier.sourceSpine",
-          "rationale": "Source spine is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
-          "evidenceSourceIds": [
-            "quality-ranking:starter-tool-category-error-detector"
-          ],
-          "riskLevel": "medium",
-          "reviewStatus": "proposed",
-          "generatedBy": "capsule-quality-ranking"
-        },
-        {
-          "proposalId": "ranking:starter-tool-category-error-detector-claimledgerseeds-claimledger",
-          "starterId": "starter-tool-category-error-detector",
-          "target": "claimLedgerSeeds",
-          "rationale": "Claim ledger is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
-          "evidenceSourceIds": [
-            "quality-ranking:starter-tool-category-error-detector"
-          ],
-          "riskLevel": "medium",
-          "reviewStatus": "proposed",
-          "generatedBy": "capsule-quality-ranking"
-        }
-      ],
-      "reviewProposalTargets": [
-        "researchDossier.sourceSpine",
-        "claimLedgerSeeds"
-      ],
-      "rank": 19
-    },
-    {
-      "starterId": "starter-tool-competing-hypotheses-matrix",
-      "label": "Competing Hypotheses Matrix",
-      "category": "tool",
-      "domain": "audit-review",
-      "score": 81.381,
-      "auditAverage": 1,
-      "sourceCount": 4,
-      "dossierSourceCount": 4,
-      "externalSourceRatio": 0.75,
-      "freshSourceRatio": 0.5,
-      "tierOneOrTwoSourceRatio": 0.75,
-      "primaryAuthoritativeSourceRatio": 0.5,
-      "supportedClaimCount": 2,
-      "weakClaimCount": 1,
-      "missingClaimCount": 3,
-      "staleClaimCount": 1,
-      "graphNodeCount": 149,
-      "graphEdgeCount": 144,
-      "weakestSignals": [
-        "relative-freshness",
-        "relative-sourceSpine",
-        "relative-claimLedger",
-        "below-gate-sourceSpine",
-        "below-gate-claimLedger",
-        "below-gate-freshness"
-      ],
-      "metrics": [
-        {
-          "id": "audit",
-          "label": "Quality audit",
-          "score": 1,
-          "weight": 0.24,
-          "detail": "taxonomy 1; sourceability 1; expertMethod 1; agentUsability 1; reviewGate 1; contentDepth 1; findings 0; source gaps 0."
-        },
-        {
-          "id": "sourceSpine",
-          "label": "Source spine",
-          "score": 0.5833333333333334,
-          "weight": 0.24,
-          "detail": "4 source-pack entries; 4 dossier sources; 75% external; 50% fresh."
-        },
-        {
-          "id": "claimLedger",
-          "label": "Claim ledger",
-          "score": 0.6354166666666666,
-          "weight": 0.15,
-          "detail": "supported 2; weak 1; missing 3; stale 1."
-        },
-        {
-          "id": "embeddedGraph",
-          "label": "Embedded graph",
-          "score": 1,
-          "weight": 0.11,
-          "detail": "149 node templates; 144 edge templates; 23 node types."
-        },
-        {
-          "id": "tacitKnowledge",
-          "label": "Tacit knowledge",
-          "score": 0.9333333333333332,
-          "weight": 0.11,
-          "detail": "15 tacit notes; average note length 109 chars."
-        },
-        {
-          "id": "agentContract",
-          "label": "Agent contract",
-          "score": 1,
-          "weight": 0.1,
-          "detail": "research-memo; approval gate Require approval before external export, graph mutation, or connector writes. Hu."
-        },
-        {
-          "id": "freshness",
-          "label": "Refresh posture",
-          "score": 0.5166666666666667,
-          "weight": 0.05,
-          "detail": "starter-seeded; stale 0; gaps 6."
-        }
-      ],
-      "reviewProposals": [
-        {
-          "proposalId": "ranking:starter-tool-competing-hypotheses-matrix-researchdossier-sourcespine-sourcespine",
-          "starterId": "starter-tool-competing-hypotheses-matrix",
-          "target": "researchDossier.sourceSpine",
-          "rationale": "Source spine is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
-          "evidenceSourceIds": [
-            "quality-ranking:starter-tool-competing-hypotheses-matrix"
-          ],
-          "riskLevel": "medium",
-          "reviewStatus": "proposed",
-          "generatedBy": "capsule-quality-ranking"
-        },
-        {
-          "proposalId": "ranking:starter-tool-competing-hypotheses-matrix-claimledgerseeds-claimledger",
-          "starterId": "starter-tool-competing-hypotheses-matrix",
-          "target": "claimLedgerSeeds",
-          "rationale": "Claim ledger is among this capsule's weaker P1 signals and should be repaired through review-card approval before starter definitions change.",
-          "evidenceSourceIds": [
-            "quality-ranking:starter-tool-competing-hypotheses-matrix"
           ],
           "riskLevel": "medium",
           "reviewStatus": "proposed",

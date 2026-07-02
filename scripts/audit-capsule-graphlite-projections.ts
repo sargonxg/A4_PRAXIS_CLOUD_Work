@@ -41,8 +41,8 @@ for (const starter of CAPSULE_STARTER_DEFINITIONS) {
   if (/\b(DROP|DELETE|DETACH)\b/i.test(sampleGql)) add(starter.starterId, 'sample GQL contains destructive verbs');
 }
 
-if (!CAPSULE_STARTER_CATALOG_VERSION.match(/graphlite-advisory-projection.*v18/)) {
-  add('catalog', `catalog version is not GraphLite v18: ${CAPSULE_STARTER_CATALOG_VERSION}`);
+if (!CAPSULE_STARTER_CATALOG_VERSION.match(/graphlite-advisory-projection.*v18|canonical-four-category-v19/)) {
+  add('catalog', `catalog version is not an accepted GraphLite projection wave: ${CAPSULE_STARTER_CATALOG_VERSION}`);
 }
 
 const report = {

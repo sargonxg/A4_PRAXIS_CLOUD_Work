@@ -1,7 +1,7 @@
 # Capsule Database Audit
 
-Catalog version: 2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth
-Generated at: 2026-06-25T02:16:16.608Z
+Catalog version: 2026-07-02-canonical-four-category-v19
+Generated at: 2026-07-02T23:16:14.974Z
 Result: pass
 Canonical store: Firestore ContextCapsules
 Audited scope: local starter catalog definitions and seedable GraphLite advisory projection metadata
@@ -10,36 +10,36 @@ Remote Firestore mutation: false
 
 ## Totals
 
-- Capsules/records: 211
-- Source records: 935
-- Excerpt records: 786
-- Named GraphLite graph records: 211
-- Graph node templates: 30343
-- Graph edge templates: 32363
+- Capsules/records: 221
+- Source records: 978
+- Excerpt records: 826
+- Named GraphLite graph records: 221
+- Graph node templates: 31761
+- Graph edge templates: 33920
 
 ## Types
 
-- situation: 86
-- tool: 75
-- output: 36
-- user: 14
+- situation: 89
+- tool: 78
+- output: 38
+- user: 16
 
 ## Domains
 
-- output-brief: 33
-- audit-review: 21
-- diplomacy: 21
-- options-mapping: 19
+- output-brief: 35
+- audit-review: 23
+- diplomacy: 22
+- options-mapping: 20
+- analyst-role: 16
 - finance: 16
-- analyst-role: 14
-- humanitarian-rights: 14
+- humanitarian-rights: 15
 - policy-review: 14
 - source-intake: 9
 - cyber-resilience: 8
 - exposure-mapping: 8
 - ai-governance: 7
+- critical-minerals: 7
 - public-health: 7
-- critical-minerals: 6
 - sustainability: 5
 - election-integrity: 4
 - migration-displacement: 4
@@ -47,17 +47,17 @@ Remote Firestore mutation: false
 
 ## Graph Stats
 
-- Nodes: min 115, max 173, average 143.81, unique counts 56
-- Edges: min 123, max 187, average 153.38, unique counts 63
+- Nodes: min 115, max 173, average 143.71, unique counts 56
+- Edges: min 123, max 187, average 153.48, unique counts 63
 - Same node/edge count records: 2
-- Density bands: 130-plus 154, 115-129 57
+- Density bands: 130-plus 163, 115-129 58
 
 ## Source Stats
 
-- Unique source IDs: 215
+- Unique source IDs: 220
 - Sources per capsule: min 4, max 6, average 4.43
-- Capsules with four or more sources: 211
-- Source tier records: tier-1 611, tier-2 269, tier-3 55
+- Capsules with four or more sources: 221
+- Source tier records: tier-1 642, tier-2 279, tier-3 57
 
 ## Multilateral Syria Flagship Records
 

@@ -1,17 +1,17 @@
 {
   "ok": true,
-  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
-  "total": 211,
+  "catalogVersion": "2026-07-02-canonical-four-category-v19",
+  "total": 221,
   "counts": {
-    "situation": 86,
-    "user": 14,
-    "tool": 75,
-    "output": 36
+    "situation": 89,
+    "user": 16,
+    "tool": 78,
+    "output": 38
   },
   "sourceRegistryCount": 27,
   "prompt": {
-    "averageLength": 9519,
-    "maxLength": 11880,
+    "averageLength": 9457,
+    "maxLength": 11818,
     "warnTarget": 12000,
     "hardCap": 16000
   },

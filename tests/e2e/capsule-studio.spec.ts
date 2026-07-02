@@ -12,7 +12,7 @@ test.describe('Capsule Studio', () => {
     await page.goto(`${BASE}/app/capsules`);
     await expect(page.getByTestId('capsule-studio-header')).toBeVisible();
     await expect(page.getByTestId('capsule-studio-command-band')).toBeVisible();
-    await expect(page.getByTestId('capsule-library-stats')).toContainText(/211/);
+    await expect(page.getByTestId('capsule-library-stats')).toContainText(/221/);
     await expect(page.getByTestId('capsule-library-stats')).toContainText(/GRAPH/i);
 
     const flagshipCard = page.getByTestId('capsule-card-starter-user-us-based-multilateral-desk-officer').first();

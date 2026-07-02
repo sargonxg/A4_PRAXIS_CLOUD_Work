@@ -2,6 +2,10 @@ import { TACITUS_CORE_PRIMITIVES, type TacitusCorePrimitive } from '@/lib/graph/
 import { summarizeOntologyMapping } from '@/lib/ontology/registry';
 import { getDomainOntologyCards, WORK_ONTOLOGIES, type WorkOntologyId } from '@/lib/ontology/work-ontologies';
 import { deriveCapsuleQuality, type CapsuleQualityBreakdownId } from '@/lib/context/capsule-quality';
+import {
+  CAPSULE_CANONICAL_CATEGORY_DEFINITIONS,
+  type CanonicalCapsuleCategoryId,
+} from '@/lib/context/capsule-categories';
 
 export type CapsuleWorkbenchCoreKind =
   | 'user'
@@ -346,12 +350,14 @@ export interface CapsuleReviewCardDisplay {
   allowedActions: Array<'approve' | 'reject'>;
 }
 
-export type CapsuleWorkbenchPillarId = 'situation' | 'users' | 'tools' | 'output';
+export type CapsuleWorkbenchPillarId = CanonicalCapsuleCategoryId;
 
 export interface CapsulePillarDisplay {
   id: CapsuleWorkbenchPillarId;
   title: string;
   description: string;
+  inspectionFocus: string;
+  mappedCoreKinds: string[];
   sections: string[];
   facts: Array<{
     label: string;
@@ -1328,21 +1334,12 @@ function buildPillars(input: {
 
   return [
     {
-      id: 'situation',
-      title: 'Situation',
-      description: 'What is true, when it is true, and how drivers connect.',
-      sections: ['Claim ledger', 'Timeline', 'Causal chain', 'Graph / Ontology'],
-      facts: [
-        { label: 'Claims', value: `${input.claims.length}`, reviewState: input.claims.length ? 'canonical' : 'missing' },
-        { label: 'Timeline', value: `${input.timeline.items.length} anchor${input.timeline.items.length === 1 ? '' : 's'}`, reviewState: input.timeline.items.length ? 'canonical' : 'missing' },
-        { label: 'Causal links', value: `${input.causalChains.length}`, reviewState: input.causalChains.length ? 'canonical' : 'missing' },
-      ],
-    },
-    {
-      id: 'users',
-      title: 'Users',
-      description: 'The mandate, audience, red lines, and tacit operating knowledge.',
-      sections: ['Audience', 'Human tacit knowledge', 'Review Queue'],
+      id: 'user',
+      title: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.user.label,
+      description: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.user.description,
+      inspectionFocus: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.user.inspectionFocus,
+      mappedCoreKinds: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.user.mappedCoreKinds,
+      sections: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.user.sections,
       facts: [
         { label: 'User core', value: coreState('user'), reviewState: coreState('user') },
         { label: 'Tacit cards', value: `${input.tacitKnowledge.items.length}`, reviewState: input.tacitKnowledge.items.length ? 'canonical' : 'missing' },
@@ -1350,10 +1347,25 @@ function buildPillars(input: {
       ],
     },
     {
+      id: 'situation',
+      title: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.situation.label,
+      description: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.situation.description,
+      inspectionFocus: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.situation.inspectionFocus,
+      mappedCoreKinds: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.situation.mappedCoreKinds,
+      sections: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.situation.sections,
+      facts: [
+        { label: 'Claims', value: `${input.claims.length}`, reviewState: input.claims.length ? 'canonical' : 'missing' },
+        { label: 'Timeline', value: `${input.timeline.items.length} anchor${input.timeline.items.length === 1 ? '' : 's'}`, reviewState: input.timeline.items.length ? 'canonical' : 'missing' },
+        { label: 'Causal links', value: `${input.causalChains.length}`, reviewState: input.causalChains.length ? 'canonical' : 'missing' },
+      ],
+    },
+    {
       id: 'tools',
-      title: 'Tools',
-      description: 'The source, graph, ontology, and agent capabilities allowed to act.',
-      sections: ['Evidence', 'Graph / Ontology', 'Agent Workflow'],
+      title: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.tools.label,
+      description: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.tools.description,
+      inspectionFocus: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.tools.inspectionFocus,
+      mappedCoreKinds: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.tools.mappedCoreKinds,
+      sections: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.tools.sections,
       facts: [
         { label: 'Sources', value: `${input.evidence.sourceCount}`, reviewState: input.evidence.sourceCount ? 'canonical' : 'missing' },
         { label: 'Ontologies', value: `${input.ontology.active.length + input.ontology.proposed.length}`, reviewState: input.ontology.active.length ? 'canonical' : 'proposed' },
@@ -1362,9 +1374,11 @@ function buildPillars(input: {
     },
     {
       id: 'output',
-      title: 'Output',
-      description: 'The memo, brief, handover, or decision product this capsule can produce.',
-      sections: ['Outputs', 'Output readiness', 'Quality meter'],
+      title: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.output.label,
+      description: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.output.description,
+      inspectionFocus: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.output.inspectionFocus,
+      mappedCoreKinds: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.output.mappedCoreKinds,
+      sections: CAPSULE_CANONICAL_CATEGORY_DEFINITIONS.output.sections,
       facts: [
         { label: 'Outputs', value: `${input.outputs.length}`, reviewState: input.outputs.length ? 'canonical' : 'missing' },
         { label: 'Quality', value: `${input.quality.score}`, reviewState: input.quality.score >= 75 ? 'canonical' : input.quality.score >= 45 ? 'proposed' : 'missing' },

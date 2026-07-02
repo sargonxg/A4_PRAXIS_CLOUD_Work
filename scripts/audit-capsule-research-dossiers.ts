@@ -68,7 +68,7 @@ const averagePromptLength = Math.round(promptLengths.reduce((sum, length) => sum
 if (averagePromptLength > CAPSULE_STARTER_PROMPT_WARN_TARGET_CHARS) {
   add('catalog', `average prompt block exceeds warning target: ${averagePromptLength}`);
 }
-if (!CAPSULE_STARTER_CATALOG_VERSION.match(/research-dossier.*v16|graphlite-advisory-projection.*v1[78]/)) {
+if (!CAPSULE_STARTER_CATALOG_VERSION.match(/research-dossier.*v16|graphlite-advisory-projection.*v1[78]|canonical-four-category-v19/)) {
   add('catalog', `catalog version is not an accepted research dossier or GraphLite projection label: ${CAPSULE_STARTER_CATALOG_VERSION}`);
 }
 

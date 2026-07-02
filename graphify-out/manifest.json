@@ -1440,8 +1440,8 @@
     "semantic_hash": ""
   },
   "scripts/audit-capsule-consolidation.ts": {
-    "mtime": 1781647178.6230562,
-    "ast_hash": "98647e359bee5eee0f5f044b4a5ceb87",
+    "mtime": 1783034159.4607794,
+    "ast_hash": "d658ed63c5154375a848d6783f3fd08f",
     "semantic_hash": ""
   },
   "scripts/audit-capsule-context-capture.ts": {
@@ -1460,8 +1460,8 @@
     "semantic_hash": ""
   },
   "scripts/audit-capsule-graphlite-projections.ts": {
-    "mtime": 1781648576.522807,
-    "ast_hash": "f25c513c8f63350d8d093c877a62bb94",
+    "mtime": 1783034147.1002295,
+    "ast_hash": "a1d4e9f677ce5968895618d593d1cd4d",
     "semantic_hash": ""
   },
   "scripts/audit-capsule-inventory.ts": {
@@ -1480,8 +1480,8 @@
     "semantic_hash": ""
   },
   "scripts/audit-capsule-research-dossiers.ts": {
-    "mtime": 1781647082.0762115,
-    "ast_hash": "c237f232242ba64694e514957bd088a5",
+    "mtime": 1783034141.8423982,
+    "ast_hash": "f3f61e70f646110e796052dde457b83b",
     "semantic_hash": ""
   },
   "scripts/audit-capsule-v3.ts": {
@@ -3440,8 +3440,8 @@
     "semantic_hash": ""
   },
   "src/components/capsules/CapsuleWorkbenchPanel.tsx": {
-    "mtime": 1782498855.631501,
-    "ast_hash": "7133a811d632d909187df3161c173433",
+    "mtime": 1783034410.9105868,
+    "ast_hash": "b0773b752f3d77bddf9052b1c795b59e",
     "semantic_hash": ""
   },
   "src/components/capsules/viewers/CapsuleGraphViewer.tsx": {
@@ -3525,8 +3525,8 @@
     "semantic_hash": ""
   },
   "src/components/capsules/workbench/CapsuleWorkbenchSections.tsx": {
-    "mtime": 1781272606.9554856,
-    "ast_hash": "5625d7ad448546de891a0d7907923339",
+    "mtime": 1783033505.5183938,
+    "ast_hash": "d25c35c0c9ffcfd563eb56ef183d132a",
     "semantic_hash": ""
   },
   "src/components/context/context-capsule-preview.tsx": {
@@ -4465,8 +4465,8 @@
     "semantic_hash": ""
   },
   "src/lib/constants/aco-colors.ts": {
-    "mtime": 1782336426.2127824,
-    "ast_hash": "a2771a4fd3ed9b499fd25f91d989cd66",
+    "mtime": 1783033463.9397907,
+    "ast_hash": "24c0c0fed4bd2afe12207bdeafdbb722",
     "semantic_hash": ""
   },
   "src/lib/constants/advisors.ts": {
@@ -4605,13 +4605,13 @@
     "semantic_hash": ""
   },
   "src/lib/context/capsule-v3.ts": {
-    "mtime": 1781282619.016531,
-    "ast_hash": "bf71bf3dec29ccf6f64ff978fde7fec4",
+    "mtime": 1783033425.8181589,
+    "ast_hash": "45eab673c4b70d014a10806ee53dd231",
     "semantic_hash": ""
   },
   "src/lib/context/capsule-workbench-view-model.ts": {
-    "mtime": 1782506260.1085694,
-    "ast_hash": "326534818c56923c70434c3ebb7e13b8",
+    "mtime": 1783033498.9457214,
+    "ast_hash": "ecf701683f2adcf0bca7bd3afe1d24ba",
     "semantic_hash": ""
   },
   "src/lib/context/context-aware.ts": {
@@ -5575,8 +5575,8 @@
     "semantic_hash": ""
   },
   "src/lib/product/context-capsules.ts": {
-    "mtime": 1782404149.7129128,
-    "ast_hash": "5abe5f46a42137969a38b657c50510c6",
+    "mtime": 1783033890.3608043,
+    "ast_hash": "5cfb6a47426a5b5f3717df035c43332c",
     "semantic_hash": ""
   },
   "src/lib/product/context-core-map.ts": {
@@ -6245,8 +6245,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/capsule-studio.spec.ts": {
-    "mtime": 1781669078.2851243,
-    "ast_hash": "cde4fe767e36316ccedc9a3e7e6f370f",
+    "mtime": 1783033911.0303352,
+    "ast_hash": "9353f48393af6e22feacdabbd03cbe7d",
     "semantic_hash": ""
   },
   "tests/e2e/capsule-workspace-visual-diagnostics.spec.ts": {
@@ -6835,8 +6835,8 @@
     "semantic_hash": ""
   },
   "tests/unit/components/praxis/capsule-workbench-contract.test.ts": {
-    "mtime": 1782319385.6008844,
-    "ast_hash": "6ac21a772ceb565fedc8b5d47b79b4e0",
+    "mtime": 1783034027.2692647,
+    "ast_hash": "f132f387e064de56dc66c2d00ee4a485",
     "semantic_hash": ""
   },
   "tests/unit/components/praxis/empty-error-state.test.tsx": {
@@ -7285,13 +7285,13 @@
     "semantic_hash": ""
   },
   "tests/unit/lib/context/capsule-v3.test.ts": {
-    "mtime": 1781282522.4920075,
-    "ast_hash": "e623b6f140fbb713b8a2c6671bf1f811",
+    "mtime": 1783033435.7391427,
+    "ast_hash": "46e3a1a21c517e8fdb326527103ddb57",
     "semantic_hash": ""
   },
   "tests/unit/lib/context/capsule-workbench-view-model.test.ts": {
-    "mtime": 1782506177.5620933,
-    "ast_hash": "c20392cc39036d00cb976992bf4edaf0",
+    "mtime": 1783033701.8704917,
+    "ast_hash": "122d6ceddcec0af79e4a5be16f2391fc",
     "semantic_hash": ""
   },
   "tests/unit/lib/context/context-aware.test.ts": {
@@ -7680,8 +7680,8 @@
     "semantic_hash": ""
   },
   "tests/unit/lib/product/context-capsules.test.ts": {
-    "mtime": 1782404129.3321154,
-    "ast_hash": "95f841ccd5110161fa9a451d67ef61ea",
+    "mtime": 1783033905.2815998,
+    "ast_hash": "88df91383f7eae203d14b00f7a969e45",
     "semantic_hash": ""
   },
   "tests/unit/lib/product/policy-agents.test.ts": {
@@ -8455,28 +8455,28 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-consolidation-audit.md": {
-    "mtime": 1782353777.8017614,
-    "ast_hash": "1e1d6bda816ba9db627141d838dfe298",
+    "mtime": 1783034177.533641,
+    "ast_hash": "86330d19a06e28ca5cab742bc072a2df",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-depth-audit.md": {
-    "mtime": 1782353775.408584,
-    "ast_hash": "97a61041b793f0ab8bea44754c27aa43",
+    "mtime": 1783034165.976893,
+    "ast_hash": "4ed67f3a6774d23ade02d5d3ecf9740e",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-graphlite-projections-audit.md": {
-    "mtime": 1782508433.0666666,
-    "ast_hash": "e104bff0fce5d9a825885e942cc665c4",
+    "mtime": 1783034171.838516,
+    "ast_hash": "129f3ba41c30f576c364fded0f138c07",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-quality-ranking.md": {
-    "mtime": 1782508420.1689024,
-    "ast_hash": "542ea8ee0fae420692124eb9af8b8a40",
+    "mtime": 1783034173.364213,
+    "ast_hash": "37a7b06d841c3582ae203fdcd210c7f3",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-research-dossiers-audit.md": {
-    "mtime": 1782508432.6499267,
-    "ast_hash": "363575c084344f8e69b873f395f3056b",
+    "mtime": 1783034167.6993153,
+    "ast_hash": "e34a20c913007707bdc439113bf85c87",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-DEEP_PRESHIP_CHECKLIST.md": {
@@ -9585,28 +9585,28 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-consolidation-audit.json": {
-    "mtime": 1782353777.8017614,
-    "ast_hash": "baac6cca4b82d5e83e5d5b630792644e",
+    "mtime": 1783034177.533641,
+    "ast_hash": "05f8007fadf22fb07496d2c8846bbfbc",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-depth-audit.json": {
-    "mtime": 1782353775.408584,
-    "ast_hash": "1acf68d47786d561961fe5ff2ca8a476",
+    "mtime": 1783034165.976893,
+    "ast_hash": "9ee6e3f81c234efa260cd388ba3205dc",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-graphlite-projections-audit.json": {
-    "mtime": 1782508433.0666666,
-    "ast_hash": "77f69384bef9b2e8c0314604c6985e8c",
+    "mtime": 1783034171.8375044,
+    "ast_hash": "00345f2a6472a37a92121b1b1d7734ff",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-quality-ranking.json": {
-    "mtime": 1782508420.1560614,
-    "ast_hash": "b71ad36d65cd51de77358e9752bf7f4b",
+    "mtime": 1783034173.3632088,
+    "ast_hash": "2773a6b0a7b22925bae12e97b18e418e",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-research-dossiers-audit.json": {
-    "mtime": 1782508432.6479204,
-    "ast_hash": "a9287c4f78b3828863a3b5a8b8690e2e",
+    "mtime": 1783034167.6983204,
+    "ast_hash": "5594dd59797c604ffa440dcbe32ffe97",
     "semantic_hash": ""
   },
   "docs/audits/agentic-research-evals/2026-05-20-praxis-vs-generic-llm.json": {
@@ -9940,8 +9940,8 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-database-audit.json": {
-    "mtime": 1782353776.6109962,
-    "ast_hash": "0d1974fbe985111f6f6eefffab9ea3cb",
+    "mtime": 1783034174.976887,
+    "ast_hash": "c1454c4f31013c7b0de72846c9a1c900",
     "semantic_hash": ""
   },
   "scripts/audit-capsule-database.ts": {
@@ -9950,8 +9950,8 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-database-audit.md": {
-    "mtime": 1782353776.6109962,
-    "ast_hash": "780e08c154d73e38face0ee76e36883d",
+    "mtime": 1783034174.979499,
+    "ast_hash": "95cf5c56243a74868f7c5925ef8644eb",
     "semantic_hash": ""
   },
   "backend/agents/praxis_data_controller/__init__.py": {
@@ -10175,8 +10175,8 @@
     "semantic_hash": ""
   },
   "tests/unit/app/api/capsule-library-try.test.ts": {
-    "mtime": 1782350055.1560981,
-    "ast_hash": "3c6a311fff9d78a68081d0c092c35b68",
+    "mtime": 1783033962.0960345,
+    "ast_hash": "b307643cd0de6b6f1c607295be745a46",
     "semantic_hash": ""
   },
   "tests/unit/components/capsules/CapsuleLibrary.test.tsx": {
@@ -10285,8 +10285,8 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-inspect-visibility-audit.json": {
-    "mtime": 1782508420.9319367,
-    "ast_hash": "e84ae35dfac3d6bb42af799d70b9670e",
+    "mtime": 1783034170.097157,
+    "ast_hash": "a256790d5feeec639a95c6aac7663291",
     "semantic_hash": ""
   },
   "scripts/audit-capsule-inspect-visibility.ts": {
@@ -10310,8 +10310,8 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-inspect-visibility-audit.md": {
-    "mtime": 1782508420.9319367,
-    "ast_hash": "4e9ce9d38c8ea0982031234baa19dcd6",
+    "mtime": 1783034170.097157,
+    "ast_hash": "92566aa9e1e2c0cbb421ae4237299750",
     "semantic_hash": ""
   },
   "docs/superpowers/specs/2026-06-26-ask-praxis-with-without-capsules-design.md": {
@@ -10332,6 +10332,11 @@
   "tests/unit/app/praxis-chat-onboarding-recovery-contract.test.ts": {
     "mtime": 1783010022.6993487,
     "ast_hash": "7104e6e5bb80cce8b5c9a6a6d4b0b75e",
+    "semantic_hash": ""
+  },
+  "src/lib/context/capsule-categories.ts": {
+    "mtime": 1783033454.7692144,
+    "ast_hash": "60cffe0d016a2fde96fb16f4d2549a3d",
     "semantic_hash": ""
   }
 }

@@ -513,7 +513,7 @@ export const CAPSULE_V3_AGENT_ROLES: CapsuleV3AgentRole[] = [
 ];
 
 export function normalizeContextCapsuleV3(input: ContextCapsuleV2 | unknown, options: ContextCapsuleNormalizeOptions = {}): ContextCapsuleV3 {
-  const v2 = normalizeContextCapsuleV2(input, options);
+  const v2 = normalizeV2ForV3(input, options);
   const body = isRecord(input) ? input : {};
   const claimLedger = buildClaimLedger(v2);
   const sourceSpine = buildSourceSpine(v2, options, claimLedger.allClaims);
@@ -1187,6 +1187,13 @@ function normalizeGraphLiteNodes(value: unknown): ContextCapsuleGraphLiteNodeV3[
       ...graphElementProvenanceFromRecord(record),
     }];
   });
+}
+
+function normalizeV2ForV3(input: ContextCapsuleV2 | unknown, options: ContextCapsuleNormalizeOptions): ContextCapsuleV2 {
+  if (options.now === undefined && isContextCapsuleV2(input)) {
+    return input;
+  }
+  return normalizeContextCapsuleV2(input, options);
 }
 
 function normalizeGraphLiteEdges(value: unknown): ContextCapsuleGraphLiteEdgeV3[] {
@@ -2113,6 +2120,16 @@ function scoreIndependence(sources: ContextCapsuleSourceRef[]): number {
 
 function isContextCapsuleV3(value: unknown): value is ContextCapsuleV3 {
   return isRecord(value) && value.schemaVersion === 3 && isRecord(value.identity) && Array.isArray(value.sectionIds);
+}
+
+function isContextCapsuleV2(value: unknown): value is ContextCapsuleV2 {
+  return isRecord(value)
+    && value.schemaVersion === 2
+    && typeof value.capsuleId === 'string'
+    && typeof value.ownerUid === 'string'
+    && Array.isArray(value.sourceRefs)
+    && Array.isArray(value.outputContracts)
+    && isRecord(value.humanGate);
 }
 
 function isStale(reviewedAt: string | null, fallbackDate: string | null, now?: string | Date): boolean {

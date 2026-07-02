@@ -185,7 +185,7 @@ describe('context capsule product contract', () => {
     const starterIds = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId));
     const categories = new Set(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.category));
 
-    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(211);
+    expect(CAPSULE_STARTER_DEFINITIONS.length).toBe(221);
     expect(starterIds.size).toBe(CAPSULE_STARTER_DEFINITIONS.length);
     expect(categories).toEqual(new Set(['situation', 'tool', 'output', 'user']));
 
@@ -193,7 +193,20 @@ describe('context capsule product contract', () => {
       counts[starter.category] = (counts[starter.category] ?? 0) + 1;
       return counts;
     }, {});
-    expect(categoryCounts).toEqual({ situation: 86, tool: 75, output: 36, user: 14 });
+    expect(categoryCounts).toEqual({ situation: 89, tool: 78, output: 38, user: 16 });
+
+    expect(CAPSULE_STARTER_DEFINITIONS.map((starter) => starter.starterId)).toEqual(expect.arrayContaining([
+      'starter-user-humanitarian-policy-desk-lead',
+      'starter-user-institutional-decision-principal',
+      'starter-situation-ceasefire-monitoring-verification-package',
+      'starter-situation-sanctions-humanitarian-carveout-risk',
+      'starter-situation-critical-minerals-community-consent-watch',
+      'starter-tool-stakeholder-power-interest-assumption-check',
+      'starter-tool-claim-assumption-sourceability-auditor',
+      'starter-tool-executive-brief-red-team-conclusion-check',
+      'starter-output-executive-summary-options-brief',
+      'starter-output-decision-handover-review-pack',
+    ]));
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {
       expect(starter.starterId).toMatch(/^starter-(situation|tool|output|user)-/);
@@ -460,7 +473,7 @@ describe('context capsule product contract', () => {
     const externalSourceCount = (starter: (typeof CAPSULE_STARTER_DEFINITIONS)[number]) =>
       starter.sourcePack.filter((source) => source.publisher !== 'PRAXIS starter catalog' && !source.url.includes('praxis.tacitus.me')).length;
 
-    expect(CAPSULE_STARTER_CATALOG_VERSION).toMatch(/graphlite-advisory-projection.*v18/);
+    expect(CAPSULE_STARTER_CATALOG_VERSION).toBe('2026-07-02-canonical-four-category-v19');
     expect(Object.keys(CAPSULE_STARTER_SOURCE_REGISTRY).length).toBeGreaterThanOrEqual(10);
 
     for (const starter of CAPSULE_STARTER_DEFINITIONS) {

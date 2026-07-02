@@ -67,6 +67,17 @@ describe('ContextCapsule v3 contract', () => {
     expect(capsule.outputContracts).toHaveLength(1);
   });
 
+  it('does not re-stale an already-normalized v2 capsule when v3 conversion is called without a new clock', () => {
+    const readyV2 = makeCapsule();
+    const readyV3 = normalizeContextCapsuleV3(readyV2);
+
+    expect(readyV3.governance.humanGateStatus).toBe('approved');
+    expect(canPublishCapsuleV3(readyV3, { actor: 'human', now: '2026-05-14T00:00:00.000Z' })).toMatchObject({
+      allowed: true,
+      status: 'human_gated',
+    });
+  });
+
   it('carries capsule-local ontology extensions into the binding contract', () => {
     const starter = CAPSULE_STARTER_DEFINITIONS[0];
     const capsule = normalizeContextCapsuleV3(makeCapsule({

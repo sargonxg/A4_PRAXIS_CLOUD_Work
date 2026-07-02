@@ -1,10 +1,10 @@
 # Capsule Depth Audit
 
 - Output: rolling LATEST file
-- Catalog version: 2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth
+- Catalog version: 2026-07-02-canonical-four-category-v19
 - Result: pass
-- Total starters: 211
-- Category counts: situation 86, tool 75, output 36, user 14
+- Total starters: 221
+- Category counts: situation 89, tool 78, output 38, user 16
 
 ## Failures
 
@@ -116,6 +116,16 @@
 - starter-output-domestic-policy-impact-one-pager: output, output-brief, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-output-board-public-affairs-risk-watch: output, output-brief, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-output-current-affairs-source-refresh-docket: output, output-brief, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-user-humanitarian-policy-desk-lead: user, analyst-role, sources 4, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-user-institutional-decision-principal: user, analyst-role, sources 4, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-situation-ceasefire-monitoring-verification-package: situation, diplomacy, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-situation-sanctions-humanitarian-carveout-risk: situation, humanitarian-rights, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-situation-critical-minerals-community-consent-watch: situation, critical-minerals, sources 4, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-tool-stakeholder-power-interest-assumption-check: tool, options-mapping, sources 5, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-tool-claim-assumption-sourceability-auditor: tool, audit-review, sources 4, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-tool-executive-brief-red-team-conclusion-check: tool, audit-review, sources 4, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-output-executive-summary-options-brief: output, output-brief, sources 4, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
+- starter-output-decision-handover-review-pack: output, output-brief, sources 4, excerpts 4, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-hr-harassment-policy: situation, hr, sources 4, excerpts 2, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-diplomatic-options: situation, diplomacy, sources 4, excerpts 2, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes
 - starter-situation-humanitarian-rights-access: situation, humanitarian-rights, sources 4, excerpts 2, compatible 3, richProfile yes, intelligenceProfile yes, cogneeProfile yes

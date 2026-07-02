@@ -1,7 +1,7 @@
 {
   "ok": true,
-  "generatedAt": "2026-06-25T02:16:16.608Z",
-  "catalogVersion": "2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth",
+  "generatedAt": "2026-07-02T23:16:14.974Z",
+  "catalogVersion": "2026-07-02-canonical-four-category-v19",
   "auditedScope": {
     "canonicalStore": "Firestore ContextCapsules",
     "auditedRecords": "local starter catalog definitions and seedable GraphLite advisory projection metadata",
@@ -10,62 +10,62 @@
     "note": "This audit validates the capsule database shape available to the app without writing to remote stores."
   },
   "totals": {
-    "capsules": 211,
-    "records": 211,
+    "capsules": 221,
+    "records": 221,
     "categories": 4,
     "domains": 18,
-    "sourceRecords": 935,
-    "excerptRecords": 786,
-    "graphNodeTemplates": 30343,
-    "graphEdgeTemplates": 32363,
-    "namedGraphRecords": 211
+    "sourceRecords": 978,
+    "excerptRecords": 826,
+    "graphNodeTemplates": 31761,
+    "graphEdgeTemplates": 33920,
+    "namedGraphRecords": 221
   },
   "recordsByCategory": [
     {
       "id": "situation",
-      "count": 86
+      "count": 89
     },
     {
       "id": "tool",
-      "count": 75
+      "count": 78
     },
     {
       "id": "output",
-      "count": 36
+      "count": 38
     },
     {
       "id": "user",
-      "count": 14
+      "count": 16
     }
   ],
   "recordsByDomain": [
     {
       "id": "output-brief",
-      "count": 33
+      "count": 35
     },
     {
       "id": "audit-review",
-      "count": 21
+      "count": 23
     },
     {
       "id": "diplomacy",
-      "count": 21
+      "count": 22
     },
     {
       "id": "options-mapping",
-      "count": 19
+      "count": 20
+    },
+    {
+      "id": "analyst-role",
+      "count": 16
     },
     {
       "id": "finance",
       "count": 16
     },
     {
-      "id": "analyst-role",
-      "count": 14
-    },
-    {
       "id": "humanitarian-rights",
-      "count": 14
+      "count": 15
     },
     {
       "id": "policy-review",
@@ -88,12 +88,12 @@
       "count": 7
     },
     {
-      "id": "public-health",
+      "id": "critical-minerals",
       "count": 7
     },
     {
-      "id": "critical-minerals",
-      "count": 6
+      "id": "public-health",
+      "count": 7
     },
     {
       "id": "sustainability",
@@ -115,7 +115,7 @@
   "recordsByReadinessStars": [
     {
       "id": "5",
-      "count": 117
+      "count": 127
     },
     {
       "id": "4",
@@ -129,29 +129,29 @@
   "recordsBySourceTier": [
     {
       "id": "tier-1",
-      "count": 611
+      "count": 642
     },
     {
       "id": "tier-2",
-      "count": 269
+      "count": 279
     },
     {
       "id": "tier-3",
-      "count": 55
+      "count": 57
     }
   ],
   "recordsByOutputProduct": [
     {
       "id": "principals-decision-memo",
-      "count": 101
+      "count": 107
     },
     {
       "id": "options-memo",
-      "count": 50
+      "count": 55
     },
     {
       "id": "evidence-sourceability-annex",
-      "count": 46
+      "count": 48
     },
     {
       "id": "talking-points",
@@ -159,15 +159,15 @@
     },
     {
       "id": "country-risk-card",
-      "count": 30
-    },
-    {
-      "id": "scenario-risk-dashboard-card",
-      "count": 30
+      "count": 31
     },
     {
       "id": "legal-mandate-compliance-note",
-      "count": 29
+      "count": 31
+    },
+    {
+      "id": "scenario-risk-dashboard-card",
+      "count": 31
     },
     {
       "id": "risk-monitor-card",
@@ -175,7 +175,7 @@
     },
     {
       "id": "humanitarian-one-pager",
-      "count": 23
+      "count": 25
     },
     {
       "id": "negotiation-prep-book",
@@ -183,7 +183,7 @@
     },
     {
       "id": "diplomatic-cable",
-      "count": 12
+      "count": 13
     },
     {
       "id": "daily-read",
@@ -221,19 +221,19 @@
   "recordsByTool": [
     {
       "id": "sourceability",
-      "count": 200
+      "count": 210
     },
     {
       "id": "memo-drafter",
-      "count": 112
+      "count": 118
     },
     {
       "id": "contradiction-finder",
-      "count": 61
+      "count": 64
     },
     {
       "id": "scenario-projector",
-      "count": 57
+      "count": 60
     },
     {
       "id": "grounded-research",
@@ -241,15 +241,15 @@
     },
     {
       "id": "stakeholder-map",
-      "count": 44
+      "count": 48
     },
     {
       "id": "ach",
-      "count": 38
+      "count": 40
     },
     {
       "id": "commitment-tracker",
-      "count": 25
+      "count": 27
     },
     {
       "id": "frame-narrative",
@@ -271,18 +271,18 @@
   "recordsByGraphDensityBand": [
     {
       "id": "130-plus",
-      "count": 154
+      "count": 163
     },
     {
       "id": "115-129",
-      "count": 57
+      "count": 58
     }
   ],
   "graphStats": {
     "nodes": {
       "min": 115,
       "max": 173,
-      "average": 143.81,
+      "average": 143.71,
       "uniqueCounts": 56,
       "sameNodeEdgeRecords": 2,
       "distribution": [
@@ -307,7 +307,19 @@
           "count": 7
         },
         {
+          "id": "150",
+          "count": 7
+        },
+        {
+          "id": "117",
+          "count": 6
+        },
+        {
           "id": "124",
+          "count": 6
+        },
+        {
+          "id": "137",
           "count": 6
         },
         {
@@ -315,7 +327,7 @@
           "count": 6
         },
         {
-          "id": "150",
+          "id": "155",
           "count": 6
         },
         {
@@ -323,19 +335,11 @@
           "count": 6
         },
         {
-          "id": "117",
-          "count": 5
-        },
-        {
           "id": "135",
           "count": 5
         },
         {
           "id": "136",
-          "count": 5
-        },
-        {
-          "id": "137",
           "count": 5
         },
         {
@@ -351,11 +355,11 @@
           "count": 5
         },
         {
-          "id": "155",
+          "id": "163",
           "count": 5
         },
         {
-          "id": "163",
+          "id": "165",
           "count": 5
         },
         {
@@ -387,6 +391,10 @@
           "count": 4
         },
         {
+          "id": "142",
+          "count": 4
+        },
+        {
           "id": "147",
           "count": 4
         },
@@ -403,10 +411,6 @@
           "count": 4
         },
         {
-          "id": "165",
-          "count": 4
-        },
-        {
           "id": "118",
           "count": 3
         },
@@ -415,15 +419,23 @@
           "count": 3
         },
         {
+          "id": "132",
+          "count": 3
+        },
+        {
+          "id": "133",
+          "count": 3
+        },
+        {
           "id": "139",
           "count": 3
         },
         {
-          "id": "142",
+          "id": "143",
           "count": 3
         },
         {
-          "id": "143",
+          "id": "153",
           "count": 3
         },
         {
@@ -451,19 +463,11 @@
           "count": 2
         },
         {
-          "id": "132",
-          "count": 2
-        },
-        {
-          "id": "133",
+          "id": "134",
           "count": 2
         },
         {
           "id": "141",
-          "count": 2
-        },
-        {
-          "id": "153",
           "count": 2
         },
         {
@@ -495,10 +499,6 @@
           "count": 1
         },
         {
-          "id": "134",
-          "count": 1
-        },
-        {
           "id": "154",
           "count": 1
         },
@@ -515,13 +515,17 @@
     "edges": {
       "min": 123,
       "max": 187,
-      "average": 153.38,
+      "average": 153.48,
       "uniqueCounts": 63,
       "sameNodeEdgeRecords": 2,
       "distribution": [
         {
           "id": "149",
           "count": 9
+        },
+        {
+          "id": "155",
+          "count": 8
         },
         {
           "id": "156",
@@ -532,15 +536,19 @@
           "count": 7
         },
         {
-          "id": "155",
-          "count": 7
-        },
-        {
           "id": "162",
           "count": 7
         },
         {
+          "id": "136",
+          "count": 6
+        },
+        {
           "id": "144",
+          "count": 6
+        },
+        {
+          "id": "151",
           "count": 6
         },
         {
@@ -560,11 +568,15 @@
           "count": 5
         },
         {
+          "id": "134",
+          "count": 5
+        },
+        {
           "id": "135",
           "count": 5
         },
         {
-          "id": "136",
+          "id": "145",
           "count": 5
         },
         {
@@ -572,7 +584,11 @@
           "count": 5
         },
         {
-          "id": "151",
+          "id": "158",
+          "count": 5
+        },
+        {
+          "id": "178",
           "count": 5
         },
         {
@@ -584,19 +600,11 @@
           "count": 4
         },
         {
-          "id": "134",
-          "count": 4
-        },
-        {
           "id": "139",
           "count": 4
         },
         {
           "id": "142",
-          "count": 4
-        },
-        {
-          "id": "145",
           "count": 4
         },
         {
@@ -628,7 +636,7 @@
           "count": 4
         },
         {
-          "id": "178",
+          "id": "177",
           "count": 4
         },
         {
@@ -652,7 +660,7 @@
           "count": 3
         },
         {
-          "id": "158",
+          "id": "165",
           "count": 3
         },
         {
@@ -661,10 +669,6 @@
         },
         {
           "id": "170",
-          "count": 3
-        },
-        {
-          "id": "177",
           "count": 3
         },
         {
@@ -697,10 +701,6 @@
         },
         {
           "id": "160",
-          "count": 2
-        },
-        {
-          "id": "165",
           "count": 2
         },
         {
@@ -778,8 +778,8 @@
     "minPerCapsule": 4,
     "maxPerCapsule": 6,
     "averagePerCapsule": 4.43,
-    "uniqueSourceIds": 215,
-    "capsulesWithFourOrMoreSources": 211
+    "uniqueSourceIds": 220,
+    "capsulesWithFourOrMoreSources": 221
   },
   "flagshipMultilateralSyriaRecords": [
     {

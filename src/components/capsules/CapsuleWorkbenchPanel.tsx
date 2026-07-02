@@ -8,10 +8,13 @@ import {
   type CapsuleWorkbenchAgentRunInput,
   type CapsuleWorkbenchCapsuleInput,
   type CapsuleWorkbenchDocumentInput,
-  type CapsuleWorkbenchPillarId,
   type CapsuleWorkbenchTacitMemoryInput,
   type CapsuleWorkbenchViewModel,
 } from '@/lib/context/capsule-workbench-view-model';
+import {
+  CAPSULE_CANONICAL_CATEGORY_DEFINITIONS,
+  normalizeCapsuleCategoryId,
+} from '@/lib/context/capsule-categories';
 import {
   CAPSULE_CATEGORY_IDS,
   getCapsuleCategoryPalette,
@@ -118,6 +121,7 @@ export function CapsuleWorkbenchPanel({
           reviewQueue={model.reviewQueue}
           graphModel={model.graph}
           research={model.research}
+          inspectionFocus={CAPSULE_CANONICAL_CATEGORY_DEFINITIONS[inspectedCategory].inspectionFocus}
           workbenchView={workbenchView}
         />
       ) : null}
@@ -182,6 +186,7 @@ type CapsuleCategoryCard = {
   id: CapsuleCategoryId;
   stateLine: string;
   detail: string;
+  inspectionFocus: string;
   ready: boolean;
 };
 
@@ -206,7 +211,7 @@ function CapsuleCategoryOverview({
             type="button"
             data-testid={`capsule-category-chip-${category.id}`}
             onClick={() => onInspect(category)}
-            title={`${palette.label}: ${category.detail} Click to inspect the full capsule depth for this category.`}
+            title={`${palette.label}: ${category.detail} ${category.inspectionFocus}`}
             className={cn(
               'flex min-h-20 min-w-0 items-center gap-3 rounded-md border px-3 py-2 text-left transition focus:outline-none focus:ring-2 focus:ring-offset-1',
               active ? 'ring-2 ring-offset-1' : 'hover:bg-slate-50',
@@ -247,6 +252,7 @@ function CapsuleInspectionDepth({
   ontology,
   reviewQueue,
   research,
+  inspectionFocus,
   workbenchView,
 }: {
   capsuleId: string;
@@ -256,6 +262,7 @@ function CapsuleInspectionDepth({
   ontology: CapsuleWorkbenchViewModel['ontology'];
   reviewQueue: CapsuleWorkbenchViewModel['reviewQueue'];
   research: CapsuleWorkbenchViewModel['research'];
+  inspectionFocus: string;
   workbenchView: 'graph' | 'agent';
 }) {
   const palette = getCapsuleCategoryPalette(inspectedCategory);
@@ -275,7 +282,7 @@ function CapsuleInspectionDepth({
           </span>
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.14em]" style={{ color: palette.text }}>{palette.label}</p>
-            <p className="truncate text-sm font-semibold text-slate-950">Full depth is open below.</p>
+            <p className="text-sm font-semibold leading-5 text-slate-950">{inspectionFocus}</p>
           </div>
         </div>
         <span title="Ontology, graph, agent packet, reasoning paths, receipts, and review state stay hidden until inspection." className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500">
@@ -297,7 +304,7 @@ function CapsuleInspectionDepth({
 }
 
 function buildCapsuleCategoryCards(model: CapsuleWorkbenchViewModel): CapsuleCategoryCard[] {
-  const pillars = new Map(model.pillars.map((pillar) => [normalizePillarCategory(pillar.id), pillar]));
+  const pillars = new Map(model.pillars.map((pillar) => [normalizeCapsuleCategoryId(pillar.id), pillar]));
   return CAPSULE_CATEGORY_IDS.map((id) => {
     const pillar = pillars.get(id);
     const primaryFact = pillar?.facts[0] ?? null;
@@ -306,15 +313,10 @@ function buildCapsuleCategoryCards(model: CapsuleWorkbenchViewModel): CapsuleCat
       id,
       stateLine: primaryFact ? `${primaryFact.label}: ${primaryFact.value}` : 'Open',
       detail: pillar?.description ?? `${getCapsuleCategoryPalette(id).label} capsule context.`,
+      inspectionFocus: pillar?.inspectionFocus ?? CAPSULE_CANONICAL_CATEGORY_DEFINITIONS[id].inspectionFocus,
       ready,
     };
   });
-}
-
-function normalizePillarCategory(id: CapsuleWorkbenchPillarId): CapsuleCategoryId {
-  if (id === 'users') return 'user';
-  if (id === 'tools') return 'tools';
-  return id;
 }
 
 function CompactCapsuleHeader({

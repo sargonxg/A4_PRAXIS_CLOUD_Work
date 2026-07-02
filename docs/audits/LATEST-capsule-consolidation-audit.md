@@ -1,12 +1,12 @@
 # Capsule Consolidation Audit
 
 - Output: rolling LATEST file
-- Catalog version: 2026-06-16-graphlite-advisory-projection-v18-multilateral-syria-depth
+- Catalog version: 2026-07-02-canonical-four-category-v19
 - Result: pass
-- Starters: 211
-- Category counts: situation 86, tool 75, output 36, user 14
+- Starters: 221
+- Category counts: situation 89, tool 78, output 38, user 16
 - Source registry entries: 27
-- Prompt average/max: 9519/11880 chars
+- Prompt average/max: 9457/11818 chars
 
 ## Failures
 

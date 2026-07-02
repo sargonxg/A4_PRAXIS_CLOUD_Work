@@ -33,7 +33,7 @@ describe('Capsule workbench UI contract', () => {
     expect(componentSource).toContain('data-testid="capsule-workbench-panel"');
     for (const expected of [
       'Situation',
-      'Users',
+      'User',
       'Tools',
       'Output',
       'Graph / Ontology',
