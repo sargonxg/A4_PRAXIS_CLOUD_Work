@@ -24,16 +24,21 @@ test.describe('Capsule Studio', () => {
     ]);
 
     const inspectorSheet = page.getByTestId('capsule-inspector-sheet');
-    const ontologyPanel = inspectorSheet.getByRole('tabpanel');
+    const ontologyGraph = inspectorSheet.getByTestId('capsule-knowledge-graph').last();
+    const ontologyStats = inspectorSheet.getByTestId('capsule-graph-stats').last();
+    const ontologyLensBar = inspectorSheet.getByTestId('capsule-graph-lens-bar').last();
+    const ontologyWhyPanel = inspectorSheet.getByTestId('capsule-graph-why-panel').last();
+    const ontologySearch = inspectorSheet.getByTestId('capsule-studio-graph-search').last();
+    const ontologyDetailPanel = inspectorSheet.getByTestId('capsule-graph-detail-panel').last();
     await expect(inspectorSheet).toBeVisible();
     await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible();
-    await expect(ontologyPanel.getByTestId('capsule-knowledge-graph')).toBeVisible();
-    await expect(ontologyPanel.getByTestId('capsule-graph-stats')).toContainText(/Boundary/i);
-    await expect(ontologyPanel.getByTestId('capsule-graph-stats')).toContainText(/Provenance/i);
-    await expect(ontologyPanel.getByTestId('capsule-graph-lens-bar')).toContainText(/Context \/ boundary/i);
-    await expect(ontologyPanel.getByTestId('capsule-graph-why-panel')).toBeVisible();
+    await expect(ontologyGraph).toBeVisible();
+    await expect(ontologyStats).toContainText(/Boundary/i);
+    await expect(ontologyStats).toContainText(/Provenance/i);
+    await expect(ontologyLensBar).toContainText(/Context \/ boundary/i);
+    await expect(ontologyWhyPanel).toBeVisible();
 
-    await ontologyPanel.getByTestId('capsule-studio-graph-search').fill('source');
-    await expect(ontologyPanel.getByTestId('capsule-graph-detail-panel')).toBeVisible();
+    await ontologySearch.fill('source');
+    await expect(ontologyDetailPanel).toBeVisible();
   });
 });
