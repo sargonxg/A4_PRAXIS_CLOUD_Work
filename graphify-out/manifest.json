@@ -6245,8 +6245,8 @@
     "semantic_hash": ""
   },
   "tests/e2e/capsule-studio.spec.ts": {
-    "mtime": 1783037681.2613478,
-    "ast_hash": "1e527dd61f30952713e281a370f80aee",
+    "mtime": 1783038734.199726,
+    "ast_hash": "cda66d3c3c7d3a860e72f2e4925918d4",
     "semantic_hash": ""
   },
   "tests/e2e/capsule-workspace-visual-diagnostics.spec.ts": {

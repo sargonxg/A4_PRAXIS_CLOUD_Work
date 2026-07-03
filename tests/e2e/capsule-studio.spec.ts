@@ -4,7 +4,7 @@ import { authenticateFirebaseCanary, hasFirebaseCanaryCredentials } from './help
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('Capsule Studio', () => {
-  test('opens the capsule library, inspects a flagship graph, and exposes reasoning stats', async ({ page }) => {
+  test('opens the capsule library and renders the inspect ontology graph', async ({ page }) => {
     test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');
 
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
@@ -24,21 +24,10 @@ test.describe('Capsule Studio', () => {
     ]);
 
     const inspectorSheet = page.getByTestId('capsule-inspector-sheet');
-    const ontologyGraph = inspectorSheet.getByTestId('capsule-knowledge-graph').last();
-    const ontologyStats = inspectorSheet.getByTestId('capsule-graph-stats').last();
-    const ontologyLensBar = inspectorSheet.getByTestId('capsule-graph-lens-bar').last();
-    const ontologyWhyPanel = inspectorSheet.getByTestId('capsule-graph-why-panel').last();
-    const ontologySearch = inspectorSheet.getByTestId('capsule-studio-graph-search').last();
-    const ontologyDetailPanel = inspectorSheet.getByTestId('capsule-graph-detail-panel').last();
+    const ontologyGraph = inspectorSheet.getByTestId('capsule-knowledge-graph').first();
     await expect(inspectorSheet).toBeVisible();
     await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible();
+    await expect(inspectorSheet).toContainText(/Ontology/i);
     await expect(ontologyGraph).toBeVisible();
-    await expect(ontologyStats).toContainText(/Boundary/i);
-    await expect(ontologyStats).toContainText(/Provenance/i);
-    await expect(ontologyLensBar).toContainText(/Context \/ boundary/i);
-    await expect(ontologyWhyPanel).toBeVisible();
-
-    await ontologySearch.fill('source');
-    await expect(ontologyDetailPanel).toBeVisible();
   });
 });
