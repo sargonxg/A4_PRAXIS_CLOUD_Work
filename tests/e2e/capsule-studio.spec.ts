@@ -23,15 +23,17 @@ test.describe('Capsule Studio', () => {
       visibleStarterCard.getByRole('link', { name: /Inspect/i }).click(),
     ]);
 
-    await expect(page.getByTestId('capsule-inspector-sheet')).toBeVisible();
+    const inspectorSheet = page.getByTestId('capsule-inspector-sheet');
+    const ontologyPanel = inspectorSheet.getByRole('tabpanel');
+    await expect(inspectorSheet).toBeVisible();
     await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible();
-    await expect(page.getByTestId('capsule-knowledge-graph')).toBeVisible();
-    await expect(page.getByTestId('capsule-graph-stats')).toContainText(/Boundary/i);
-    await expect(page.getByTestId('capsule-graph-stats')).toContainText(/Provenance/i);
-    await expect(page.getByTestId('capsule-graph-lens-bar')).toContainText(/Context \/ boundary/i);
-    await expect(page.getByTestId('capsule-graph-why-panel')).toBeVisible();
+    await expect(ontologyPanel.getByTestId('capsule-knowledge-graph')).toBeVisible();
+    await expect(ontologyPanel.getByTestId('capsule-graph-stats')).toContainText(/Boundary/i);
+    await expect(ontologyPanel.getByTestId('capsule-graph-stats')).toContainText(/Provenance/i);
+    await expect(ontologyPanel.getByTestId('capsule-graph-lens-bar')).toContainText(/Context \/ boundary/i);
+    await expect(ontologyPanel.getByTestId('capsule-graph-why-panel')).toBeVisible();
 
-    await page.getByTestId('capsule-studio-graph-search').fill('source');
-    await expect(page.getByTestId('capsule-graph-detail-panel')).toBeVisible();
+    await ontologyPanel.getByTestId('capsule-studio-graph-search').fill('source');
+    await expect(ontologyPanel.getByTestId('capsule-graph-detail-panel')).toBeVisible();
   });
 });
