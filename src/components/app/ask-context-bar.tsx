@@ -34,6 +34,7 @@ import {
   type CapsuleDockSlotKind,
   type CapsuleDockWarning,
 } from '@/lib/context/active-context-stack';
+import { persistCapsuleDockStack } from '@/hooks/use-capsule-dock-actions';
 import { getCapsuleCategoryPalette } from '@/lib/constants/aco-colors';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
@@ -120,11 +121,7 @@ export function AskContextBar({
   async function persistStack(next: ActiveContextStackState) {
     setSaving(true);
     try {
-      await saveStack({
-        stackId: next.capsuleId ?? DEFAULT_CONTEXT_STACK_ID,
-        capsuleId: next.capsuleId,
-        capsuleRefs: next.capsuleRefs,
-      });
+      await persistCapsuleDockStack(saveStack, next);
     } finally {
       setSaving(false);
     }

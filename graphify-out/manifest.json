@@ -3250,8 +3250,8 @@
     "semantic_hash": ""
   },
   "src/components/app/ask-context-bar.tsx": {
-    "mtime": 1783517210.3764105,
-    "ast_hash": "07468d930655cc2b9956162d0e4c9769",
+    "mtime": 1783520184.8914418,
+    "ast_hash": "9d9de8e31e1b97e1e25f5fdf04548ff6",
     "semantic_hash": ""
   },
   "src/components/app/calibration-transparency-modal.tsx": {
@@ -3385,8 +3385,8 @@
     "semantic_hash": ""
   },
   "src/components/boardroom/boardroom-workspace.tsx": {
-    "mtime": 1783517210.3958883,
-    "ast_hash": "c0a32dbff92b13f6d7b05c9c455cdbd8",
+    "mtime": 1783520245.400626,
+    "ast_hash": "565e6e7666371cad788611e82fe45c55",
     "semantic_hash": ""
   },
   "src/components/brand/praxis-brand-chip.tsx": {
@@ -10125,8 +10125,8 @@
     "semantic_hash": ""
   },
   "src/components/capsules/CapsuleLibrary.tsx": {
-    "mtime": 1783519426.6479275,
-    "ast_hash": "a86c10d5a959c577229a877ae0906cbf",
+    "mtime": 1783519697.1844225,
+    "ast_hash": "dd673dd2c5ad9242e78e747bd364bce8",
     "semantic_hash": ""
   },
   "src/lib/capsules/library-try.ts": {
@@ -10327,6 +10327,16 @@
   "tests/unit/lib/capsules/library.test.ts": {
     "mtime": 1783519203.2918673,
     "ast_hash": "5730574e004bc92b5016d604efac1e6e",
+    "semantic_hash": ""
+  },
+  "src/hooks/use-capsule-dock-actions.ts": {
+    "mtime": 1783520175.474096,
+    "ast_hash": "d8dec7cd2659fdde56a4653ba46ed692",
+    "semantic_hash": ""
+  },
+  "tests/unit/components/boardroom/boardroom-dock-picker.test.tsx": {
+    "mtime": 1783520146.7265825,
+    "ast_hash": "42389af09c2954bc40a155bdfc5ea7c3",
     "semantic_hash": ""
   }
 }
