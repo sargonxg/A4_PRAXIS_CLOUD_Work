@@ -100,7 +100,7 @@ describe('GraphLite capsule sync compiler', () => {
           authorId: 'analyst-1',
           reviewerId: 'reviewer-1',
           reviewedAt: '2026-05-30T00:00:00.000Z',
-          expiresAt: '2026-06-30T00:00:00.000Z',
+          expiresAt: '2036-06-30T00:00:00.000Z',
         },
         visibility: 'private',
         forkability: 'review_required',
