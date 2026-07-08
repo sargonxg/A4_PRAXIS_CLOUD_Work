@@ -4545,8 +4545,8 @@
     "semantic_hash": ""
   },
   "src/lib/context/active-context-stack.ts": {
-    "mtime": 1783517210.6496768,
-    "ast_hash": "a4c5b8fac8a1aae18090e720c874332c",
+    "mtime": 1783519265.5174532,
+    "ast_hash": "3c83e88c4946242aa8e8d9b77c80f5b9",
     "semantic_hash": ""
   },
   "src/lib/context/capsule-architect.ts": {
@@ -10125,28 +10125,28 @@
     "semantic_hash": ""
   },
   "src/components/capsules/CapsuleLibrary.tsx": {
-    "mtime": 1783517210.3958883,
-    "ast_hash": "ec86cf6fe266f3a86e008d4a3451f9bf",
+    "mtime": 1783519426.6479275,
+    "ast_hash": "a86c10d5a959c577229a877ae0906cbf",
     "semantic_hash": ""
   },
   "src/lib/capsules/library-try.ts": {
-    "mtime": 1783517210.618006,
-    "ast_hash": "890e04345a3147da778ea84a72ccecb2",
+    "mtime": 1783519321.331078,
+    "ast_hash": "8d01b26c8545fd82be73d091cbd0c5f5",
     "semantic_hash": ""
   },
   "src/lib/capsules/library.ts": {
-    "mtime": 1783517210.618006,
-    "ast_hash": "1302989de120dd9421911502bc5859e1",
+    "mtime": 1783519550.8003268,
+    "ast_hash": "8e97cdad9987e4f965d4d1933829de27",
     "semantic_hash": ""
   },
   "tests/unit/app/api/capsule-library-try.test.ts": {
-    "mtime": 1783517211.113704,
-    "ast_hash": "0713b4c86373a842512bae49af004190",
+    "mtime": 1783519452.6265216,
+    "ast_hash": "fc77bf9f768da177baf63b8ba57d2644",
     "semantic_hash": ""
   },
   "tests/unit/components/capsules/CapsuleLibrary.test.tsx": {
-    "mtime": 1783517211.1531532,
-    "ast_hash": "32f8d7549ccebbfe6fb4039fecd9f617",
+    "mtime": 1783519220.7837207,
+    "ast_hash": "901e713bd1d086fd6588435a40f0ae5f",
     "semantic_hash": ""
   },
   "docs/reviews/2026-06-24-codebase-cleanup-plan.md": {
@@ -10240,13 +10240,13 @@
     "semantic_hash": ""
   },
   "src/components/capsules/CapsuleLibraryCard.tsx": {
-    "mtime": 1783517210.3958883,
-    "ast_hash": "ed924b0a566c053cd7ded543bce85950",
+    "mtime": 1783519417.3325367,
+    "ast_hash": "fedab6798aa1238fbd36abcd88d1de4d",
     "semantic_hash": ""
   },
   "tests/unit/components/capsules/CapsuleLibraryCard.test.tsx": {
-    "mtime": 1783517211.1551652,
-    "ast_hash": "aa21bc24953f856c85d46dcba60878c9",
+    "mtime": 1783519202.236749,
+    "ast_hash": "6dd8ec012ae4da579316639ec01129bc",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-inspect-visibility-audit.json": {
@@ -10322,6 +10322,11 @@
   "docs/architecture/CAPSULE_ONTOLOGY_SEMANTIC_STRUCTURE.md": {
     "mtime": 1783517545.2333238,
     "ast_hash": "703eb03035acce388b5c9b162cf6b1c5",
+    "semantic_hash": ""
+  },
+  "tests/unit/lib/capsules/library.test.ts": {
+    "mtime": 1783519203.2918673,
+    "ast_hash": "5730574e004bc92b5016d604efac1e6e",
     "semantic_hash": ""
   }
 }

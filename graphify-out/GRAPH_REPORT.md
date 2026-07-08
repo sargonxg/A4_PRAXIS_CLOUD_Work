@@ -1,16 +1,16 @@
 # Graph Report - A4_PRAXIS_CLOUD_Work  (2026-07-08)
 
 ## Corpus Check
-- 1985 files · ~1,692,172 words
+- 1986 files · ~1,693,106 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 17381 nodes · 33857 edges · 1068 communities (876 shown, 192 thin omitted)
+- 17395 nodes · 33909 edges · 1083 communities (892 shown, 191 thin omitted)
 - Extraction: 95% EXTRACTED · 5% INFERRED · 0% AMBIGUOUS · INFERRED: 1773 edges (avg confidence: 0.72)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `0bc96930`
+- Built from commit: `fbe77356`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -831,6 +831,9 @@
 - [[_COMMUNITY_Community 879|Community 879]]
 - [[_COMMUNITY_Community 880|Community 880]]
 - [[_COMMUNITY_Community 881|Community 881]]
+- [[_COMMUNITY_Community 882|Community 882]]
+- [[_COMMUNITY_Community 883|Community 883]]
+- [[_COMMUNITY_Community 884|Community 884]]
 - [[_COMMUNITY_Community 885|Community 885]]
 - [[_COMMUNITY_Community 886|Community 886]]
 - [[_COMMUNITY_Community 887|Community 887]]
@@ -838,6 +841,7 @@
 - [[_COMMUNITY_Community 890|Community 890]]
 - [[_COMMUNITY_Community 891|Community 891]]
 - [[_COMMUNITY_Community 892|Community 892]]
+- [[_COMMUNITY_Community 893|Community 893]]
 - [[_COMMUNITY_Community 894|Community 894]]
 - [[_COMMUNITY_Community 895|Community 895]]
 - [[_COMMUNITY_Community 896|Community 896]]
@@ -913,6 +917,11 @@
 - [[_COMMUNITY_Community 967|Community 967]]
 - [[_COMMUNITY_Community 968|Community 968]]
 - [[_COMMUNITY_Community 969|Community 969]]
+- [[_COMMUNITY_Community 970|Community 970]]
+- [[_COMMUNITY_Community 971|Community 971]]
+- [[_COMMUNITY_Community 972|Community 972]]
+- [[_COMMUNITY_Community 973|Community 973]]
+- [[_COMMUNITY_Community 974|Community 974]]
 - [[_COMMUNITY_Community 975|Community 975]]
 - [[_COMMUNITY_Community 976|Community 976]]
 - [[_COMMUNITY_Community 977|Community 977]]
@@ -929,25 +938,31 @@
 - [[_COMMUNITY_Community 988|Community 988]]
 - [[_COMMUNITY_Community 989|Community 989]]
 - [[_COMMUNITY_Community 990|Community 990]]
+- [[_COMMUNITY_Community 995|Community 995]]
 - [[_COMMUNITY_Community 1006|Community 1006]]
 - [[_COMMUNITY_Community 1013|Community 1013]]
 - [[_COMMUNITY_Community 1022|Community 1022]]
 - [[_COMMUNITY_Community 1023|Community 1023]]
+- [[_COMMUNITY_Community 1051|Community 1051]]
 - [[_COMMUNITY_Community 1052|Community 1052]]
+- [[_COMMUNITY_Community 1053|Community 1053]]
 - [[_COMMUNITY_Community 1054|Community 1054]]
+- [[_COMMUNITY_Community 1055|Community 1055]]
 - [[_COMMUNITY_Community 1056|Community 1056]]
+- [[_COMMUNITY_Community 1057|Community 1057]]
+- [[_COMMUNITY_Community 1058|Community 1058]]
 - [[_COMMUNITY_Community 1059|Community 1059]]
 - [[_COMMUNITY_Community 1060|Community 1060]]
 - [[_COMMUNITY_Community 1061|Community 1061]]
 - [[_COMMUNITY_Community 1062|Community 1062]]
 - [[_COMMUNITY_Community 1063|Community 1063]]
 - [[_COMMUNITY_Community 1064|Community 1064]]
+- [[_COMMUNITY_Community 1065|Community 1065]]
 - [[_COMMUNITY_Community 1066|Community 1066]]
 - [[_COMMUNITY_Community 1068|Community 1068]]
 - [[_COMMUNITY_Community 1070|Community 1070]]
 - [[_COMMUNITY_Community 1071|Community 1071]]
 - [[_COMMUNITY_Community 1075|Community 1075]]
-- [[_COMMUNITY_Community 1077|Community 1077]]
 - [[_COMMUNITY_Community 1078|Community 1078]]
 - [[_COMMUNITY_Community 1083|Community 1083]]
 - [[_COMMUNITY_Community 1084|Community 1084]]
@@ -972,16 +987,16 @@
 10. `Situation` - 92 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `readCreatedWorkLane()` --calls--> `Lane`  [INFERRED]
-  src/lib/created-work/service.ts → scripts/run-authenticated-runtime-lane.ts
 - `testRoute()` --calls--> `String()`  [INFERRED]
   scripts/verify-tools.ts → src/components/settings/account-settings-page.tsx
 - `makeCapsule()` --calls--> `normalizeContextCapsuleV2()`  [INFERRED]
+  tests/unit/lib/context/capsule-v2.test.ts → src/lib/context/capsule-v2.ts
+- `makeCapsule()` --calls--> `normalizeContextCapsuleV2()`  [INFERRED]
   tests/unit/lib/context/capsule-v3.test.ts → src/lib/context/capsule-v2.ts
-- `runRow()` --calls--> `String()`  [INFERRED]
-  tests/unit/lib/agent-runtime/postgres-sweep.test.ts → src/components/settings/account-settings-page.tsx
-- `approvalRow()` --calls--> `String()`  [INFERRED]
-  tests/unit/lib/agent-runtime/postgres-sweep.test.ts → src/components/settings/account-settings-page.tsx
+- `_ttl()` --calls--> `timedelta`  [INFERRED]
+  cloud_functions/_shared/spine.py → backend/services/situation_health.py
+- `auditAppSearchContracts()` --calls--> `buildAppDiagnosticSummary()`  [INFERRED]
+  scripts/audit-app-search.ts → src/lib/diagnostics/app-red-flags.ts
 
 ## Import Cycles
 - 1-file cycle: `backend/main.py -> backend/main.py`
@@ -995,15 +1010,15 @@
 - 4-file cycle: `src/lib/context/capsule-quality.ts -> src/lib/context/capsule-v2.ts -> src/lib/context/capsule-service.ts -> src/lib/context/capsule-schema.ts -> src/lib/context/capsule-quality.ts`
 - 4-file cycle: `src/lib/context/capsule-schema.ts -> src/lib/context/capsule-v3.ts -> src/lib/context/capsule-v2.ts -> src/lib/context/capsule-service.ts -> src/lib/context/capsule-schema.ts`
 
-## Communities (1068 total, 192 thin omitted)
+## Communities (1083 total, 191 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.09
 Nodes (96): Actor, BaseInterest, Claim, AcoDataPoint, Actor, Claim, Commitment, Constraint (+88 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.04
-Nodes (61): Any, ACHEvidence, ACHHypothesis, ACHMatrix, ACHRanking, ACHScore, KACAssumption, KACReport (+53 more)
+Cohesion: 0.06
+Nodes (57): Any, ACHEvidence, ACHHypothesis, ACHRanking, ACHScore, KACAssumption, KACReport, PremortemPathway (+49 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.05
@@ -1011,15 +1026,15 @@ Nodes (66): AttachDocumentSchema, CapsuleAssociationSchema, RouteContext, AutoSt
 
 ### Community 3 - "Community 3"
 Cohesion: 0.04
-Nodes (46): AgentResultTurnHeader(), AskCoreBrick, askGapPromotionKey(), AskGapPromotionState, AskMessageBubble(), AskPanelMessage, AskRuntimeReadinessCard(), AskThreadHistory (+38 more)
+Nodes (46): AgentResultTurnHeader(), AskCoreBrick, askGapPromotionKey(), AskGapPromotionState, AskMessageBubble(), AskPanelMessage, AskRuntimeReadinessCard(), AskStreamPanelProps (+38 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.06
-Nodes (35): CapsuleFactoryApplyTargetSchema, CapsuleFactoryCogneeModeSchema, CapsuleFactoryCoreKindSchema, CapsuleFactoryDocumentSchema, CapsuleFactoryDraftCoreSchema, CapsuleFactoryEcosystemContributorSchema, CapsuleFactoryGraphModeSchema, CapsuleFactoryLaneId (+27 more)
+Nodes (33): CapsuleFactoryApplyTargetSchema, CapsuleFactoryCogneeModeSchema, CapsuleFactoryCoreKindSchema, CapsuleFactoryDocumentSchema, CapsuleFactoryDraftCoreSchema, CapsuleFactoryEcosystemContributorSchema, CapsuleFactoryGraphModeSchema, CapsuleFactoryLaneId (+25 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.04
-Nodes (112): CapsuleQualityBreakdownId, addGraphBoundaryLayer(), addGraphLiteProjection(), arrayText(), arrayUnknown(), asRecord(), buildAgentWorkflow(), buildAnatomy() (+104 more)
+Nodes (38): CapsuleQualityBreakdownId, CapsuleAgentWorkflowDisplay, CapsuleCausalChainDisplay, CapsuleClaimDisplay, CapsuleClaimReceiptDisplay, CapsuleCoreDisplay, CapsuleCoreSourceabilityGate, CapsuleEvidenceDisplay (+30 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.12
@@ -1030,48 +1045,48 @@ Cohesion: 0.07
 Nodes (53): ADVISORY_REVIEW_STATES, AgentContextBudget, arrayOfRecords(), arrayOfStrings(), BUDGETS, buildReasoningPaths(), CAUSAL_RELATIONSHIPS, claimConfidence() (+45 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.08
-Nodes (70): Any, Any, MemoryScope, StreamingResponse, CogneeSearchMode, get_graph(), get_graph_subgraph(), get_situation_frame() (+62 more)
+Cohesion: 0.13
+Nodes (54): Any, MemoryScope, StreamingResponse, CogneeSearchMode, ACHHypothesisRequest, add_ach_hypothesis(), assist_memo(), _build_recall_answer() (+46 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.06
-Nodes (46): AiProviderPosture, architectureFinding(), buildAiProviderPosture(), buildContinuityCheck(), buildRuntimeDataPlaneReport(), buildSecretsIamPosture(), canaryFinding(), CloudSqlIntrospection (+38 more)
+Cohesion: 0.09
+Nodes (33): AiProviderPosture, architectureFinding(), buildAiProviderPosture(), buildContinuityCheck(), buildRuntimeDataPlaneReport(), buildSecretsIamPosture(), canaryFinding(), CloudSqlIntrospection (+25 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.10
 Nodes (45): appendAgentContextPacketToPromptBlock(), buildAgentContextPacket(), BuildAgentContextPacketInput, buildGroundingMap(), buildRenderContext(), capsuleTemporality(), claimUseRuleFor(), classifyIntent() (+37 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.05
-Nodes (44): AdkAgentKind, AdkDryRunMirrorDeps, AdkDryRunMirrorResult, AdkRunContext, AdkRunEvent, AdkRunInput, buildAdkPromptFromContextCapsule(), cleanContext() (+36 more)
+Cohesion: 0.13
+Nodes (11): payload, AgentWorkerError, bearerToken(), verifyAgentWorkerRequest(), ExecuteAgentRunPayload, generateTextMock, makeDefaultRun(), makeRun() (+3 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.07
-Nodes (66): get_settings(), Any, MemoryScope, Any, Exception, capped_confidence(), CogneeCandidate, promote_link() (+58 more)
+Cohesion: 0.11
+Nodes (48): Any, Exception, add(), _base_payload(), _candidate_id(), _candidate_metadata(), _candidate_score(), _candidate_source_id() (+40 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.06
-Nodes (117): capsuleQualityReviewOutputHref(), countCapsuleQualityReviewProposalKinds(), parseCapsuleQualityReviewProposalsFromText(), stripJsonFence(), summarizeCapsuleQualityReviewRun(), buildCapsuleWorkerContext(), mirrorWorkerEvent(), buildOutputFormatterReasoningLoop() (+109 more)
+Nodes (106): capsuleQualityReviewOutputHref(), countCapsuleQualityReviewProposalKinds(), parseCapsuleQualityReviewProposalsFromText(), stripJsonFence(), summarizeCapsuleQualityReviewRun(), buildCapsuleWorkerContext(), mirrorWorkerEvent(), buildSourceabilityLedgerFromEvidencePack() (+98 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.24
 Nodes (15): Any, Request, forget(), list_candidates(), memory_health(), promote(), PromoteRequest, Cognee memory router.  The route surface is live but disabled-safe. Recall ret (+7 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.08
-Nodes (33): NextMove, NextMovesContext, DomainPickerProps, IconName, buildFullLensWeights(), bustDomainCache(), cache, listDomains() (+25 more)
+Cohesion: 0.05
+Nodes (63): TurnCapsule, buildCapsule(), buildInstantContextCapsule(), buildInstantCoreRefs(), buildSourcingPolicy(), buildTemporality(), cleanSignal(), compactList() (+55 more)
 
 ### Community 16 - "Community 16"
 Cohesion: 0.06
 Nodes (66): ArtifactFreshnessSummary, AuditArtifactSnapshot, buildArtifactFreshness(), buildCanaryPlan(), buildDoctorReport(), CANARY_ANALYST_PROFILE, CanaryArtifact, canaryHttpStatus() (+58 more)
 
 ### Community 17 - "Community 17"
-Cohesion: 0.12
-Nodes (27): buildLadybugProjectionFromGraphJsonLd(), cleanString(), collectJsonLdRecords(), confidenceForRecord(), dedupeEdges(), edgesForRecord(), entityTypeOf(), isRecord() (+19 more)
+Cohesion: 0.11
+Nodes (28): mapGraphJsonLd(), buildLadybugProjectionFromGraphJsonLd(), cleanString(), collectJsonLdRecords(), confidenceForRecord(), dedupeEdges(), edgesForRecord(), entityTypeOf() (+20 more)
 
 ### Community 18 - "Community 18"
-Cohesion: 0.08
-Nodes (76): ActivateSchema, CombineSchema, CoreRefsSchema, CreateSchema, ForkSchema, ImportCoreSchema, RetrievalPolicySchema, SeedStartersSchema (+68 more)
+Cohesion: 0.13
+Nodes (12): buildAdjacency(), computeBetweennessCentrality(), computeDensity(), detectCommunities(), findShortestPath(), getMostCentralNode(), FirestoreGraphLayer, Neo4jGraphLayer (+4 more)
 
 ### Community 19 - "Community 19"
 Cohesion: 0.04
@@ -1079,99 +1094,99 @@ Nodes (24): AccountRecord, ActionButton(), AdminRuntimeHealthPayload, AgenticSea
 
 ### Community 20 - "Community 20"
 Cohesion: 0.01
-Nodes (161): capsuleSearchMatchReason(), CapsuleInventorySummary, actionIcons, activeCapsulesFromContextStack(), AgentActionDrawer(), AgentApprovalSummary, agentReadinessClass(), _AgentRegistryCard() (+153 more)
+Nodes (174): CapsuleInventorySummary, buildCapsuleImproveProposals(), dedupeBy(), actionIcons, activeCapsulesFromContextStack(), actOnCreatedWorkItem(), AgentActionDrawer(), AgentApprovalSummary (+166 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.14
 Nodes (3): FakeCollection, FakeFirestore, FakeSnapshot
 
 ### Community 22 - "Community 22"
-Cohesion: 0.06
-Nodes (45): CONFLICT_ONTOLOGY, ECONOMIC_ONTOLOGY, GOVERNANCE_ONTOLOGY, HUMAN_RIGHTS_ONTOLOGY, HUMANITARIAN_ONTOLOGY, LEGAL_ONTOLOGY, MEDIATION_ONTOLOGY, NARRATIVE_ONTOLOGY (+37 more)
+Cohesion: 0.04
+Nodes (81): CONFLICT_ONTOLOGY, CapsuleOntologyTypeCandidateInput, CapsuleOntologyItemDisplay, ECONOMIC_ONTOLOGY, GOVERNANCE_ONTOLOGY, ACO_PRIMITIVES, TACITUS_CORE_PRIMITIVES, TacitusCorePrimitive (+73 more)
 
 ### Community 23 - "Community 23"
 Cohesion: 0.04
-Nodes (98): cleanId(), ensureSchema(), getDatabaseUrl(), getPool(), isAskThreadSqlConfigured(), iso(), isRecord(), listAskThreadTurnsSql() (+90 more)
+Nodes (105): cleanId(), ensureSchema(), getDatabaseUrl(), getPool(), isAskThreadSqlConfigured(), iso(), isRecord(), listAskThreadTurnsSql() (+97 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.03
-Nodes (66): GET, emitNotification(), emitSystemEvent(), EventSource, NotificationKind, Severity, SystemEventKind, ttl() (+58 more)
+Cohesion: 0.21
+Nodes (8): getCapsuleStarterDefinition(), listCapsuleStarterDefinitions(), LoaderDeps, StarterCache, staticCapsuleStarterSeedRows(), actor, ADMIN_ALLOWLIST, main()
 
 ### Community 25 - "Community 25"
-Cohesion: 0.07
-Nodes (35): AsyncClient, AsyncDocumentReference, entity_timeline(), export_graph(), get_actor_profile(), get_graph(), get_path(), get_visualization() (+27 more)
+Cohesion: 0.10
+Nodes (29): Graph, Cypher export helper — converts a NetworkX graph to idempotent Neo4j Cypher., Generate an idempotent Cypher script (MERGE) suitable for Neo4j import.      E, to_cypher(), entity_timeline(), export_graph(), get_actor_profile(), get_graph() (+21 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.06
 Nodes (42): ApiRouteCategory, ApiRouteInventoryEntry, buildApiRouteInventory(), formatApiRouteInventoryMarkdown(), listRouteFiles(), ROUTE_ROOT, writeApiRouteInventory(), AgenticRuntimeReadinessEntry (+34 more)
 
 ### Community 27 - "Community 27"
-Cohesion: 0.06
-Nodes (87): GET(), AgentRunDispatchPayload, AgentRunDispatchResult, AgentRunTask, buildAgentRunTask(), CloudTaskCreateResult, createCloudTask(), cryptoRandomDispatchId() (+79 more)
+Cohesion: 0.11
+Nodes (55): GET(), mirrorAgentApprovalToFirestore(), mirrorAgentRunEventToFirestore(), mirrorAgentRunToFirestore(), mirrorAgentToolCallToFirestore(), writeFirestoreMirror(), AgentRunDispatchClaim, AgentRunDispatchMetadata (+47 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.06
-Nodes (57): buildCapsuleAgentPayload(), CapsuleAgentPayload, CapsuleForkability, CapsuleImproveAction, CapsuleImproveProposal, CapsuleReviewStatus, CapsuleVisibilityV2, cleanStringArray() (+49 more)
+Nodes (56): buildCapsuleAgentPayload(), CapsuleAgentPayload, CapsuleForkability, CapsuleImproveAction, CapsuleImproveProposal, CapsuleReviewStatus, CapsuleVisibilityV2, cleanStringArray() (+48 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.13
 Nodes (34): Any, TenantConnection, Any, datetime, TenantConnection, dispatch_pending_deliveries(), initial_channel_status(), _now_iso() (+26 more)
 
 ### Community 30 - "Community 30"
-Cohesion: 0.05
-Nodes (59): SourceabilitySupportLabel, answerContextReadiness(), AskAgenticDepthRecommendation, AskAnswerQualitySummary, AskContextDiagnostics, AskContextProvenanceChipKind, AskContextRepairAction, AskContinuationAction (+51 more)
+Cohesion: 0.04
+Nodes (66): SourceabilitySupportLabel, answerContextReadiness(), AskAgenticDepthRecommendation, AskAnswerQualitySummary, AskCapsuleSuggestionReceipt, AskContextDiagnostics, AskContextProvenanceChipKind, AskContextRepairAction (+58 more)
 
 ### Community 31 - "Community 31"
 Cohesion: 0.03
-Nodes (163): CapsuleArchitectProposal, CapsuleEnvelopePatch, AdvisoryMemoryReviewCandidateInput, AppliedGraphProposal, applyCoreHealthToReadiness(), applyGraphEdgeProposal(), applyGraphNodeProposal(), approveAdvisoryMemoryCandidate() (+155 more)
+Nodes (216): ActionSchema, DELETE, PatchSchema, POST, RouteContext, ShareSchema, activateCapsule(), AdvisoryMemoryReviewCandidateInput (+208 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.04
-Nodes (53): LENS_CATALOG, LensDef, completeProfile, strongSituation, DOMAIN_TOOL_BOOSTS, recommendToolsForRole(), ROLE_LABELS, ROLE_TOOLS (+45 more)
+Cohesion: 0.03
+Nodes (62): CapsuleCreateResponse, OUTPUT_OPTIONS, ROLE_OPTIONS, AuthContextValue, GET, LENS_CATALOG, LensDef, ChipLibrary (+54 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.07
-Nodes (37): buildGroundingVerificationForText(), AgentContextGroundingMap, AgentContextPacketResult, AgentContextSelectionResult, NormalizedClaimCard, OmittedContextItem, ReasoningPath, SelectedAgentContext (+29 more)
+Nodes (36): AgentContextGroundingMap, AgentContextPacketResult, AgentContextSelectionResult, NormalizedClaimCard, OmittedContextItem, ReasoningPath, SelectedAgentContext, AgentContextFlaggedSpan (+28 more)
 
 ### Community 34 - "Community 34"
-Cohesion: 0.08
-Nodes (35): ContextCapsuleClaim, ContextCapsuleSourceRef, ContextCapsuleSourceSpine, DialecticaCapsuleImportPlan, ACOEntityType, ConfidenceLevel, PRIMITIVE_SUBTYPES, SourceSpanSchema (+27 more)
+Cohesion: 0.09
+Nodes (29): ACOEntityType, ConfidenceLevel, PRIMITIVE_SUBTYPES, SourceSpanSchema, buildDocumentCausalLinks(), buildDocumentFirstCapsuleArchitectSignals(), buildDocumentFirstClaims(), buildDocumentFirstEmbeddedGraph() (+21 more)
 
 ### Community 35 - "Community 35"
-Cohesion: 0.15
-Nodes (31): agentRunToCreatedWork(), CreatedWorkInternal, CreatedWorkKind, CreatedWorkListInput, CreatedWorkResponse, CreatedWorkServiceDeps, CreatedWorkSummary, dedupeCreatedWork() (+23 more)
+Cohesion: 0.13
+Nodes (34): CreatedWorkQuerySchema, GET, agentRunToCreatedWork(), CreatedWorkInternal, CreatedWorkKind, CreatedWorkListInput, CreatedWorkResponse, CreatedWorkServiceDeps (+26 more)
 
 ### Community 36 - "Community 36"
 Cohesion: 0.04
 Nodes (109): buildAgentOperatingContract(), buildCandidateExtension(), buildCapsuleV3AgentReviewCards(), buildClaimLedger(), buildClaimLedgerFromClaims(), buildCogneeAdvisoryReviewCard(), buildContextCaptureOntologyBinding(), buildContextCaptureProfile() (+101 more)
 
 ### Community 37 - "Community 37"
-Cohesion: 0.17
-Nodes (19): isModelPreferenceValue(), GET(), parseSessionCookie(), PUT(), getCookieSigningSecret(), signCookie(), verifyCookie(), verifyIdToken() (+11 more)
+Cohesion: 0.10
+Nodes (32): isModelPreferenceValue(), GET(), parseSessionCookie(), PUT(), cookieSet, canUseDefaultCalibration(), getSessionUid(), refundCredits() (+24 more)
 
 ### Community 38 - "Community 38"
-Cohesion: 0.08
-Nodes (55): appendCaveat(), appendDocumentClaims(), applyFeedbackToClaimLedger(), applyUsageToClaimLedger(), asRecord(), buildDocumentLearningReviewCardInputs(), buildUsageLearningReviewCardInput(), buildUserFeedbackLearningReviewCardInput() (+47 more)
+Cohesion: 0.14
+Nodes (35): appendCaveat(), appendDocumentClaims(), applyFeedbackToClaimLedger(), applyUsageToClaimLedger(), asRecord(), buildDocumentLearningReviewCardInputs(), buildUsageLearningReviewCardInput(), buildUserFeedbackLearningReviewCardInput() (+27 more)
 
 ### Community 39 - "Community 39"
 Cohesion: 0.09
 Nodes (17): assertProtectedRoute(), coreRoutes, hasAuthCredentials, authenticateFirebaseCanary(), AuthenticateFirebaseCanaryOptions, canaryCredentialSkipReason(), decodeCookieValue(), expectAuthenticatedSession() (+9 more)
 
 ### Community 40 - "Community 40"
-Cohesion: 0.05
-Nodes (38): actionClassName(), ApprovalInboxButton, AskContextBar(), attachCapsule(), CapsuleDockWarningChip(), CapsuleImportButton, CapsuleListPicker, clearContext() (+30 more)
+Cohesion: 0.04
+Nodes (65): actionClassName(), ApprovalInboxButton, AskContextBar(), attachCapsule(), CapsuleDockWarningChip(), CapsuleImportButton, CapsuleListPicker, clearContext() (+57 more)
 
 ### Community 41 - "Community 41"
-Cohesion: 0.17
-Nodes (21): Any, ExtractionResult, extract_conflict_text(), extract_from_document(), extract_from_url(), _make_id(), _parse_llm_response(), Conflict entity extractor — reads source text, produces ACO entities via Gemini. (+13 more)
+Cohesion: 0.13
+Nodes (27): Any, Any, build_full_extraction_prompt(), build_verification_prompt(), extract_structured_claims(), NerEntity, Gemini precision extraction helper with optional GLiNER recall candidates., ExtractionResult (+19 more)
 
 ### Community 42 - "Community 42"
-Cohesion: 0.07
-Nodes (46): AgentFailureDiagnosticInput, buildAgentRunFailureSummary(), cleanNullableToken(), cleanToken(), inferFailedToolCall(), isRecord(), normalizeAgentRunFailureSummary(), normalizeEventSummary() (+38 more)
+Cohesion: 0.06
+Nodes (48): buildCompactRunTimelineViewModel(), CompactRunPhaseId, CompactRunPhaseStatus, CompactRunTimelineViewModel, inferTimelineMode(), isCompletionEvent(), mergePhaseStatus(), phaseIdsFromEvent() (+40 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.04
-Nodes (76): audienceTonePreset(), audienceTuningEnabled(), PRESETS, formatResultsAsContext(), isGroundedSearchConfigured(), scrapeMultiple(), scrapeUrl(), searchWeb() (+68 more)
+Cohesion: 0.05
+Nodes (59): isGroundedSearchConfigured(), scrapeUrl(), tacitusTools, CATEGORY_SEARCH_TERMS, POST, POST, createGraphUpdateProposalsFromGraphData(), deleteToolData() (+51 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.01
@@ -1182,12 +1197,12 @@ Cohesion: 0.06
 Nodes (55): GET, GET, buildAad(), decrypt(), encrypt(), EncryptedRecord, getMasterKey(), maskSecret() (+47 more)
 
 ### Community 46 - "Community 46"
-Cohesion: 0.06
-Nodes (66): datetime, Client, Any, datetime, Enum, _get_id_token(), on_document_uploaded(), Cloud Function: on_document_uploaded  Triggered by Firestore document creation (+58 more)
+Cohesion: 0.14
+Nodes (35): datetime, _age(), AnalystProfileHealthInput, _as_utc(), compute_situation_health(), _corpus_health(), CorpusCoverageHealthInput, _feed_health() (+27 more)
 
 ### Community 47 - "Community 47"
-Cohesion: 0.04
-Nodes (59): AgentRunEventFirestoreMirror, agentRunFirestorePath(), AgentRunFirestoreSnapshot, AgentRunFirestoreStep, buildAgentRunEventMirror(), buildAgentRunFirestoreSnapshot(), cleanPathSegment(), extractWorkflowSteps() (+51 more)
+Cohesion: 0.05
+Nodes (62): AdkAgentKind, AdkDryRunMirrorDeps, AdkDryRunMirrorResult, AdkRunContext, AdkRunEvent, AdkRunInput, buildAdkPromptFromContextCapsule(), cleanContext() (+54 more)
 
 ### Community 48 - "Community 48"
 Cohesion: 0.12
@@ -1195,43 +1210,43 @@ Nodes (24): CitationSchema, CreateOutputCapsuleSchema, GapSchema, GET, POST, cap
 
 ### Community 49 - "Community 49"
 Cohesion: 0.05
-Nodes (63): formatEvidencePackPromptBlock(), activeContextStackFromBoardroomDockPayload(), BOARDROOM_DOCK_ROLES, BoardroomCapsuleDockPayload, BoardroomCapsuleDockPayloadSchema, BoardroomCapsuleDockSlotPayload, BoardroomCapsuleDockSlotPayloadSchema, isDockRole() (+55 more)
+Nodes (60): formatEvidencePackPromptBlock(), buildBoardroomMemoBlocks(), BOARDROOM_DOCK_ROLES, BoardroomCapsuleDockPayload, BoardroomCapsuleDockPayloadSchema, BoardroomCapsuleDockSlotPayload, BoardroomCapsuleDockSlotPayloadSchema, isDockRole() (+52 more)
 
 ### Community 50 - "Community 50"
 Cohesion: 0.11
 Nodes (35): Any, Any, Path, Path, Chunk, chunk_docling_document(), _extract_items(), _kind() (+27 more)
 
 ### Community 51 - "Community 51"
-Cohesion: 0.10
-Nodes (33): arrayLength(), average(), boundedRatio(), CapsuleQualityDiagnostic, CapsuleQualityDiagnosticCode, CapsuleReadinessSummaryTier, CapsuleUsageSignals, clampReadinessScore() (+25 more)
+Cohesion: 0.09
+Nodes (34): buildCapsuleQualityReviewAnalysis(), arrayLength(), average(), boundedRatio(), CapsuleQualityDiagnostic, CapsuleQualityDiagnosticCode, CapsuleReadinessSummaryTier, CapsuleUsageSignals (+26 more)
 
 ### Community 52 - "Community 52"
 Cohesion: 0.08
-Nodes (49): CapsuleClaimLedgerItem, CapsuleGroundingReceipt, CapsuleMemoryReceipt, CapsuleSourceRefreshDocket, CapsuleSourceRefreshDocketItem, CapabilityDefinition, CapabilityId, action() (+41 more)
+Nodes (48): CapsuleClaimLedgerItem, CapsuleGroundingReceipt, CapsuleMemoryReceipt, CapsuleSourceRefreshDocket, CapsuleSourceRefreshDocketItem, CapabilityDefinition, CapabilityId, action() (+40 more)
 
 ### Community 53 - "Community 53"
 Cohesion: 0.11
 Nodes (37): Any, MultiDiGraph, Any, MultiDiGraph, Any, MultiDiGraph, Any, MultiDiGraph (+29 more)
 
 ### Community 54 - "Community 54"
-Cohesion: 0.16
-Nodes (32): Graph, escalation_assessment(), faction_map(), graph_diff(), hidden_linkages(), _infer_event_escalation_impact(), intelligence_gaps(), _is_concept_node() (+24 more)
+Cohesion: 0.11
+Nodes (44): Graph, escalation_assessment(), faction_map(), graph_diff(), hidden_linkages(), _infer_event_escalation_impact(), intelligence_gaps(), _is_concept_node() (+36 more)
 
 ### Community 55 - "Community 55"
 Cohesion: 0.10
 Nodes (6): ABC, Graph, GraphAdapter, Neo4jAdapter, Graph adapter factory.  Phase 1 standardizes the graph index on Neo4j Aura. Fi, _safe_cypher_identifier()
 
 ### Community 56 - "Community 56"
-Cohesion: 0.06
-Nodes (42): agents_health(), case_ontology_debug(), cognee_admin_quiesce(), cognee_admin_resume(), cognee_service_health(), _emit_agents_health_failure(), health(), healthz() (+34 more)
+Cohesion: 0.09
+Nodes (25): Any, Path, test_priority_ontology_golden_sets_are_versioned_and_well_formed(), available_case_types(), CaseTypeSpec, data_point_class_names(), data_point_classes_for_case_types(), data_point_modules_for_case_types() (+17 more)
 
 ### Community 57 - "Community 57"
-Cohesion: 0.07
-Nodes (19): AskTurn, CapsuleSummary, CLASSIFICATION_MARKINGS, CORE_LAYERS, escapeAttr(), ExportGateChip(), insertAskReply(), insertSourceCitation() (+11 more)
+Cohesion: 0.04
+Nodes (59): AskTurn, CapsuleSummary, CLASSIFICATION_MARKINGS, CORE_LAYERS, downloadBlob(), escapeAttr(), exportDocx(), ExportGateChip() (+51 more)
 
 ### Community 58 - "Community 58"
-Cohesion: 0.05
-Nodes (76): detachCapsule(), PraxisChatProps, readLocalStack(), AskStreamPanelProps, resolveAskAgentRunContext(), ActiveCapsuleRole, ActiveCapsuleRoleInputValue, ActiveContextBlockId (+68 more)
+Cohesion: 0.32
+Nodes (10): AppliedCapsuleRef, buildFallbackCoreRefs(), buildThinCapsuleFallback(), cleanSignal(), ConversationCapsuleSignalInput, hasConversationCapsuleSignal(), isRecord(), normalizeAppliedCapsuleRefs() (+2 more)
 
 ### Community 59 - "Community 59"
 Cohesion: 0.03
@@ -1242,84 +1257,84 @@ Cohesion: 0.08
 Nodes (24): CapsuleLibraryCard(), CapsuleLibraryCardAddAction, CapsuleLibraryCardBadge, CapsuleLibraryCardCounts, CapsuleLibraryCardDragAction, CapsuleLibraryCardGraph, CapsuleLibraryCardMetric, CapsuleLibraryCardProps (+16 more)
 
 ### Community 61 - "Community 61"
-Cohesion: 0.10
-Nodes (37): capsuleIdOf(), CapsulePatchSchema, CapsuleRouteContext, CapsuleWriteSchema, buildCapsule(), canReadCapsule(), CapsuleListInput, CapsuleRecord (+29 more)
+Cohesion: 0.08
+Nodes (40): capsuleIdOf(), CapsulePatchSchema, CapsuleRouteContext, CapsuleWriteSchema, buildCapsule(), canReadCapsule(), CapsuleListInput, CapsuleRecord (+32 more)
 
 ### Community 62 - "Community 62"
 Cohesion: 0.07
-Nodes (21): CapsuleStarterCategory, CapsuleStarterDomain, auditDir, computeGraphStats(), CountRow, Finding, findings, graphEdgeCounts (+13 more)
+Nodes (21): CapsuleStarterDomain, MULTILATERAL_SYRIA_FLAGSHIP_STARTER_IDS, auditDir, computeGraphStats(), CountRow, Finding, findings, graphEdgeCounts (+13 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.11
-Nodes (24): COST_RANK, MarketplaceToolRunInput, CATEGORY_PERSONAS, CATEGORY_TERMS, MarketplaceSemanticProfile, TOOL_TERM_OVERRIDES, buildToolTransparencyCard(), contextLabel() (+16 more)
+Cohesion: 0.08
+Nodes (36): COST_RANK, filterMarketplaceTools(), getMarketplaceHandlerContract(), advisorySummary(), buildMarketplaceToolRun(), buildMemoStructuredOutput(), buildSatStructuredOutput(), MarketplaceToolRunInput (+28 more)
 
 ### Community 64 - "Community 64"
-Cohesion: 0.08
-Nodes (44): AgentToolId, ASK_MODEL_POLICY, ASK_ORCHESTRATION_OPTIONS, AskRuntimeMode, AskRuntimeOption, AskRuntimeStatus, buildAskRuntimeFallbackCandidates(), getAskRuntimeOption() (+36 more)
+Cohesion: 0.13
+Nodes (25): ASK_MODEL_POLICY, ASK_ORCHESTRATION_OPTIONS, AskRuntimeMode, AskRuntimeOption, AskRuntimeStatus, AskRuntimeDepth, MODEL_PREFERENCE_VALUES, modelPreferenceLabel() (+17 more)
 
 ### Community 65 - "Community 65"
 Cohesion: 0.05
-Nodes (35): analyzeDocument, analyzeMediaSource, canonicalNameLookup, ceasefireMonitor, checkUNTerminology, compareConflicts, compareMediaCoverage, deepSourceResearch (+27 more)
+Nodes (34): analyzeDocument, analyzeMediaSource, canonicalNameLookup, ceasefireMonitor, checkUNTerminology, compareConflicts, compareMediaCoverage, deepSourceResearch (+26 more)
 
 ### Community 66 - "Community 66"
-Cohesion: 0.14
-Nodes (15): getGoogleAgentBigQueryTable(), GOOGLE_AGENT_BIGQUERY_TABLES, GoogleAgentBigQueryField, GoogleAgentBigQueryFieldType, GoogleAgentBigQueryTable, toBqSchemaString(), add(), Check (+7 more)
+Cohesion: 0.13
+Nodes (16): Detail(), getGoogleAgentBigQueryTable(), GOOGLE_AGENT_BIGQUERY_TABLES, GoogleAgentBigQueryField, GoogleAgentBigQueryFieldType, GoogleAgentBigQueryTable, toBqSchemaString(), add() (+8 more)
 
 ### Community 67 - "Community 67"
-Cohesion: 0.09
-Nodes (31): ContextCapsule, CapsuleDryRunEvalInput, buildCapsuleSourcingPlan(), CapsuleContextRetrievalDeps, CapsuleContextRetrievalInput, CapsuleContextRetrievalResult, CapsuleSourcingLane, CapsuleSourcingLaneId (+23 more)
+Cohesion: 0.15
+Nodes (14): ContextCapsule, CapsuleDryRunEvalInput, buildCapsuleSourcingPlan(), CapsuleContextRetrievalDeps, CapsuleContextRetrievalInput, CapsuleContextRetrievalResult, CapsuleSourcingLane, CapsuleSourcingLaneId (+6 more)
 
 ### Community 68 - "Community 68"
-Cohesion: 0.15
-Nodes (17): cookieSet, COOKIE_OPTIONS, POST, compactAttributes(), decodePubSubJsonEnvelope(), getPubSubClient(), isPushEnvelope(), publishPubSubJson() (+9 more)
+Cohesion: 0.11
+Nodes (23): compactAttributes(), decodePubSubJsonEnvelope(), getPubSubClient(), isPushEnvelope(), publishPubSubJson(), PubSubJsonInput, PubSubPushEnvelope, publishMessage (+15 more)
 
 ### Community 69 - "Community 69"
-Cohesion: 0.12
-Nodes (27): currentMonthlyUsageKey(), isUnlimitedUsagePrincipal(), monthlyUsageDocId(), nextMonthlyReset(), normalizeUsageEmail(), PRAXIS_UNLIMITED_USAGE_EMAILS, PRAXIS_USAGE_COPY, shouldBypassMinuteRateLimit() (+19 more)
+Cohesion: 0.13
+Nodes (26): currentMonthlyUsageKey(), isUnlimitedUsagePrincipal(), monthlyUsageDocId(), nextMonthlyReset(), normalizeUsageEmail(), PRAXIS_UNLIMITED_USAGE_EMAILS, PRAXIS_USAGE_COPY, shouldBypassMinuteRateLimit() (+18 more)
 
 ### Community 70 - "Community 70"
-Cohesion: 0.20
-Nodes (21): agenticMemoryHealth(), availableLayers(), computeScore(), computeSituationContextHealth(), ContextHealthDimension, ContextHealthFinding, ContextHealthFindingKind, ContextHealthState (+13 more)
+Cohesion: 0.15
+Nodes (25): ContextBuilderPlan, agenticMemoryHealth(), availableLayers(), buildSituationContextHealthPrompt(), computeScore(), computeSituationContextHealth(), ContextHealthDimension, ContextHealthFinding (+17 more)
 
 ### Community 71 - "Community 71"
 Cohesion: 0.09
 Nodes (38): basePayload, citation, destinationForTemplate(), planOutputCapsuleRun(), PlanOutputCapsuleRunInput, canTransitionOutputCapsule(), clamp01(), evaluateOutputCapsuleQuality() (+30 more)
 
 ### Community 72 - "Community 72"
-Cohesion: 0.15
-Nodes (24): Graph builder — adapted from Graphify's build.py.  Takes extraction dicts (or, Graph extraction validation — adapted from Graphify's validate.py.  Validates, Validate an extraction dict. Returns list of warning strings.      Does NOT ra, validate_extraction(), ACOEdge, ACONode, Actor, Claim (+16 more)
+Cohesion: 0.09
+Nodes (30): Enum, Graph extraction validation — adapted from Graphify's validate.py.  Validates, Validate an extraction dict. Returns list of warning strings.      Does NOT ra, validate_extraction(), ACOEdge, ACONode, Actor, Claim (+22 more)
 
 ### Community 73 - "Community 73"
-Cohesion: 0.06
-Nodes (65): baseProvenance, buildBundleReadme(), buildCapsulePlusExportBundle(), buildCapsulePlusManifest(), buildGraphLiteReadme(), buildGraphLiteSeedGql(), buildPostgresSeedSql(), buildPraxisCapsuleFilename() (+57 more)
+Cohesion: 0.08
+Nodes (53): baseProvenance, buildBundleReadme(), buildCapsulePlusExportBundle(), buildCapsulePlusManifest(), buildGraphLiteReadme(), buildGraphLiteSeedGql(), buildPostgresSeedSql(), buildPraxisCapsuleFilename() (+45 more)
 
 ### Community 74 - "Community 74"
-Cohesion: 0.09
-Nodes (34): buildCapsuleQualityReviewAnalysis(), buildCapsuleQualityReviewDigest(), buildDeterministicCapsuleQualityReviewProposals(), CapsuleQualityReviewAnalysis, capsuleQualityReviewCardInput(), CapsuleQualityReviewDeficit, capsuleQualityReviewGeneratedBy(), CapsuleQualityReviewProposal (+26 more)
+Cohesion: 0.10
+Nodes (32): buildCapsuleQualityReviewDigest(), buildDeterministicCapsuleQualityReviewProposals(), CapsuleQualityReviewAnalysis, capsuleQualityReviewCardInput(), CapsuleQualityReviewDeficit, capsuleQualityReviewGeneratedBy(), CapsuleQualityReviewProposal, CapsuleQualityReviewProposalKind (+24 more)
 
 ### Community 75 - "Community 75"
 Cohesion: 0.13
 Nodes (32): CapsuleFactoryDeps, CapsuleFactoryDraftOutput, CreateCapsuleReviewCardInput, capsuleIntakeFlow, capsuleResearchPlanFlow, capsuleSynthesisFlow, capsuleWritingProfileFlow, clean() (+24 more)
 
 ### Community 76 - "Community 76"
-Cohesion: 0.08
-Nodes (31): generateAgentText(), createGoogleModel(), createModel(), createVertexModel(), getAnalysisModel(), getAvailableProviders(), getDeepThinkModel(), getModelAsync() (+23 more)
+Cohesion: 0.06
+Nodes (46): generateAgentText(), createGoogleModel(), createModel(), createVertexModel(), getAnalysisModel(), getDeepThinkModel(), getGroundedModel(), getModel() (+38 more)
 
 ### Community 77 - "Community 77"
 Cohesion: 0.03
 Nodes (66): dependencies, ai, @ai-sdk/google, @ai-sdk/google-vertex, @ai-sdk/react, class-variance-authority, clsx, cmdk (+58 more)
 
 ### Community 78 - "Community 78"
-Cohesion: 0.11
-Nodes (27): DeepResearchEnvelopeInput, DeepResearchFallbackReason, deepResearchStreamHeaders(), encodeDeepResearchEvent(), streamResearchEngineEnvelope(), WebSearchResult, MODE_PROMPTS, quickSearch() (+19 more)
+Cohesion: 0.07
+Nodes (40): ActorEnrichmentSchema, DEMO_RESPONSE, POST, DeepResearchEnvelopeInput, DeepResearchFallbackReason, deepResearchStreamHeaders(), encodeDeepResearchEvent(), streamResearchEngineEnvelope() (+32 more)
 
 ### Community 79 - "Community 79"
-Cohesion: 0.04
+Cohesion: 0.03
 Nodes (83): getEmbeddingModel(), hasServerAiProvider(), POST, RequestSchema, ExtractedEntities, ExtractedEntitySchema, POST, chunkAndSaveDocument() (+75 more)
 
 ### Community 80 - "Community 80"
-Cohesion: 0.03
-Nodes (61): AdvancedExplanationPanel(), AdvancedExplanationPanelProps, CapsuleDockSlotKind, CapsuleBoard(), CapsuleBoardProps, capsuleToSlots(), emptyBoard(), handleDragEnd() (+53 more)
+Cohesion: 0.06
+Nodes (36): CapsuleBoard(), capsuleToSlots(), emptyBoard(), handleDragEnd(), handleSave(), handleToggleLock(), SLOT_ORDER, CapsuleSlot() (+28 more)
 
 ### Community 81 - "Community 81"
 Cohesion: 0.16
@@ -1327,39 +1342,39 @@ Nodes (22): Graph, Situation brief renderer — produces markdown and JSON intel
 
 ### Community 82 - "Community 82"
 Cohesion: 0.09
-Nodes (23): EMBEDDING_DIMENSION, EMBEDDING_MODEL, EmbeddingDimension, chunkText(), generateEmbedding(), generateEmbeddings(), buildCapsuleEmbeddingInputs(), CapsuleEmbeddingInput (+15 more)
+Nodes (22): EMBEDDING_DIMENSION, EMBEDDING_MODEL, EmbeddingDimension, chunkText(), generateEmbeddings(), buildCapsuleEmbeddingInputs(), CapsuleEmbeddingInput, CapsuleEmbeddingKind (+14 more)
 
 ### Community 83 - "Community 83"
 Cohesion: 0.02
-Nodes (210): ACO_CONTEXT_CAPTURE_PRIMITIVES, applyCatalogWideReasonedGraphVariation(), applyHumanGatedPolicyJudgmentPhaseBRewrite(), buildCapsuleArtifactIndex(), buildCapsuleCogneeSeedDocuments(), buildCapsuleContextPack(), buildCapsuleQualityReceipt(), buildCapsuleStarterPromptBlock() (+202 more)
+Nodes (203): ACO_CONTEXT_CAPTURE_PRIMITIVES, applyCatalogWideReasonedGraphVariation(), applyHumanGatedPolicyJudgmentPhaseBRewrite(), buildCapsuleArtifactIndex(), buildCapsuleCogneeSeedDocuments(), buildCapsuleContextPack(), buildCapsuleQualityReceipt(), buildCatalogReasonedBoundaryEdgeTemplates() (+195 more)
 
 ### Community 84 - "Community 84"
-Cohesion: 0.13
-Nodes (23): TurnCapsule, buildCapsule(), buildInstantContextCapsule(), buildInstantCoreRefs(), buildSourcingPolicy(), buildTemporality(), cleanSignal(), compactList() (+15 more)
+Cohesion: 0.11
+Nodes (26): APP_SEARCH_COMMANDS, AppSearchAction, AppSearchItemInput, AppSearchKind, AppSearchMatchedField, AppSearchResult, buildCapsuleSearchItem(), capsuleSearchMatchReason() (+18 more)
 
 ### Community 85 - "Community 85"
-Cohesion: 0.13
-Nodes (27): collectHumanGateDeficits(), ContextCapsuleNormalizeOptions, ContextCapsuleOutputContract, ContextCapsuleV2, ContextCapsuleGovernanceV3, ContextCapsuleV3, ContextChainHealthInput, ContextChainHealthResult (+19 more)
+Cohesion: 0.12
+Nodes (28): collectHumanGateDeficits(), ContextCapsuleNormalizeOptions, ContextCapsuleOutputContract, ContextCapsuleV2, makeCapsule(), ContextCapsuleGovernanceV3, ContextCapsuleV3, ContextChainHealthInput (+20 more)
 
 ### Community 86 - "Community 86"
-Cohesion: 0.06
-Nodes (47): ACOExtractionOutput, build_agentic_research_flow_plan(), emit_agent_run_flow_event(), PRAXIS AI Flows — structured Genkit flows for conflict intelligence.  Falls ba, Build the deterministic plan envelope for the Genkit/ADK research flow., Run a deterministic AgentRun research-flow skeleton.      The live model/tool, Run ACO extraction using Genkit if available, else raw google-genai.      This, Register Genkit flows on the given Genkit instance. (+39 more)
+Cohesion: 0.09
+Nodes (30): Graph, Request, push_to_neo4j(), Graph export — Neo4j push, HTML visualization, JSON, Cypher, GraphML.  Adapted, Export graph as JSON with ACO metadata., Generate an interactive HTML visualization using vis.js Network.      Uses TAC, Export graph as Cypher CREATE statements., Export graph as GraphML XML string. (+22 more)
 
 ### Community 87 - "Community 87"
 Cohesion: 0.09
 Nodes (7): make_aco_node(), Deserialize a dict into the correct ACONode subclass., Tests for ACO schema definitions — Prompt 5.1., Unknown types should fall back to Actor., test_make_aco_node_actor(), test_make_aco_node_event(), test_make_aco_node_unknown_type_returns_actor()
 
 ### Community 88 - "Community 88"
-Cohesion: 0.13
-Nodes (28): AgentRunOutput, AgentRunOutputSchema, AgentTriggerTypeSchema, CreateManualAgentRunRequest, CreateManualAgentRunRequestSchema, destinationLabel(), GetAgentRunParams, isRecord() (+20 more)
+Cohesion: 0.08
+Nodes (43): CapsuleReadReceipt, AgentRunOutput, AgentRunOutputSchema, AgentTriggerTypeSchema, CreateManualAgentRunRequest, CreateManualAgentRunRequestSchema, destinationLabel(), GetAgentRunParams (+35 more)
 
 ### Community 89 - "Community 89"
 Cohesion: 0.07
-Nodes (32): advisoryServiceHeaders(), attachEnrichment(), buildEnrichedTurnCapsule(), CogneeEnrichmentProvider, CogneeRecallRequest, CogneeRecallResult, ContextEnrichmentCogneeStatus, ContextEnrichmentGraphLiteStatus (+24 more)
+Nodes (32): KernelMemoryItem, CapsuleServiceDeps, advisoryServiceHeaders(), attachEnrichment(), buildEnrichedTurnCapsule(), CogneeEnrichmentProvider, CogneeRecallRequest, CogneeRecallResult (+24 more)
 
 ### Community 90 - "Community 90"
-Cohesion: 0.13
-Nodes (15): GET, getPreferences(), PatchSchema, PATH(), savePreferences(), GET, PATCH, PatchSchema (+7 more)
+Cohesion: 0.12
+Nodes (16): GET, getPreferences(), PatchSchema, PATH(), savePreferences(), GET, PATCH, PatchSchema (+8 more)
 
 ### Community 91 - "Community 91"
 Cohesion: 0.14
@@ -1370,36 +1385,36 @@ Cohesion: 0.09
 Nodes (30): PolicyWorkflowPath, canCreateWithMode(), clampScore(), cleanList(), CONTEXT_CREATION_MODES, ContextCoreLiteStatus, ContextCreationMode, ContextCreationModeDefinition (+22 more)
 
 ### Community 93 - "Community 93"
-Cohesion: 0.08
-Nodes (37): deriveInteractionFrame(), summarizeOutput(), truncate(), ContextBlock, AGENT_CONTEXT_PACKET_USE_BLOCK, CapsuleFrameAgentOperatingContract, CapsuleFrameClaim, CapsuleFrameOntologyBinding (+29 more)
+Cohesion: 0.11
+Nodes (30): AGENT_CONTEXT_PACKET_USE_BLOCK, CapsuleFrameAgentOperatingContract, CapsuleFrameClaim, CapsuleFrameOntologyBinding, CapsuleFrameSourceReceipt, CapsuleFrameValidityWindow, domainPostureFor(), escapeTag() (+22 more)
 
 ### Community 94 - "Community 94"
-Cohesion: 0.12
-Nodes (19): getPolicyWorkflowPath(), POLICY_WORKFLOW_PATHS, PolicyWorkflowPathId, buildChecklist(), buildContextBuilderPlan(), buildDeepResearchPrompt(), buildNextActions(), buildRunSequence() (+11 more)
+Cohesion: 0.15
+Nodes (15): getPolicyWorkflowPath(), POLICY_WORKFLOW_PATHS, PolicyWorkflowPathId, buildChecklist(), buildContextBuilderPlan(), buildDeepResearchPrompt(), buildNextActions(), buildRunSequence() (+7 more)
 
 ### Community 95 - "Community 95"
-Cohesion: 0.11
-Nodes (19): CogneeRecallPanel(), CogneeRecallPanelProps, PanelStatus, refresh(), resolveCandidate(), capCogneeConfidence(), formatAdvisoryCandidate(), isCogneeEnabledForClient() (+11 more)
+Cohesion: 0.14
+Nodes (15): refresh(), capCogneeConfidence(), formatAdvisoryCandidate(), isCogneeEnabledForClient(), isRecord(), MemoryLayer, MemoryLayerHealth, MemoryLayerMode (+7 more)
 
 ### Community 96 - "Community 96"
 Cohesion: 0.06
 Nodes (30): Canary Artifacts, Checks, Evidence And Remediation, PASS agent-run-queue, PASS agent-service-account, PASS agent-worker-runtime-env, PASS auth-doctor, PASS cloud-run-praxis-frontend (+22 more)
 
 ### Community 97 - "Community 97"
-Cohesion: 0.13
-Nodes (23): POST, EnrichedEntity, enrichEntity(), fetchWikipediaSummary(), WikipediaSummary, approveStagedGraph(), discardStagedGraph(), enrichActors() (+15 more)
+Cohesion: 0.11
+Nodes (25): POST, orgIdOf(), POST, EnrichedEntity, enrichEntity(), fetchWikipediaSummary(), WikipediaSummary, approveStagedGraph() (+17 more)
 
 ### Community 98 - "Community 98"
-Cohesion: 0.09
-Nodes (39): Graph, Graph, build(), build_from_json(), Build a NetworkX undirected graph from a single extraction dict.      Node att, Merge multiple extraction dicts into a single graph.      Nodes with the same, cluster(), cohesion_score() (+31 more)
+Cohesion: 0.17
+Nodes (22): Graph, build(), build_from_json(), Graph builder — adapted from Graphify's build.py.  Takes extraction dicts (or, Build a NetworkX undirected graph from a single extraction dict.      Node att, Merge multiple extraction dicts into a single graph.      Nodes with the same, extract_sudan_fixture(), MockGeminiClient (+14 more)
 
 ### Community 99 - "Community 99"
 Cohesion: 0.05
 Nodes (56): Report, ReportSchema, ReportSection, ReportSectionSchema, ApiError, ApiRequest, ApiResponse, ChatMessage (+48 more)
 
 ### Community 100 - "Community 100"
-Cohesion: 0.07
-Nodes (34): AGENT_REGISTRY, AgentPersona, AgentPersonaId, AgentRunnerError, clamp(), formatCalibrationBlock(), formatCorpusBlock(), formatPersonaBlock() (+26 more)
+Cohesion: 0.05
+Nodes (55): AGENT_REGISTRY, AgentPersona, AgentPersonaId, AgentRunnerError, clamp(), formatCalibrationBlock(), formatCorpusBlock(), formatPersonaBlock() (+47 more)
 
 ### Community 101 - "Community 101"
 Cohesion: 0.10
@@ -1410,20 +1425,20 @@ Cohesion: 0.18
 Nodes (20): CapsuleEval, CapsuleEvalThresholds, CapsuleImport, CapsuleRef, CertificationBadge, FewShotExample, RetrievalConfig, SourcingPolicy (+12 more)
 
 ### Community 103 - "Community 103"
-Cohesion: 0.06
-Nodes (52): describeAskFailure(), isRecord(), parseDataStreamError(), stringField(), HelpMessage, buildCapsuleImproveProposals(), dedupeBy(), actOnCreatedWorkItem() (+44 more)
+Cohesion: 0.09
+Nodes (36): describeAskFailure(), isRecord(), parseDataStreamError(), stringField(), HelpMessage, buildGuideChatPrompt(), buildStructuredAskTurnMetadata(), cn() (+28 more)
 
 ### Community 104 - "Community 104"
 Cohesion: 0.04
-Nodes (66): LENS_AXES, PATH_TINT, PathPickerProps, SAMPLE_BY_PATH, SPRING, ClassifyPathResult, bustPathCache(), cache (+58 more)
+Nodes (71): LENS_AXES, PATH_TINT, PathPickerProps, SAMPLE_BY_PATH, SPRING, ClassifyPathResult, bustPathCache(), cache (+63 more)
 
 ### Community 105 - "Community 105"
 Cohesion: 0.10
-Nodes (26): BodySchema, POST, RouteContext, applyApprovedProposal(), applyMutationToGraph(), approveProposal(), asRecord(), asStringNumberRecord() (+18 more)
+Nodes (27): BodySchema, POST, RouteContext, applyApprovedProposal(), applyMutationToGraph(), approveProposal(), asRecord(), asStringNumberRecord() (+19 more)
 
 ### Community 106 - "Community 106"
-Cohesion: 0.05
-Nodes (36): EMBEDDING_DIMENSIONS, coerceIsoTimestamp(), FEED_TTL_HOURS, FeedLayer, buildAdjacency(), computeBetweennessCentrality(), computeDensity(), detectCommunities() (+28 more)
+Cohesion: 0.09
+Nodes (14): FEED_TTL_HOURS, FeedLayer, createGraphLayer(), CONTEXT_BUDGETS, estimateTokens(), RetrievalOrchestrator, TOOL_CATEGORIES, SituationKnowledgeCore (+6 more)
 
 ### Community 107 - "Community 107"
 Cohesion: 0.10
@@ -1431,31 +1446,31 @@ Nodes (14): mocks, IntelligenceEdgeSchema, IntelligenceNodeSchema, SituationInte
 
 ### Community 108 - "Community 108"
 Cohesion: 0.05
-Nodes (39): refresh(), AgentRunSummary, arrayFromPath(), BOARDROOM_AGENT_IDS, BOARDROOM_ROSTER, BoardroomAgent, BoardroomDecisionOption, BoardroomProofSummaryPanel() (+31 more)
+Nodes (35): PraxisChatFirstShell(), useActiveContextStack(), AgentRunSummary, arrayFromPath(), BOARDROOM_AGENT_IDS, BOARDROOM_ROSTER, BoardroomAgent, BoardroomDecisionOption (+27 more)
 
 ### Community 109 - "Community 109"
 Cohesion: 0.05
-Nodes (46): getRelationshipCategory(), applyGraphStyling(), CapsuleGraphConfidenceKind, CapsuleGraphGeneratedBy, CapsuleGraphInvalidationReason, CapsuleGraphProposalIntent, CapsuleGraphViewer, CapsuleGraphViewerComponent() (+38 more)
+Nodes (44): applyGraphStyling(), CapsuleGraphConfidenceKind, CapsuleGraphGeneratedBy, CapsuleGraphInvalidationReason, CapsuleGraphProposalIntent, CapsuleGraphViewer, CapsuleGraphViewerComponent(), CapsuleGraphViewerEdge (+36 more)
 
 ### Community 110 - "Community 110"
-Cohesion: 0.05
-Nodes (45): NormalizedGraphNode, CapsuleOntologyTypeCandidateInput, CapsuleOntologyItemDisplay, ACO_PRIMITIVES, computeCorePrimitiveCoverage(), CorePrimitiveCoverage, normalizePrimitiveType(), TACITUS_CORE_PRIMITIVES (+37 more)
+Cohesion: 0.29
+Nodes (5): DEFERRED_WORK_ONTOLOGIES, getDomainOntologyCards(), WORK_ONTOLOGIES, WorkOntologyDefinition, WorkOntologyId
 
 ### Community 111 - "Community 111"
 Cohesion: 0.07
-Nodes (38): BodySchema, POST, buildCatalogue(), buildSystemPrompt(), classifyDomain(), classifyDomainAndPath(), ClassifyInput, ClassifyOutputSchema (+30 more)
+Nodes (36): BodySchema, POST, ContextCapsuleOntologyBindingV3, createSituationAdmin(), listSituations(), CASE_TYPE_IDS, CaseTypeClassification, CaseTypeDefinition (+28 more)
 
 ### Community 112 - "Community 112"
-Cohesion: 0.26
-Nodes (11): scoreWithSourcePosture(), clamp(), DEFAULT_FEED_RELIABILITY, fallbackPosture(), getSourcePosture(), inferFeedOrigin(), normalizeSourceId(), SourceMixWeight (+3 more)
+Cohesion: 0.16
+Nodes (24): Client, Any, datetime, _get_id_token(), on_document_uploaded(), Cloud Function: on_document_uploaded  Triggered by Firestore document creation, _string_field(), _extract_situation() (+16 more)
 
 ### Community 113 - "Community 113"
-Cohesion: 0.07
-Nodes (22): CapsuleAnyVersionSchema, CapsuleClaimCausalLinksSchema, CapsuleClaimPatchSchema, CapsuleEnvelopePatchSchema, CapsuleReadinessTier, CapsuleV1Schema, CapsuleV2Schema, CapsuleV3Schema (+14 more)
+Cohesion: 0.06
+Nodes (31): CapsuleArchitectProposal, CapsuleQualityResult, CapsuleAnyVersionSchema, CapsuleClaimCausalLinksSchema, CapsuleClaimPatchSchema, CapsuleEnvelopePatch, CapsuleEnvelopePatchSchema, CapsuleReadinessBlock (+23 more)
 
 ### Community 114 - "Community 114"
-Cohesion: 0.13
-Nodes (18): AI_PLATFORM_POSTURE, AIProviderRuntime, AskPraxisRuntimePolicyMatrix, CostClass, getAskPraxisRuntimePolicyMatrix(), getTaskKinds(), MODEL_MATRIX, ModelMatrixEntry (+10 more)
+Cohesion: 0.14
+Nodes (18): AI_PLATFORM_POSTURE, AIProviderRuntime, AskPraxisRuntimePolicyMatrix, CostClass, getAskPraxisRuntimePolicyMatrix(), getModelMatrixEntry(), getTaskKinds(), MODEL_MATRIX (+10 more)
 
 ### Community 115 - "Community 115"
 Cohesion: 0.19
@@ -1463,19 +1478,19 @@ Nodes (22): canonicalize(), canonicalizeCapsuleContent(), CapsuleLoader, Capsule
 
 ### Community 116 - "Community 116"
 Cohesion: 0.09
-Nodes (31): GET, QuerySchema, GraphData, GraphUpdateProposal, listProposals(), normalizeCanonicalGraph(), buildGraphContextPack(), byType() (+23 more)
+Nodes (30): GET, QuerySchema, GraphData, GraphUpdateProposal, normalizeCanonicalGraph(), buildGraphContextPack(), byType(), generateGraphRepairSuggestions() (+22 more)
 
 ### Community 117 - "Community 117"
-Cohesion: 0.15
-Nodes (19): buildRuntimeHealthSummary(), checkAgentTaskQueue(), checkAgentTaskQueueViaMetadata(), checkAgentWorkerDispatch(), collectRuntimeBuildProvenance(), collectRuntimeHealth(), CRITICAL_CHECK_IDS, redactPublicRuntimeString() (+11 more)
+Cohesion: 0.16
+Nodes (18): buildRuntimeHealthSummary(), checkAgentTaskQueue(), checkAgentTaskQueueViaMetadata(), checkAgentWorkerDispatch(), collectRuntimeBuildProvenance(), collectRuntimeHealth(), CRITICAL_CHECK_IDS, redactPublicRuntimeString() (+10 more)
 
 ### Community 118 - "Community 118"
-Cohesion: 0.17
-Nodes (17): appendContextQualityBlock(), buildPromptHealthReport(), buildSuggestedFlow(), clampScore(), dedupeWeakLayers(), escapeXml(), inferMissingLayers(), inferWeakLayers() (+9 more)
+Cohesion: 0.23
+Nodes (13): appendContextQualityBlock(), buildPromptHealthReport(), buildSuggestedFlow(), clampScore(), dedupeWeakLayers(), escapeXml(), inferMissingLayers(), inferWeakLayers() (+5 more)
 
 ### Community 119 - "Community 119"
 Cohesion: 0.06
-Nodes (44): buildCapsuleLibraryEntries(), auditDetail(), average(), buildCapsuleQualityRankingReport(), buildReviewProposals(), CapsuleQualityRankingItem, CapsuleQualityRankingMetric, CapsuleQualityRankingMetricId (+36 more)
+Nodes (44): auditDetail(), average(), buildCapsuleQualityRankingReport(), buildReviewProposals(), CapsuleQualityRankingItem, CapsuleQualityRankingMetric, CapsuleQualityRankingMetricId, CapsuleQualityRankingOptions (+36 more)
 
 ### Community 120 - "Community 120"
 Cohesion: 0.06
@@ -1494,20 +1509,20 @@ Cohesion: 0.11
 Nodes (28): buildTrustGraphCapsuleSegments(), buildTrustGraphCapsuleSyncRequest(), cleanArray(), compactSegmentText(), normalizeCoreRefs(), NormalizedCoreRefs, readRecord(), segment() (+20 more)
 
 ### Community 124 - "Community 124"
-Cohesion: 0.08
-Nodes (56): buildCapsuleEnrichmentReceipt(), buildCapsuleUsefulnessRating(), capsuleCategory(), capsuleCategoryMeta(), capsuleCounts(), capsuleDefaultRole(), CapsuleDetailPanel(), capsuleDomainAccent() (+48 more)
+Cohesion: 0.11
+Nodes (44): buildCapsuleEnrichmentReceipt(), buildCapsuleUsefulnessRating(), capsuleCategory(), capsuleCategoryMeta(), capsuleCounts(), capsuleDefaultRole(), CapsuleDetailPanel(), capsuleDomainAccent() (+36 more)
 
 ### Community 125 - "Community 125"
-Cohesion: 0.13
-Nodes (22): AskGenerationBudgetReceipt, AskOrchestrationComplexity, AskTurnPlan, AskTurnPlanAnswerShape, AskTurnPlanComplexity, AskTurnPlanContinuationPolicy, AskTurnPlanIntent, AskTurnPlanOutputMode (+14 more)
+Cohesion: 0.18
+Nodes (16): AskOrchestrationComplexity, AskTurnPlanAnswerShape, AskTurnPlanComplexity, AskTurnPlanContinuationPolicy, AskTurnPlanIntent, AskTurnPlanOutputMode, buildArtifactPlan(), buildAskTurnPlan() (+8 more)
 
 ### Community 126 - "Community 126"
 Cohesion: 0.28
 Nodes (11): CaseOntologyDefinition, OntologyEdgeType, OntologyNodeType, OntologyValidator, Pydantic mirrors for PRAXIS ontology definitions., Economic / Sanctions ontology mirror., Human Rights ontology mirror., Humanitarian ontology mirror. (+3 more)
 
 ### Community 127 - "Community 127"
-Cohesion: 0.07
-Nodes (37): GroundingMode, GroundingPlan, GroundingPlanInput, resolveGroundingPlan(), AgentWorkflowKind, AskContextReceipt, AskAgenticMode, AskContextHealthDegradation (+29 more)
+Cohesion: 0.09
+Nodes (32): GroundingPlan, AgentWorkflowKind, AskContextReceipt, AskAgenticMode, AskContextHealthDegradation, AskContextHealthDegradationStage, AskContextHealthReceipt, AskConversationOrchestrationReceipt (+24 more)
 
 ### Community 128 - "Community 128"
 Cohesion: 0.08
@@ -1522,52 +1537,52 @@ Cohesion: 0.13
 Nodes (20): applyPolarSubscriptionPatch(), booleanValue(), creditAllowanceForPlan(), isoDateValue(), objectValue(), planFromMetadata(), PolarBillablePlan, PolarEventLike (+12 more)
 
 ### Community 131 - "Community 131"
-Cohesion: 0.14
-Nodes (24): buildWorkIntentPlan(), capsuleRecommendationsFor(), capThree(), compact(), confidenceFor(), formatWorkIntentPromptBlock(), getPolicyContextPreset(), humanReviewFor() (+16 more)
+Cohesion: 0.13
+Nodes (25): buildWorkIntentPlan(), capsuleRecommendationsFor(), capThree(), compact(), confidenceFor(), getPolicyContextPreset(), humanReviewFor(), methodRecommendationsFor() (+17 more)
 
 ### Community 132 - "Community 132"
-Cohesion: 0.07
-Nodes (50): ensureSchema(), getDatabaseUrl(), getPool(), isDocumentSqlMirrorConfigured(), mirrorDocumentIngestionSql(), autoStructureDocument(), buildSpans(), inferActors() (+42 more)
+Cohesion: 0.06
+Nodes (53): ensureSchema(), getDatabaseUrl(), getPool(), isDocumentSqlMirrorConfigured(), mirrorDocumentIngestionSql(), autoStructureDocument(), buildSpans(), inferActors() (+45 more)
 
 ### Community 133 - "Community 133"
-Cohesion: 0.12
-Nodes (4): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
+Cohesion: 0.15
+Nodes (3): FakeCollection, FakeFirestore, FakeSnapshot
 
 ### Community 134 - "Community 134"
 Cohesion: 0.19
 Nodes (15): Any, extract_document_candidates(), prepare_l1_candidates(), V5 document extraction orchestration.  This module layers GLiNER L1 recall ahe, Run GLiNER L1 candidates and optional Gemini L2 typed extraction., _dedupe(), detect_entities(), EntitySpan (+7 more)
 
 ### Community 135 - "Community 135"
-Cohesion: 0.07
-Nodes (40): anchorItems(), arrayOfRecords(), buildTemporalTimeline(), BuildTemporalTimelineInput, capsuleCausalEdges(), capsuleTemporality(), CAUSAL_RELATIONS, causalityRecord() (+32 more)
+Cohesion: 0.08
+Nodes (39): anchorItems(), arrayOfRecords(), buildTemporalTimeline(), BuildTemporalTimelineInput, capsuleCausalEdges(), capsuleTemporality(), CAUSAL_RELATIONS, causalityRecord() (+31 more)
 
 ### Community 136 - "Community 136"
-Cohesion: 0.09
-Nodes (45): CapsuleLibrary(), CapsuleLibraryProps, CategoryChip(), ownedCapsule(), buildCapsuleRepositoryEntries(), CAPSULE_LIBRARY_CATEGORIES, CAPSULE_LIBRARY_ENTRIES, CapsuleLibraryCategory (+37 more)
+Cohesion: 0.06
+Nodes (62): CapsuleLibrary(), CapsuleLibraryProps, CategoryChip(), ownedCapsule(), buildCapsuleLibraryEntries(), buildCapsuleLibraryFacetOptions(), buildCapsuleRepositoryEntries(), CAPSULE_LIBRARY_CATEGORIES (+54 more)
 
 ### Community 137 - "Community 137"
-Cohesion: 0.16
-Nodes (15): AppIndexPage(), listExampleCases(), buildGraphSyncReport(), compareGraphSnapshots(), GraphSyncDiff, GraphSyncReport, GraphSyncSnapshot, listExampleGraphSnapshots() (+7 more)
+Cohesion: 0.19
+Nodes (13): buildGraphSyncReport(), compareGraphSnapshots(), GraphSyncDiff, GraphSyncReport, GraphSyncSnapshot, listExampleGraphSnapshots(), loadFirestoreGraphSnapshots(), loadNeo4jGraphSnapshots() (+5 more)
 
 ### Community 138 - "Community 138"
-Cohesion: 0.10
-Nodes (26): attachedFromContext(), candidate(), dedupeMoves(), domainFromContext(), getNextMoves(), inferHealthScore(), labelFor(), NextMoveKind (+18 more)
+Cohesion: 0.12
+Nodes (19): publicCapsuleMatchesDomain(), publicCapsuleMatchesPolicyTeam(), publicCategoryForTemplate(), taxonomyDomainFilterCount(), capsuleDomainFacetLabel(), getPolicyTeamCategory(), PolicyTeamCategory, policyTeamCategoryForTags() (+11 more)
 
 ### Community 139 - "Community 139"
-Cohesion: 0.15
-Nodes (27): abstractFromInvertedIndex(), arrayValue(), asRecord(), clampLimit(), clampTrust(), CONNECTOR_ENV, ConnectorEnvMeta, FIRECRAWL_ID (+19 more)
+Cohesion: 0.09
+Nodes (44): abstractFromInvertedIndex(), arrayValue(), asRecord(), clampLimit(), clampTrust(), CONNECTOR_ENV, ConnectorEnvMeta, FIRECRAWL_ID (+36 more)
 
 ### Community 140 - "Community 140"
-Cohesion: 0.13
-Nodes (20): MVP_METHODS, snapshot, artifactsFor(), detailFor(), findingsFor(), gapsFor(), getMethodRuntimeContract(), METHOD_RUNTIME_CONTRACTS (+12 more)
+Cohesion: 0.07
+Nodes (33): CATEGORY_LABELS, getMethodById(), getMethodSourceTool(), MethodCategory, MethodDefinition, MethodStatus, MethodSuggestion, MVP_METHODS (+25 more)
 
 ### Community 141 - "Community 141"
-Cohesion: 0.05
-Nodes (30): SourcePreviewCard, TOOL_BY_ROUTE, AnswerAgentActivity(), ChatBubble(), ChatMessage, ChatProposal, ExportToEditorButton(), hasContextSignal() (+22 more)
+Cohesion: 0.06
+Nodes (26): SourcePreviewCard, AnswerAgentActivity(), ChatBubble(), ChatMessage, ChatProposal, ExportToEditorButton(), hasContextSignal(), isProfileMutationIntent() (+18 more)
 
 ### Community 142 - "Community 142"
-Cohesion: 0.07
-Nodes (39): _auth, callBackend(), getBackendIdToken(), AI_CREDIT_COSTS, checkAndDeductCredits(), checkAndDeductCreditsForUid(), checkAndRecordSituationCostCap(), deductCreditsAdmin() (+31 more)
+Cohesion: 0.15
+Nodes (14): _auth, callBackend(), getBackendIdToken(), ALLOWED_BACKEND_PATHS, DELETE, GET, isAllowedBackendPath(), localBackendFallback() (+6 more)
 
 ### Community 143 - "Community 143"
 Cohesion: 0.07
@@ -1578,32 +1593,32 @@ Cohesion: 0.05
 Nodes (41): 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates, 2026-04-30 — Tool operating system foundation, 2026-05-01 — Tools workspace continuation, 2026-05-03 — Syria graph-grounded research handoff, [2.x] — Pre-release, [3.0.0] — 2026-03-01, [3.1.0] — 2026-03-05, [3.2.0] — 2026-03-10 (+33 more)
 
 ### Community 145 - "Community 145"
-Cohesion: 0.08
-Nodes (34): CustomSource, SOURCE_CATEGORIES, SOURCE_CATEGORY_BY_ID, SourceCategory, SourceCategoryId, ContextCapsuleOntologyBindingV3, collectionRef(), persistCaseScaffoldAudit() (+26 more)
+Cohesion: 0.10
+Nodes (26): CustomSource, SOURCE_CATEGORIES, SOURCE_CATEGORY_BY_ID, SourceCategory, SourceCategoryId, collectionRef(), persistCaseScaffoldAudit(), buildCaseScaffoldProposal() (+18 more)
 
 ### Community 146 - "Community 146"
 Cohesion: 0.10
 Nodes (16): buildClaimEvidenceReport(), buildEvidenceReviews(), ClaimEvidenceReview, ClaimEvidenceStatus, countWords(), EvidenceGapReport, EvidenceSection, EvidenceSource (+8 more)
 
 ### Community 147 - "Community 147"
-Cohesion: 0.15
-Nodes (27): buildOutputForProfile(), buildPathCatalogue(), clamp01(), classifyPathFlow, ClassifyPathFlowInput, ClassifyPathFlowInputSchema, ClassifyPathFlowOutput, ClassifyPathFlowOutputSchema (+19 more)
+Cohesion: 0.11
+Nodes (33): buildOutputForProfile(), buildPathCatalogue(), clamp01(), classifyPathFlow, ClassifyPathFlowInput, ClassifyPathFlowInputSchema, ClassifyPathFlowOutput, ClassifyPathFlowOutputSchema (+25 more)
 
 ### Community 148 - "Community 148"
-Cohesion: 0.06
-Nodes (43): canUseDefaultCalibration(), isOnboardingComplete(), REQUIRED_ONBOARDING_FIELDS, ActiveCapsuleRef, AttachedCapsuleContext, buildCalibratedContext(), buildDefaultRetrievalQuery(), capsuleRefsForCalibration() (+35 more)
+Cohesion: 0.07
+Nodes (40): ActiveCapsuleRef, deriveInteractionFrame(), summarizeOutput(), truncate(), AttachedCapsuleContext, buildCalibratedContext(), buildDefaultRetrievalQuery(), capsuleRefsForCalibration() (+32 more)
 
 ### Community 149 - "Community 149"
 Cohesion: 0.09
-Nodes (32): ARCHIVE_TOOLS, getRelatedTools(), getToolById(), getToolsByCategory(), HERO_TOOLS, EXPECTED_HERO_IDS, TOOL_BY_ID, TOOL_ID_ALIASES (+24 more)
+Nodes (31): ARCHIVE_TOOLS, getRelatedTools(), getToolById(), getToolsByCategory(), HERO_TOOLS, EXPECTED_HERO_IDS, TOOL_BY_ID, TOOL_ID_ALIASES (+23 more)
 
 ### Community 150 - "Community 150"
-Cohesion: 0.21
-Nodes (17): buildCapsuleFieldDiffs(), DiffRow, flattenCoreRefs(), GET, isRecord(), listDiffRows(), loadCapsuleVersion(), parseVersion() (+9 more)
+Cohesion: 0.18
+Nodes (19): buildCapsuleFieldDiffs(), DiffRow, flattenCoreRefs(), GET, isRecord(), listDiffRows(), loadCapsuleVersion(), parseVersion() (+11 more)
 
 ### Community 152 - "Community 152"
-Cohesion: 0.14
-Nodes (15): Any, Path, _fixture_path(), main(), run_recipe(), RecipeId, reason(), ReasonRequest (+7 more)
+Cohesion: 0.12
+Nodes (16): Any, Path, _fixture_path(), main(), run_recipe(), RecipeId, reason(), ReasonRequest (+8 more)
 
 ### Community 153 - "Community 153"
 Cohesion: 0.21
@@ -1614,28 +1629,28 @@ Cohesion: 0.15
 Nodes (22): assertLiveHeaders(), body(), collectFiles(), collectLiveHeaderEvidence(), evaluateLaunchReadiness(), FileMap, findPublicEnvNames(), hasFile() (+14 more)
 
 ### Community 155 - "Community 155"
-Cohesion: 0.06
-Nodes (40): addActor(), addEvent(), archiveSituation(), ClientSituation, createSituation(), deleteSituation(), deleteSituationAdmin(), generateId() (+32 more)
+Cohesion: 0.05
+Nodes (53): buildDraftingEvidencePrompt(), buildLanguageDirectives(), DiplomaticArtifactMode, DiplomaticArtifactModeSchema, diplomaticSituationRequestFields, DraftingAuditSchema, resolveSituationFromRequest(), sourceAuditPrompt() (+45 more)
 
 ### Community 156 - "Community 156"
-Cohesion: 0.09
-Nodes (38): EvidenceReceipt, buildDialecticaCapsuleImportPlan(), claimCaveat(), claimProvenanceRefs(), cleanStringArray(), DIALECTICA_KNOWN_LAYERS, dialecticaCapsuleId(), DialecticaCapsuleImportPreview (+30 more)
+Cohesion: 0.10
+Nodes (29): EvidenceReceipt, claimCaveat(), claimProvenanceRefs(), cleanStringArray(), DIALECTICA_KNOWN_LAYERS, DialecticaCapsuleImportPreview, DialecticaCapsuleParts, DialecticaFieldError (+21 more)
 
 ### Community 157 - "Community 157"
 Cohesion: 0.09
-Nodes (26): AGENT_DESTINATIONS, PolicyAgentStrip(), ApprovalGate, ApprovalGateActionType, ApprovalGateRiskLevel, ApprovalGateStatus, ContextCapsuleLauncherState, FORBIDDEN_MVP_INTEGRATION_CLAIMS (+18 more)
+Nodes (25): AGENT_DESTINATIONS, PolicyAgentStrip(), ApprovalGate, ApprovalGateActionType, ApprovalGateRiskLevel, ApprovalGateStatus, ContextCapsuleLauncherState, FORBIDDEN_MVP_INTEGRATION_CLAIMS (+17 more)
 
 ### Community 158 - "Community 158"
 Cohesion: 0.09
 Nodes (29): activePersonas(), ADVISOR_RUNTIME_BY_ID, advisorRuntimeSeeds(), AdvisorSeedConfig, criticPersonas(), DEFAULT_BRAINSTORMING_PANEL, fallbackAdvisorConfigs(), getPersona() (+21 more)
 
 ### Community 159 - "Community 159"
-Cohesion: 0.14
-Nodes (21): enrichCalibrationWithToolBackbone(), ACTIVE_PATH_LABELS, buildToolContextBlueprintPrompt(), databaseBlueprint(), degradedReasons(), documentArtifactTypes(), DRAFTING_TOOL_IDS, getToolContextBlueprint() (+13 more)
+Cohesion: 0.15
+Nodes (21): ACTIVE_PATH_LABELS, buildToolContextBlueprintPrompt(), databaseBlueprint(), degradedReasons(), documentArtifactTypes(), DRAFTING_TOOL_IDS, getToolContextBlueprint(), getToolContextReadiness() (+13 more)
 
 ### Community 160 - "Community 160"
-Cohesion: 0.07
-Nodes (48): AskDocumentPackOutputTarget, ConversationDocumentPack, ArtifactButton(), AskArtifactPreview(), AskArtifactPreviewProps, DraftSaveResult, excerpt(), saveOutputCapsule() (+40 more)
+Cohesion: 0.09
+Nodes (39): ConversationDocumentPack, conversationDocumentPackToMemoBlocks(), ArtifactButton(), AskArtifactPreview(), AskArtifactPreviewProps, DraftSaveResult, excerpt(), saveOutputCapsule() (+31 more)
 
 ### Community 161 - "Community 161"
 Cohesion: 0.05
@@ -1646,36 +1661,36 @@ Cohesion: 0.05
 Nodes (40): ACO v2.0 — Agentic Conflict Ontology, Agent Handoff, AI Model Tiers (Gemini 3.5 Ask primary + Gemini 2.5 fallbacks), AnalystProfile — Calibration Contract, Analytical Frameworks (15), Anti-Patterns to Refuse, Architecture, Authentication (+32 more)
 
 ### Community 163 - "Community 163"
-Cohesion: 0.12
-Nodes (30): ActiveContextBlocks, buildAdvisoryMemoryPromptBlock(), buildAssociatedCapsulesPromptBlock(), buildCapsuleDockPromptBlock(), buildCapsuleInjectionKey(), buildCapsulePromptBlock(), buildContextChainBlocksPromptBlock(), buildGenerationContractPromptBlock() (+22 more)
+Cohesion: 0.06
+Nodes (63): normalizePointer(), readLocalStack(), activeContextStackFromBoardroomDockPayload(), ActiveContextStackState, defaultActiveContextStack(), sanitizeActiveContextStack(), capsuleToStack(), getOrMigrateDefaultCapsule() (+55 more)
 
 ### Community 164 - "Community 164"
-Cohesion: 0.12
-Nodes (21): claimSupport(), clamp(), computeTrustPosture(), daysSince(), evidenceCoverage(), graphReadiness(), looseArray(), missingGaps() (+13 more)
+Cohesion: 0.18
+Nodes (15): claimSupport(), clamp(), computeTrustPosture(), daysSince(), evidenceCoverage(), graphReadiness(), looseArray(), missingGaps() (+7 more)
 
 ### Community 165 - "Community 165"
-Cohesion: 0.09
-Nodes (32): CapsuleStripHeader(), assignPolicyTeam(), createCapsuleLite(), publicCapsuleMatchesPolicyTeam(), taxonomyDomainFilterCount(), buildCapsuleTaxonomyStats(), CAPSULE_ATTACHMENT_ROLES, CAPSULE_CONNECTOR_IDEAS (+24 more)
+Cohesion: 0.04
+Nodes (56): askToolsSource, chatRouteSource, exaSource, repoRoot, researchGraphSource, CapsuleSlotRow(), CapsuleStripHeader(), KIND_DOT_FILLED (+48 more)
 
 ### Community 166 - "Community 166"
-Cohesion: 0.13
-Nodes (24): blockToLayoutChunk(), buildFallbackSpatialSourceBinding(), buildSpatialSourceBinding(), chunkToLayoutChunk(), clamp01(), DocumentAiChunk, DocumentAiLayoutBlock, DocumentAiResponse (+16 more)
+Cohesion: 0.08
+Nodes (42): blockToLayoutChunk(), buildFallbackSpatialSourceBinding(), buildSpatialSourceBinding(), chunkToLayoutChunk(), clamp01(), DocumentAiChunk, DocumentAiLayoutBlock, DocumentAiResponse (+34 more)
 
 ### Community 167 - "Community 167"
-Cohesion: 0.08
-Nodes (37): orgIdOf(), buckets, consume(), orgIdOf(), POST, orgIdOf(), POST, bodyParagraph() (+29 more)
+Cohesion: 0.09
+Nodes (35): orgIdOf(), buckets, consume(), orgIdOf(), POST, bodyParagraph(), divider(), exportConflictGrammarJSON() (+27 more)
 
 ### Community 168 - "Community 168"
 Cohesion: 0.11
-Nodes (18): advisoryRows(), AgentPacketGroundingClaim, AgentPacketRiskFlag, BUDGET_TIERS, dedupeRiskFlags(), deriveRiskFlags(), displayId(), edgeRef() (+10 more)
+Nodes (19): advisoryRows(), AgentPacketGroundingClaim, AgentPacketRiskFlag, BUDGET_TIERS, dedupeRiskFlags(), deriveRiskFlags(), displayId(), edgeRef() (+11 more)
 
 ### Community 169 - "Community 169"
-Cohesion: 0.25
-Nodes (15): handleUserModelChange(), getPublicUserModel(), PUBLIC_USER_MODELS, forkPublicUserModel(), userModelFirestorePath(), forkUserModel(), getActiveUserModelId(), getUserModel() (+7 more)
+Cohesion: 0.11
+Nodes (22): McpToolDescriptor, normalizeMcpPart(), RegisteredMcpAgentTool, registerMcpToolForAgentRuntime(), approvalThresholdFromRun(), buildOutputFormatterReasoningLoop(), buildResearchMemoReasoningLoop(), isRecord() (+14 more)
 
 ### Community 170 - "Community 170"
-Cohesion: 0.18
-Nodes (17): agentRailStageFromEvent(), applyOrchestratorEvent(), buildOrchestratorStreamUrl(), BuildOrchestratorStreamUrlOptions, eventKindFrom(), initialState, isRecord(), LEDGER_EVENT_TYPES (+9 more)
+Cohesion: 0.12
+Nodes (11): AsyncClient, AsyncDocumentReference, FirestoreSync, Async Firestore client for PRAXIS data operations., Write the graph snapshot (nodes + edges + communities) to Firestore., Write the graph analysis results to Firestore., Read the current graph snapshot from Firestore., Read graph analysis from Firestore. (+3 more)
 
 ### Community 171 - "Community 171"
 Cohesion: 0.12
@@ -1686,8 +1701,8 @@ Cohesion: 0.30
 Nodes (12): Any, ActorNode, build_owner_scoped_actor_metadata_update(), match_actor(), normalize_actor(), OpenSanctions yente client with owner-scoped persistence discipline., Build the only payload shape allowed to persist yente results.      yente is a, SanctionsMatch (+4 more)
 
 ### Community 173 - "Community 173"
-Cohesion: 0.07
-Nodes (36): GetAgentRunParamsSchema, AGENT_RUN_CANCELLABLE_STATUSES, AGENT_RUN_RETRYABLE_STATUSES, AGENT_RUN_TERMINAL_STATUSES, AgentRunLifecycleEvent, AgentRunLifecycleInput, AgentRunLifecycleStep, agentRunLifecycleSteps() (+28 more)
+Cohesion: 0.08
+Nodes (31): AGENT_RUN_CANCELLABLE_STATUSES, AGENT_RUN_RETRYABLE_STATUSES, AGENT_RUN_TERMINAL_STATUSES, AgentRunLifecycleEvent, AgentRunLifecycleInput, AgentRunLifecycleStep, agentRunLifecycleSteps(), AgentRunUiStatus (+23 more)
 
 ### Community 174 - "Community 174"
 Cohesion: 0.06
@@ -1701,25 +1716,29 @@ Nodes (23): attachFirewallHeaders(), CLAIM_KEYS, ClaimGrounding, extractFirewall
 Cohesion: 0.11
 Nodes (18): situationIntelligenceFlow, SituationIntelligenceFlowInput, SituationIntelligenceFlowInputSchema, ai, gemini25Flash, gemini25Pro, genkitGoogleProvider, ModelTaskKind (+10 more)
 
+### Community 177 - "Community 177"
+Cohesion: 0.15
+Nodes (24): buildAgentWorkflow(), buildCoreSourceability(), buildOntology(), buildResearchDisplay(), causalTargetNodeId(), claimPostureFromUnknown(), cleanStrings(), cleanText() (+16 more)
+
 ### Community 178 - "Community 178"
 Cohesion: 0.03
-Nodes (79): CapsuleDockSlotCard(), AcoPrimitiveCoverageChip, CapsuleOntologyWorkbench(), deriveAcoPrimitiveCoverage(), PrimitiveCoverageState, ontology, CapsuleAgentView, CapsuleCategoryCard (+71 more)
+Nodes (76): CapsuleDockSlotCard(), AcoPrimitiveCoverageChip, CapsuleOntologyWorkbench(), deriveAcoPrimitiveCoverage(), PrimitiveCoverageState, ontology, CapsuleAgentView, CapsuleCategoryCard (+68 more)
 
 ### Community 179 - "Community 179"
-Cohesion: 0.11
-Nodes (15): ALLOWED_KINDS, asGateKindArray(), CapsuleGateError, parseCapsuleGateResponse(), readCapsuleGateError(), GateCoreKind, CORE_LABEL, CORE_REPAIR_CTA (+7 more)
+Cohesion: 0.10
+Nodes (18): CapsuleGateResult, checkCapsuleAgainstRequiredCores(), checkCapsuleForTool(), ALLOWED_KINDS, asGateKindArray(), CapsuleGateError, parseCapsuleGateResponse(), readCapsuleGateError() (+10 more)
 
 ### Community 180 - "Community 180"
-Cohesion: 0.18
-Nodes (11): RedTeamReport, main(), Red Team Analyst subagent scaffold for Pack 15., Output schema for the PRAXIS Red Team Analyst., is_safe_framing(), Deterministic safe runner for the Red Team Analyst foundation path., Return a safe synthesized red-team report.      This is the local deterministi, run_red_team_analysis() (+3 more)
+Cohesion: 0.14
+Nodes (12): ACHMatrix, RedTeamReport, main(), Red Team Analyst subagent scaffold for Pack 15., Output schema for the PRAXIS Red Team Analyst., is_safe_framing(), Deterministic safe runner for the Red Team Analyst foundation path., Return a safe synthesized red-team report.      This is the local deterministi (+4 more)
 
 ### Community 181 - "Community 181"
 Cohesion: 0.05
 Nodes (37): BLOCKED auth-doctor, Canary Artifacts, Checks, Evidence And Remediation, PASS agent-run-queue, PASS agent-service-account, PASS agent-worker-runtime-env, PASS audit-ai-routes-mjs (+29 more)
 
 ### Community 182 - "Community 182"
-Cohesion: 0.16
-Nodes (16): contract(), generatedContractForTool(), getMarketplaceHandlerContract(), MARKETPLACE_HANDLER_CONTRACTS, MarketplaceHandlerContract, MarketplaceHandlerStage, advisorySummary(), buildMarketplaceToolRun() (+8 more)
+Cohesion: 0.14
+Nodes (18): agents_health(), case_ontology_debug(), cognee_admin_quiesce(), cognee_admin_resume(), cognee_service_health(), _emit_agents_health_failure(), health(), healthz() (+10 more)
 
 ### Community 183 - "Community 183"
 Cohesion: 0.23
@@ -1730,8 +1749,8 @@ Cohesion: 0.05
 Nodes (37): 10 Specific Things To Build, 10. Trust, Packaging, And Paid Pilot Layer, 1. Conflict Case Capsule Bundles, 2. Conflict Dynamic Ontology Pack, 3. Source Connector And Receipt Layer, 4. Conflict Scene Graph, 5. Analytica Framework Runner, 6. Conflict Agent Team (+29 more)
 
 ### Community 185 - "Community 185"
-Cohesion: 0.13
-Nodes (20): agentRuntime, args, AuthRuntimePreflightCheck, AuthRuntimePreflightResult, capture(), continueOnFailure, evaluateAuthenticatedRuntimePreflight(), Lane (+12 more)
+Cohesion: 0.14
+Nodes (19): agentRuntime, args, AuthRuntimePreflightCheck, AuthRuntimePreflightResult, capture(), continueOnFailure, evaluateAuthenticatedRuntimePreflight(), liveRuntime (+11 more)
 
 ### Community 186 - "Community 186"
 Cohesion: 0.09
@@ -1739,19 +1758,19 @@ Nodes (17): AI_REQUEST_LIMITS, GET(), GenkitGoogleProviderConfig, GenkitGooglePr
 
 ### Community 187 - "Community 187"
 Cohesion: 0.09
-Nodes (16): CONSOLIDATED_TOOLS, AREA_IDS, CONSOLIDATED_TOOL_CONTEXT_CORES, CONTEXT_CORES, ContextCoreDefinition, ContextCoreOwnerScope, CORE_BY_ID, SimplifiedCapabilityLedgerEntry (+8 more)
+Nodes (15): AREA_IDS, CONSOLIDATED_TOOL_CONTEXT_CORES, CONTEXT_CORES, ContextCoreDefinition, ContextCoreOwnerScope, CORE_BY_ID, SimplifiedCapabilityLedgerEntry, TOOL_TO_AREA (+7 more)
 
 ### Community 188 - "Community 188"
-Cohesion: 0.05
-Nodes (58): buildLiveSourcePack(), formatScrapes(), formatSources(), LiveSourcePack, LiveSourcePackInput, CraftedQueries, CraftedQueriesSchema, craftQueriesFromTemplate() (+50 more)
+Cohesion: 0.11
+Nodes (30): buildLiveSourcePack(), formatScrapes(), formatSources(), LiveSourcePack, LiveSourcePackInput, buildSourceReceipts(), clampReliability(), cleanExcerpt() (+22 more)
 
 ### Community 189 - "Community 189"
-Cohesion: 0.13
-Nodes (25): buildMemoSourceabilityRequest(), clampIndex(), cleanId(), memoExportReadiness, MemoSourceabilityRequest, MemoSourceabilityResult, MemoSourceSnippet, normalizeText() (+17 more)
+Cohesion: 0.12
+Nodes (26): buildMemoSourceabilityRequest(), clampIndex(), cleanId(), memoExportReadiness, MemoSourceabilityRequest, MemoSourceabilityResult, MemoSourceSnippet, normalizeText() (+18 more)
 
 ### Community 190 - "Community 190"
-Cohesion: 0.18
-Nodes (17): agenticResearchFlag(), AgenticSearchInput, AppDiagnosticGroup, AppDiagnosticRedFlag, AppDiagnosticSource, AppDiagnosticStatus, AppDiagnosticSummary, AppDiagnosticSummaryInput (+9 more)
+Cohesion: 0.20
+Nodes (16): agenticResearchFlag(), AgenticSearchInput, AppDiagnosticGroup, AppDiagnosticSource, AppDiagnosticStatus, AppDiagnosticSummary, AppDiagnosticSummaryInput, authCanaryFlag() (+8 more)
 
 ### Community 191 - "Community 191"
 Cohesion: 0.07
@@ -1763,11 +1782,11 @@ Nodes (33): CapsuleEval, CapsuleEvalThresholds, CapsuleImport, CapsuleRef, Certi
 
 ### Community 193 - "Community 193"
 Cohesion: 0.14
-Nodes (9): AuthTokenReadyUser, delay(), isFirestorePermissionDenied(), loadProfileAfterAuthReady(), ProfileReadinessOptions, PendingAgentApproval, RunApprovalContext, usePendingAgentApprovals() (+1 more)
+Nodes (16): listCapsules(), ContextCoreId, AXES, axesFromReadiness(), clamp01(), cleanParam(), GET(), RadarAxis (+8 more)
 
 ### Community 194 - "Community 194"
 Cohesion: 0.03
-Nodes (62): AccountProfileButton(), Detail(), ActivityPanel(), ElapsedTime(), FilterMode, formatElapsed(), OperationRow(), AppShell() (+54 more)
+Nodes (77): AccountProfileButton(), AppShell(), SearchOpenEvent, AppSidebar(), ICONS, NavGroup(), CalibrationTransparencyModal(), FloatingPraxis() (+69 more)
 
 ### Community 195 - "Community 195"
 Cohesion: 0.11
@@ -1781,8 +1800,8 @@ Cohesion: 0.07
 Nodes (29): API route inventory, `/app/contexts` residue, Auth and onboarding pages, Boardroom and advanced labs, Dead and unused code candidates, Direct AI tools, Executive summary, Full route and page inventory (+21 more)
 
 ### Community 197 - "Community 197"
-Cohesion: 0.15
-Nodes (23): ACTIVE_TOOL_PATH_IDS, buildPathFromPolicy(), DIALECTICA_PREMIUM_FUTURE, GENERIC_CORE_PATH, GENERIC_CORE_TOOL_IDS, getActiveToolPaths(), getDashboardToolPackageSummaries(), getRecommendedToolIdsForWorkflowPath() (+15 more)
+Cohesion: 0.16
+Nodes (22): ACTIVE_TOOL_PATH_IDS, buildPathFromPolicy(), DIALECTICA_PREMIUM_FUTURE, GENERIC_CORE_PATH, GENERIC_CORE_TOOL_IDS, getActiveToolPaths(), getDashboardToolPackageSummaries(), getRecommendedToolIdsForWorkflowPath() (+14 more)
 
 ### Community 198 - "Community 198"
 Cohesion: 0.13
@@ -1790,15 +1809,15 @@ Nodes (19): add(), assessGoogleAgentPlatformReadiness(), buildGoogleAgentPlatfor
 
 ### Community 199 - "Community 199"
 Cohesion: 0.12
-Nodes (24): CapsuleImportButton(), CapsuleImportResult, confirmImport(), FieldError, FieldErrorList(), formatList(), handleFile(), ImportPhase (+16 more)
+Nodes (23): CapsuleImportButton(), CapsuleImportResult, confirmImport(), FieldError, FieldErrorList(), formatList(), handleFile(), ImportPhase (+15 more)
 
 ### Community 200 - "Community 200"
 Cohesion: 0.24
 Nodes (7): AppSearchResultSchema, normalizeAppSearchQuery(), normalizeCapsuleSearchResult(), searchApp(), sortAndLimit(), starterCapsuleResults(), GET
 
 ### Community 201 - "Community 201"
-Cohesion: 0.15
-Nodes (12): Additive metrics writer for graph analytics.  The symbolic firewall permits th, write_metrics_to_graph_nodes(), lifespan(), Any, close_pool(), _conninfo(), open_pool(), Async Postgres access for PRAXIS Phase 1.  All tenant-owned SQL work must ente (+4 more)
+Cohesion: 0.12
+Nodes (13): Additive metrics writer for graph analytics.  The symbolic firewall permits th, write_metrics_to_graph_nodes(), Any, close_pool(), open_pool(), Async Postgres access for PRAXIS Phase 1.  All tenant-owned SQL work must ente, verify_extensions(), test_audit_log_insert_only() (+5 more)
 
 ### Community 202 - "Community 202"
 Cohesion: 0.31
@@ -1813,8 +1832,8 @@ Cohesion: 0.06
 Nodes (32): 1. Ask Supervisor, 2. Capsule Reader, 3. Workflow Planner, 4. Research Scout, 5. Evidence Curator / Sourceability Reviewer, 6. Domain Lens Agents, 7. Synthesis / Briefing Agent, 8. Output Formatter (+24 more)
 
 ### Community 205 - "Community 205"
-Cohesion: 0.09
-Nodes (11): AppPageHeader(), AppPageHeaderProps, HeaderAction, AskWorkspacePage(), AskWorkspacePageProps, buildCoreBricks(), ComposerAction(), CoreBrick (+3 more)
+Cohesion: 0.07
+Nodes (34): AppPageHeader(), AppPageHeaderProps, HeaderAction, AskWorkspacePage(), AskWorkspacePageProps, buildCoreBricks(), ComposerAction(), CoreBrick (+26 more)
 
 ### Community 206 - "Community 206"
 Cohesion: 0.08
@@ -1825,8 +1844,8 @@ Cohesion: 0.18
 Nodes (11): CONSOLIDATED_ANCHOR_TOOL_IDS, CONSOLIDATED_TOOL_IDS, consolidatedToolForLegacyId(), getSpecializedToolDevelopmentGroups(), LEGACY_TO_CONSOLIDATED, SPECIALIZED_TOOL_DEVELOPMENT_GROUPS, SpecializedToolDevelopmentGroup, SpecializedToolDevelopmentStatus (+3 more)
 
 ### Community 208 - "Community 208"
-Cohesion: 0.13
-Nodes (25): cautiousRewrite(), citationWarningsFor(), cleanList(), cleanText(), deterministicSourceability(), explanationForDeterministicStatus(), explanationForStatus(), missingEvidenceFor() (+17 more)
+Cohesion: 0.18
+Nodes (19): cautiousRewrite(), citationWarningsFor(), cleanList(), cleanText(), deterministicSourceability(), explanationForDeterministicStatus(), explanationForStatus(), missingEvidenceFor() (+11 more)
 
 ### Community 209 - "Community 209"
 Cohesion: 0.23
@@ -1857,12 +1876,12 @@ Cohesion: 0.06
 Nodes (31): overrides, axios, dompurify, fast-xml-parser, follow-redirects, @google-cloud/firestore, google-gax, @google/genai (+23 more)
 
 ### Community 216 - "Community 216"
-Cohesion: 0.18
-Nodes (12): call(), CapsuleManagerMenuProps, handleActivate(), handleArchive(), handleDelete(), handleFavorite(), handleFork(), handlePublishToggle() (+4 more)
+Cohesion: 0.06
+Nodes (33): AdvancedExplanationPanel(), AdvancedExplanationPanelProps, PraxisCapsule, CapsuleBoardProps, CapsuleLineageTree(), CapsuleLineageTreeProps, LineageNode, CapsuleListPicker() (+25 more)
 
 ### Community 217 - "Community 217"
-Cohesion: 0.15
-Nodes (31): ConversationAgentActivityRail(), ConversationReceiptSummary(), appliedCapsuleLabels(), arrayOfRecords(), artifactIdsFromHref(), asRecord(), buildDegradedStates(), buildImprovementActions() (+23 more)
+Cohesion: 0.14
+Nodes (32): ConversationAgentActivityRail(), ConversationReceiptSummary(), appliedCapsuleLabels(), arrayOfRecords(), artifactIdsFromHref(), asRecord(), buildDegradedStates(), buildImprovementActions() (+24 more)
 
 ### Community 218 - "Community 218"
 Cohesion: 0.14
@@ -1873,8 +1892,8 @@ Cohesion: 0.16
 Nodes (16): CapsuleDryRunEvalResult, CapsuleEvalSample, CapsuleEvalSourceSnippet, buildLaunchCapsules(), DEFINITIONS, evaluateLaunchCapsuleGoldenSets(), LAUNCH_CAPSULE_IDS, LaunchCapsuleEntry (+8 more)
 
 ### Community 220 - "Community 220"
-Cohesion: 0.13
-Nodes (10): SourceabilityVerdict, CapsuleUsageClaimSignal, ClaimCheckCard(), Gap, GapFillerRail(), GapFillerRailProps, LanguageCheckCard(), MemoClaimCheckResult (+2 more)
+Cohesion: 0.15
+Nodes (12): POST, toLegacyDataStreamResponse(), HelpChatSchema, PRODUCT_HELP_SYSTEM_PROMPT, formatAsStreamResponse(), getCachedResponse(), hashInput(), matchesPattern() (+4 more)
 
 ### Community 221 - "Community 221"
 Cohesion: 0.19
@@ -1886,11 +1905,11 @@ Nodes (29): 1. Daily Brief Agent, 2. Research Memo Agent, 3. Watchlist Agent, Br
 
 ### Community 223 - "Community 223"
 Cohesion: 0.02
-Nodes (90): AskContextProvenanceChip, PublicShell(), AnswerContextProvenanceChips(), ChipGroup(), fallbackChips(), ProvenanceChip(), CheckoutPayload, CheckoutPlan (+82 more)
+Nodes (114): AskContextProvenanceChip, PublicShell(), AnswerContextProvenanceChips(), ChipGroup(), fallbackChips(), ProvenanceChip(), refresh(), CheckoutPayload (+106 more)
 
 ### Community 224 - "Community 224"
-Cohesion: 0.07
-Nodes (36): CapsuleGateResult, checkCapsuleAgainstRequiredCores(), checkCapsuleForTool(), coreIdsForKind(), dedupe(), isCorePresent(), isCoreStale(), mapToGateKind() (+28 more)
+Cohesion: 0.09
+Nodes (26): ActivateSchema, CombineSchema, CoreRefsSchema, CreateSchema, ForkSchema, ImportCoreSchema, RetrievalPolicySchema, SeedStartersSchema (+18 more)
 
 ### Community 225 - "Community 225"
 Cohesion: 0.33
@@ -1918,19 +1937,19 @@ Nodes (5): default_pipeline_plan(), PipelineRunPlan, PipelineStage, Pack 30 pipe
 
 ### Community 231 - "Community 231"
 Cohesion: 0.10
-Nodes (20): CaseContext, CommunicationStyle, CommunicationStyleSchema, ConfidenceTolerance, ConfidenceToleranceSchema, ContextExtraction, ContextLayer, ContextLayerSchema (+12 more)
+Nodes (19): CommunicationStyle, CommunicationStyleSchema, ConfidenceTolerance, ConfidenceToleranceSchema, ContextExtraction, ContextLayer, ContextLayerSchema, ContextSpecSchema (+11 more)
 
 ### Community 232 - "Community 232"
 Cohesion: 0.07
 Nodes (27): Agent Run Flow, App Layers, Build Waves, Canonical Data Model, Cloud Run First, GKE Later, ContextCapsule Product Contract, Core Services, First Agents (+19 more)
 
 ### Community 233 - "Community 233"
-Cohesion: 0.13
-Nodes (9): CATEGORY_LABELS, MethodCategory, MethodDefinition, MethodStatus, MethodSuggestion, STATUS_LABELS, MethodRoleAffinity, V5_METHOD_ROLE_AFFINITY (+1 more)
+Cohesion: 0.15
+Nodes (14): Any, MemoryScope, capped_confidence(), CogneeCandidate, promote_link(), Bridge between Cognee candidates and the canonical ACO graph.  Cognee-derived, reject_link(), write_candidate_links() (+6 more)
 
 ### Community 234 - "Community 234"
-Cohesion: 0.19
-Nodes (14): arrayOfRecords(), FlaggedAssumptionLike, isRecord(), mapRedTeamReviewToAnnotations(), memoTextToParagraphs(), paragraphIndexForClaim(), RedTeamAnnotation, RedTeamAnnotationSeverity (+6 more)
+Cohesion: 0.18
+Nodes (17): ACOExtractionOutput, build_agentic_research_flow_plan(), emit_agent_run_flow_event(), PRAXIS AI Flows — structured Genkit flows for conflict intelligence.  Falls ba, Build the deterministic plan envelope for the Genkit/ADK research flow., Run a deterministic AgentRun research-flow skeleton.      The live model/tool, Run ACO extraction using Genkit if available, else raw google-genai.      This, Register Genkit flows on the given Genkit instance. (+9 more)
 
 ### Community 235 - "Community 235"
 Cohesion: 0.07
@@ -1957,8 +1976,8 @@ Cohesion: 0.07
 Nodes (26): appHeader, appLoading, appShell, appSidebar, boardroom, button, design, docs (+18 more)
 
 ### Community 241 - "Community 241"
-Cohesion: 0.19
-Nodes (14): KIND_CLASS, ReceiptCard(), ReceiptCardProps, SourceTierBadge(), compareSourcesByTierThenRecency(), formatSourceFreshness(), isRecord(), resolveSourceTier() (+6 more)
+Cohesion: 0.13
+Nodes (17): buildAnatomy(), buildCapsuleWorkbenchViewModel(), buildOutputs(), buildPillars(), buildQuality(), humanizeId(), inferDomain(), inferJurisdiction() (+9 more)
 
 ### Community 242 - "Community 242"
 Cohesion: 0.27
@@ -1973,12 +1992,12 @@ Cohesion: 0.08
 Nodes (26): 01_DIAGNOSTICS, 02_MARKETPLACE_HONESTY, 03_CALIBRATION_INVARIANT, 04_COGNEE_UI_HONESTY, 05_CHAPTER_CODE_SPLIT, 06_LIBRARY_INGEST_CONSOLIDATION, 07_ONBOARDING_GATE, 08_THIN_CASE_CALIBRATION (+18 more)
 
 ### Community 245 - "Community 245"
-Cohesion: 0.10
-Nodes (8): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot, fixtureInput(), fixtureRoot, fixtureText(), ImportedCapsuleInput
+Cohesion: 0.09
+Nodes (18): FakeCollection, FakeFirestore, FakeSnapshot, fixtureInput(), fixtureRoot, fixtureText(), ImportedCapsuleInput, buildDialecticaCapsuleImportPlan() (+10 more)
 
 ### Community 246 - "Community 246"
-Cohesion: 0.12
-Nodes (18): buildMemoBlocksForCase(), getMemoTemplate(), listMemoTemplates(), MEMO_TEMPLATES, MemoTemplate, AUDIENCE_WEIGHT, blockKey(), buildDraftMemoOptions() (+10 more)
+Cohesion: 0.16
+Nodes (12): AUDIENCE_WEIGHT, blockKey(), defaultBlockRedactions(), DraftAppendixOption, DraftAudience, DraftBlockRedactions, DraftCoverPage, DraftExportSettings (+4 more)
 
 ### Community 247 - "Community 247"
 Cohesion: 0.08
@@ -2005,8 +2024,8 @@ Cohesion: 0.22
 Nodes (6): FederatedSearchData, SearchResult, COMMANDS, GlobalSearch(), PraxisCommand, SEARCH_GROUPS
 
 ### Community 253 - "Community 253"
-Cohesion: 0.27
-Nodes (14): GET, POST, addEdges(), addNodes(), findPivotActors(), getEntityDistribution(), getGraph(), getGraphEvolution() (+6 more)
+Cohesion: 0.20
+Nodes (17): GET, POST, addEdges(), addNodes(), findPivotActors(), getEntityDistribution(), getGraph(), getGraphEvolution() (+9 more)
 
 ### Community 254 - "Community 254"
 Cohesion: 0.25
@@ -2017,16 +2036,16 @@ Cohesion: 0.45
 Nodes (9): _convert(), _download_gcs_uri(), _get_converter(), healthz(), parse(), ParseRequest, ParseResponse, _persist_json() (+1 more)
 
 ### Community 256 - "Community 256"
-Cohesion: 0.05
-Nodes (39): ArmsFlowSnapshot, ConflictProfile, DataQuality, getConflictProfile(), GLASL_STAGES, glaslFromRatio(), GovernanceSnapshot, groundedToIntel() (+31 more)
+Cohesion: 0.06
+Nodes (37): ArmsFlowSnapshot, ConflictProfile, DataQuality, getConflictProfile(), getSituationIntelligence(), GLASL_STAGES, glaslFromRatio(), GovernanceSnapshot (+29 more)
 
 ### Community 257 - "Community 257"
 Cohesion: 0.33
 Nodes (7): Any, FirewallDecision, _needle(), Symbolic firewall claim verification.  Phase 2 policy: user-visible claims mus, validate_cypher(), verify_claim(), Symbolic firewall flow.
 
 ### Community 258 - "Community 258"
-Cohesion: 0.08
-Nodes (40): LoadedMemoByIdRecord, loadMemoById(), loadMemoDraft(), memoDocumentId(), MemoDraftRecord, memoRefFor(), normalizeLoadedMemo(), sanitizeDocId() (+32 more)
+Cohesion: 0.24
+Nodes (13): LoadedMemoByIdRecord, loadMemoById(), loadMemoDraft(), memoDocumentId(), MemoDraftRecord, memoRefFor(), normalizeLoadedMemo(), sanitizeDocId() (+5 more)
 
 ### Community 259 - "Community 259"
 Cohesion: 0.40
@@ -2037,8 +2056,8 @@ Cohesion: 0.33
 Nodes (5): Any, Vertex AI reranking helper with deterministic fallback., Return documents ordered by Vertex ranking when configured.      The local fal, rerank(), test_rerank_fallback_orders_by_query_overlap()
 
 ### Community 261 - "Community 261"
-Cohesion: 0.10
-Nodes (27): addAnalystNote(), AnalystNote, AnalystNoteSchema, deleteAnalystNote(), listAnalystNotes(), notesRef(), __test__, updateAnalystNote() (+19 more)
+Cohesion: 0.27
+Nodes (11): args, buildAad(), COMMIT, deleteLegacy(), encrypt(), getMasterKey(), initFirestore(), LEGACY_MAP (+3 more)
 
 ### Community 262 - "Community 262"
 Cohesion: 0.09
@@ -2049,8 +2068,8 @@ Cohesion: 0.14
 Nodes (13): 1. Verdict on the current structure, 2. Gaps and recommendations (priority order), 3. What NOT to do, 4. Sequencing with the build queue, ContextCapsule — Ontology & Semantic Structure: Assessment + Recommendations, R1 — Close the entity-type gap between capsule graphs and ACO (high), R2 — Stable semantic identity for graph nodes (high), R3 — Claim ↔ graph ↔ source triangle (high) (+5 more)
 
 ### Community 264 - "Community 264"
-Cohesion: 0.27
-Nodes (12): _escape(), _format_labels(), increment_counter(), _labels(), observe_latency(), Small in-process metrics registry for backend pre-ship visibility.  This inten, record_cognee_call(), record_tenant_session_reset() (+4 more)
+Cohesion: 0.23
+Nodes (14): metrics(), PlainTextResponse, _escape(), _format_labels(), increment_counter(), _labels(), observe_latency(), Small in-process metrics registry for backend pre-ship visibility.  This inten (+6 more)
 
 ### Community 265 - "Community 265"
 Cohesion: 0.14
@@ -2073,8 +2092,8 @@ Cohesion: 0.09
 Nodes (23): items, maxItems, minItems, type, grammarSource, additionalProperties, properties, required (+15 more)
 
 ### Community 270 - "Community 270"
-Cohesion: 0.15
-Nodes (11): auditDir, capsuleReports, categories, counts, expected, failures, genericFragments, jsonPath (+3 more)
+Cohesion: 0.22
+Nodes (16): cogneeHeaders(), cogneeDatasetFor(), ALLOWED_MEMORY_PATHS, cogneeServiceHeaders(), DELETE, disabledMemoryResponse(), enforceMemoryCost(), GET (+8 more)
 
 ### Community 271 - "Community 271"
 Cohesion: 0.31
@@ -2082,23 +2101,23 @@ Nodes (7): Security utilities — URL validation, label sanitization — copied 
 
 ### Community 272 - "Community 272"
 Cohesion: 0.05
-Nodes (118): POST, ActorEnrichmentSchema, DEMO_RESPONSE, POST, ActorProfileSchema, ActorProfilesSchema, POST, AdvisorySchema (+110 more)
+Nodes (102): ActorProfileSchema, ActorProfilesSchema, POST, AdvisorySchema, DEMO_RESPONSE, POST, RecommendationSchema, buildAnnotationContext() (+94 more)
 
 ### Community 273 - "Community 273"
 Cohesion: 0.11
 Nodes (11): additions, aliases, homeConfig, homeConfigPath, managedServers, nextConfig, packageManager, projectConfig (+3 more)
 
 ### Community 274 - "Community 274"
-Cohesion: 0.19
-Nodes (9): CapsuleCreateResponse, OUTPUT_OPTIONS, ROLE_OPTIONS, GET, ChipLibrary, FALLBACK_CHIPS, getMandateChips(), getRedLineChips() (+1 more)
+Cohesion: 0.20
+Nodes (15): AgentToolId, TaskKind, ModelFallbackCandidate, buildReasons(), buildTacitusRoutingDecision(), labelForWorker(), outputDestinationFor(), selectModelTier() (+7 more)
 
 ### Community 275 - "Community 275"
 Cohesion: 0.29
 Nodes (4): EXTERNAL_MCP_TOOL_STUBS, ExternalMcpToolRegistration, ExternalMcpToolSource, listExternalMcpToolStubs()
 
 ### Community 276 - "Community 276"
-Cohesion: 0.06
-Nodes (61): AgentReadContract, buildAgentReadContractFromReceipt(), buildCapsuleReadReceiptFromAsk(), buildCapsuleReadReceiptFromEvidencePack(), buildCapsuleReadReceiptFromRun(), CapsuleReadReceipt, CapsuleReceiptGovernanceOptions, CapsuleReceiptOntologyStack (+53 more)
+Cohesion: 0.08
+Nodes (45): AgentReadContract, buildAgentReadContractFromReceipt(), buildCapsuleReadReceiptFromAsk(), buildCapsuleReadReceiptFromEvidencePack(), buildCapsuleReadReceiptFromRun(), CapsuleReceiptGovernanceOptions, CapsuleReceiptOntologyStack, governanceFields() (+37 more)
 
 ### Community 277 - "Community 277"
 Cohesion: 0.10
@@ -2121,8 +2140,8 @@ Cohesion: 0.10
 Nodes (20): Cloud SQL Postgres, Cognee / Graph Layer, ContextCapsule Repository, Current Checkpoint, Documents, Sources, And Storage, Firebase / Firestore, Launch Score Target, Non-Negotiables (+12 more)
 
 ### Community 282 - "Community 282"
-Cohesion: 0.13
-Nodes (24): DialecticaCapsuleImportError, DialecticaCapsuleParts, DialecticaImportedCapsuleInput, DialecticaParsedCapsulePackage, DialecticaClaim, DialecticaClaimSchema, DialecticaContextExport, DialecticaContextExportSchema (+16 more)
+Cohesion: 0.15
+Nodes (22): buildDialecticaImportPreview(), DialecticaCapsuleImportError, DialecticaClaim, DialecticaClaimSchema, DialecticaContextExport, DialecticaContextExportSchema, DialecticaPraxisImportPreview, DialecticaSourceReceiptSchema (+14 more)
 
 ### Community 283 - "Community 283"
 Cohesion: 0.15
@@ -2169,12 +2188,12 @@ Cohesion: 0.18
 Nodes (18): BaseCore, ContextStack, CoreKind, CoreProvenance, CoreStatus, DocumentCore, GraphCore, MemoryCore (+10 more)
 
 ### Community 294 - "Community 294"
-Cohesion: 0.17
-Nodes (3): PRAXIS Backend configuration — loads from environment variables., Settings, BaseSettings
+Cohesion: 0.09
+Nodes (18): Any, get_settings(), PRAXIS Backend configuration — loads from environment variables., Settings, BaseSettings, close_checkpointer(), _conninfo(), get_checkpointer() (+10 more)
 
 ### Community 295 - "Community 295"
-Cohesion: 0.21
-Nodes (18): hostFromUrl(), isRecord(), normalizeConfidence(), normalizeCoords(), normalizeKind(), normalizeReliability(), normalizeRetrievalMethod(), normalizeSourceReceipt() (+10 more)
+Cohesion: 0.14
+Nodes (17): capsuleMatchesDomain(), capsuleMatchesPolicyTeam(), capsuleMatchesType(), domainOrPolicyTeamMatchesCapsule(), if(), strictCapsuleTypeFilter(), average(), isCapsuleStarterCategory() (+9 more)
 
 ### Community 296 - "Community 296"
 Cohesion: 0.12
@@ -2197,20 +2216,20 @@ Cohesion: 0.24
 Nodes (9): ContractAuditRow, { getToolOperatingContract }, { hrefForTool }, main(), pageExists(), render(), routeExists(), scoreTool() (+1 more)
 
 ### Community 301 - "Community 301"
-Cohesion: 0.14
-Nodes (18): filterMarketplaceTools(), ALL_ONTOLOGY_REQUIREMENTS, contractCategory(), defaultContextSpec(), defaultSubagents(), getMarketplaceTool(), looseInput(), looseOutput() (+10 more)
+Cohesion: 0.11
+Nodes (23): contract(), generatedContractForTool(), MARKETPLACE_HANDLER_CONTRACTS, MarketplaceHandlerContract, MarketplaceHandlerStage, ALL_ONTOLOGY_REQUIREMENTS, contractCategory(), defaultContextSpec() (+15 more)
 
 ### Community 302 - "Community 302"
 Cohesion: 0.11
-Nodes (34): getConflictGraphAdmin(), asRecord(), clampLimit(), pickString(), reliabilityToConfidence(), retrieveArgus(), retrieveDocuments(), retrieveGraph() (+26 more)
+Nodes (23): EMBEDDING_DIMENSIONS, asRecord(), canonicalToolId(), coerceIsoTimestamp(), confidenceFromMetadata(), EvidenceEnvelope, evidenceEnvelopeToCorpusItem(), pickNumber() (+15 more)
 
 ### Community 303 - "Community 303"
 Cohesion: 0.29
 Nodes (4): AskMode, AskSlashCommand, COMMANDS, ParsedAskCommand
 
 ### Community 304 - "Community 304"
-Cohesion: 0.13
-Nodes (20): FirewallReport, buildToolRunArtifact(), firestoreToolRunArtifactWriter, hashArtifact(), numberField(), persistToolRunArtifact(), stringField(), summarizeToolRunArtifact() (+12 more)
+Cohesion: 0.16
+Nodes (16): FirewallReport, buildToolRunArtifact(), firestoreToolRunArtifactWriter, hashArtifact(), numberField(), persistToolRunArtifact(), stringField(), summarizeToolRunArtifact() (+8 more)
 
 ### Community 305 - "Community 305"
 Cohesion: 0.11
@@ -2265,20 +2284,20 @@ Cohesion: 0.12
 Nodes (16): 0. How to read this document, 16. End-to-end: a real request, 19. The audit chain, 1. The product in one paragraph, 21. Anti-patterns, 22. Update protocol, 23. Changelog, 25. Closing note (+8 more)
 
 ### Community 319 - "Community 319"
-Cohesion: 0.20
-Nodes (13): aggregateEpisodesByDay(), createEpisode(), CreateEpisodeInput, deleteEpisode(), EpisodeDayBucket, episodesCol(), generateEpisodeId(), listEpisodes() (+5 more)
+Cohesion: 0.11
+Nodes (21): aggregateEpisodesByDay(), createEpisode(), CreateEpisodeInput, deleteEpisode(), EpisodeDayBucket, episodesCol(), generateEpisodeId(), listEpisodes() (+13 more)
 
 ### Community 320 - "Community 320"
 Cohesion: 0.25
 Nodes (7): FromAskSchema, POST, buildMemoSourceRecord(), cleanDocId(), CreateMemoFromAskInput, createMemoSourceFromAsk(), MemoSourceRecord
 
 ### Community 321 - "Community 321"
-Cohesion: 0.12
-Nodes (21): auth, db, DEFAULT_FIREBASE_CONFIG, firebaseConfig, createScenario(), deleteScenario(), getScenario(), listScenarios() (+13 more)
+Cohesion: 0.08
+Nodes (25): auth, db, DEFAULT_FIREBASE_CONFIG, firebaseConfig, createScenario(), deleteScenario(), getScenario(), listScenarios() (+17 more)
 
 ### Community 322 - "Community 322"
-Cohesion: 0.24
-Nodes (10): Any, close_checkpointer(), _conninfo(), get_checkpointer(), health_check(), Postgres checkpoint store for PRAXIS LangGraph workflows., Verify checkpoint database reachability and report health metadata., Return a process-wide PostgresSaver, creating checkpoint tables once.      Lan (+2 more)
+Cohesion: 0.37
+Nodes (15): AgentFailureDiagnosticInput, buildAgentRunFailureSummary(), cleanNullableToken(), cleanToken(), inferFailedToolCall(), isRecord(), normalizeAgentRunFailureSummary(), normalizeEventSummary() (+7 more)
 
 ### Community 323 - "Community 323"
 Cohesion: 0.17
@@ -2297,8 +2316,8 @@ Cohesion: 0.12
 Nodes (17): Codex Continuation — 2026-04-29 AI safeguards and health visibility, Codex Continuation — 2026-04-29 executive situation intelligence, Codex Continuation — 2026-04-29 grounded-search intelligence spine, Codex Continuation — 2026-04-29 persona QA demo trust wave, Codex Continuation — 2026-04-29 roadmap and root runbooks, Codex Continuation — 2026-04-29 sophisticated persona and AI trust wave, Codex Continuation — backend trust boundary + Core-8 graph coverage, Codex Continuation — Evidence envelope + SKC retrieval hardening (+9 more)
 
 ### Community 327 - "Community 327"
-Cohesion: 0.11
-Nodes (19): SourceabilityClaimVerdict, SourceabilityLedgerSummary, AskAnswerEnvelope, AskCapsuleSuggestionReceipt, AskGenerationReceipt, AskAnswerEnvelopeStreamPayload, AskChatFinishStreamPayload, AskGenerationStatusStreamPayload (+11 more)
+Cohesion: 0.10
+Nodes (27): SourceabilityClaimVerdict, SourceabilityLedgerSummary, AskAnswerEnvelope, AskAnswerEnvelopeStreamPayload, AskChatFinishStreamPayload, AskGenerationStatusStreamPayload, AskSourceabilityVerdictsStreamPayload, buildAskChatFinishPayloads() (+19 more)
 
 ### Community 328 - "Community 328"
 Cohesion: 0.36
@@ -2329,8 +2348,8 @@ Cohesion: 0.15
 Nodes (13): metadata, NotFound(), CONTENT_LAST_MODIFIED, LEGAL_LAST_MODIFIED, getLegalPage(), LegalPage, legalPages, LegalPageSection (+5 more)
 
 ### Community 337 - "Community 337"
-Cohesion: 0.09
-Nodes (11): CreatedWorkItem, RecentPolicyWorkPage(), resolvePostLoginRedirect(), PraxisBrandChip(), CallbackCard(), LoginCallbackContent(), getPasswordStrength(), LoginForm() (+3 more)
+Cohesion: 0.07
+Nodes (15): organizationJsonLd, Page(), softwareJsonLd, CreatedWorkItem, RecentPolicyWorkPage(), resolvePostLoginRedirect(), PraxisBrandChip(), CallbackCard() (+7 more)
 
 ### Community 338 - "Community 338"
 Cohesion: 0.31
@@ -2345,8 +2364,8 @@ Cohesion: 0.14
 Nodes (13): DEFAULT_MODEL_PREFERENCE, AI_CREDIT_COSTS, CreditTransaction, deductCredits(), DEFAULT_AI_SETTINGS, ensureUserProfile(), getCreditBalance(), getCreditHistory() (+5 more)
 
 ### Community 341 - "Community 341"
-Cohesion: 0.02
-Nodes (89): GET, POST, AuthSessionPayload, SessionUserSnapshot, withAuth(), archivedGraphStagingRoute, GET, POST (+81 more)
+Cohesion: 0.01
+Nodes (166): ACCOUNT_PATCH_FIELDS, cleanAccountPatch(), DELETE, GET, PATCH, purgeCollection(), serializeFirestoreData(), SITUATION_SUBCOLLECTIONS (+158 more)
 
 ### Community 342 - "Community 342"
 Cohesion: 0.12
@@ -2406,7 +2425,7 @@ Nodes (4): build_agent(), main(), Deploy the PRAXIS Deep Research Agent to Verte
 
 ### Community 356 - "Community 356"
 Cohesion: 0.13
-Nodes (24): GraphEdge, GraphNode, GraphContextPack, allView(), episodicView(), eventTime(), graphView, GraphViewId (+16 more)
+Nodes (25): GraphEdge, GraphNode, GraphContextPack, allView(), episodicView(), eventTime(), graphView, GraphViewId (+17 more)
 
 ### Community 378 - "Community 378"
 Cohesion: 0.12
@@ -2501,8 +2520,8 @@ Cohesion: 0.14
 Nodes (14): 3.10 Every subagent invocation is logged, costed, traced, 3.11 Persona suites are the production bar, 3.12 Terraform is the only sanctioned infrastructure, 3.13 Canary deploys are mandatory, 3.1 The eight ACO primitives are the substrate, 3.2 The four context layers are the only context, 3.3 Owner scoping is absolute, 3.4 The symbolic firewall has two tiers (+6 more)
 
 ### Community 403 - "Community 403"
-Cohesion: 0.22
-Nodes (9): applyCaptureSuggestionDraft(), buildCaptureSuggestion(), CaptureSuggestion, CaptureSuggestionKind, OutputPreferences, SourcePreferences, UserModelFields, UserModelRecord (+1 more)
+Cohesion: 0.25
+Nodes (14): Any, get_graph(), get_graph_subgraph(), get_situation_frame(), list_briefings(), list_cases(), list_dialectica_runs(), list_drafts() (+6 more)
 
 ### Community 404 - "Community 404"
 Cohesion: 0.14
@@ -2517,8 +2536,8 @@ Cohesion: 0.21
 Nodes (12): firstAgentBlueprint(), FORBIDDEN_PRIMARY_RUNTIME_ADDITIONS, PRAXIS_DEFERRED_BROWSER_AUTOMATION_LANE, PRAXIS_FIRST_AGENT_BLUEPRINTS, PRAXIS_TASKLET_STYLE_STACK, PraxisAgentBlueprint, PraxisAgentKind, PraxisAgentRuntimeDecision (+4 more)
 
 ### Community 407 - "Community 407"
-Cohesion: 0.25
-Nodes (12): withContextHealthGate(), allowUnsignedConversationHeader(), buildCaseContext(), buildContextAdvisories(), buildContextSnapshot(), buildUserContext(), buildWorkspaceContext(), ContextAwareResult (+4 more)
+Cohesion: 0.18
+Nodes (12): GET, MemoQuerySchema, POST, SaveMemoSchema, MemoBlockSchema, MemoCitation, MemoCitationSchema, MemoSchema (+4 more)
 
 ### Community 408 - "Community 408"
 Cohesion: 0.40
@@ -2533,28 +2552,28 @@ Cohesion: 0.17
 Nodes (11): getMarketplaceStageTarget(), getStageTarget(), HERO_TARGETS, MARKETPLACE_STAGE_TARGETS, MarketplaceHeroToolId, MarketplaceStageChapter, MarketplaceStageTarget, MarketplaceStagedContext (+3 more)
 
 ### Community 411 - "Community 411"
-Cohesion: 0.07
-Nodes (35): buildDiplomaticDraftingContext(), buildDraftingEvidencePrompt(), buildLanguageDirectives(), DiplomaticArtifactMode, DiplomaticArtifactModeSchema, diplomaticSituationRequestFields, DraftingAuditSchema, resolveSituationFromRequest() (+27 more)
+Cohesion: 0.06
+Nodes (30): AiActAckContext, aiActAcknowledgedAt(), requireAiActAck(), CalibratedHandler, checkAiRequestLimits(), enrichCalibrationWithToolBackbone(), estimateTextChars(), jsonError() (+22 more)
 
 ### Community 412 - "Community 412"
-Cohesion: 0.24
-Nodes (8): ACCOUNT_PATCH_FIELDS, cleanAccountPatch(), DELETE, GET, PATCH, purgeCollection(), serializeFirestoreData(), SITUATION_SUBCOLLECTIONS
+Cohesion: 0.22
+Nodes (11): createCapsuleFactoryReviewCards(), runCapsuleFactoryDraft(), stableId(), uniqueStrings(), AgentRuntimeMirrorDeps, AgentRuntimeSubstrate, buildCapsuleEventPointers(), CapsuleWorkerContext (+3 more)
 
 ### Community 413 - "Community 413"
 Cohesion: 0.14
 Nodes (13): Acceptance Criteria, ADK Ownership, Capsule Factory Decision, Current ADK State, Current Genkit State, Executive Position, Genkit Ownership, Non-Goals For The Next Wave (+5 more)
 
 ### Community 414 - "Community 414"
-Cohesion: 0.12
-Nodes (13): CAPSULE_STARTER_SOURCE_REGISTRY, acceptedPostConsolidationCatalogWaves, auditDir, averagePromptLength, counts, expectedCounts, failures, jsonPath (+5 more)
+Cohesion: 0.21
+Nodes (10): ActivityPanel(), ElapsedTime(), FilterMode, formatElapsed(), OperationRow(), ActiveOperation, ActivityStore, OperationStatus (+2 more)
 
 ### Community 415 - "Community 415"
 Cohesion: 0.15
 Nodes (13): Lane LP1 — Landing page hero animation + product copy overhaul, Lane LP2 — Audit of previous lanes, Lane M — Agent registry codified (this round), Lane T — Source Scout agent (agentic workflow #1), Lane U — Red-Team auto-review agent (agentic workflow #2), Lane V — `<AiErrorToast />` + `<DegradedDataChip />` shared primitives, Lane W — Citation parser + chip primitives for Ask PRAXIS chat, Lane X — Brainstorming Table Markdown export (+5 more)
 
 ### Community 416 - "Community 416"
-Cohesion: 0.22
-Nodes (6): Anchor, insert(), onKey(), Props, SourceHit, SourceMentionMenu()
+Cohesion: 0.33
+Nodes (8): BillablePlan, createPolarClient(), isPolarBillingConfigured(), polarBillingMode(), polarProductIdForPlan(), CheckoutSchema, POST, POST
 
 ### Community 419 - "Community 419"
 Cohesion: 0.39
@@ -2573,8 +2592,8 @@ Cohesion: 0.67
 Nodes (3): Any, ach_suggest_evidence(), ach_suggest_hypotheses()
 
 ### Community 428 - "Community 428"
-Cohesion: 0.53
-Nodes (6): downloadBlob(), exportDocx(), exportMarkdown(), exportPdf(), htmlToMarkdown(), safeFilename()
+Cohesion: 0.18
+Nodes (12): arrayText(), arrayUnknown(), asRecord(), buildClaims(), buildEvidence(), buildTacitKnowledge(), causalLinksObjectFromUnknown(), claimBucketsFromUnknown() (+4 more)
 
 ### Community 429 - "Community 429"
 Cohesion: 0.40
@@ -2669,16 +2688,20 @@ Cohesion: 0.13
 Nodes (22): hrefForSituationSettings(), dedupeActions(), defaultAction(), defaultPackageActions(), getToolPackageActions(), prettyToolName(), ToolPackageAction, ToolPackageActionKind (+14 more)
 
 ### Community 456 - "Community 456"
-Cohesion: 0.27
-Nodes (11): bodyParagraph(), divider(), heading(), meta(), paragraphize(), POST, sourceabilityExportGate(), text() (+3 more)
+Cohesion: 0.29
+Nodes (10): bodyParagraph(), divider(), meta(), paragraphize(), POST, sourceabilityExportGate(), text(), uniqueStrings() (+2 more)
+
+### Community 457 - "Community 457"
+Cohesion: 0.12
+Nodes (4): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
 
 ### Community 458 - "Community 458"
 Cohesion: 0.17
 Nodes (11): 10. CODEX prompt queue (run in order, one prompt = one checkpoint), 1. The objective, 2. Current state (verified shipped as of 2026-06-11), 3. Architecture invariants (do not break), 4. Workstream A — Make each capsule genuinely great (highest priority), 5. Workstream B — Repository as the extensible capsule library, 6. Workstream C — Generation transparency and source attention, 7. Workstream D — Graphic coherence (simple, gentle, a bit futuristic) (+3 more)
 
 ### Community 459 - "Community 459"
-Cohesion: 0.22
-Nodes (8): getCronSecretFromRequest(), isCronAuthorized(), requireCronSecret(), GET(), SituationAlert, GET(), BriefingSchema, GET()
+Cohesion: 0.14
+Nodes (16): getCronSecretFromRequest(), isCronAuthorized(), requireCronSecret(), GET(), SituationAlert, EventSchema, FeedEvent, getGroundedSearchEvents() (+8 more)
 
 ### Community 460 - "Community 460"
 Cohesion: 0.12
@@ -2705,16 +2728,20 @@ Cohesion: 0.17
 Nodes (11): assetPaths, candidateFiles, CLIENT_MANIFESTS, existingManifests, kb, limitKb, NEXT_DIR, ROOT (+3 more)
 
 ### Community 466 - "Community 466"
-Cohesion: 0.10
-Nodes (26): ConsolidatedToolDefinition, PrimaryNavItem, PRODUCT_SURFACE_IDS, PRODUCT_SURFACE_TOOL_IDS, PRODUCT_SURFACES, ProductSurface, ProductSurfaceId, applyToolPreferences() (+18 more)
+Cohesion: 0.12
+Nodes (19): CONSOLIDATED_TOOLS, ConsolidatedToolDefinition, PrimaryNavItem, PRODUCT_SURFACE_IDS, PRODUCT_SURFACE_TOOL_IDS, PRODUCT_SURFACES, ProductSurface, ProductSurfaceId (+11 more)
 
 ### Community 467 - "Community 467"
-Cohesion: 0.29
-Nodes (9): bullet(), { getToolContextBlueprint }, { getToolOperatingContract }, { getToolPathMembership }, main(), renderIndex(), renderToolDoc(), task() (+1 more)
+Cohesion: 0.25
+Nodes (10): bullet(), { getToolContextBlueprint }, { getToolOperatingContract }, { getToolPathMembership }, main(), renderIndex(), renderToolDoc(), task() (+2 more)
 
 ### Community 468 - "Community 468"
 Cohesion: 0.17
 Nodes (11): Build Deployer Service Account, Cloud Build triggers — opt-in auto-deploy, Coordinating with Codex + Claude, Frontend Main Trigger, Full Main Trigger, Installed Production State, Manual deploy (still works), One-time GitHub connection (+3 more)
+
+### Community 469 - "Community 469"
+Cohesion: 0.29
+Nodes (9): EXPECTED_FIRESTORE_PATHS, redactString(), renderRuntimeDataPlaneMarkdown(), collectCloudSqlIntrospection(), collectFirestoreSamples(), main(), outDir, root (+1 more)
 
 ### Community 470 - "Community 470"
 Cohesion: 0.18
@@ -2725,20 +2752,20 @@ Cohesion: 0.20
 Nodes (9): appHomePath, chatShellPath, floatingPraxisPath, legacyLandingPath, marketingHomePath, praxisChatPath, primaryNavPath, publicHomePath (+1 more)
 
 ### Community 472 - "Community 472"
-Cohesion: 0.67
-Nodes (3): [3.9.0] — 2026-03-29, Added, Changed
+Cohesion: 0.20
+Nodes (9): COMMON_INDICATORS, DomainKey, INDICATOR_CATALOG, indicatorsForDomain(), IndicatorSpec, IndicatorSchema, POST, ResponseSchema (+1 more)
 
 ### Community 473 - "Community 473"
 Cohesion: 0.67
 Nodes (3): FOUNDATION_MARKERS, redactMarketplaceFoundationJson(), redactMarketplaceFoundationMarkers()
 
 ### Community 474 - "Community 474"
-Cohesion: 0.15
-Nodes (16): hashContextHealthOverride(), ContextHealthGateError, average(), clamp(), computeContextHealthScore(), ContextHealthDimensionId, ContextHealthDimensionScore, ContextHealthScore (+8 more)
+Cohesion: 0.09
+Nodes (30): AuthenticatedUser, CalibrationCtx, hashContextHealthOverride(), withContextHealthGate(), allowUnsignedConversationHeader(), buildCaseContext(), buildContextAdvisories(), buildContextSnapshot() (+22 more)
 
 ### Community 476 - "Community 476"
 Cohesion: 0.08
-Nodes (26): COMING_SOON_CASES, getLandingCaseCards(), LandingCaseCardView, EXAMPLE_CASE_MODULES, getCaseModule(), listLandingCaseCards(), CaseModule, CaseModuleKind (+18 more)
+Nodes (34): AppIndexPage(), attachedFromContext(), candidate(), dedupeMoves(), domainFromContext(), getNextMoves(), inferHealthScore(), labelFor() (+26 more)
 
 ### Community 477 - "Community 477"
 Cohesion: 0.33
@@ -2785,8 +2812,8 @@ Cohesion: 0.11
 Nodes (17): capsulePlus, capsuleRoute, capsuleService, capsulesRoute, chatRoute, contextCapsules, contextInjection, coreLibrary (+9 more)
 
 ### Community 509 - "Community 509"
-Cohesion: 0.67
-Nodes (3): [4.0.0] — 2026-03-31, Added, Changed
+Cohesion: 0.22
+Nodes (11): addGraphBoundaryLayer(), addGraphLiteProjection(), buildGraph(), capsuleGraphRecordedAt(), clamp(), confidenceFromScore(), confidenceFromUnknown(), graphDisplayTypeForEntity() (+3 more)
 
 ### Community 510 - "Community 510"
 Cohesion: 0.22
@@ -2893,8 +2920,8 @@ Cohesion: 0.18
 Nodes (10): Composition, Context Requirements, Examples, Inputs, Key Assumptions Check, Outputs, Pitfalls, Purpose (+2 more)
 
 ### Community 547 - "Community 547"
-Cohesion: 0.32
-Nodes (10): MemoSearchResult, normalizeMemoSearchResult(), numberField(), QuerySchema, searchHaystack(), snippetsFor(), sourceReceiptIdsFrom(), stringField() (+2 more)
+Cohesion: 0.31
+Nodes (8): addAnalystNote(), AnalystNote, AnalystNoteSchema, deleteAnalystNote(), listAnalystNotes(), notesRef(), __test__, updateAnalystNote()
 
 ### Community 548 - "Community 548"
 Cohesion: 0.18
@@ -2905,8 +2932,8 @@ Cohesion: 0.18
 Nodes (10): Composition, Context Requirements, Examples, Inputs, Memo Refresh, Outputs, Pitfalls, Purpose (+2 more)
 
 ### Community 550 - "Community 550"
-Cohesion: 0.05
-Nodes (42): APP_SEARCH_COMMANDS, AppSearchAction, AppSearchItemInput, AppSearchKind, AppSearchMatchedField, AppSearchResult, buildCapsuleSearchItem(), getAskPraxisFallbackResult() (+34 more)
+Cohesion: 0.03
+Nodes (48): buildCapsuleStarterPromptBlock(), buildCapsuleStarterPromptBlockLegacy(), CAPSULE_CONTEXT_CAPTURE_FIXTURE_STARTER_IDS, CAPSULE_STARTER_DEFINITIONS, CAPSULE_STARTER_SOURCE_REGISTRY, compactPromptList(), compactPromptText(), getCapsuleStarterDefinition() (+40 more)
 
 ### Community 552 - "Community 552"
 Cohesion: 0.18
@@ -2917,8 +2944,8 @@ Cohesion: 0.18
 Nodes (10): Composition, Context Requirements, Examples, Inputs, Outputs, Pitfalls, Premortem, Purpose (+2 more)
 
 ### Community 559 - "Community 559"
-Cohesion: 0.21
-Nodes (11): capsuleDetailsCollection(), cleanId(), createCapsuleMemory(), dbOf(), ensureCapsule(), listCapsuleMemories(), CreateMemorySchema, GET (+3 more)
+Cohesion: 0.28
+Nodes (11): capsuleDetailsCollection(), clampNumber(), cleanId(), createCapsuleEvaluation(), createCapsuleMemory(), dbOf(), ensureCapsule(), listCapsuleEvaluations() (+3 more)
 
 ### Community 561 - "Community 561"
 Cohesion: 0.18
@@ -3013,8 +3040,8 @@ Cohesion: 0.18
 Nodes (10): Composition, Context Requirements, Examples, Inputs, Needs Aggregator, Outputs, Pitfalls, Purpose (+2 more)
 
 ### Community 596 - "Community 596"
-Cohesion: 0.33
-Nodes (10): clamp01(), computePathConfidence(), ConfidenceCarrier, confidenceFromString(), createProvenanceStep(), listProvenanceSteps(), normalizeNumericConfidence(), provenanceCollection() (+2 more)
+Cohesion: 0.29
+Nodes (11): clamp01(), computePathConfidence(), ConfidenceCarrier, confidenceFromString(), createProvenanceStep(), listProvenanceSteps(), normalizeNumericConfidence(), provenanceCollection() (+3 more)
 
 ### Community 597 - "Community 597"
 Cohesion: 0.18
@@ -3077,8 +3104,8 @@ Cohesion: 0.18
 Nodes (10): Canonical Documents, Codebase Alignment, Current Gaps, Documentation Cleanup Policy, Engineering Gate For Each Session, PRAXIS Foundation Coherence Check, Required Next Build Order, Senior Engineering Guidance (+2 more)
 
 ### Community 612 - "Community 612"
-Cohesion: 0.12
-Nodes (24): buildSourceabilityClaimVerdicts(), sourceabilityVerdictForSupportLabel(), AskPraxisDelegateResult, buildMemoClaimCheckQuestion(), buildMemoClaimCheckResult(), checkMemoLanguageConstraints(), confidenceForSupportLabel(), deriveMemoExportGate() (+16 more)
+Cohesion: 0.10
+Nodes (27): buildSourceabilityClaimVerdicts(), SourceabilityVerdict, sourceabilityVerdictForSupportLabel(), AskPraxisDelegateResult, CapsuleUsageClaimSignal, buildMemoClaimCheckQuestion(), buildMemoClaimCheckResult(), checkMemoLanguageConstraints() (+19 more)
 
 ### Community 619 - "Community 619"
 Cohesion: 0.17
@@ -3160,6 +3187,10 @@ Nodes (9): Composition, Context Requirements, Examples, Inputs, Outputs, Pitfall
 Cohesion: 0.20
 Nodes (9): Composition, Context Requirements, Examples, Inputs, Outputs, Pitfalls, Purpose, When Not To Use (+1 more)
 
+### Community 665 - "Community 665"
+Cohesion: 0.31
+Nodes (7): ActivePolicyFileInput, ActivePolicyFileModel, buildActivePolicyFileModel(), clean(), safeCount(), ActivePolicyFileStrip(), outputTargetReviewGate()
+
 ### Community 666 - "Community 666"
 Cohesion: 0.20
 Nodes (9): Active Status Ledger, Architecture Audit Chain Parity, Current Local Gate, Known Reference/API Shape Drift, Partially Implemented Target State, PRAXIS Architecture Live-App Alignment, Required Correction, Shipped And Enforced (+1 more)
@@ -3213,8 +3244,8 @@ Cohesion: 0.22
 Nodes (9): 17.1 New concept in the situation domain (e.g., "ceasefire violation," "BATNA"), 17.2 New piece of context (e.g., "user's preferred citation format"), 17.3 New analytical capability (e.g., "fact-check Russian-language sources"), 17.4 New AI capability that doesn't fit a tool's request/response shape (e.g., "translate memo blocks to French"), 17.5 New surface in the UI (e.g., "a global search bar"), 17.6 New data store (e.g., "a graph database for high-fanout queries"), 17.7 New external integration (e.g., "import documents from Google Drive"), 17.8 New infrastructure resource (e.g., "BigQuery for analytics") (+1 more)
 
 ### Community 685 - "Community 685"
-Cohesion: 0.07
-Nodes (30): AskPraxisDelegateInput, delegateToAskPraxis(), buildSituationContext(), formatRole(), formatType(), getGlaslLabel(), getGlaslZone(), ClaimCheckOutputSchema (+22 more)
+Cohesion: 0.04
+Nodes (58): AskPraxisDelegateInput, delegateToAskPraxis(), audienceTonePreset(), audienceTuningEnabled(), PRESETS, buildSituationContext(), formatRole(), formatType() (+50 more)
 
 ### Community 686 - "Community 686"
 Cohesion: 0.40
@@ -3225,8 +3256,8 @@ Cohesion: 0.22
 Nodes (8): Corpus Sources, Current Implementation, Google Cloud Path, Implementation Order, Objective, PRAXIS Corpus Architecture, Retrieval Contract, Target API
 
 ### Community 689 - "Community 689"
-Cohesion: 0.50
-Nodes (3): AttachSchema, POST, RouteContext
+Cohesion: 0.22
+Nodes (10): buildCausalChains(), buildReviewQueue(), buildTimeline(), causalityFromCapsule(), causalLinksFromUnknown(), firstRecord(), sourceItemsFromUnknown(), temporalityFromCapsule() (+2 more)
 
 ### Community 690 - "Community 690"
 Cohesion: 0.22
@@ -3329,8 +3360,8 @@ Cohesion: 0.25
 Nodes (7): Core Rules, Deeper References, Incident Response, Launch Acceptance Criteria, PRAXIS Security, Review Checklist, Trust Boundary
 
 ### Community 718 - "Community 718"
-Cohesion: 0.24
-Nodes (8): DraftingActionRequestSchema, POST, applyDraftingAction(), DRAFTING_ACTIONS, DraftingActionId, DraftingActionInput, DraftingActionResult, tonePrefix()
+Cohesion: 0.44
+Nodes (6): citationMarker(), collectFootnotes(), createMemoVersion(), memoBlocksToMarkdown(), memoBlocksToPlainText(), blocks
 
 ### Community 719 - "Community 719"
 Cohesion: 0.25
@@ -3392,6 +3423,10 @@ Nodes (6): askContextBarPath, chatShellPath, floatingPraxisPath, inlineBuilderPa
 Cohesion: 0.29
 Nodes (6): accountApi, appShell, checkoutRoute, proxy, settingsPage, settingsRoute
 
+### Community 735 - "Community 735"
+Cohesion: 0.44
+Nodes (8): applyToolPreferences(), CUSTOMIZABLE_SIDEBAR_TOOLS, CustomizableToolItem, hiddenToolSet(), isToolHiddenByPreference(), LEGACY_TOOL_ID_ALIASES, normalizeToolPreferenceId(), orderedToolIds()
+
 ### Community 736 - "Community 736"
 Cohesion: 0.29
 Nodes (6): Done Evidence, Lane: Cloud And Auth Operations, No-Touch Boundaries, Scope, Start Reads, Validation
@@ -3449,8 +3484,8 @@ Cohesion: 0.29
 Nodes (6): files, markers, missingFiles, missingMarkers, root, source
 
 ### Community 752 - "Community 752"
-Cohesion: 0.09
-Nodes (29): _init_firebase(), Request, Firebase ID token verification for FastAPI.  Every protected endpoint uses Dep, FastAPI dependency: verify a trusted Google service-account OIDC token.      U, Initialize firebase-admin once. Subsequent calls are no-ops.      Credential r, FastAPI dependency: verify Firebase ID token OR Google OIDC token.      Token, verify_firebase_token(), verify_service_token() (+21 more)
+Cohesion: 0.14
+Nodes (22): _init_firebase(), Request, Firebase ID token verification for FastAPI.  Every protected endpoint uses Dep, FastAPI dependency: verify a trusted Google service-account OIDC token.      U, Initialize firebase-admin once. Subsequent calls are no-ops.      Credential r, FastAPI dependency: verify Firebase ID token OR Google OIDC token.      Token, verify_firebase_token(), verify_service_token() (+14 more)
 
 ### Community 753 - "Community 753"
 Cohesion: 0.29
@@ -3533,8 +3568,8 @@ Cohesion: 0.33
 Nodes (6): Changed, Changed (public pricing surface — credit metering hidden), Fixed, Known Remaining Work, [Unreleased] — 2026-04-25 (first session), Validation
 
 ### Community 774 - "Community 774"
-Cohesion: 0.22
-Nodes (5): approvalRow(), eventRowFromParams(), mocks, NOW, runRow()
+Cohesion: 0.07
+Nodes (41): AgentRunDispatchPayload, AgentRunDispatchResult, AgentRunTask, buildAgentRunTask(), CloudTaskCreateResult, createCloudTask(), cryptoRandomDispatchId(), enqueueAgentRunDispatch() (+33 more)
 
 ### Community 775 - "Community 775"
 Cohesion: 0.33
@@ -3557,20 +3592,24 @@ Cohesion: 0.48
 Nodes (5): buildAdvancedMediaSearchQuery(), buildSituationMediaKeywords(), cleanToken(), MediaSearchQueryInput, quote()
 
 ### Community 780 - "Community 780"
-Cohesion: 0.08
-Nodes (25): askToolsSource, chatRouteSource, exaSource, repoRoot, researchGraphSource, COCKPIT_CAPSULE_LIBRARY, COCKPIT_COMBINATION_RECIPES, COCKPIT_TOOL_SUGGESTIONS (+17 more)
+Cohesion: 0.25
+Nodes (6): getAvailableProviders(), MODEL_NAMES, GET, getProviderIntegrationStatus(), POLAR_REQUIRED_ENV, ProviderIntegrationStatus
+
+### Community 781 - "Community 781"
+Cohesion: 0.28
+Nodes (4): GET, diffGraphSnapshots(), GraphDiff, GraphSnapshot
 
 ### Community 782 - "Community 782"
 Cohesion: 0.33
 Nodes (5): adminTabRedirects, bareRoutes, nextConfig, repoRoot, withBundleAnalyzer
 
 ### Community 783 - "Community 783"
-Cohesion: 0.83
-Nodes (3): database_url(), run_migrations_offline(), run_migrations_online()
+Cohesion: 0.31
+Nodes (7): heading(), buildMemoBlocksForCase(), getMemoTemplate(), listMemoTemplates(), MEMO_TEMPLATES, MemoTemplate, buildDraftMemoOptions()
 
 ### Community 784 - "Community 784"
-Cohesion: 0.67
-Nodes (3): apply, main(), VersionBucket
+Cohesion: 0.36
+Nodes (5): run_escalation_ladder(), healthz(), simulate(), SimulateRequest, test_escalation_ladder_is_deterministic()
 
 ### Community 785 - "Community 785"
 Cohesion: 0.33
@@ -3789,8 +3828,8 @@ Cohesion: 0.50
 Nodes (4): 10.1 The types, 10.2 The provider, 10.3 Persistence, 10. Context (L4 part 1) — the four-layer substrate
 
 ### Community 839 - "Community 839"
-Cohesion: 0.09
-Nodes (23): ICONS, NavGroup(), ICONS, MobileBottomNav(), MobileLink(), breadcrumbsForPath(), HomeSidebarDestination, humanizeSegment() (+15 more)
+Cohesion: 0.39
+Nodes (6): PraxisLink(), PraxisLinkProps, PUBLIC_ROOT_PATHS, shouldPrefixPraxisHref(), usePraxisRoute(), useRoutePrefix()
 
 ### Community 840 - "Community 840"
 Cohesion: 0.50
@@ -3803,6 +3842,10 @@ Nodes (3): Current Audits, PRAXIS Audit Index, Retention Policy
 ### Community 842 - "Community 842"
 Cohesion: 0.50
 Nodes (3): authContext, firebaseConfig, root
+
+### Community 843 - "Community 843"
+Cohesion: 0.36
+Nodes (8): getCrossContextEntities(), getEntitiesForSituation(), GlobalEntity, GlobalEntityMention, indexEntities(), makeEntityId(), normalize(), searchGlobalEntities()
 
 ### Community 844 - "Community 844"
 Cohesion: 0.50
@@ -3853,8 +3896,8 @@ Cohesion: 0.50
 Nodes (3): componentPath, sectionSource, workbenchSource
 
 ### Community 856 - "Community 856"
-Cohesion: 0.67
-Nodes (3): [3.9.4] — 2026-03-30, Added, Fixed
+Cohesion: 0.32
+Nodes (6): ALL_TOOL_IDS, buildToolStatus(), GET, getAllResearchProgress(), getResearchProgress(), ResearchProgress
 
 ### Community 857 - "Community 857"
 Cohesion: 0.50
@@ -3892,6 +3935,18 @@ Nodes (5): BackfillArgs, BackfillCapsuleDoc, BackfillRow, main(), parseArgs()
 Cohesion: 0.67
 Nodes (3): [3.6.1] — 2026-03-28, Changed, Security — Auth Hardening
 
+### Community 882 - "Community 882"
+Cohesion: 0.38
+Nodes (7): SaveMemoDraftInput, MemoExportInput, UserContext, MemoBlock, MemoStatus, MemoTemplateId, DraftMemoOption
+
+### Community 883 - "Community 883"
+Cohesion: 0.40
+Nodes (4): SourceabilityVerdictBadges(), sourceabilityVerdictBadgeTone(), SourceabilityVerdictTone, VERDICT_TONES
+
+### Community 884 - "Community 884"
+Cohesion: 0.40
+Nodes (6): ContextCapsuleClaim, ContextCapsuleSourceRef, ContextCapsuleSourceSpine, DialecticaCapsuleImportPlan, CapsuleDocumentFirstSignals, NormalizedArchitectDocument
+
 ### Community 885 - "Community 885"
 Cohesion: 0.67
 Nodes (3): [3.9.1] — 2026-03-30, Added, Fixed
@@ -3908,9 +3963,9 @@ Nodes (3): [5.1.0] — 2026-04-01, Added, Changed
 Cohesion: 0.67
 Nodes (3): [6.3.1] — 2026-04-14, Changed, Fixed
 
-### Community 892 - "Community 892"
-Cohesion: 0.67
-Nodes (3): Added, Changed, [Unreleased] — 2026-04-25 (third session)
+### Community 893 - "Community 893"
+Cohesion: 0.33
+Nodes (5): CreateMemorySchema, GET, LinksSchema, POST, RouteContext
 
 ### Community 894 - "Community 894"
 Cohesion: 0.67
@@ -3944,17 +3999,41 @@ Nodes (3): validFrom, format, type
 Cohesion: 0.67
 Nodes (3): validTo, format, type
 
-### Community 1054 - "Community 1054"
+### Community 970 - "Community 970"
+Cohesion: 0.70
+Nodes (4): AskTurnPlanPanel(), continuationActionForTurnPlan(), formatPlanToken(), PlanChip()
+
+### Community 971 - "Community 971"
 Cohesion: 0.40
-Nodes (13): clampNumber(), cleanIso(), cleanStringArray(), cleanText(), createCapsuleEvaluation(), createCapsuleNote(), defaultNoteTitle(), normalizeLinks() (+5 more)
+Nodes (4): Graph, cohesion_score(), Community detection — adapted from Graphify's cluster.py.  Uses graspologic's, Compute intra-community edge density (0–1).      Higher = more tightly connect
+
+### Community 973 - "Community 973"
+Cohesion: 0.40
+Nodes (3): cleanMemoId(), MemoIdContext, GET
+
+### Community 995 - "Community 995"
+Cohesion: 0.67
+Nodes (4): graphLiteEdgesFromUnknown(), graphLiteNodesFromUnknown(), graphLiteProjectionFromCapsule(), graphProjectionResearchFromUnknown()
+
+### Community 1054 - "Community 1054"
+Cohesion: 0.56
+Nodes (9): cleanIso(), cleanStringArray(), cleanText(), createCapsuleNote(), defaultNoteTitle(), normalizeLinks(), sanitizeEvaluation(), sanitizeMemory() (+1 more)
 
 ### Community 1056 - "Community 1056"
 Cohesion: 0.38
 Nodes (5): AuditEventStatus, buildReadAuditEvent(), ReadAuditEvent, ReadAuditEventInput, writeReadAuditEvent()
 
+### Community 1057 - "Community 1057"
+Cohesion: 0.67
+Nodes (3): [3.7.1] — 2026-03-29, Added, Audited
+
+### Community 1058 - "Community 1058"
+Cohesion: 0.67
+Nodes (3): [3.9.5] — 2026-03-30, Added, Fixed
+
 ### Community 1059 - "Community 1059"
-Cohesion: 0.54
-Nodes (6): Any, build_full_extraction_prompt(), build_verification_prompt(), extract_structured_claims(), NerEntity, Gemini precision extraction helper with optional GLiNER recall candidates.
+Cohesion: 0.67
+Nodes (3): [3.9.7] — 2026-03-30, Added, Fixed
 
 ### Community 1060 - "Community 1060"
 Cohesion: 0.33
@@ -3968,6 +4047,10 @@ Nodes (6): listCapsuleNotes(), CreateNoteSchema, GET, LinksSchema, POST, RouteCo
 Cohesion: 0.40
 Nodes (5): fixtureRoot, fixtureText(), fixtureZip(), root, routePath
 
+### Community 1065 - "Community 1065"
+Cohesion: 0.67
+Nodes (3): [4.2.0] — 2026-03-31, Added, Changed
+
 ### Community 1066 - "Community 1066"
 Cohesion: 0.12
 Nodes (4): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
@@ -3977,12 +4060,8 @@ Cohesion: 0.50
 Nodes (3): MockedAuthRouteHandler, packet, service
 
 ### Community 1071 - "Community 1071"
-Cohesion: 0.22
-Nodes (7): listCapsuleEvaluations(), CreateEvaluationSchema, GET, LinksSchema, POST, RouteContext, ScorecardSchema
-
-### Community 1077 - "Community 1077"
-Cohesion: 0.40
-Nodes (4): Graph, Cypher export helper — converts a NetworkX graph to idempotent Neo4j Cypher., Generate an idempotent Cypher script (MERGE) suitable for Neo4j import.      E, to_cypher()
+Cohesion: 0.29
+Nodes (6): CreateEvaluationSchema, GET, LinksSchema, POST, RouteContext, ScorecardSchema
 
 ### Community 1078 - "Community 1078"
 Cohesion: 0.40
@@ -4007,17 +4086,17 @@ Nodes (7): How Outputs Return With Proof, How Triage Selects the Team, Policy-Ag
 ## Knowledge Gaps
 - **6402 isolated node(s):** `ALLOWED`, `SequentialAgent`, `Any`, `Any`, `Any` (+6397 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **192 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **191 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `FastAPI` connect `Community 752` to `Community 325`, `Community 8`, `Community 201`, `Community 14`, `Community 81`, `Community 210`, `Community 533`, `Community 86`, `Community 213`, `Community 56`, `Community 25`, `Community 285`, `Community 152`, `Community 183`, `Community 255`?**
+- **Why does `FastAPI` connect `Community 182` to `Community 325`, `Community 8`, `Community 14`, `Community 752`, `Community 81`, `Community 210`, `Community 784`, `Community 533`, `Community 86`, `Community 213`, `Community 152`, `Community 25`, `Community 285`, `Community 183`, `Community 255`?**
   _High betweenness centrality (0.059) - this node is a cross-community bridge._
-- **Why does `ContextCapsule` connect `Community 67` to `Community 34`, `Community 102`, `Community 218`, `Community 143`, `Community 115`, `Community 569`, `Community 250`, `Community 219`, `Community 61`, `Community 31`?**
+- **Why does `ContextCapsule` connect `Community 67` to `Community 34`, `Community 102`, `Community 218`, `Community 143`, `Community 113`, `Community 115`, `Community 884`, `Community 569`, `Community 250`, `Community 219`, `Community 61`?**
   _High betweenness centrality (0.034) - this node is a cross-community bridge._
 - **Why does `AliasModel` connect `Community 102` to `Community 1`, `Community 67`?**
-  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+  _High betweenness centrality (0.031) - this node is a cross-community bridge._
 - **Are the 15 inferred relationships involving `withAuth()` (e.g. with `GET()` and `POST()`) actually correct?**
   _`withAuth()` has 15 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 2 inferred relationships involving `handleRouteError()` (e.g. with `String()` and `GET()`) actually correct?**

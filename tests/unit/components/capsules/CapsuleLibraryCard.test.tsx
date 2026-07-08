@@ -33,6 +33,26 @@ describe('CapsuleLibraryCard', () => {
     expect(html).not.toContain('data-testid="capsule-mini-graph"');
   });
 
+  it('labels the Add action with the proposed dock slot', () => {
+    const html = renderToStaticMarkup(
+      <CapsuleLibraryCard
+        variant="full"
+        capsuleId="cap-situation"
+        title="Situation capsule"
+        summary="A source-backed situation frame."
+        addAction={{
+          label: 'Add to Situation slot',
+          onAdd: vi.fn(),
+          roleOptions: [],
+        }}
+      />,
+    );
+
+    expect(html).toContain('data-testid="capsule-card-add-split"');
+    expect(html).toContain('Add to Situation slot');
+    expect(html).not.toContain('Choose context bucket');
+  });
+
   it('renders the full library card contract and tolerates missing optional fields', () => {
     const html = renderToStaticMarkup(
       <CapsuleLibraryCard

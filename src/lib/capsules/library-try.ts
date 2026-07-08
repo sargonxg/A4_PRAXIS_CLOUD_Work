@@ -1,8 +1,11 @@
 import {
   DEFAULT_CONTEXT_STACK_ID,
+  assignCapsuleToDockSlot,
+  defaultActiveContextStack,
   type ActiveContextStackState,
+  type CapsuleDockSlotKind,
 } from '@/lib/context/active-context-stack';
-import type { CapsuleLibraryEntry } from '@/lib/capsules/library';
+import { proposeDockSlotForCapsule, type CapsuleLibraryEntry } from '@/lib/capsules/library';
 
 export type SaveActiveContextStack = (patch: Partial<ActiveContextStackState>) => Promise<ActiveContextStackState>;
 
@@ -14,6 +17,8 @@ export type TryLibraryCapsuleResult =
 export interface TryLibraryCapsuleDeps {
   fetch?: typeof fetch;
   saveStack: SaveActiveContextStack;
+  stack?: ActiveContextStackState | null;
+  slotKind?: CapsuleDockSlotKind | null;
 }
 
 export async function tryLibraryCapsule(
@@ -28,80 +33,32 @@ export async function tryLibraryCapsule(
       : { status: 'failed', capsuleId: entry.id, reason: available.reason };
   }
 
-  await deps.saveStack(activeContextPatchForLibraryEntry(entry));
+  await deps.saveStack(activeContextPatchForLibraryEntry(entry, {
+    stack: deps.stack,
+    slotKind: deps.slotKind,
+  }));
 
   return { status: 'attached', capsuleId: entry.id, seeded: available.seeded };
 }
 
-export function activeContextPatchForLibraryEntry(entry: CapsuleLibraryEntry): Partial<ActiveContextStackState> {
-  return {
-    stackId: entry.id || DEFAULT_CONTEXT_STACK_ID,
-    capsuleId: entry.id,
-    capsuleRefs: [{
+export function activeContextPatchForLibraryEntry(
+  entry: CapsuleLibraryEntry,
+  options: { stack?: ActiveContextStackState | null; slotKind?: CapsuleDockSlotKind | null } = {},
+): Partial<ActiveContextStackState> {
+  const next = assignCapsuleToDockSlot(
+    options.stack ?? defaultActiveContextStack(),
+    options.slotKind ?? proposeDockSlotForCapsule(entry),
+    {
       capsuleId: entry.id,
       label: entry.title,
-      role: 'primary',
-      primary: true,
-      order: 0,
       version: entry.version,
-    }],
-    userModelId: entry.coreRefs.userCoreId,
-    situationId: entry.coreRefs.situationCoreId,
-    sourceIds: entry.coreRefs.sourceCoreIds,
-    documentIds: entry.coreRefs.documentCoreIds,
-    outputGoal: entry.coreRefs.outputCoreIds[0] ?? entry.coreRefs.productCoreIds[0] ?? null,
-    contextBlocks: {
-      userCore: entry.coreRefs.userCoreId ? [{
-        id: entry.coreRefs.userCoreId,
-        capsuleId: entry.id,
-        label: entry.title,
-        role: 'user',
-        primary: true,
-        order: 0,
-      }] : [],
-      situation: entry.coreRefs.situationCoreId ? [{
-        id: entry.coreRefs.situationCoreId,
-        capsuleId: entry.id,
-        label: entry.title,
-        role: 'situation',
-        primary: true,
-        order: 0,
-      }] : [],
-      sources: [
-        ...entry.coreRefs.sourceCoreIds.map((id, order) => ({
-          id,
-          capsuleId: entry.id,
-          label: null,
-          role: 'source',
-          primary: order === 0,
-          order,
-        })),
-        ...entry.coreRefs.documentCoreIds.map((id, order) => ({
-          id,
-          capsuleId: entry.id,
-          label: null,
-          role: 'document',
-          primary: false,
-          order: entry.coreRefs.sourceCoreIds.length + order,
-        })),
-      ],
-      thinkingDevices: entry.coreRefs.toolCoreIds.map((id, order) => ({
-        id,
-        capsuleId: entry.id,
-        label: null,
-        role: 'tool',
-        primary: order === 0,
-        order,
-      })),
-      output: entry.coreRefs.outputCoreIds.map((id, order) => ({
-        id,
-        capsuleId: entry.id,
-        label: null,
-        role: 'output',
-        primary: order === 0,
-        order,
-      })),
     },
+  );
+
+  return {
+    stackId: next.capsuleId ?? DEFAULT_CONTEXT_STACK_ID,
+    capsuleId: next.capsuleId,
+    capsuleRefs: next.capsuleRefs,
   };
 }
 

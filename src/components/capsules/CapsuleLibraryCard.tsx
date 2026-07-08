@@ -49,7 +49,9 @@ export interface CapsuleLibraryCardMetric {
 
 export interface CapsuleLibraryCardAddAction {
   onAdd: (role?: string) => void;
-  roleOptions: Array<{ label: string; value: string }>;
+  label?: string;
+  roleOptions?: Array<{ label: string; value: string }>;
+  disabled?: boolean;
 }
 
 export interface CapsuleLibraryCardDragAction {
@@ -177,6 +179,7 @@ export function CapsuleLibraryCard({
         { label: 'Graph', value: `${graphNodes}/${graphEdges}` },
         { label: 'Quality', value: typeof qualityScore === 'number' ? Math.round(qualityScore) : null },
       ];
+  const addRoleOptions = addAction?.roleOptions ?? [];
 
   return (
     <article
@@ -325,25 +328,32 @@ export function CapsuleLibraryCard({
                 <button
                   type="button"
                   onClick={() => addAction.onAdd()}
-                  className="rounded-l-md bg-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600"
+                  disabled={addAction.disabled}
+                  className={cn(
+                    'bg-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60',
+                    addRoleOptions.length ? 'rounded-l-md' : 'rounded-md',
+                  )}
                 >
-                  Add
+                  {addAction.label ?? 'Add'}
                 </button>
-                <button
-                  type="button"
-                  aria-label={`Choose context bucket for ${title}`}
-                  aria-expanded={roleMenuOpen}
-                  onClick={() => setRoleMenuOpen((open) => !open)}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-r-md border-l border-emerald-500 bg-emerald-700 text-white hover:bg-emerald-600"
-                >
-                  <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', roleMenuOpen && 'rotate-180')} />
-                </button>
-                {roleMenuOpen ? (
+                {addRoleOptions.length ? (
+                  <button
+                    type="button"
+                    aria-label={`Choose context bucket for ${title}`}
+                    aria-expanded={roleMenuOpen}
+                    onClick={() => setRoleMenuOpen((open) => !open)}
+                    disabled={addAction.disabled}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-r-md border-l border-emerald-500 bg-emerald-700 text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', roleMenuOpen && 'rotate-180')} />
+                  </button>
+                ) : null}
+                {roleMenuOpen && addRoleOptions.length ? (
                   <span
                     role="menu"
                     className="absolute bottom-full left-0 z-20 mb-1 grid min-w-40 overflow-hidden rounded-md border border-slate-200 bg-white p-1 text-xs font-semibold text-slate-700 shadow-lg"
                   >
-                    {addAction.roleOptions.map((option) => (
+                    {addRoleOptions.map((option) => (
                       <button
                         key={option.value}
                         type="button"

@@ -54,12 +54,9 @@ describe('tryLibraryCapsule', () => {
     expect(saveStack).toHaveBeenCalledWith(expect.objectContaining({
       stackId: entry.id,
       capsuleId: entry.id,
-      sourceIds: entry.coreRefs.sourceCoreIds,
-      documentIds: entry.coreRefs.documentCoreIds,
-      outputGoal: entry.coreRefs.outputCoreIds[0] ?? entry.coreRefs.productCoreIds[0] ?? null,
     }));
     expect(saveStack.mock.calls[0][0].capsuleRefs).toEqual([
-      expect.objectContaining({ capsuleId: entry.id, role: 'primary', primary: true }),
+      expect.objectContaining({ capsuleId: entry.id, role: 'situation', primary: true }),
     ]);
   });
 
@@ -105,7 +102,9 @@ describe('tryLibraryCapsule', () => {
     });
 
     expect(stack.capsuleId).toBe('starter-context');
-    expect(stack.contextBlocks.sources.map((item) => item.id)).toEqual(['source-a']);
+    expect(stack.capsuleRefs).toEqual([
+      expect.objectContaining({ capsuleId: 'starter-context', role: 'situation', primary: true }),
+    ]);
     expect(context.toolContext.capsules?.map((capsule) => capsule.capsuleId)).toEqual(['starter-context']);
     expect(context.systemPromptBlock).toContain('<capsule-frame count="1"');
     expect(context.systemPromptBlock).toContain('Starter context');

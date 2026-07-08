@@ -4,6 +4,7 @@ import { CapsuleLibrary } from '@/components/capsules/CapsuleLibrary';
 import {
   CAPSULE_LIBRARY_CATEGORIES,
   CAPSULE_LIBRARY_ENTRIES,
+  buildCapsuleLibraryFacetOptions,
   buildCapsuleRepositoryEntries,
   capsuleRepositoryEntryFromCapsule,
   filterCapsuleLibraryEntries,
@@ -49,7 +50,10 @@ describe('CapsuleLibrary', () => {
     expect(html).toContain('data-testid="capsule-library"');
     expect(html).toContain('Capsule Repository');
     expect(html).toContain('Search capsules');
-    expect(html).toContain('Attach');
+    expect(html).toContain('Filter by capsule type');
+    expect(html).toContain('Filter by capsule domain');
+    expect(html).toContain('Filter by policy team');
+    expect(html).toContain('Add to');
     expect(html).toContain('Inspect');
     expect(html).toContain('Your capsule');
     expect(html).toContain('Starter library');
@@ -72,6 +76,42 @@ describe('CapsuleLibrary', () => {
     const nonLegal = CAPSULE_LIBRARY_ENTRIES.find((entry) => entry.category !== 'legal');
     expect(nonLegal).toBeTruthy();
     expect(html).not.toContain(nonLegal!.title);
+  });
+
+  it('filters the rendered grid by taxonomy facets from the resolver', () => {
+    const facets = buildCapsuleLibraryFacetOptions(CAPSULE_LIBRARY_ENTRIES);
+    const situation = facets.types.find((facet) => facet.tag === 'type:situation');
+    const nonSituation = CAPSULE_LIBRARY_ENTRIES.find((entry) => !entry.taxonomy.types.some((facet) => facet.tag === situation?.tag));
+    const situationEntry = CAPSULE_LIBRARY_ENTRIES.find((entry) => entry.taxonomy.types.some((facet) => facet.tag === situation?.tag));
+
+    expect(situation).toBeTruthy();
+    expect(situationEntry).toBeTruthy();
+    expect(nonSituation).toBeTruthy();
+
+    const html = renderToStaticMarkup(
+      <CapsuleLibrary
+        entries={CAPSULE_LIBRARY_ENTRIES}
+        initialTypeFacet={situation!.tag}
+        onTryCapsule={() => undefined}
+      />,
+    );
+
+    expect(html).toContain(situation!.label);
+    expect(html).toContain(situationEntry!.title);
+    expect(html).not.toContain(nonSituation!.title);
+  });
+
+  it('shows a resettable quiet empty state when facet filters have no matches', () => {
+    const html = renderToStaticMarkup(
+      <CapsuleLibrary
+        entries={CAPSULE_LIBRARY_ENTRIES}
+        initialTypeFacet="type:not-real"
+        onTryCapsule={() => undefined}
+      />,
+    );
+
+    expect(html).toContain('No capsules match these filters.');
+    expect(html).toContain('Reset filters');
   });
 
   it('builds repository entries from owned capsules and starter entries without duplicating seeded starters', () => {

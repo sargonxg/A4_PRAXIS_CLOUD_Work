@@ -471,9 +471,11 @@ function dockSlotPrecedence(role: ActiveCapsuleRoleInputValue): number {
 
 type ActiveCapsuleRoleInputValue = ActiveCapsuleRefInput['role'];
 
-function isDockSlotKind(value: unknown): value is CapsuleDockSlotKind {
+export function isCapsuleDockSlotKind(value: unknown): value is CapsuleDockSlotKind {
   return value === 'user' || value === 'situation' || value === 'tool' || value === 'output';
 }
+
+const isDockSlotKind = isCapsuleDockSlotKind;
 
 function emptyContextBlocks(): ActiveContextBlocks {
   return {

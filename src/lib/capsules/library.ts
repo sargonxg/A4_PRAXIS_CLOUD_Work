@@ -5,9 +5,16 @@ import {
 import {
   CAPSULE_STARTER_DEFINITIONS,
   resolveCapsuleTaxonomy,
+  type CapsuleResolvedTaxonomy,
   type CapsuleStarterDefinition,
+  type CapsuleTaxonomyFacet,
+  type CapsuleTaxonomyInput,
 } from '@/lib/product/context-capsules';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import {
+  isCapsuleDockSlotKind,
+  type CapsuleDockSlotKind,
+} from '@/lib/context/active-context-stack';
 
 export type CapsuleLibraryCategory =
   | 'conflict'
@@ -38,6 +45,37 @@ export interface CapsuleLibraryResearchSignals {
   unsupportedClaimCount: number;
 }
 
+export interface CapsuleLibraryTaxonomy {
+  types: CapsuleTaxonomyFacet[];
+  domains: CapsuleTaxonomyFacet[];
+  policyTeams: CapsuleTaxonomyFacet[];
+}
+
+export interface CapsuleLibraryFacetOption {
+  id: string;
+  label: string;
+  tag: string;
+  count: number;
+}
+
+export interface CapsuleLibraryFacetOptions {
+  types: CapsuleLibraryFacetOption[];
+  domains: CapsuleLibraryFacetOption[];
+  teams: CapsuleLibraryFacetOption[];
+}
+
+export interface CapsuleLibraryFacetFilters {
+  type?: string | null;
+  domain?: string | null;
+  team?: string | null;
+}
+
+export type CapsuleDockSlotProposalInput =
+  | CapsuleLibraryEntry
+  | CapsuleResolvedTaxonomy
+  | CapsuleTaxonomyInput
+  | { taxonomy: Pick<CapsuleLibraryTaxonomy, 'types'> };
+
 export interface CapsuleLibraryCoreRefs {
   userCoreId: string | null;
   situationCoreId: string | null;
@@ -65,6 +103,7 @@ export interface CapsuleLibraryEntry {
   researchSignals: CapsuleLibraryResearchSignals;
   readinessTier: CapsuleReadinessTier;
   searchKeywords: string[];
+  taxonomy: CapsuleLibraryTaxonomy;
   ranking: {
     rank: number;
     score: number;
@@ -99,14 +138,40 @@ export function filterCapsuleRepositoryEntries(
   entries: CapsuleLibraryEntry[],
   category: CapsuleLibraryCategory | 'all',
   query: string,
+  facets: CapsuleLibraryFacetFilters = {},
 ): CapsuleLibraryEntry[] {
   const categoryFiltered = filterCapsuleLibraryEntries(entries, category);
   const tokens = tokenizeSearch(query);
-  if (!tokens.length) return categoryFiltered;
   return categoryFiltered.filter((entry) => {
+    if (!matchesFacet(entry.taxonomy.types, facets.type)) return false;
+    if (!matchesFacet(entry.taxonomy.domains, facets.domain)) return false;
+    if (!matchesFacet(entry.taxonomy.policyTeams, facets.team)) return false;
+    if (!tokens.length) return true;
     const haystack = repositorySearchText(entry);
     return tokens.every((token) => haystack.includes(token));
   });
+}
+
+export function buildCapsuleLibraryFacetOptions(entries: CapsuleLibraryEntry[]): CapsuleLibraryFacetOptions {
+  return {
+    types: facetOptionsFromEntries(entries, (entry) => entry.taxonomy.types),
+    domains: facetOptionsFromEntries(entries, (entry) => entry.taxonomy.domains),
+    teams: facetOptionsFromEntries(entries, (entry) => entry.taxonomy.policyTeams),
+  };
+}
+
+export function proposeDockSlotForCapsule(input: CapsuleDockSlotProposalInput): CapsuleDockSlotKind {
+  const taxonomy = isResolvedTaxonomy(input)
+    ? input
+    : isTaxonomyCarrier(input)
+      ? input.taxonomy
+      : resolveCapsuleTaxonomy(input);
+
+  for (const facet of taxonomy.types) {
+    const candidate = (facet.value ?? facet.id ?? facet.tag.replace(/^type:/, '')).toLowerCase();
+    if (isCapsuleDockSlotKind(candidate)) return candidate;
+  }
+  return 'situation';
 }
 
 export function buildCapsuleRepositoryEntries(input: {
@@ -123,6 +188,17 @@ export function buildCapsuleRepositoryEntries(input: {
 export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): CapsuleLibraryEntry {
   const refs = capsule.coreRefs;
   const tags = capsule.community?.tags ?? [];
+  const capsuleType = capsuleTypeForCapsule(capsule);
+  const starterDomain = domainForCapsule(capsule);
+  const taxonomy = resolveCapsuleTaxonomy({
+    capsuleId: capsule.capsuleId,
+    category: capsuleType,
+    domain: starterDomain,
+    scope: capsule.scope,
+    community: capsule.community,
+    starterSnapshot: capsule.starterSnapshot as CapsuleTaxonomyInput['starterSnapshot'],
+    coreRefs: refs,
+  });
   const ontologyStack = uniqueStrings([
     ...ontologyIdsForCapsule(capsule),
     capsule.activeOntologyStackId ?? null,
@@ -146,8 +222,8 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
     category: libraryCategoryForCapsule(capsule),
     origin: 'user',
     version: capsule.version ?? null,
-    capsuleType: capsuleTypeForCapsule(capsule),
-    starterDomain: domainForCapsule(capsule),
+    capsuleType,
+    starterDomain,
     ontologyStack: ontologyStack.length ? ontologyStack : ['workspace context'],
     inside: {
       sources: refs.sourceCoreIds.length + refs.documentCoreIds.length + sourceRefs,
@@ -166,6 +242,7 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
       ...refs.outputCoreIds,
       ...(refs.productCoreIds ?? []),
     ]).slice(0, 80),
+    taxonomy,
     ranking: {
       rank: 0,
       score,
@@ -261,6 +338,7 @@ function libraryEntryFromStarter(
       ...starter.outputProductIds,
       starter.summary,
     ]).slice(0, 80),
+    taxonomy,
     ranking: {
       rank: ranking.rank,
       score: ranking.score,
@@ -368,6 +446,9 @@ function repositorySearchText(entry: CapsuleLibraryEntry): string {
     entry.readinessTier,
     ...entry.searchKeywords,
     ...entry.ontologyStack,
+    ...entry.taxonomy.types.map((facet) => `${facet.label} ${facet.tag}`),
+    ...entry.taxonomy.domains.map((facet) => `${facet.label} ${facet.tag}`),
+    ...entry.taxonomy.policyTeams.map((facet) => `${facet.label} ${facet.tag}`),
     entry.coreRefs.userCoreId,
     entry.coreRefs.situationCoreId,
     entry.coreRefs.graphCoreId,
@@ -383,6 +464,41 @@ function repositorySearchText(entry: CapsuleLibraryEntry): string {
 
 function tokenizeSearch(value: string): string[] {
   return value.toLowerCase().split(/\s+/).map((token) => token.trim()).filter(Boolean);
+}
+
+function facetOptionsFromEntries(
+  entries: CapsuleLibraryEntry[],
+  facetsForEntry: (entry: CapsuleLibraryEntry) => CapsuleTaxonomyFacet[],
+): CapsuleLibraryFacetOption[] {
+  const options = new Map<string, CapsuleLibraryFacetOption>();
+  for (const entry of entries) {
+    for (const facet of facetsForEntry(entry)) {
+      const tag = facet.tag.trim();
+      if (!tag) continue;
+      const current = options.get(tag);
+      options.set(tag, {
+        id: facet.id,
+        label: facet.label,
+        tag,
+        count: (current?.count ?? 0) + 1,
+      });
+    }
+  }
+  return Array.from(options.values()).sort((a, b) => a.label.localeCompare(b.label) || a.tag.localeCompare(b.tag));
+}
+
+function matchesFacet(facets: CapsuleTaxonomyFacet[], selected: string | null | undefined): boolean {
+  if (!selected || selected === 'all') return true;
+  return facets.some((facet) => facet.tag === selected);
+}
+
+function isResolvedTaxonomy(input: unknown): input is CapsuleResolvedTaxonomy {
+  if (!isRecord(input)) return false;
+  return Array.isArray(input.types) && Array.isArray(input.domains) && Array.isArray(input.policyTeams);
+}
+
+function isTaxonomyCarrier(input: unknown): input is { taxonomy: Pick<CapsuleLibraryTaxonomy, 'types'> } {
+  return isRecord(input) && isRecord(input.taxonomy) && Array.isArray(input.taxonomy.types);
 }
 
 function ontologyIdsForCapsule(capsule: PraxisCapsule): string[] {

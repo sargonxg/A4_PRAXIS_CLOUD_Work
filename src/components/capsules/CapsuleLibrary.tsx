@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Boxes, Eye, Loader2, Search } from 'lucide-react';
+import { Eye, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { CapsuleLibraryCard } from '@/components/capsules/CapsuleLibraryCard';
@@ -10,12 +10,15 @@ import {
   CAPSULE_LIBRARY_CATEGORIES,
   CAPSULE_LIBRARY_ENTRIES,
   buildCapsuleRepositoryEntries,
+  buildCapsuleLibraryFacetOptions,
   filterCapsuleLibraryEntries,
   filterCapsuleRepositoryEntries,
+  proposeDockSlotForCapsule,
   type CapsuleLibraryCategory,
   type CapsuleLibraryEntry,
 } from '@/lib/capsules/library';
 import { activeContextPatchForLibraryEntry, tryLibraryCapsule } from '@/lib/capsules/library-try';
+import { CAPSULE_DOCK_SLOT_LABELS, type CapsuleDockSlotKind } from '@/lib/context/active-context-stack';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { cn } from '@/lib/utils/cn';
 
@@ -24,12 +27,15 @@ interface CapsuleLibraryProps {
   initialCategory?: CapsuleLibraryCategory | 'all';
   busyCapsuleId?: string | null;
   status?: string | null;
-  onTryCapsule?: (entry: CapsuleLibraryEntry) => void;
+  initialTypeFacet?: string | null;
+  initialDomainFacet?: string | null;
+  initialTeamFacet?: string | null;
+  onTryCapsule?: (entry: CapsuleLibraryEntry, slotKind: CapsuleDockSlotKind) => void;
 }
 
 export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCapsule' | 'busyCapsuleId' | 'status'>) {
   const router = useRouter();
-  const { saveStack } = useActiveContextStack();
+  const { saveStack, stack } = useActiveContextStack();
   const [userCapsules, setUserCapsules] = useState<PraxisCapsule[]>([]);
   const [busyCapsuleId, setBusyCapsuleId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -54,12 +60,15 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
     };
   }, []);
 
-  async function handleTryCapsule(entry: CapsuleLibraryEntry) {
+  async function handleTryCapsule(entry: CapsuleLibraryEntry, slotKind: CapsuleDockSlotKind) {
     setBusyCapsuleId(entry.id);
     setStatus(null);
     const result = entry.origin === 'starter'
-      ? await tryLibraryCapsule(entry, { saveStack })
-      : await saveStack(activeContextPatchForLibraryEntry(entry))
+      ? await tryLibraryCapsule(entry, { saveStack, stack, slotKind })
+      : await saveStack(activeContextPatchForLibraryEntry(entry, {
+        stack,
+        slotKind,
+      }))
         .then(() => ({ status: 'attached' as const, capsuleId: entry.id, seeded: false }))
         .catch((error: unknown) => ({ status: 'failed' as const, capsuleId: entry.id, reason: error instanceof Error ? error.message : 'Attach failed' }));
     setBusyCapsuleId(null);
@@ -81,7 +90,7 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
       entries={entries}
       busyCapsuleId={busyCapsuleId}
       status={status}
-      onTryCapsule={(entry) => void handleTryCapsule(entry)}
+      onTryCapsule={(entry, slotKind) => void handleTryCapsule(entry, slotKind)}
     />
   );
 }
@@ -91,16 +100,30 @@ export function CapsuleLibrary({
   initialCategory = 'all',
   busyCapsuleId = null,
   status = null,
+  initialTypeFacet = null,
+  initialDomainFacet = null,
+  initialTeamFacet = null,
   onTryCapsule,
 }: CapsuleLibraryProps) {
   const [category, setCategory] = useState<CapsuleLibraryCategory | 'all'>(initialCategory);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [typeFacet, setTypeFacet] = useState(initialTypeFacet ?? 'all');
+  const [domainFacet, setDomainFacet] = useState(initialDomainFacet ?? 'all');
+  const [teamFacet, setTeamFacet] = useState(initialTeamFacet ?? 'all');
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchQuery(searchInput), 180);
     return () => window.clearTimeout(timer);
   }, [searchInput]);
-  const filtered = useMemo(() => filterCapsuleRepositoryEntries(entries, category, searchQuery), [category, entries, searchQuery]);
+  const facets = useMemo(() => buildCapsuleLibraryFacetOptions(entries), [entries]);
+  const filtered = useMemo(
+    () => filterCapsuleRepositoryEntries(entries, category, searchQuery, {
+      type: typeFacet,
+      domain: domainFacet,
+      team: teamFacet,
+    }),
+    [category, domainFacet, entries, searchQuery, teamFacet, typeFacet],
+  );
   const categoryGroups = useMemo(
     () => CAPSULE_LIBRARY_CATEGORIES
       .map((item) => ({
@@ -110,6 +133,16 @@ export function CapsuleLibrary({
       .filter((item) => item.entries.length > 0),
     [filtered],
   );
+  const hasActiveFilters = category !== 'all' || searchInput || searchQuery || typeFacet !== 'all' || domainFacet !== 'all' || teamFacet !== 'all';
+
+  function resetFilters() {
+    setCategory('all');
+    setSearchInput('');
+    setSearchQuery('');
+    setTypeFacet('all');
+    setDomainFacet('all');
+    setTeamFacet('all');
+  }
 
   return (
     <section className="rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]" data-testid="capsule-library">
@@ -153,6 +186,30 @@ export function CapsuleLibrary({
         </label>
       </div>
 
+      <div className="mt-3 grid gap-2 md:grid-cols-3" aria-label="Capsule taxonomy filters">
+        <FacetSelect
+          label="Filter by capsule type"
+          value={typeFacet}
+          allLabel="All types"
+          options={facets.types}
+          onChange={setTypeFacet}
+        />
+        <FacetSelect
+          label="Filter by capsule domain"
+          value={domainFacet}
+          allLabel="All domains"
+          options={facets.domains}
+          onChange={setDomainFacet}
+        />
+        <FacetSelect
+          label="Filter by policy team"
+          value={teamFacet}
+          allLabel="All teams"
+          options={facets.teams}
+          onChange={setTeamFacet}
+        />
+      </div>
+
       {categoryGroups.length ? (
         <div className="mt-4 grid gap-5">
           {categoryGroups.map((group) => (
@@ -162,57 +219,55 @@ export function CapsuleLibrary({
                 <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{group.entries.length} shown</span>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                {group.entries.map((entry) => (
-                  <CapsuleLibraryCard
-                    key={entry.id}
-                    variant="full"
-                    capsuleId={entry.id}
-                    title={entry.title}
-                    summary={entry.valueProp}
-                    subtitle={`${entry.origin === 'user' ? 'Your capsule' : 'Starter library'} / ${entry.category.replace('-', ' ')}`}
-                    categoryLabel={entry.capsuleType}
-                    domainLabel={entry.starterDomain}
-                    roleLabel={entry.origin === 'user' ? 'Workspace capsule' : 'Starter capsule'}
-                    readiness={{
-                      tier: entry.readinessTier === 'review' ? 'near' : 'ready',
-                      score: Math.round(entry.ranking.score),
-                    }}
-                    qualityScore={entry.ranking.score}
-                    counts={{
-                      sources: entry.inside.sources,
-                      claims: entry.inside.claims,
-                      graphNodes: entry.inside.graphNodes,
-                      graphEdges: entry.inside.graphEdges,
-                    }}
-                    graph={{
-                      nodeCount: entry.inside.graphNodes,
-                      edgeCount: entry.inside.graphEdges,
-                    }}
-                    researchSignals={{
-                      sourceSpineCount: entry.researchSignals.sourceSpineCount,
-                      evidenceGapCount: entry.researchSignals.evidenceGapCount,
-                      refreshStatus: entry.researchSignals.refreshStatus,
-                      graphNodeCount: entry.researchSignals.graphNodeCount,
-                      graphEdgeCount: entry.researchSignals.graphEdgeCount,
-                      unsupportedClaimCount: entry.researchSignals.unsupportedClaimCount,
-                      inspectHref: `/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`,
-                    }}
-                    tags={entry.ontologyStack.slice(0, 4).map((item) => ({
-                      label: item,
-                      className: 'rounded-[var(--radius-full)]',
-                    }))}
-                    busy={busyCapsuleId === entry.id}
-                    footerActions={(
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => onTryCapsule?.(entry)}
-                          disabled={!onTryCapsule || busyCapsuleId === entry.id}
-                          className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] bg-slate-950 px-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {busyCapsuleId === entry.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Boxes className="h-4 w-4" />}
-                          Attach
-                        </button>
+                {group.entries.map((entry) => {
+                  const proposedSlot = proposeDockSlotForCapsule(entry);
+                  const slotLabel = proposedSlot === 'tool' ? 'Tool' : CAPSULE_DOCK_SLOT_LABELS[proposedSlot];
+                  return (
+                    <CapsuleLibraryCard
+                      key={entry.id}
+                      variant="full"
+                      capsuleId={entry.id}
+                      title={entry.title}
+                      summary={entry.valueProp}
+                      subtitle={`${entry.origin === 'user' ? 'Your capsule' : 'Starter library'} / ${entry.category.replace('-', ' ')}`}
+                      categoryLabel={entry.taxonomy.types[0]?.label ?? entry.capsuleType}
+                      domainLabel={entry.taxonomy.domains[0]?.label ?? entry.starterDomain}
+                      roleLabel={entry.origin === 'user' ? 'Workspace capsule' : 'Starter capsule'}
+                      readiness={{
+                        tier: entry.readinessTier === 'review' ? 'near' : 'ready',
+                        score: Math.round(entry.ranking.score),
+                      }}
+                      qualityScore={entry.ranking.score}
+                      counts={{
+                        sources: entry.inside.sources,
+                        claims: entry.inside.claims,
+                        graphNodes: entry.inside.graphNodes,
+                        graphEdges: entry.inside.graphEdges,
+                      }}
+                      graph={{
+                        nodeCount: entry.inside.graphNodes,
+                        edgeCount: entry.inside.graphEdges,
+                      }}
+                      researchSignals={{
+                        sourceSpineCount: entry.researchSignals.sourceSpineCount,
+                        evidenceGapCount: entry.researchSignals.evidenceGapCount,
+                        refreshStatus: entry.researchSignals.refreshStatus,
+                        graphNodeCount: entry.researchSignals.graphNodeCount,
+                        graphEdgeCount: entry.researchSignals.graphEdgeCount,
+                        unsupportedClaimCount: entry.researchSignals.unsupportedClaimCount,
+                        inspectHref: `/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`,
+                      }}
+                      tags={entry.ontologyStack.slice(0, 4).map((item) => ({
+                        label: item,
+                        className: 'rounded-[var(--radius-full)]',
+                      }))}
+                      busy={busyCapsuleId === entry.id}
+                      addAction={{
+                        label: busyCapsuleId === entry.id ? `Adding to ${slotLabel} slot` : `Add to ${slotLabel} slot`,
+                        onAdd: () => onTryCapsule?.(entry, proposedSlot),
+                        disabled: !onTryCapsule || busyCapsuleId === entry.id,
+                      }}
+                      footerActions={(
                         <Link
                           href={`/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`}
                           className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -220,23 +275,65 @@ export function CapsuleLibrary({
                           <Eye className="h-4 w-4" />
                           Inspect
                         </Link>
-                      </>
-                    )}
-                  />
-                ))}
+                      )}
+                    />
+                  );
+                })}
               </div>
             </section>
           ))}
         </div>
       ) : (
         <div className="mt-4 rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
-          <p className="text-sm font-semibold text-slate-800">{entries.length ? 'No capsules match this search.' : 'No capsules yet.'}</p>
+          <p className="text-sm font-semibold text-slate-800">{entries.length ? 'No capsules match these filters.' : 'No capsules yet.'}</p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            {entries.length ? 'Try another category or search title, ontology, source, claim, or output terms.' : 'Starter capsules will still appear here when the library loads.'}
+            {entries.length ? 'Try another facet, category, or search title, ontology, source, claim, or output term.' : 'Starter capsules will still appear here when the library loads.'}
           </p>
+          {hasActiveFilters ? (
+            <button
+              type="button"
+              onClick={resetFilters}
+              className="mt-3 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              Reset filters
+            </button>
+          ) : null}
         </div>
       )}
     </section>
+  );
+}
+
+function FacetSelect({
+  label,
+  value,
+  allLabel,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  allLabel: string;
+  options: Array<{ tag: string; label: string; count: number }>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="grid gap-1">
+      <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="min-h-10 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-500"
+      >
+        <option value="all">{allLabel}</option>
+        {options.map((option) => (
+          <option key={option.tag} value={option.tag}>
+            {option.label} ({option.count})
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 
