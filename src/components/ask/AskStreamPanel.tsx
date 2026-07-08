@@ -31,6 +31,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import { AgentsWorkingStrip } from '@/components/ask/AgentsWorkingStrip';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
 import { AnswerContextProvenanceChips } from '@/components/ask/AnswerContextProvenanceChips';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
@@ -297,7 +298,7 @@ export function AskStreamPanel({
           createdAt: new Date(timestamp).toISOString(),
           streaming: true,
           stages: [],
-          orchestrationEvents: initialAskWorkingTimeline(),
+          orchestrationEvents: [],
         },
       ]);
 
@@ -696,6 +697,7 @@ export function AskStreamPanel({
                   threadId={threadId}
                   message={message}
                   newestActive={idx === timelineMessages.length - 1}
+                  reduceMotion={Boolean(reduceMotion)}
                   onDraftPack={draftDocumentPack}
                   onFollowUp={(followUp) => setPrompt(followUp)}
                   onRunTerminal={() => void loadHistory()}
@@ -853,7 +855,7 @@ function appendTimelineStage(setMessages: TimelineSetter, messageId: string, sta
 function appendOrchestrationEvent(setMessages: TimelineSetter, messageId: string, event: AskOrchestrationStatusEvent) {
   setMessages((current) => current.map((message) => {
     if (message.id !== messageId) return message;
-    const existing = message.orchestrationEvents ?? initialAskWorkingTimeline();
+    const existing = message.orchestrationEvents?.length ? message.orchestrationEvents : initialAskWorkingTimeline();
     const nextEvents = existing.map((item) => (item.id === event.id ? event : item));
     const queuedRun = event.id === 'worker' && event.runId ? event : message.queuedRun ?? null;
     return { ...message, orchestrationEvents: nextEvents, queuedRun };
@@ -907,6 +909,7 @@ function AskMessageBubble({
   onRunTerminal,
   onQueueSourceGapScout,
   packSaving,
+  reduceMotion,
 }: {
   capsuleId?: string | null;
   threadId?: string | null;
@@ -917,6 +920,7 @@ function AskMessageBubble({
   onRunTerminal: () => void;
   onQueueSourceGapScout: (unsupportedClaims: string[]) => void;
   packSaving: boolean;
+  reduceMotion: boolean;
 }) {
   if (message.role === 'user') {
     return (
@@ -937,6 +941,13 @@ function AskMessageBubble({
   return (
     <div className="flex justify-start">
       <article className="max-w-[88%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm">
+        <AgentsWorkingStrip
+          events={message.orchestrationEvents}
+          streaming={Boolean(message.streaming)}
+          runId={message.queuedRun?.runId}
+          envelope={message.answerEnvelope}
+          reduceMotion={reduceMotion}
+        />
         <div className="prose prose-sm max-w-none prose-headings:font-serif prose-headings:text-navy-950 prose-a:text-diplomatic-blue prose-strong:text-navy-950">
           <AgentResultTurnHeader runtime={message.receipt?.runtime} />
           {message.content ? (
