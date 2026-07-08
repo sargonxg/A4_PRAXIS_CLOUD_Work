@@ -33,12 +33,12 @@ import {
 } from 'lucide-react';
 import { AgentsWorkingStrip } from '@/components/ask/AgentsWorkingStrip';
 import { AnswerQualityStrip } from '@/components/ask/AnswerQualityStrip';
+import { AnswerSourcesPanel } from '@/components/ask/AnswerSourcesPanel';
 import { AnswerContextProvenanceChips } from '@/components/ask/AnswerContextProvenanceChips';
 import { AskArtifactPreview } from '@/components/ask/AskArtifactPreview';
 import { AskQueuedAgentRunPanel } from '@/components/ask/AskQueuedAgentRunPanel';
 import { SourceabilityVerdictBadges } from '@/components/ask/SourceabilityVerdictBadges';
 import { AskTurnPlanPanel } from '@/components/ask/AskTurnPlanPanel';
-import { SourceTierBadge } from '@/components/source/SourceTierBadge';
 import { ActivePolicyFileStrip } from '@/components/policy-work-file/ActivePolicyFileStrip';
 import { KnowledgeStructurePanel, knowledgeStructureFromAskEnvelope } from '@/components/policy-work-file/KnowledgeStructurePanel';
 import { InterruptCard, type InterruptRequest } from '@/components/ask/InterruptCard';
@@ -938,6 +938,10 @@ function AskMessageBubble({
   const sourceabilityVerdicts = message.answerEnvelope?.sourceabilityVerdicts?.length
     ? message.answerEnvelope.sourceabilityVerdicts
     : message.sourceabilityVerdicts ?? [];
+  const focusAnswerSourceEntry = (entryId: string) => {
+    if (typeof document === 'undefined') return;
+    document.getElementById(entryId)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
   return (
     <div className="flex justify-start">
       <article className="max-w-[88%] rounded-2xl rounded-bl-md border border-slate-200 bg-white px-4 py-3 text-slate-900 shadow-sm">
@@ -964,6 +968,12 @@ function AskMessageBubble({
 
         <AnswerContextProvenanceChips envelope={message.answerEnvelope} />
         <SourceabilityVerdictBadges verdicts={sourceabilityVerdicts} />
+        <AnswerSourcesPanel
+          envelope={message.answerEnvelope}
+          onAction={onFollowUp}
+          onQueueSourceGapScout={onQueueSourceGapScout}
+          onSourceEntryRequest={focusAnswerSourceEntry}
+        />
 
         {message.streaming ? (
           <span className="mt-2 inline-block h-4 w-0.5 animate-pulse bg-gold-500" />
@@ -983,7 +993,7 @@ function AskMessageBubble({
           turnId={message.id}
           onFollowUp={onFollowUp}
         />
-        <AnswerSourcePreviewPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
+        <AnswerFollowUpPanel envelope={message.answerEnvelope} onFollowUp={onFollowUp} />
         <KnowledgeStructurePanel buckets={knowledgeStructureFromAskEnvelope(message.answerEnvelope)} />
         {!message.streaming && message.content && message.answerEnvelope?.documentPackCandidate ? (
           <AskArtifactPreview
@@ -1536,78 +1546,26 @@ function sourceGapPromotionTitle(gap: string): string {
   return cleaned ? `Source gap: ${cleaned}` : 'Source gap review';
 }
 
-function AnswerSourcePreviewPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
-  const sourceCards = envelope?.sourceCards ?? [];
+function AnswerFollowUpPanel({ envelope, onFollowUp }: { envelope?: AskAnswerEnvelope; onFollowUp: (followUp: string) => void }) {
   const followUps = envelope?.followUps ?? [];
-  if (sourceCards.length === 0 && followUps.length === 0) return null;
+  if (followUps.length === 0) return null;
   return (
     <div className="mt-3 space-y-2">
-      {sourceCards.length > 0 ? (
-        <section className="rounded-md border border-slate-200 bg-slate-50 p-2">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Sources used</p>
-            <span className="rounded-md border border-slate-200 bg-white px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
-              {sourceCards.length} preview{sourceCards.length === 1 ? '' : 's'}
-            </span>
-          </div>
-          <div className="mt-2 grid gap-2">
-            {sourceCards.map((card) => (
-              <article key={card.id} className="rounded-md border border-slate-200 bg-white p-2">
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{card.label}</p>
-                    {card.url ? (
-                      <a href={card.url} target="_blank" rel="noreferrer" className="mt-0.5 block truncate text-xs font-semibold text-diplomatic-blue hover:underline">
-                        {card.title}
-                      </a>
-                    ) : (
-                      <p className="mt-0.5 truncate text-xs font-semibold text-navy-950">{card.title}</p>
-                    )}
-                  </div>
-                  <div className="flex shrink-0 flex-wrap items-center justify-end gap-1">
-                    <SourceTierBadge tier={card.reliabilityTier ?? null} date={card.date ?? null} stale={card.stale ?? null} showFreshness size="xs" />
-                    <span className="rounded-md border border-slate-200 bg-slate-50 px-1.5 py-0.5 font-mono text-[10px] text-slate-500">
-                      {Math.round((card.confidence ?? 0) * 100)}%
-                    </span>
-                  </div>
-                </div>
-                <blockquote className="mt-2 border-l-2 border-diplomatic-blue/40 pl-2 text-xs leading-5 text-slate-700">
-                  {card.quotePreview || 'No quote preview available.'}
-                </blockquote>
-                <div className="mt-2 flex flex-wrap gap-1 text-[10px] text-slate-500">
-                  {card.citationLabel ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.citationLabel}</span> : null}
-                  {card.locatorLabel ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.locatorLabel}</span> : null}
-                  {!card.locatorLabel && card.pageRef ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.pageRef}</span> : null}
-                  {card.chunkId ? <span className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono">{card.chunkId}</span> : null}
-                  {card.extractionFallbackLabel ? <span className="rounded-md bg-amber-50 px-1.5 py-0.5 font-mono text-amber-800">{card.extractionFallbackLabel}</span> : null}
-                  {card.sourceReceiptHref && card.sourceReceiptId ? (
-                    <a href={card.sourceReceiptHref} className="rounded-md bg-slate-100 px-1.5 py-0.5 font-mono text-diplomatic-blue hover:underline">
-                      Source receipt
-                    </a>
-                  ) : null}
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-      ) : null}
-      {followUps.length > 0 ? (
-        <section className="rounded-md border border-slate-200 bg-white p-2">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Follow-ups</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {followUps.map((followUp) => (
-              <button
-                key={followUp}
-                type="button"
-                onClick={() => onFollowUp(followUp)}
-                className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-left text-[11px] font-semibold text-slate-700 hover:border-diplomatic-blue/30 hover:bg-white"
-              >
-                {followUp}
-              </button>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <section className="rounded-md border border-slate-200 bg-white p-2">
+        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-600">Follow-ups</p>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {followUps.map((followUp) => (
+            <button
+              key={followUp}
+              type="button"
+              onClick={() => onFollowUp(followUp)}
+              className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-left text-[11px] font-semibold text-slate-700 hover:border-diplomatic-blue/30 hover:bg-white"
+            >
+              {followUp}
+            </button>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

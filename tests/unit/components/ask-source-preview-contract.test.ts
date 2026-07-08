@@ -4,15 +4,18 @@ import { describe, expect, it } from 'vitest';
 
 describe('Ask source preview panel contract', () => {
   const source = readFileSync(join(process.cwd(), 'src/components/ask/AskStreamPanel.tsx'), 'utf8');
+  const answerSourcesPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerSourcesPanel.tsx'), 'utf8');
   const answerQualityStripSource = readFileSync(join(process.cwd(), 'src/components/ask/AnswerQualityStrip.tsx'), 'utf8');
   const turnPlanPanelSource = readFileSync(join(process.cwd(), 'src/components/ask/AskTurnPlanPanel.tsx'), 'utf8');
 
   it('renders source locators, source receipt links, and extraction fallback labels', () => {
-    expect(source).toContain('locatorLabel');
-    expect(source).toContain('sourceReceiptHref');
-    expect(source).toContain('extractionFallbackLabel');
-    expect(source).toContain('Source receipt');
-    expect(source).toContain('SourceTierBadge');
+    expect(source).toContain("import { AnswerSourcesPanel }");
+    expect(source).toContain('<AnswerSourcesPanel');
+    expect(answerSourcesPanelSource).toContain('locatorLabel');
+    expect(answerSourcesPanelSource).toContain('sourceReceiptHref');
+    expect(answerSourcesPanelSource).toContain('extractionFallbackLabel');
+    expect(answerSourcesPanelSource).toContain('Source receipt');
+    expect(answerSourcesPanelSource).toContain('SourceTierBadge');
   });
 
   it('renders follow-up chips as composer actions', () => {

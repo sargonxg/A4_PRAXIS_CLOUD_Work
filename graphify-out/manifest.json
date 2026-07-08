@@ -3340,8 +3340,8 @@
     "semantic_hash": ""
   },
   "src/components/ask/AskStreamPanel.tsx": {
-    "mtime": 1783518480.9985788,
-    "ast_hash": "c0f74e2038d2d968514841dce08b7571",
+    "mtime": 1783520967.616409,
+    "ast_hash": "7fdd6ee93eae8f0ad95ade0d7069c630",
     "semantic_hash": ""
   },
   "src/components/ask/AskTurnPlanPanel.tsx": {
@@ -6735,8 +6735,8 @@
     "semantic_hash": ""
   },
   "tests/unit/components/ask-source-preview-contract.test.ts": {
-    "mtime": 1783517211.1469584,
-    "ast_hash": "83ec9068be85b8f73ed18bd8951efb4a",
+    "mtime": 1783521110.2735298,
+    "ast_hash": "bbf2ccbdc723e24d98c7d6fbdcf797b9",
     "semantic_hash": ""
   },
   "tests/unit/components/ask-sourceability-verdict-badges.test.ts": {
@@ -10337,6 +10337,21 @@
   "tests/unit/components/boardroom/boardroom-dock-picker.test.tsx": {
     "mtime": 1783520146.7265825,
     "ast_hash": "42389af09c2954bc40a155bdfc5ea7c3",
+    "semantic_hash": ""
+  },
+  "src/components/ask/AnswerSourcesPanel.tsx": {
+    "mtime": 1783521186.014876,
+    "ast_hash": "ad6bc55b9017b8d0e9b3a50c213b7ac3",
+    "semantic_hash": ""
+  },
+  "tests/unit/components/ask/AnswerSourcesPanel.test.tsx": {
+    "mtime": 1783521016.378601,
+    "ast_hash": "822b3a44770216ca0d8fb09c20a8db00",
+    "semantic_hash": ""
+  },
+  ".serena/memories/memory_maintenance.md": {
+    "mtime": 1783520578.3221543,
+    "ast_hash": "17877e37a829c58bb20c04228b985ab8",
     "semantic_hash": ""
   }
 }
