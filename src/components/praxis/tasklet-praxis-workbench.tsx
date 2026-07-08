@@ -64,6 +64,7 @@ import {
 import { AskContextBar } from '@/components/app/ask-context-bar';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { CapsuleWorkbenchPanel } from '@/components/capsules/CapsuleWorkbenchPanel';
+import { CapsuleAdoptionTrustBlock, type CapsuleAdoptionProvenance, type CapsuleAdoptionSourceCoverage } from '@/components/capsules/CapsuleAdoptionTrustBlock';
 import { CapsuleImportButton } from '@/components/capsules/CapsuleImportButton';
 import { CapsuleLibraryCard } from '@/components/capsules/CapsuleLibraryCard';
 import { CapsuleOntologyWorkbench } from '@/components/capsules/CapsuleOntologyWorkbench';
@@ -398,6 +399,13 @@ type PraxisCapsuleSummary = {
   scope: 'user' | 'situation' | 'team';
   version: number;
   summary?: string | null;
+  parentCapsuleId?: string | null;
+  forkedFromVersion?: number | null;
+  provenance?: {
+    source?: string | null;
+    parentCapsuleId?: string | null;
+    notes?: string | null;
+  } | null;
   updatedAt: string;
   archivedAt?: string | null;
   activeForSituationIds?: string[];
@@ -950,6 +958,7 @@ export function TaskletPraxisWorkbench({
   const [userCapsules, setUserCapsules] = useState<PraxisCapsuleSummary[]>([]);
   const [capsuleInventorySummary, setCapsuleInventorySummary] = useState<CapsuleInventorySummary | null>(null);
   const [capsulesLoading, setCapsulesLoading] = useState(false);
+  const [forkingCapsuleId, setForkingCapsuleId] = useState<string | null>(null);
   const [capsuleBrowserOpen, setCapsuleBrowserOpen] = useState(false);
   const [capsuleBrowserTargetRole, setCapsuleBrowserTargetRole] = useState<CapsuleRole | null>(null);
   const [mobileContextSheetOpen, setMobileContextSheetOpen] = useState(false);
@@ -2914,6 +2923,42 @@ export function TaskletPraxisWorkbench({
     setGuidePrompt(`Ask about "${capsule.label}": source gaps, use cases, risks, or next action.`);
     setInspectorOpen(true);
     setStatus(`${capsule.label} opened from the capsule repository in the inspector.`);
+  }
+
+  async function forkCapsuleFromInspector(capsule: PraxisCapsuleSummary) {
+    if (!isAuthenticated) {
+      sendPublicToLogin(`Fork "${capsule.label}" into a private PRAXIS capsule.`);
+      return;
+    }
+    const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
+    if (persisted) {
+      selectUserCapsule(persisted);
+      setStatus(`${persisted.label} is already in your private capsule library.`);
+      return;
+    }
+    setForkingCapsuleId(capsule.capsuleId);
+    try {
+      const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsule.capsuleId)}?action=fork`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ label: `${capsule.label} fork` }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok || !payload?.capsule) {
+        throw new Error(payload?.error ?? 'Capsule fork failed');
+      }
+      const fork = payload.capsule as PraxisCapsuleSummary;
+      setUserCapsules((current) => [fork, ...current.filter((item) => item.capsuleId !== fork.capsuleId)]);
+      selectUserCapsule(fork);
+      setGuideCapsuleId(fork.capsuleId);
+      setStatus(`${fork.label} created as a private fork of ${capsule.label}.`);
+      await refreshCapsules(fork.capsuleId);
+    } catch (err) {
+      setStatus(err instanceof Error ? `Fork failed: ${err.message}` : 'Fork failed.');
+    } finally {
+      setForkingCapsuleId(null);
+    }
   }
 
   async function archiveCapsuleCard(capsule: PraxisCapsuleSummary) {
@@ -4939,6 +4984,8 @@ export function TaskletPraxisWorkbench({
             selectedAgent={selectedAgent}
             isAuthenticated={isAuthenticated}
             isStreaming={guideStreaming}
+            ownedByViewer={userCapsules.some((item) => item.capsuleId === selectedCapsule.capsuleId)}
+            forkBusy={forkingCapsuleId === selectedCapsule.capsuleId}
             onClose={() => setInspectorOpen(false)}
             onImprove={() => {
               setInspectorOpen(false);
@@ -4954,6 +5001,9 @@ export function TaskletPraxisWorkbench({
             }}
             onAdd={() => {
               if (selectedCapsule) applyCapsuleCard(selectedCapsule);
+            }}
+            onFork={() => {
+              if (selectedCapsule) void forkCapsuleFromInspector(selectedCapsule);
             }}
             onRateUsefulness={(rating) => selectedCapsule ? void rateCapsuleUsefulness(selectedCapsule, rating) : undefined}
           />
@@ -6522,6 +6572,86 @@ function capsuleFreshnessStatus(capsule: PraxisCapsuleSummary | null): string {
   if (artifacts.refreshDocket) return artifacts.refreshDocket.status;
   const starter = starterDefinitionForCapsule(capsule);
   return starter?.curationProfile.sourceRefreshStatus.status ?? 'freshness unknown';
+}
+
+function capsuleAdoptionSourceCoverage(capsule: PraxisCapsuleSummary, v3Capsule: ReturnType<typeof normalizeContextCapsuleV3> | null): CapsuleAdoptionSourceCoverage {
+  const artifacts = starterResearchArtifacts(capsule);
+  const starterSources = artifacts.sourceSpine.map((source) => ({
+    tier: source.reliabilityTier,
+    stale: false,
+  }));
+  const v3Sources = v3Capsule?.sourceSpine.sourceRefs.map((source) => ({
+    tier: source.reliabilityTier,
+    stale: v3Capsule.sourceSpine.staleSourceIds.includes(source.sourceId),
+  })) ?? [];
+  const sources = starterSources.length ? starterSources : v3Sources;
+  if (!sources.length) {
+    return {
+      assessed: false,
+      tierSummary: 'source coverage not assessed',
+      freshnessLabel: 'freshness not assessed',
+    };
+  }
+
+  const tierCounts = new Map<string, number>();
+  for (const source of sources) {
+    const tier = typeof source.tier === 'number' || typeof source.tier === 'string'
+      ? `tier ${source.tier}`
+      : 'tier not assessed';
+    tierCounts.set(tier, (tierCounts.get(tier) ?? 0) + 1);
+  }
+  const tierSummary = Array.from(tierCounts.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([tier, count]) => `${tier}: ${count}`)
+    .join(' / ');
+  const staleCount = sources.filter((source) => source.stale).length;
+  const docketStatus = artifacts.refreshDocket?.status ?? capsuleFreshnessStatus(capsule);
+  return {
+    assessed: true,
+    tierSummary,
+    freshnessLabel: staleCount
+      ? `${staleCount} stale source${staleCount === 1 ? '' : 's'} / ${humanizeIdentifier(docketStatus)}`
+      : humanizeIdentifier(docketStatus),
+  };
+}
+
+function capsuleAdoptionProvenance(capsule: PraxisCapsuleSummary, v2Capsule: ContextCapsuleV2): CapsuleAdoptionProvenance {
+  const parentCapsuleId = capsule.parentCapsuleId ?? capsule.provenance?.parentCapsuleId ?? v2Capsule.provenance.parentCapsuleId ?? null;
+  return {
+    originLabel: capsule.provenance?.source ?? v2Capsule.provenance.source ?? 'not assessed',
+    parentCapsuleId,
+    parentHref: parentCapsuleId ? `/app/capsules?starter=${encodeURIComponent(parentCapsuleId)}&lane=inspect` : null,
+  };
+}
+
+function capsuleLastRefreshLabel(capsule: PraxisCapsuleSummary, v3Capsule: ReturnType<typeof normalizeContextCapsuleV3> | null): string {
+  const artifacts = starterResearchArtifacts(capsule);
+  const sourceDates = [
+    ...artifacts.sourceSpine.map((source) => source.date),
+    ...(v3Capsule?.sourceSpine.sourceRefs.map((source) => source.date) ?? []),
+  ].filter((date): date is string => Boolean(date));
+  const latestSourceDate = latestDateLabel(sourceDates);
+  if (latestSourceDate) return latestSourceDate;
+  return formatCapsuleDateLabel(capsule.updatedAt) ?? 'not assessed';
+}
+
+function latestDateLabel(values: string[]): string | null {
+  const timestamps = values
+    .map((value) => {
+      const normalized = /^\d{4}$/.test(value) ? `${value}-01-01` : value;
+      const timestamp = Date.parse(normalized);
+      return Number.isFinite(timestamp) ? timestamp : null;
+    })
+    .filter((value): value is number => typeof value === 'number');
+  if (!timestamps.length) return null;
+  return new Date(Math.max(...timestamps)).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatCapsuleDateLabel(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return null;
+  return new Date(timestamp).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function isHumanGatedPolicyJudgmentCapsule(capsule: PraxisCapsuleSummary): boolean {
@@ -10222,11 +10352,14 @@ function CapsuleInspectorSheet({
   selectedAgent,
   isAuthenticated,
   isStreaming,
+  ownedByViewer,
+  forkBusy,
   onClose,
   onImprove,
   onRepository,
   onAskCapsule,
   onAdd,
+  onFork,
   onRateUsefulness,
 }: {
   capsule: PraxisCapsuleSummary | null;
@@ -10240,11 +10373,14 @@ function CapsuleInspectorSheet({
   selectedAgent: PolicyAgentDefinition;
   isAuthenticated: boolean;
   isStreaming: boolean;
+  ownedByViewer: boolean;
+  forkBusy: boolean;
   onClose: () => void;
   onImprove: () => void;
   onRepository: () => void;
   onAskCapsule: (question: string) => void;
   onAdd: () => void;
+  onFork: () => void;
   onRateUsefulness: (rating: number) => void;
 }) {
   const [inspectorPrompt, setInspectorPrompt] = useState('');
@@ -10292,6 +10428,14 @@ function CapsuleInspectorSheet({
   const v3Capsule = v2Capsule ? normalizeContextCapsuleV3(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : null;
   const v3Quality = v3Capsule ? deriveCapsuleV3QualityAudit(v3Capsule, { now: STARTER_CAPSULE_UPDATED_AT }) : null;
   const v3PublishGate = v3Capsule ? canPublishCapsuleV3(v3Capsule, { actor: 'human', now: STARTER_CAPSULE_UPDATED_AT }) : null;
+  const adoptionTrust = capsule && v2Capsule && !ownedByViewer && (v2Capsule.visibility === 'public' || v2Capsule.visibility === 'unlisted') && v2Capsule.forkability !== 'disabled'
+    ? {
+        readiness: deriveCapsuleReadinessSummary(v2Capsule, { now: STARTER_CAPSULE_UPDATED_AT }),
+        sourceCoverage: capsuleAdoptionSourceCoverage(capsule, v3Capsule),
+        provenance: capsuleAdoptionProvenance(capsule, v2Capsule),
+        lastRefreshLabel: capsuleLastRefreshLabel(capsule, v3Capsule),
+      }
+    : null;
   const reviewCardOnlyAgentIds = CAPSULE_V3_AGENT_ROLES.map((role) => role.id);
   const unsupportedClaims = capsule ? capsuleUnsupportedClaimCount(capsule) : 0;
   const qualityBreakdownSummary = v2Quality
@@ -10396,6 +10540,19 @@ function CapsuleInspectorSheet({
           selectedAgent={selectedAgent}
           compact
         />
+        {adoptionTrust && v2Capsule ? (
+          <CapsuleAdoptionTrustBlock
+            capsuleTitle={capsule?.label ?? 'Capsule'}
+            readiness={adoptionTrust.readiness}
+            sourceCoverage={adoptionTrust.sourceCoverage}
+            humanGateLabel={humanGateStatusLabel(humanGateStatus)}
+            lastRefreshLabel={adoptionTrust.lastRefreshLabel}
+            provenance={adoptionTrust.provenance}
+            forkability={v2Capsule.forkability}
+            forkBusy={forkBusy}
+            onFork={onFork}
+          />
+        ) : null}
         <CapsuleXRayScoreboard
           capsule={capsule}
           policyTeam={policyTeam}

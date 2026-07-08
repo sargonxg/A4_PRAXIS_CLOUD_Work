@@ -143,9 +143,12 @@ export async function forkCapsule(
   const now = nowIso(deps);
   const suffix = cleanId(deps?.idFactory?.() ?? randomUUID(), 'fork').slice(0, 12);
   const forkId = cleanId(`${source.id}-fork-${suffix}`, `${source.id}-fork`);
+  const resetEval = { ...source.eval };
+  delete resetEval.lastRun;
   const fork = buildCapsule(uid, {
     ...source,
     id: forkId,
+    version: '0.1.0',
     status: 'draft',
     immutable: false,
     forkedFrom: {
@@ -169,6 +172,7 @@ export async function forkCapsule(
       rating: 0,
       revenueShare: undefined,
     },
+    eval: resetEval,
   }, now);
   const record = withRecordMetadata(uid, fork, now, now, null);
   await capsulesCollection(deps).doc(record.id).set(record);

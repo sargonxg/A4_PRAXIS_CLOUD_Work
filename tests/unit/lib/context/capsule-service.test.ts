@@ -159,11 +159,19 @@ describe('capsule service', () => {
       capsuleId: 'cap-1',
       coreRefs: { situationCoreId: 'sit-1' },
       activeForSituationIds: ['sit-1'],
+      access: { visibility: 'public', allowClone: true, allowCommunityRating: true },
+      latestGateState: 'applied',
+      readinessSummary: { reviewRequired: false, reviewCardCount: 2 },
     }, deps(db));
     const fork = await forkCapsule('u1', parent.capsuleId, { capsuleId: 'cap-2' }, deps(db));
 
     expect(fork?.parentCapsuleId).toBe(parent.capsuleId);
     expect(fork?.forkedFromVersion).toBe(parent.version);
+    expect(fork?.version).toBe(1);
+    expect(fork?.access.visibility).toBe('private');
+    expect(fork?.latestGateState).toBe('none');
+    expect(fork?.readinessSummary?.reviewRequired).toBe(false);
+    expect(fork?.readinessSummary?.reviewCardCount).toBe(0);
     expect(fork?.provenance.source).toBe('fork');
     expect(fork?.activeForSituationIds).toEqual([]);
   });

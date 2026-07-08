@@ -3725,8 +3725,8 @@
     "semantic_hash": ""
   },
   "src/components/praxis/tasklet-praxis-workbench.tsx": {
-    "mtime": 1783517210.47602,
-    "ast_hash": "dc0cdf281572bacc389c354472844f62",
+    "mtime": 1783522360.418908,
+    "ast_hash": "c875ee52256ea2fc1f7728b0e7841cbd",
     "semantic_hash": ""
   },
   "src/components/praxis/tasklet-workbench-conversation.ts": {
@@ -4440,8 +4440,8 @@
     "semantic_hash": ""
   },
   "src/lib/capsules/storage.ts": {
-    "mtime": 1783517210.633645,
-    "ast_hash": "57859ca03dd1d955676bed55b7d5f12d",
+    "mtime": 1783522269.2126606,
+    "ast_hash": "fbf08e339912c48d098b964d2d193937",
     "semantic_hash": ""
   },
   "src/lib/cases/landing-cards.ts": {
@@ -7185,8 +7185,8 @@
     "semantic_hash": ""
   },
   "tests/unit/lib/capsules/storage.test.ts": {
-    "mtime": 1783517211.241401,
-    "ast_hash": "9f9ce8ca2b6bdfffc05b66bfe258a0ca",
+    "mtime": 1783522279.3036606,
+    "ast_hash": "182aa93921c253b359855c2d822f4e5a",
     "semantic_hash": ""
   },
   "tests/unit/lib/constants/advisors.test.ts": {
@@ -7265,8 +7265,8 @@
     "semantic_hash": ""
   },
   "tests/unit/lib/context/capsule-service.test.ts": {
-    "mtime": 1783517211.2627392,
-    "ast_hash": "428cf1d8ba00289aa9c142a3a2574b7c",
+    "mtime": 1783522375.775804,
+    "ast_hash": "55e72aa535539963fc0b45fb1f5739ac",
     "semantic_hash": ""
   },
   "tests/unit/lib/context/capsule-suggestions.test.ts": {
@@ -10352,6 +10352,16 @@
   ".serena/memories/memory_maintenance.md": {
     "mtime": 1783520578.3221543,
     "ast_hash": "17877e37a829c58bb20c04228b985ab8",
+    "semantic_hash": ""
+  },
+  "src/components/capsules/CapsuleAdoptionTrustBlock.tsx": {
+    "mtime": 1783521932.4573846,
+    "ast_hash": "ecb61605e52aea7a37a6203d90573df0",
+    "semantic_hash": ""
+  },
+  "tests/unit/components/capsules/CapsuleAdoptionTrustBlock.test.tsx": {
+    "mtime": 1783522366.8227785,
+    "ast_hash": "b11f22857937e410c00d6309b84c5d89",
     "semantic_hash": ""
   }
 }

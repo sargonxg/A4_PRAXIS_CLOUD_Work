@@ -83,6 +83,7 @@ describe('capsule/v2 Firestore storage lifecycle', () => {
     const updated = await updateDraftCapsule('u1', 'mediation-sudan', {
       capsule: {
         persona: { frameworks: ['zartman-ripeness', 'stedman-spoilers'] },
+        version: '2.0.0',
         eval: {
           lastRun: {
             runId: 'eval-pass',
@@ -118,13 +119,24 @@ describe('capsule/v2 Firestore storage lifecycle', () => {
 
     const fork = await forkCapsule('u1', 'mediation-sudan', deps);
     expect(fork.id).toBe('mediation-sudan-fork-uuid-1234');
+    expect(fork.version).toBe('0.1.0');
     expect(fork.status).toBe('draft');
     expect(fork.immutable).toBe(false);
+    expect(fork.ownerUid).toBe('u1');
     expect(fork.forkedFrom).toEqual({
       id: 'mediation-sudan',
       version: published.version,
       hash: published.contentHash,
     });
+    expect(fork.market.visibility).toBe('private');
+    expect(fork.market.installs).toBe(0);
+    expect(fork.market.rating).toBe(0);
+    expect(fork.publishedVersionHash).toBeNull();
+    expect(fork.provenance.publishedAt).toBeUndefined();
+    expect(fork.provenance.signature).toBeUndefined();
+    expect(fork.provenance.attestation).toBeUndefined();
+    expect(fork.provenance.certification).toBeUndefined();
+    expect(fork.eval.lastRun).toBeUndefined();
 
     const loaded = await getCapsule('u1', 'mediation-sudan', deps);
     expect(loaded?.publishedVersionHash).toBe(published.contentHash);
