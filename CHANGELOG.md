@@ -2,6 +2,56 @@
 
 ## [Unreleased]
 
+Build 2026.07.08.01 (PRAXIS v6.5.0).
+
+- feat(ask): agents-working narrative strip. While an answer streams, a calm
+  one-line strip narrates the live orchestration receipts (triage, active
+  agent, tool calls, sourceability, approval gates) keyed off
+  `AskOrchestrationStatusEvent`, links to `/agents/{runId}` when a durable
+  run exists, and collapses into an expandable "how this was made" summary
+  after completion (HANDOVER P3).
+
+- feat(ask): first-class answer sources panel. Sources render under every
+  answer with tier badges, publisher/date lines, and quote snippets; claim
+  chips carry support posture (supported / partially / unsupported /
+  disputed) and focus their backing source entry; auto-derived sourcing
+  commentary summarizes tier coverage per group; unsupported/weak claims
+  surface as amber gap chips wired to the source-gap scout. Absorbs the old
+  source-preview cards (Workstream C).
+
+- feat(capsules): repository facet filters + slot-aware Add. `/app/capsules`
+  filters by type / domain / team from the canonical capsule taxonomy
+  resolver (no hardcoded facet lists), and every card's Add action proposes
+  the correct dock slot from the capsule's `type:*` facet, writing through
+  `assignCapsuleToDockSlot`. "Try this capsule" now flows through the same
+  canonical dock-assign path instead of a bespoke stack patch (HANDOVER P4).
+
+- feat(boardroom): inline dock slot pickers. Each Capsule Dock slot in the
+  boardroom sidebar can be changed/cleared in place via `CapsuleListPicker`
+  and the shared `persistCapsuleDockStack` helper (extracted from the Ask
+  context bar with zero Ask behavior change); the compiled dock still governs
+  runs server-side (HANDOVER P6).
+
+- feat(capsules): adoption trust block + hardened fork semantics. Non-owned
+  public/unlisted capsules show trust semaphore, source coverage and
+  freshness, human-gate status, and provenance (with parent link for forks)
+  before adoption; fork CTA respects `forkability`. Storage-level fork now
+  resets version to `0.1.0` and clears inherited eval pass state so forked
+  content is never treated as pre-approved; privacy-by-default asserted in
+  tests (HANDOVER P8).
+
+- docs(capsules): `docs/architecture/CAPSULE_ATTACHABLE_DOCK_BUILD.md`
+  (attach contract, slot semantics, version pinning, portability envelope,
+  build sequence) and
+  `docs/architecture/CAPSULE_ONTOLOGY_SEMANTIC_STRUCTURE.md` (V3 semantic
+  assessment + recommendations R1–R8: ACO type validation, canonical node
+  refs, claim↔graph↔source triangle, ontology registry as data, JSON-LD
+  projection, confidence bands, cross-capsule contradictions, output
+  register layer).
+
+- test: pinned far-future human-gate expiry in the capsule-sync fixtures so
+  the suite no longer rots when the fixture gate expires in real time.
+
 Build 2026.06.12.01 (PRAXIS v6.5.0).
 
 - refactor(home): simplify home surfaces — removed the PraxisAppLaunchpad

@@ -1,5 +1,37 @@
 # PRAXIS — STATUS
 
+## 2026-07-08 — Generation Transparency + Capsule Adoption Round (build 2026.07.08.01)
+
+Current product checkpoint (HANDOVER P3, P4, P6, P8 + Workstream C):
+
+- Ask PRAXIS now narrates its own agentic workflow: a calm one-line
+  agents-working strip renders live orchestration receipts above every
+  streaming answer (triage, active agent, tool calls, sourceability,
+  approval gates), deep-links `/agents/{runId}`, and collapses to an
+  expandable "how this was made" summary.
+- Answers carry a first-class sources panel: tiered sources with quote
+  snippets, claim chips with support posture that focus their backing
+  source, auto-derived sourcing commentary, and amber gap chips wired to
+  the source-gap scout.
+- The capsule repository has taxonomy facet filters (type / domain / team)
+  and slot-aware Add-to-dock; "Try this capsule" and all attach flows now
+  write through the canonical `assignCapsuleToDockSlot` path.
+- The boardroom dock is editable in place via inline slot pickers using the
+  shared `persistCapsuleDockStack` helper (extracted from the Ask context
+  bar, zero Ask behavior change).
+- Non-owned public capsules show an adoption trust block (semaphore, source
+  coverage, human-gate status, provenance with parent link); storage-level
+  fork resets version and eval pass state, private by default.
+- New architecture docs: `docs/architecture/CAPSULE_ATTACHABLE_DOCK_BUILD.md`
+  and `docs/architecture/CAPSULE_ONTOLOGY_SEMANTIC_STRUCTURE.md` (R1–R8
+  semantic roadmap).
+- Baseline repair: capsule-sync test fixtures no longer expire with wall
+  time (far-future human-gate expiry).
+- Validation: `npx tsc --noEmit`, full `npx vitest run`, `npm run lint`,
+  `npm run build`, `npm run audit:repo-shape`,
+  `node scripts/audit-ai-routes.mjs`, `npm run audit:public-surface`, and
+  `npm run audit:release-notes` pass locally.
+
 ## 2026-06-11 — P1 Capsule Quality Ranking Gate (build 2026.06.11.04)
 
 Current product checkpoint:
