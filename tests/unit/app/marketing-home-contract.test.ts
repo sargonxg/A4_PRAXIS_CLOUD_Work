@@ -99,6 +99,18 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).not.toContain('<PublicShell');
   });
 
+  it('keeps the public composer first and offers clear saved-context entry points', () => {
+    const shellSource = readFileSync(chatShellPath, 'utf8');
+    const chatSource = readFileSync(praxisChatPath, 'utf8');
+    expect(chatSource).toContain('Policy analysis you can inspect.');
+    expect(chatSource).toContain('Sign in to run your question and save the work.');
+    expect(chatSource).toContain("isPublic ? 'order-first'");
+    expect(shellSource).toContain('Explore capsules');
+    expect(shellSource).toContain('Build your own');
+    expect(shellSource).toContain('How saved context guides the analysis');
+    expect(shellSource).toContain("item.id === 'ask' || item.id === 'context'");
+  });
+
   it('rebuilds signed-in /app as a calm launchpad instead of the full cockpit default', () => {
     const source = readFileSync(appHomePath, 'utf8');
     expect(source).toContain('PraxisChatFirstShell');

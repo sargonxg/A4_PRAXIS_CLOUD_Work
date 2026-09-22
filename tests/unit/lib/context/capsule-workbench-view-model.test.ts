@@ -47,6 +47,15 @@ const capsule = {
 };
 
 describe('buildCapsuleWorkbenchViewModel', () => {
+  it('only offers decisions on persisted open cards, never derived warnings or closed decisions', () => {
+    const model = buildCapsuleWorkbenchViewModel({ capsule, reviewCards: [
+      { reviewCardId: 'open', state: 'owner_review' },
+      { reviewCardId: 'closed', state: 'applied' },
+      { state: 'proposed' },
+    ] });
+    expect(model.reviewQueue.find((card) => card.id === 'open')?.allowedActions).toEqual(['approve', 'reject']);
+    expect(model.reviewQueue.filter((card) => card.id !== 'open').every((card) => card.allowedActions.length === 0)).toBe(true);
+  });
   it('turns a capsule into a structured workbench with graph, ontology, tacit knowledge, agents, and review posture', () => {
     const model = buildCapsuleWorkbenchViewModel({
       capsule,
@@ -175,7 +184,7 @@ describe('buildCapsuleWorkbenchViewModel', () => {
     expect(model.reviewQueue.some((item) => item.target === 'sourceGap')).toBe(true);
     expect(model.reviewQueue.find((item) => item.target === 'sourceGap')).toMatchObject({
       evidenceLabels: expect.arrayContaining(['source count: 0']),
-      allowedActions: ['approve', 'reject'],
+      allowedActions: [],
     });
     expect(model.summaryFacts.nextAction).toBe('Attach sources or create a source-gap review card.');
   });

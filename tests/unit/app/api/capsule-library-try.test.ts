@@ -36,20 +36,27 @@ vi.mock('@/lib/context/capsule-service', async (importOriginal) => {
 });
 
 describe('tryLibraryCapsule', () => {
-  it('seeds starter capsules and attaches one for a new user with no existing capsules', async () => {
+  it('returns a recoverable failure when the network or stack save rejects', async () => {
+    const entry = CAPSULE_LIBRARY_ENTRIES[0];
+    const saveStack = vi.fn().mockRejectedValue(new Error('offline'));
+    const fetched = vi.fn().mockResolvedValue(Response.json({ capsules: [{ capsuleId: entry.id }] }));
+    await expect(tryLibraryCapsule(entry, { fetch: fetched, saveStack })).resolves.toMatchObject({ status: 'failed' });
+    await expect(tryLibraryCapsule(entry, { fetch: vi.fn().mockRejectedValue(new Error('offline')), saveStack })).resolves.toMatchObject({ status: 'failed' });
+  });
+  it('seeds only the selected starter and attaches it without loading the entire library', async () => {
     const entry = CAPSULE_LIBRARY_ENTRIES[0];
     const fetcher = vi.fn()
-      .mockResolvedValueOnce(Response.json({ capsules: [], persisted: true }))
-      .mockResolvedValueOnce(Response.json({ created: 221 }, { status: 201 }));
+      .mockResolvedValueOnce(Response.json({ error: 'Not found' }, { status: 404 }))
+      .mockResolvedValueOnce(Response.json({ created: 1 }, { status: 201 }));
     const saveStack = vi.fn(async (patch) => sanitizeActiveContextStack(patch));
 
     const result = await tryLibraryCapsule(entry, { fetch: fetcher, saveStack });
 
     expect(result).toEqual({ status: 'attached', capsuleId: entry.id, seeded: true });
-    expect(fetcher).toHaveBeenNthCalledWith(1, '/api/context/capsules', { credentials: 'include' });
+    expect(fetcher).toHaveBeenNthCalledWith(1, `/api/context/capsules/${encodeURIComponent(entry.id)}`, expect.objectContaining({ credentials: 'include', signal: expect.any(AbortSignal) }));
     expect(fetcher).toHaveBeenNthCalledWith(2, '/api/context/capsules', expect.objectContaining({
       method: 'POST',
-      body: JSON.stringify({ action: 'seed-starters' }),
+      body: JSON.stringify({ action: 'seed-starters', starterId: entry.id }),
     }));
     expect(saveStack).toHaveBeenCalledWith(expect.objectContaining({
       stackId: entry.id,

@@ -5,6 +5,7 @@ import {
   type DockCapsuleEntry,
 } from '@/lib/context/context-injection';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import { CAPSULE_STARTER_CATALOG_VERSION, getCapsuleStarterDefinition } from '@/lib/product/context-capsules';
 
 function capsuleFixture(overrides: Partial<PraxisCapsule>): PraxisCapsule {
   const now = '2026-06-11T00:00:00.000Z';
@@ -60,6 +61,17 @@ function capsuleFixture(overrides: Partial<PraxisCapsule>): PraxisCapsule {
 }
 
 describe('buildCapsuleDockPromptBlock', () => {
+  it('injects the saved method procedure and checks for a fork without substituting the catalog', () => {
+    const starter = getCapsuleStarterDefinition('starter-tool-fiscal-distributional-impact-screen')!;
+    const saved = { ...starter, catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,
+      deviceProfile: { ...starter.deviceProfile!, methodSteps: ['Use the analyst-edited baseline.'] } };
+    const block = buildCapsuleDockPromptBlock([{ role: 'tool', capsule: capsuleFixture({ capsuleId: 'my-private-fork', starterSnapshot: saved }) }]);
+    expect(block).toContain('method_steps: Use the analyst-edited baseline.');
+    expect(block).toContain('method_inputs:');
+    expect(block).toContain('method_checks:');
+    expect(block).toContain('method_gate:');
+    expect(block).toContain('not evidence');
+  });
   it('returns an empty string when the dock is empty and nothing is missing', () => {
     expect(buildCapsuleDockPromptBlock([], [])).toBe('');
   });

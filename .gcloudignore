@@ -38,6 +38,7 @@ backend/venv/
 .idea/
 .claude/
 .codex/
+.serena/
 .code-review-graph/
 *.swp
 .DS_Store
@@ -70,6 +71,8 @@ docs/
 # ── Test artefacts not needed at build time ─────────────────────────────────
 playwright-report/
 test-results/
+output/
+.playwright-cli/
 graphify-out/
 
 # ── Rust local build outputs ────────────────────────────────────────────────

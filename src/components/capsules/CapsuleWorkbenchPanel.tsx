@@ -27,6 +27,7 @@ import { CapsuleAdvancedDrawer } from '@/components/capsules/workbench/CapsuleAd
 import { CapsuleGraphSection } from '@/components/capsules/workbench/CapsuleGraphSection';
 import { CapsuleResearchSection } from '@/components/capsules/workbench/CapsuleResearchSection';
 import { StatePill } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+import { CapsuleMethodInspection } from '@/components/capsules/CapsuleMethodInspection';
 
 const CapsuleAgentView = dynamic(() => import('@/components/capsules/CapsuleAgentView'), {
   ssr: false,
@@ -53,9 +54,12 @@ export function CapsuleWorkbenchPanel({
   tacitMemories?: CapsuleWorkbenchTacitMemoryInput[];
   compact?: boolean;
 }) {
+  const [reviewedCapsule, setReviewedCapsule] = useState<CapsuleWorkbenchCapsuleInput | null>(null);
+  const activeCapsule = reviewedCapsule?.capsuleId === capsule.capsuleId && (reviewedCapsule.version ?? 0) >= (capsule.version ?? 0)
+    ? reviewedCapsule : capsule;
   const model = useMemo(
-    () => buildCapsuleWorkbenchViewModel({ capsule, repositoryDocuments, agentRuns, tacitMemories }),
-    [capsule, repositoryDocuments, agentRuns, tacitMemories],
+    () => buildCapsuleWorkbenchViewModel({ capsule: activeCapsule, repositoryDocuments, agentRuns, tacitMemories }),
+    [activeCapsule, repositoryDocuments, agentRuns, tacitMemories],
   );
   const sparse = model.evidence.sourceCount === 0;
   const capsuleTags = useMemo(() => (capsule as { community?: { tags?: string[] } }).community?.tags ?? [], [capsule]);
@@ -89,6 +93,7 @@ export function CapsuleWorkbenchPanel({
         inspectedCategory={inspectedCategory}
         onInspect={(category) => setInspectedCategory(category.id)}
       />
+      <CapsuleMethodInspection snapshot={activeCapsule.starterSnapshot} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CapsuleWorkbenchViewToggle value={workbenchView} onChange={setWorkbenchView} />
         <div className="flex items-center gap-2">
@@ -143,6 +148,7 @@ export function CapsuleWorkbenchPanel({
         graphSection={graphSection}
         agentRuns={agentRuns}
         inspectionCategory={inspectedCategory}
+        onReviewed={setReviewedCapsule}
       />
     </section>
   );

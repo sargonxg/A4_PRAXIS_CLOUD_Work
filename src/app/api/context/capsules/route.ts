@@ -13,6 +13,7 @@ import {
   seedStarterCapsules,
 } from '@/lib/context/capsule-service';
 import { parseCorePackage } from '@/lib/context/core-package';
+import { CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 
 export const dynamic = 'force-dynamic';
 
@@ -87,6 +88,7 @@ const CombineSchema = z.object({
 
 const SeedStartersSchema = z.object({
   action: z.literal('seed-starters'),
+  starterId: z.string().min(1).max(120).optional(),
 });
 
 export const GET = withAuth(async (request, user) => {
@@ -116,9 +118,12 @@ export const POST = withAuth(async (request, user) => {
     }
     const raw = await request.json().catch(() => ({}));
 
-    const seedParsed = SeedStartersSchema.safeParse(raw);
-    if (seedParsed.success) {
-      const result = await seedStarterCapsules(user.uid);
+    if (raw?.action === 'seed-starters') {
+      const seedParsed = SeedStartersSchema.safeParse(raw);
+      if (!seedParsed.success || (seedParsed.data.starterId && !CAPSULE_STARTER_DEFINITIONS.some((starter) => starter.starterId === seedParsed.data.starterId))) {
+        return NextResponse.json({ error: 'Invalid starter selection' }, { status: 400 });
+      }
+      const result = await seedStarterCapsules(user.uid, undefined, { starterId: seedParsed.data.starterId });
       return NextResponse.json(result, { status: result.created > 0 ? 201 : 200 });
     }
 

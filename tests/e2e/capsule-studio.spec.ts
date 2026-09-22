@@ -4,6 +4,49 @@ import { authenticateFirebaseCanary, hasFirebaseCanaryCredentials } from './help
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('Capsule Studio', () => {
+  test('uploads a source, builds reviewable proposals and attaches spotlight context', async ({ page }) => {
+    test.setTimeout(180_000);
+    test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');
+    await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
+    await page.goto(`${BASE}/app/capsules?lane=repository`);
+    const spotlights = page.getByRole('region', { name: 'Policy capsule spotlights' });
+    await expect(spotlights.locator('article')).toHaveCount(12);
+    await spotlights.getByRole('button', { name: 'Add method', exact: true }).first().click();
+    await page.waitForURL(/\/app$/, { timeout: 60_000 });
+    await expect(page.getByTestId('capsule-dock')).toContainText(/Institutional/i);
+
+    await page.goto(`${BASE}/app/capsules/builder`);
+    await page.getByLabel('What should this capsule do?').fill('QA fixture only: inspect actors and a dated commitment; do not treat this as a real-world event.');
+    await page.locator('input[type=file]').setInputFiles({
+      name: `praxis-qa-${Date.now()}.txt`, mimeType: 'text/plain',
+      buffer: Buffer.from('Synthetic QA fixture, not a real-world event.\nActor: Example Council\nOn 2026-09-20 the Example Council agreed to review the proposal.\nThe review deadline is 2026-10-01.\nFunding approval remains unconfirmed.'),
+    });
+    const build = page.getByRole('button', { name: 'Build evidence proposals', exact: true });
+    await expect(build).toBeEnabled({ timeout: 60_000 });
+    const proposalResponse = page.waitForResponse((response) => response.url().endsWith('/api/capsules/assist/architect') && response.request().method() === 'POST');
+    await build.click();
+    const response = await proposalResponse;
+    expect(response.status()).toBe(200);
+    const payload = await response.json();
+    expect(payload.reviewRequired).toBe(true);
+    expect(payload.cards.length).toBeGreaterThan(0);
+    const capsuleId = payload.capsule.capsuleId as string;
+    await page.getByRole('link', { name: 'Inspect and review your capsule' }).click();
+    await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible({ timeout: 30_000 });
+    const drawer = page.getByTestId('capsule-workbench-panel').getByTestId('capsule-advanced-drawer');
+    const toggle = drawer.getByRole('button', { name: /Ontologies, graph, reasoning, receipts/ });
+    if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
+    await drawer.getByRole('tab', { name: 'Review', exact: true }).click();
+    await expect(drawer.getByText('Reason for your next decision')).toBeVisible({ timeout: 30_000 });
+    await drawer.getByLabel('Reason for your next decision').fill('QA: inspected the explicitly synthetic source; rejecting this proposal to verify the human decision boundary.');
+    await drawer.getByRole('button', { name: 'reject', exact: true }).first().click();
+    await expect(drawer.getByText('Proposal rejected. No proposed facts were applied.')).toBeVisible({ timeout: 30_000 });
+    const saved = await page.request.get(`${BASE}/api/context/capsules/${encodeURIComponent(capsuleId)}?includeReviewCards=true`);
+    expect(saved.ok()).toBe(true);
+    expect((await saved.json()).reviewCards.some((card: { state: string }) => card.state === 'rejected')).toBe(true);
+    await page.screenshot({ path: 'output/playwright/capsule-review-journey.png', fullPage: true });
+  });
+
   test('opens the capsule library and renders the inspect ontology graph', async ({ page }) => {
     test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');
 

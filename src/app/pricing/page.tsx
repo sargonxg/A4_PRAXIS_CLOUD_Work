@@ -26,10 +26,10 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   const billingMode = process.env.POLAR_SERVER === 'sandbox'
-    ? 'Polar checkout is running in sandbox test mode in this environment.'
+    ? 'Checkout is in test mode. No real subscription will be started.'
     : process.env.POLAR_ACCESS_TOKEN
-      ? 'Polar checkout is configured for live billing in this environment.'
-      : 'Polar checkout is not configured in this environment; signed-in users see an explicit unavailable state.';
+      ? 'Start free. Review your plan and payment details before confirming any upgrade.'
+      : 'Paid upgrades are not available yet. You can create an account and start with the free plan.';
   const pricingRailCells = [
     { id: 'profile', label: 'Profile', value: 'Analyst or team', detail: 'Workspace-owned', state: 'ready' as const },
     { id: 'context', label: 'Context', value: 'One workspace first', detail: 'Upgrade when work travels', state: 'active' as const },

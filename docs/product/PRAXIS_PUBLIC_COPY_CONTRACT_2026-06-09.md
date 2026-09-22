@@ -29,8 +29,9 @@ Use "saved context" for first-impression and public support copy. Use "ContextCa
 
 ## Current User-Facing Contract
 
-- Home headline: "Ask anything. Leave with a sourced brief."
-- Home helper: "Attach context capsules when the work has to hold up."
+- Public home headline (September 2026 refinement): "Policy analysis you can inspect."
+- Home helper: "Ask a hard question. Bring your sources and methods. Review the evidence, assumptions and options."
+- Keep the public composer above optional context details. On mobile, use compact navigation and explicit Explore capsules / Build your own login handoffs. Explain that sign-in is required to run the question and that generated analysis needs review.
 - Public primary CTA: "Continue".
 - Public top nav: Home, Pricing, Learn, Guide, Release notes, Sign in, Start work.
 - Public left rail: Ask and Saved context only. Do not expose Boardroom, Memo/Drafts, or internal tools before login.

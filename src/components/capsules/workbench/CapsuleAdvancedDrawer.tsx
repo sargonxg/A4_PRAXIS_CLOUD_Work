@@ -4,6 +4,7 @@ import { useMemo, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import type {
   CapsuleWorkbenchAgentRunInput,
+  CapsuleWorkbenchCapsuleInput,
   CapsuleWorkbenchViewModel,
 } from '@/lib/context/capsule-workbench-view-model';
 import type { CapsuleCategoryId } from '@/lib/constants/aco-colors';
@@ -43,6 +44,7 @@ export function CapsuleAdvancedDrawer({
   graphSection,
   agentRuns,
   inspectionCategory,
+  onReviewed,
 }: {
   model: CapsuleWorkbenchViewModel;
   compact: boolean;
@@ -50,6 +52,7 @@ export function CapsuleAdvancedDrawer({
   graphSection: ReactNode;
   agentRuns: CapsuleWorkbenchAgentRunInput[];
   inspectionCategory?: CapsuleCategoryId | null;
+  onReviewed?: (capsule: CapsuleWorkbenchCapsuleInput) => void;
 }) {
   const [open, setOpen] = useState(Boolean(inspectionCategory));
   const [activeTab, setActiveTab] = useState<AdvancedTabId>(
@@ -95,7 +98,7 @@ export function CapsuleAdvancedDrawer({
             ))}
           </div>
           <div className="pt-2" role="tabpanel">
-            {renderTab(active.id, { model, compact, sparse, graphSection, agentRuns })}
+            {renderTab(active.id, { model, compact, sparse, graphSection, agentRuns, onReviewed })}
           </div>
         </div>
       ) : null}
@@ -134,6 +137,7 @@ function renderTab(
     sparse: boolean;
     graphSection: ReactNode;
     agentRuns: CapsuleWorkbenchAgentRunInput[];
+    onReviewed?: (capsule: CapsuleWorkbenchCapsuleInput) => void;
   },
 ) {
   const { model, compact, sparse, graphSection, agentRuns } = input;
@@ -193,5 +197,5 @@ function renderTab(
   if (id === 'memory') return <CapsuleTacitKnowledgeSection tacitKnowledge={model.tacitKnowledge} />;
   if (id === 'agents') return <CapsuleAgentWorkflowSection agents={model.agents} />;
   if (id === 'outputs') return <CapsuleOutputsSection outputs={model.outputs} />;
-  return <CapsuleReviewQueueSection reviewQueue={model.reviewQueue} />;
+  return <CapsuleReviewQueueSection key={model.capsuleId} capsuleId={model.capsuleId} reviewQueue={model.reviewQueue} onReviewed={input.onReviewed} />;
 }

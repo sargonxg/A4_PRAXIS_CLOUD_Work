@@ -11,6 +11,7 @@ import {
   type CapsuleTaxonomyInput,
 } from '@/lib/product/context-capsules';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import { POLICY_CAPSULE_SPOTLIGHTS } from '@/lib/capsules/spotlights';
 import {
   isCapsuleDockSlotKind,
   type CapsuleDockSlotKind,
@@ -267,6 +268,7 @@ export function getCapsuleLibraryEntry(id: string): CapsuleLibraryEntry | null {
 }
 
 function buildCapsuleLibraryEntries(): CapsuleLibraryEntry[] {
+  const spotlightIds = new Set<string>(POLICY_CAPSULE_SPOTLIGHTS.map((item) => item.id));
   const rankingByStarter = new Map(
     buildCapsuleQualityRankingReport({ generatedAt: '2026-06-17T02:58:17.977Z' })
       .ranked
@@ -274,16 +276,20 @@ function buildCapsuleLibraryEntries(): CapsuleLibraryEntry[] {
   );
   const starters = CAPSULE_STARTER_DEFINITIONS
     .flatMap((starter) => {
-      const category = libraryCategoryForStarter(starter);
+      const category = libraryCategoryForStarter(starter)
+        ?? (spotlightIds.has(starter.starterId) ? 'governance' : null);
       const ranking = rankingByStarter.get(starter.starterId);
       return category && ranking ? [{ starter, category, ranking }] : [];
     });
 
-  return CAPSULE_LIBRARY_CATEGORIES.flatMap(({ id }) => starters
+  const featured = CAPSULE_LIBRARY_CATEGORIES.flatMap(({ id }) => starters
     .filter((item) => item.category === id)
     .sort((a, b) => b.ranking.score - a.ranking.score || a.ranking.rank - b.ranking.rank)
     .slice(0, FEATURED_PER_CATEGORY)
     .map(({ starter, category, ranking }) => libraryEntryFromStarter(starter, category, ranking)));
+  const spotlights = starters.filter(({ starter }) => spotlightIds.has(starter.starterId))
+    .map(({ starter, category, ranking }) => libraryEntryFromStarter(starter, category, ranking));
+  return Array.from(new Map([...spotlights, ...featured].map((entry) => [entry.id, entry])).values());
 }
 
 function libraryEntryFromStarter(

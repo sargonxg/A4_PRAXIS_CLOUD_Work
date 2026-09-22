@@ -117,3 +117,29 @@ describe('GET /api/context/capsules', () => {
     });
   });
 });
+
+describe('POST /api/context/capsules selected starter', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('passes a validated selection to the owner-scoped service', async () => {
+    const { POST } = await import('@/app/api/context/capsules/route');
+    const { CAPSULE_STARTER_DEFINITIONS } = await import('@/lib/product/context-capsules');
+    const starterId = CAPSULE_STARTER_DEFINITIONS[0].starterId;
+    service.seedStarterCapsules.mockResolvedValueOnce({ created: 1, existing: 0, capsules: [] });
+    const response = await (POST as unknown as MockedAuthRouteHandler)(new Request('http://localhost/api/context/capsules', {
+      method: 'POST', body: JSON.stringify({ action: 'seed-starters', starterId }),
+    }), { uid: 'u1', isDemo: false });
+    expect(response.status).toBe(201);
+    expect(service.seedStarterCapsules).toHaveBeenCalledWith('u1', undefined, { starterId });
+  });
+
+  it.each(['unknown', '', 123])('rejects invalid selections without falling through to create: %s', async (starterId) => {
+    const { POST } = await import('@/app/api/context/capsules/route');
+    const response = await (POST as unknown as MockedAuthRouteHandler)(new Request('http://localhost/api/context/capsules', {
+      method: 'POST', body: JSON.stringify({ action: 'seed-starters', starterId }),
+    }), { uid: 'u1', isDemo: false });
+    expect(response.status).toBe(400);
+    expect(service.seedStarterCapsules).not.toHaveBeenCalled();
+    expect(service.createCapsule).not.toHaveBeenCalled();
+  });
+});

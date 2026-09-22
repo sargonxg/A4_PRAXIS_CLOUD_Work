@@ -78,7 +78,9 @@ describe('classifyPathFlow', () => {
       alternates: [{ id: 'legal-compliance', confidence: 0.55 }],
     });
     expect(result.suggestedTools).toEqual(expect.arrayContaining(['Source Scout', 'Policy Memo']));
-  }, 15000);
+  // Includes a cold import of the Genkit dependency graph on Windows; the
+  // model itself is mocked, so this is not a model-latency acceptance limit.
+  }, 60_000);
 
   it('classifies a foreign policy prompt deterministically', async () => {
     const { classifyPathFlow } = await import('@/lib/genkit/flows/classify-path');

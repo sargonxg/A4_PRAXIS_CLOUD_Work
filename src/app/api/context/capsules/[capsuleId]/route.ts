@@ -13,6 +13,7 @@ import {
   exportCapsuleCorePackage,
   forkCapsule,
   getCapsule,
+  listCapsuleReviewCards,
   promoteCapsuleSourceGaps,
   proposeCogneeSeedReviewCards,
   rateCapsule,
@@ -195,7 +196,9 @@ export const GET = withAuth<RouteContext>(async (_request, user, context) => {
     }
     const capsule = await getCapsule(user.uid, capsuleId);
     if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
-    return NextResponse.json({ capsule });
+    const reviewCards = url.searchParams.get('includeReviewCards') === 'true'
+      ? await listCapsuleReviewCards(user.uid, capsuleId) : undefined;
+    return NextResponse.json({ capsule, ...(reviewCards ? { reviewCards } : {}) });
   } catch (err) {
     return handleRouteError(err, 'context/capsules/get');
   }

@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { JevReviewControl } from '@/components/app/jev-review-control';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -460,16 +461,16 @@ export function PraxisChat({
     >
       <div className={cn('flex min-h-0 flex-1 flex-col', compact ? 'h-full' : '')}>
         {variant === 'home' ? (
-          <div className="mb-6 text-center">
+          <div className={cn('mb-6 text-center', isPublic ? 'order-first' : '')}>
             <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
               <Sparkles className="h-3.5 w-3.5" />
               Ask PRAXIS
             </p>
             <h1 className="mt-4 font-serif text-4xl font-semibold tracking-normal text-[color:var(--color-app-text)] sm:text-5xl">
-              Write trusted knowledge products.
+              {isPublic ? 'Policy analysis you can inspect.' : 'Write trusted knowledge products.'}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-              {greeting ?? 'Capsules keep the context clear.'}
+              {isPublic ? 'Ask a hard question. Bring your sources and methods. Review the evidence, assumptions and options.' : greeting ?? 'Capsules keep the context clear.'}
             </p>
           </div>
         ) : null}
@@ -478,6 +479,7 @@ export function PraxisChat({
 
         <div className={cn(
           'min-h-0 flex-1 overflow-y-auto',
+          isPublic && messages.length === 0 ? 'hidden' : '',
           variant === 'floating' ? 'px-3 py-3' : 'rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/80 p-3 shadow-[var(--shadow-card)]',
         )}>
           {messages.length === 0 ? (
@@ -543,6 +545,7 @@ export function PraxisChat({
 
         <form onSubmit={submit} className={cn(
           'mt-3 rounded-[var(--radius-lg)] border bg-white p-2 shadow-[var(--shadow-card)]',
+          isPublic ? 'order-first mb-4' : '',
           variant === 'floating' ? 'border-slate-700 bg-slate-950 shadow-none' : 'border-[var(--color-app-border)]',
         )}>
           <input type="hidden" name="capsulePrompt" value={input} />
@@ -594,7 +597,8 @@ export function PraxisChat({
               ) : null}
               {error ? <span className="text-xs font-medium text-amber-700">{error}</span> : null}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
+              {!isPublic ? <JevReviewControl /> : null}
               {isPublic ? (
                 <Link
                   href="/login"
@@ -636,6 +640,7 @@ export function PraxisChat({
               </button>
             </div>
           </div>
+          {isPublic ? <p className="px-2 pb-1 pt-3 text-xs leading-5 text-slate-500">Sign in to run your question and save the work. AI-generated analysis needs your review.</p> : null}
         </form>
       </div>
     </section>

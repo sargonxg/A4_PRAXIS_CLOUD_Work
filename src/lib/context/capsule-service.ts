@@ -883,8 +883,17 @@ export async function listCapsules(
   input: { situationId?: string; includeArchived?: boolean } = {},
   deps?: CapsuleServiceDeps,
 ): Promise<PraxisCapsule[]> {
-  const snap = await capsulesCollection(uid, deps).get();
-  const capsules = snap.docs
+  const collection = capsulesCollection(uid, deps);
+  // Single-field, owner-scoped queries use Firestore's automatic indexes.
+  // Do not transfer and normalize the entire private library for each tool turn.
+  const snapshots = input.situationId
+    ? await Promise.all([
+      collection.where('coreRefs.situationCoreId', '==', input.situationId).get(),
+      collection.where('activeForSituationIds', 'array-contains', input.situationId).get(),
+    ])
+    : [await collection.get()];
+  const docs = [...new Map(snapshots.flatMap((snapshot) => snapshot.docs).map((doc) => [doc.id, doc])).values()];
+  const capsules = docs
     .map((doc) => ({ data: { ...doc.data(), capsuleId: doc.id } }))
     .filter(({ data }) => recordOwnedBy(data, uid))
     .map(({ data }) => sanitizeCapsule({ ...data, ownerUid: ownerUidOrPath(data, uid) }))
@@ -905,10 +914,7 @@ export async function listCapsuleInventory(
 ): Promise<CapsuleInventoryResult> {
   const snap = await capsulesCollection(uid, deps).get();
   const rows = snap.docs
-    .map((doc) => {
-      const raw = { ...doc.data(), capsuleId: doc.id };
-      return { raw, capsule: sanitizeCapsule(raw) };
-    })
+    .map((doc) => ({ raw: { ...doc.data(), capsuleId: doc.id } }))
     .filter(({ raw }) => recordOwnedBy(raw, uid))
     .map(({ raw }) => ({ raw: { ...raw, ownerUid: ownerUidOrPath(raw, uid) }, capsule: sanitizeCapsule({ ...raw, ownerUid: ownerUidOrPath(raw, uid) }) }))
     .filter(({ capsule }) => {
@@ -1060,15 +1066,25 @@ export function buildCapsuleInventorySummary(
 export async function seedStarterCapsules(
   uid: string,
   deps?: CapsuleServiceDeps,
+  input: { starterId?: string } = {},
 ): Promise<SeedStarterCapsulesResult> {
   const capsules: PraxisCapsule[] = [];
   let created = 0;
   let existing = 0;
 
-  for (const starterDefinition of CAPSULE_STARTER_DEFINITIONS) {
+  const definitions = input.starterId
+    ? CAPSULE_STARTER_DEFINITIONS.filter((starter) => starter.starterId === input.starterId)
+    : CAPSULE_STARTER_DEFINITIONS;
+  if (!definitions.length) throw new Error('Unknown starter');
+  for (const starterDefinition of definitions) {
     const current = await getCapsule(uid, starterDefinition.starterId, deps);
     if (current) {
       existing += 1;
+      // Attaching one capsule must never refresh or overwrite a user's saved copy.
+      if (input.starterId) {
+        capsules.push(current);
+        continue;
+      }
       const promoted = promoteStarterCapsule(current, starterDefinition, deps);
       if (promoted !== current) {
         await capsulesCollection(uid, deps).doc(promoted.capsuleId).set(promoted, { merge: true });
@@ -1697,6 +1713,29 @@ export async function promoteCapsuleOntologyExtensionToGlobalAco(
   return { capsule, extension: promoted };
 }
 
+export async function listCapsuleReviewCards(
+  uid: string,
+  capsuleId: string,
+  deps?: CapsuleServiceDeps,
+): Promise<CapsuleReviewCard[]> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return [];
+  const snapshot = await capsulesCollection(uid, deps).doc(capsule.capsuleId)
+    .collection('reviewCards').orderBy('updatedAt', 'desc').limit(100).get();
+  return snapshot.docs.map((doc) => normalizeReviewCard(doc.data(), capsule, doc.id));
+}
+
+export class CapsuleReviewConflictError extends Error {
+  constructor() {
+    super('This review card is already decided or not ready for owner review. Refresh before continuing.');
+    this.name = 'CapsuleReviewConflictError';
+  }
+}
+
+function assertReviewCardDecidable(card: CapsuleReviewCard): void {
+  if (!['proposed', 'owner_review', 'accepted'].includes(card.state)) throw new CapsuleReviewConflictError();
+}
+
 export async function createCapsuleReviewCard(
   uid: string,
   capsuleId: string,
@@ -1769,7 +1808,7 @@ export async function applyCapsuleReviewCard(
       get: (docRef: TransactionDocRef) => Promise<{ exists: boolean; data: () => Record<string, unknown>; id: string }>;
       set: (docRef: TransactionDocRef, value: unknown, options?: { merge?: boolean }) => void;
     }) => Promise<T>) => Promise<T>;
-  }).runTransaction;
+  }).runTransaction?.bind(db);
 
   if (typeof runTransaction === 'function') {
     const result = await runTransaction(async (transaction) => {
@@ -1825,12 +1864,8 @@ export async function rejectCapsuleReviewCard(
   const db = dbOf(deps);
   const ref = capsulesCollection(uid, deps).doc(cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID));
   const cardRef = ref.collection('reviewCards').doc(cleanId(reviewCardId, 'review-card'));
-  const capsuleSnap = await ref.get();
-  if (!capsuleSnap.exists) return null;
-  const capsule = sanitizeCapsule({ ...capsuleSnap.data(), capsuleId: ref.id });
-  const cardSnap = await cardRef.get();
-  if (!cardSnap.exists) return null;
-  const card = normalizeReviewCard(cardSnap.data(), capsule, cardRef.id);
+  const decide = (capsule: PraxisCapsule, card: CapsuleReviewCard) => {
+  assertReviewCardDecidable(card);
   const timestamp = stringOrNull(metadata.rejectedAt) ?? nowIso(deps);
   const reviewerUid = cleanText(metadata.reviewerUid, 160) || uid;
   const rejectionMetadata: CapsuleReviewRejectionMetadata = {
@@ -1856,11 +1891,32 @@ export async function rejectCapsuleReviewCard(
     },
     updatedAt: timestamp,
   });
-  const batch = db.batch();
-  batch.set(ref, updatedCapsule, { merge: true });
-  batch.set(cardRef, rejectedCard, { merge: true });
-  await batch.commit();
   return { capsule: updatedCapsule, card: rejectedCard };
+  };
+  // Both approve and reject read the decision inside a transaction, so competing
+  // reviewers cannot overwrite each other's completed decision.
+  if (typeof db.runTransaction === 'function') {
+    return db.runTransaction(async (transaction) => {
+      const capsuleSnap = await transaction.get(ref);
+      const cardSnap = await transaction.get(cardRef);
+      if (!capsuleSnap.exists || !cardSnap.exists) return null;
+      const capsule = sanitizeCapsule({ ...capsuleSnap.data(), capsuleId: ref.id });
+      const result = decide(capsule, normalizeReviewCard(cardSnap.data(), capsule, cardRef.id));
+      transaction.set(ref, result.capsule, { merge: true });
+      transaction.set(cardRef, result.card, { merge: true });
+      return result;
+    });
+  }
+  const capsuleSnap = await ref.get();
+  const cardSnap = await cardRef.get();
+  if (!capsuleSnap.exists || !cardSnap.exists) return null;
+  const capsule = sanitizeCapsule({ ...capsuleSnap.data(), capsuleId: ref.id });
+  const result = decide(capsule, normalizeReviewCard(cardSnap.data(), capsule, cardRef.id));
+  const batch = db.batch();
+  batch.set(ref, result.capsule, { merge: true });
+  batch.set(cardRef, result.card, { merge: true });
+  await batch.commit();
+  return result;
 }
 
 export async function getCapsuleDependents(uid: string, capsuleId: string, deps?: CapsuleServiceDeps): Promise<PraxisCapsule[]> {
@@ -1943,9 +1999,6 @@ function promoteStarterCapsule(
   ).slice(0, 20);
   const starterSnapshot = buildStarterSnapshot(starterDefinition);
   const needsPromotion =
-    capsule.community.favorite !== true ||
-    (capsule.community.averageRating ?? 0) < 4.8 ||
-    capsule.community.ratingCount < 10 ||
     !tags.every((tag) => capsule.community.tags.includes(tag)) ||
     capsule.starterSnapshot?.catalogVersion !== CAPSULE_STARTER_CATALOG_VERSION;
   if (!needsPromotion) return capsule;
@@ -1955,11 +2008,6 @@ function promoteStarterCapsule(
     ...capsule,
     community: {
       ...capsule.community,
-      favorite: true,
-      averageRating: 5,
-      userRating: capsule.community.userRating ?? 5,
-      ratingCount: Math.max(capsule.community.ratingCount, 18),
-      listedInMarketplace: true,
       tags,
     },
     access: {
@@ -1967,14 +2015,6 @@ function promoteStarterCapsule(
       allowClone: true,
       allowDownload: true,
       allowCommunityRating: true,
-    },
-    trust: {
-      ...capsule.trust,
-      level: capsule.trust.level === 'red' ? 'amber' : capsule.trust.level,
-      score: Math.max(capsule.trust.score, 92),
-      label: capsule.trust.label || 'Starter ready',
-      summary: capsule.trust.summary || starterDefinition.summary,
-      checkedAt: timestamp,
     },
     starterSnapshot,
     version: shouldBumpVersion ? capsule.version + 1 : capsule.version,
@@ -2737,11 +2777,11 @@ function starterToCreateInput(uid: string, starterDefinition: CapsuleStarterDefi
         domain: starterDefinition.domain,
         policyTeamIds: resolveCapsuleTaxonomy(starterDefinition).policyTeams.map((team) => team.id),
       }).slice(0, 20),
-      favorite: true,
-      averageRating: 5,
-      userRating: 5,
-      ratingCount: 18,
-      listedInMarketplace: true,
+      favorite: false,
+      averageRating: null,
+      userRating: null,
+      ratingCount: 0,
+      listedInMarketplace: false,
     },
     access: {
       visibility: 'private',
@@ -3654,6 +3694,7 @@ function buildAppliedReviewCardUpdate(
   card: CapsuleReviewCard,
   applyMetadata: CapsuleReviewApplyMetadata,
 ): { previousSnapshot: PraxisCapsule; capsule: PraxisCapsule; card: CapsuleReviewCard } {
+  assertReviewCardDecidable(card);
   const patch = card.proposedEnvelopePatch;
   const graphPatch = buildAppliedGraphProjectionPatch(capsule, card, applyMetadata);
   const graphCoreRefs = isRecord(graphPatch.coreRefs) ? graphPatch.coreRefs : {};

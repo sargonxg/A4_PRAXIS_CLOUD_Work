@@ -409,18 +409,19 @@ export function buildDocumentFirstCapsuleArchitectSignals(
   const normalizedAt = cleanTextForCapsule(options.normalizedAt, 80) || new Date().toISOString();
   const domainId = cleanIdForCapsule(options.domainId ?? 'generic', 'generic');
   const cleanedDocuments = documents
-    .map((document, index) => normalizeArchitectDocument(document, index, normalizedAt))
+    .map((document, index) => normalizeArchitectDocument(document, index))
     .slice(0, 20);
   const sourceRefs = cleanedDocuments.map((document) => document.sourceRef);
-  const claimLedger = buildDocumentFirstClaims(cleanedDocuments, options.jobPrompt, normalizedAt);
-  const timelineAnchors = buildDocumentTimelineAnchors(cleanedDocuments, claimLedger, normalizedAt);
-  const causalLinks = buildDocumentCausalLinks(cleanedDocuments, claimLedger, normalizedAt);
+  const claimLedger = buildDocumentFirstClaims(cleanedDocuments, normalizedAt);
+  const timelineAnchors = buildDocumentTimelineAnchors(claimLedger);
+  const causalLinks = buildDocumentCausalLinks(claimLedger);
   const embeddedGraph = buildDocumentFirstEmbeddedGraph({
     domainId,
     sourceRefs,
     claimLedger,
     timelineAnchors,
     causalLinks,
+    documents: cleanedDocuments,
   });
 
   return {
@@ -430,7 +431,7 @@ export function buildDocumentFirstCapsuleArchitectSignals(
     temporality: {
       timelineAnchors,
       asOf: normalizedAt.slice(0, 10),
-      validFrom: timelineAnchors[0]?.date ?? normalizedAt.slice(0, 10),
+      validFrom: undefined,
       validUntil: undefined,
     },
     causality: { causalLinks },
@@ -524,12 +525,12 @@ interface NormalizedArchitectDocument {
 function normalizeArchitectDocument(
   document: CapsuleArchitectDocumentInput,
   index: number,
-  normalizedAt: string,
 ): NormalizedArchitectDocument {
   const title = cleanTextForCapsule(document.title, 180) || `Uploaded document ${index + 1}`;
   const documentId = cleanIdForCapsule(document.documentId ?? title, `document-${index + 1}`);
   const sourceId = cleanIdForCapsule(document.sourceId ?? documentId, `source-${index + 1}`);
-  const text = cleanTextForCapsule(document.text, 12000);
+  // Do not trim or collapse whitespace: receipt offsets address this exact text.
+  const text = typeof document.text === 'string' ? document.text.slice(0, 16000) : '';
   const reliabilityTier = normalizeReliabilityTier(document.reliabilityTier);
   return {
     documentId,
@@ -542,7 +543,7 @@ function normalizeArchitectDocument(
       label: title,
       url: cleanTextForCapsule(document.url ?? document.originalUri, 1000) || null,
       publisher: cleanTextForCapsule(document.publisher, 240) || 'Uploaded document',
-      date: cleanTextForCapsule(document.date, 80) || normalizedAt.slice(0, 10),
+      date: cleanTextForCapsule(document.date, 80) || null,
       reliabilityTier,
       stale: false,
     },
@@ -551,39 +552,16 @@ function normalizeArchitectDocument(
 
 function buildDocumentFirstClaims(
   documents: NormalizedArchitectDocument[],
-  jobPrompt: string | null | undefined,
   normalizedAt: string,
 ): ContextCapsuleClaim[] {
   const candidateRows = documents.flatMap((document) => {
-    const extractionRows = [
-      document.extraction?.summary,
-      ...(document.extraction?.timeline ?? []).map((entry) => entry.event),
-      ...(document.extraction?.nodes ?? []).map((node) => node.description || node.label),
-    ].filter((value): value is string => Boolean(value?.trim()));
     const sentenceRows = splitArchitectSentences(document.text);
-    const fallbackRows = [
-      `${document.title} is relevant evidence for ${cleanTextForCapsule(jobPrompt, 220) || 'the capsule job'}.`,
-    ];
-    return [...extractionRows, ...sentenceRows, ...fallbackRows]
+    return sentenceRows
       .map((text) => ({ document, text }))
-      .slice(0, 5);
+      .slice(0, 12);
   });
-
-  const promptText = cleanTextForCapsule(jobPrompt, 300);
-  const paddedRows = [...candidateRows];
-  while (paddedRows.length < 3) {
-    const document = documents[paddedRows.length % Math.max(documents.length, 1)];
-    if (!document) break;
-    paddedRows.push({
-      document,
-      text: promptText
-        ? `The capsule should test this job against the uploaded evidence: ${promptText}.`
-        : `The capsule needs a human-reviewed claim from ${document.title}.`,
-    });
-  }
-
-  return uniqueByText(paddedRows)
-    .slice(0, 12)
+  return uniqueByText(candidateRows)
+    .slice(0, 60)
     .map(({ document, text }, index): ContextCapsuleClaim => {
       const snippet = cleanTextForCapsule(text, 500) || document.title;
       const receipt: EvidenceReceipt = {
@@ -593,7 +571,7 @@ function buildDocumentFirstClaims(
         date: document.sourceRef.date,
         reliabilityTier: document.sourceRef.reliabilityTier,
         snippet,
-        charOffset: { start: 0, end: snippet.length },
+        charOffset: { start: document.text.indexOf(snippet), end: document.text.indexOf(snippet) + snippet.length },
         page: document.page,
         confidence: 0.72,
         stance: 'supports',
@@ -603,31 +581,19 @@ function buildDocumentFirstClaims(
         text: snippet,
         support: 'supported',
         sourceRefIds: [document.sourceRef.sourceId],
-        caveat: 'Draft Capsule Architect claim; human review required before canonical use.',
+        caveat: 'Verbatim source assertion, not independent corroboration. Human review required before canonical use.',
         receipts: [receipt],
-        validFrom: extractIsoDate(snippet) ?? normalizedAt.slice(0, 10),
+        validFrom: null,
         validUntil: null,
         asOf: normalizedAt.slice(0, 10),
-        causalLinks: index === 0 && paddedRows.length > 1 ? { causes: ['architect-claim-2'] } : {},
+        causalLinks: {},
       };
     });
 }
 
-function buildDocumentTimelineAnchors(
-  documents: NormalizedArchitectDocument[],
-  claims: ContextCapsuleClaim[],
-  normalizedAt: string,
-): ContextCapsule['temporality']['timelineAnchors'] {
-  const timelineRows = documents.flatMap((document) =>
-    (document.extraction?.timeline ?? []).map((entry) => ({
-      label: entry.event,
-      date: entry.date,
-      sourceRefs: [document.sourceRef.sourceId],
-      confidence: 0.7,
-    })),
-  );
+function buildDocumentTimelineAnchors(claims: ContextCapsuleClaim[]): ContextCapsule['temporality']['timelineAnchors'] {
   const claimRows = claims.flatMap((claim) => {
-    const date = extractIsoDate(`${claim.text} ${claim.validFrom ?? ''}`);
+    const date = extractIsoDate(claim.text);
     if (!date) return [];
     return [{
       label: claim.text.slice(0, 180),
@@ -636,43 +602,30 @@ function buildDocumentTimelineAnchors(
       confidence: 0.65,
     }];
   });
-  const rows = [...timelineRows, ...claimRows];
-  const fallback = {
-    label: 'Capsule Architect review window',
-    date: normalizedAt.slice(0, 10),
-    sourceRefs: documents.map((document) => document.sourceRef.sourceId),
-    confidence: 0.55,
-  };
-  return (rows.length ? rows : [fallback]).slice(0, 12).map((row, index) => ({
+  return claimRows.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 24).map((row, index) => ({
     id: `architect-anchor-${index + 1}`,
-    label: row.label || fallback.label,
-    date: row.date || fallback.date,
-    kind: index === 0 ? 'as-of' : 'event',
+    label: row.label,
+    date: row.date,
+    kind: /deadline|expires|by\b|before\b/i.test(row.label) ? 'deadline' : 'event',
     sourceRefs: row.sourceRefs,
     confidence: row.confidence,
   }));
 }
 
-function buildDocumentCausalLinks(
-  documents: NormalizedArchitectDocument[],
-  claims: ContextCapsuleClaim[],
-  normalizedAt: string,
-): ContextCapsule['causality']['causalLinks'] {
-  const sourceIds = documents.map((document) => document.sourceRef.sourceId);
-  const cause = claims[0]?.text ?? 'Uploaded evidence changes the policy posture';
-  const effect = claims[1]?.text ?? 'The capsule needs human review before reuse';
-  return [{
-    id: 'architect-causal-driver-1',
-    cause,
-    effect,
-    relation: 'causes',
-    evidenceRefs: sourceIds,
-    confidence: 0.6,
-    caveat: `Proposed by Capsule Architect on ${normalizedAt}; confirm causality before canonical promotion.`,
-  }];
+function buildDocumentCausalLinks(claims: ContextCapsuleClaim[]): ContextCapsule['causality']['causalLinks'] {
+  return claims.flatMap((claim) => {
+    const match = claim.text.match(/^(.+?)\s+(causes|enables|blocks)\s+(.+?)[.!?]?$/i);
+    if (!match) return [];
+    return [{ id: `causal:${claim.claimId}`, cause: match[1], effect: match[3],
+      relation: match[2].toLowerCase() as 'causes' | 'enables' | 'blocks',
+      evidenceRefs: claim.sourceRefIds, confidence: 0.5,
+      caveat: 'The source asserts this relation; the compiler does not establish causation. Review alternatives and corroboration.',
+    }];
+  });
 }
 
 function buildDocumentFirstEmbeddedGraph(input: {
+  documents: NormalizedArchitectDocument[];
   domainId: string;
   sourceRefs: ContextCapsuleSourceRef[];
   claimLedger: ContextCapsuleClaim[];
@@ -722,6 +675,7 @@ function buildDocumentFirstEmbeddedGraph(input: {
       sourceReceiptIds: input.sourceRefs.map((source) => source.sourceId),
     },
     ...sourceNodes,
+    ...buildExplicitActorNodes(input.documents),
     ...claimNodes,
     ...timelineNodes,
     ...causalNodes,
@@ -731,8 +685,8 @@ function buildDocumentFirstEmbeddedGraph(input: {
       id: `edge:${sourceId}:${claim.claimId}`,
       source: `source:${sourceId}`,
       target: `claim:${claim.claimId}`,
-      label: 'supports claim',
-      relationshipType: 'SUPPORTED_BY',
+      label: 'contains assertion',
+      relationshipType: 'CONTAINS',
       reviewState: 'advisory' as const,
       confidence: claim.receipts?.[0]?.confidence ?? 0.6,
       sourceReceiptIds: claim.sourceRefIds,
@@ -748,7 +702,13 @@ function buildDocumentFirstEmbeddedGraph(input: {
     confidence: 0.6,
     sourceReceiptIds: [source.sourceId],
   }));
-  const edges = [...domainEdges, ...sourceToClaimEdges];
+  const entityEdges = nodes.filter((node) => node.entityType === 'Actor' || node.entityType === 'Event')
+    .flatMap((node) => (node.sourceReceiptIds ?? []).map((sourceId) => ({
+      id: `edge:${sourceId}:${node.id}`, source: `source:${sourceId}`, target: node.id,
+      label: 'mentions', relationshipType: 'MENTIONS', reviewState: 'advisory' as const,
+      confidence: 0.6, sourceReceiptIds: [sourceId],
+    })));
+  const edges = [...domainEdges, ...sourceToClaimEdges, ...entityEdges];
   return {
     provider: 'graphlite',
     projectionId: `architect-${safeDomainId}-graphlite-projection`,
@@ -766,17 +726,16 @@ function buildDocumentFirstEmbeddedGraph(input: {
 
 function splitArchitectSentences(value: string): string[] {
   return value
-    .replace(/\s+/g, ' ')
-    .split(/(?<=[.!?])\s+/)
+    .split(/(?<=[.!?])\s+|[\r\n]+/)
     .map((item) => item.trim())
-    .filter((item) => item.length >= 24)
+    .filter((item) => item.length >= 12)
     .slice(0, 12);
 }
 
 function uniqueByText(rows: Array<{ document: NormalizedArchitectDocument; text: string }>) {
   const seen = new Set<string>();
   return rows.filter((row) => {
-    const key = row.text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const key = `${row.document.documentId}:${row.text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()}`;
     if (!key || seen.has(key)) return false;
     seen.add(key);
     return true;
@@ -793,7 +752,24 @@ function normalizePositiveInt(value: unknown): number | null {
 
 function extractIsoDate(value: string): string | null {
   const match = value.match(/\b\d{4}-\d{2}-\d{2}\b/);
-  return match?.[0] ?? null;
+  if (!match) return null;
+  const parsed = new Date(`${match[0]}T00:00:00.000Z`);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === match[0] ? match[0] : null;
+}
+
+function buildExplicitActorNodes(documents: NormalizedArchitectDocument[]) {
+  // Deliberately conservative: explicit actor fields and source-matched existing
+  // extraction labels. Do not guess identity, alliances or intent from title case.
+  return documents.flatMap((document) => {
+    const labels = [
+      ...Array.from(document.text.matchAll(/(?:^|[\n.!?]\s*)\s*(?:actor|party|stakeholder)\s*:\s*([^\n.!?;]{2,120})/gi), (match) => match[1].trim()),
+      ...(document.extraction?.nodes ?? []).filter((node) => node.primitive_type === 'Actor' && document.text.includes(node.label)).map((node) => node.label),
+    ];
+    return [...new Set(labels)].slice(0, 20).map((label, index) => ({
+      id: `actor:${document.documentId}:${index + 1}`, label, entityType: 'Actor',
+      reviewState: 'advisory' as const, confidence: 0.6, sourceReceiptIds: [document.sourceRef.sourceId],
+    }));
+  });
 }
 
 function cleanIdForCapsule(value: unknown, fallback: string): string {

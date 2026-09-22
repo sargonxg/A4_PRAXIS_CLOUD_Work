@@ -3,6 +3,31 @@ import { describe, expect, it } from 'vitest';
 import { buildDocumentFirstCapsuleArchitectSignals } from '@/lib/services/entity-extraction';
 
 describe('document-first capsule architect signals', () => {
+  it('never invents supported claims, dates or causality from a filename or a job prompt', () => {
+    const signals = buildDocumentFirstCapsuleArchitectSignals([{ title: 'Unreadable.pdf', text: '' }], {
+      jobPrompt: 'The ceasefire has collapsed', normalizedAt: '2026-09-20T00:00:00.000Z',
+    });
+    expect(signals.claimLedger).toEqual([]);
+    expect(signals.temporality.timelineAnchors).toEqual([]);
+    expect(signals.causality.causalLinks).toEqual([]);
+  });
+
+  it('keeps exact spans and explicit actors; sorts real dates without dating undated claims', () => {
+    const text = 'Actor: United Nations.\n\nThe ceasefire meeting is on 2026-09-25.\nThe talks began on 2026-09-01. Negotiations remain disputed without corroboration.';
+    const input = [{ documentId: 'conflict', title: 'Conflict note', text }];
+    const options = { normalizedAt: '2026-09-20T00:00:00.000Z' };
+    const signals = buildDocumentFirstCapsuleArchitectSignals(input, options);
+    expect(signals).toEqual(buildDocumentFirstCapsuleArchitectSignals(input, options));
+    for (const claim of signals.claimLedger) {
+      const receipt = claim.receipts![0];
+      expect(text.slice(receipt.charOffset!.start, receipt.charOffset!.end)).toBe(receipt.snippet);
+    }
+    expect(signals.claimLedger.find((claim) => claim.text.startsWith('Negotiations'))?.validFrom).toBeNull();
+    expect(signals.temporality.timelineAnchors.map((anchor) => anchor.date)).toEqual(['2026-09-01', '2026-09-25']);
+    expect(signals.embeddedGraph.nodes.some((node) => node.entityType === 'Actor' && node.label === 'United Nations')).toBe(true);
+    expect(signals.causality.causalLinks).toEqual([]);
+    expect(signals.claimLedger.every((claim) => Object.keys(claim.causalLinks ?? {}).length === 0)).toBe(true);
+  });
   it('turns two uploaded PDFs into sources, receipted claims, graph candidates, and elicitation anchors', () => {
     const signals = buildDocumentFirstCapsuleArchitectSignals([
       {
@@ -43,7 +68,7 @@ describe('document-first capsule architect signals', () => {
     expect(signals.embeddedGraph.nodes.length).toBeGreaterThanOrEqual(4);
     expect(signals.embeddedGraph.edges.length).toBeGreaterThanOrEqual(2);
     expect(signals.temporality.timelineAnchors.length).toBeGreaterThanOrEqual(1);
-    expect(signals.causality.causalLinks.length).toBeGreaterThanOrEqual(1);
+    expect(signals.causality.causalLinks).toEqual([]); // Adjacency is not causality.
     expect(signals.reviewGate).toBe('human_review');
   });
 });

@@ -6,8 +6,11 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { CapsuleJsonMonacoEditor } from '@/components/capsules/CapsuleJsonMonacoEditor';
 import { CapsuleLivePreview } from '@/components/capsules/CapsuleLivePreview';
+import Link from 'next/link';
+import { ingestArchitectDocuments, type ArchitectDocumentDraft } from '@/lib/context/architect-document-intake';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { CAPSULE_EVAL_JUDGE_MODEL } from '@/lib/ai/model-matrix';
+import { ContextCapsuleSchema } from '@/lib/ai/schemas/context-capsule';
 import { TACITUS_CORE_PRIMITIVES } from '@/lib/graph/core-primitives';
 import { ONTOLOGY_IDS } from '@/lib/ontology/types';
 import { PENDING_CONTEXT_CAPSULE_PROMPT_KEY } from '@/lib/product/context-capsule-pending';
@@ -22,27 +25,16 @@ const STEPS: Array<{ id: BuilderStepId; label: string; helper: string }> = [
   { id: 'grounding', label: 'Grounding', helper: 'Timeline anchors, causal links, and ontology binding.' },
   { id: 'output', label: 'Output', helper: 'Deliverable format and schema ordering.' },
   { id: 'tools', label: 'Tools', helper: 'How PRAXIS should use sourceability and research tools.' },
-  { id: 'eval', label: 'Test & evaluate', helper: 'Sample questions and a dry-run quality gate.' },
+  { id: 'eval', label: 'Test & evaluate', helper: 'Check structure, then test actual analysis in Ask PRAXIS.' },
   { id: 'publish', label: 'Publish', helper: 'Visibility, pricing, and immutable publish.' },
 ];
 
 const DOMAIN_OPTIONS = Object.keys(DOMAIN_SEEDS);
 
 const TOOL_OPTIONS = ['sourceability', 'deep_research', 'source-scout', 'policy_memo'];
-const FOLDER_PICKER_INPUT_PROPS = {
-  webkitdirectory: '',
-  directory: '',
-} as Record<string, string>;
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'publishing' | 'published' | 'error';
 type CapsulePatch = DeepPartial<ContextCapsule>;
-type ArchitectDocumentDraft = {
-  documentId: string;
-  title: string;
-  mimeType: string;
-  originalUri: string;
-  text?: string;
-};
 type DeepPartial<T> = {
   [K in keyof T]?: T[K] extends unknown[]
     ? T[K]
@@ -68,6 +60,12 @@ export function CapsuleBuilderWizard() {
   const [sampleQuestions, setSampleQuestions] = useState('What changed this week?\nWhich claims need corroboration?');
   const [architectDocuments, setArchitectDocuments] = useState<ArchitectDocumentDraft[]>([]);
   const [architectReviewCount, setArchitectReviewCount] = useState(0);
+  const [intakeBusy, setIntakeBusy] = useState(false);
+  const [architectBusy, setArchitectBusy] = useState(false);
+  const [assistBusy, setAssistBusy] = useState(false);
+  const [intakeWarnings, setIntakeWarnings] = useState<string[]>([]);
+  const [architectCapsuleId, setArchitectCapsuleId] = useState<string | null>(null);
+  const [intakeSituationId, setIntakeSituationId] = useState<string | undefined>();
   const [capsule, setCapsule] = useState<ContextCapsule>(() => makeDraftCapsule({
     job,
     frameworks,
@@ -88,7 +86,6 @@ export function CapsuleBuilderWizard() {
     if (!plainLanguagePrompt) return;
     const inferredDomain = inferDomainFromPrompt(plainLanguagePrompt);
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate builder draft from login/localStorage handoff.
     setJob(plainLanguagePrompt);
     setSampleQuestions([
       plainLanguagePrompt,
@@ -115,6 +112,7 @@ export function CapsuleBuilderWizard() {
   }, [searchParams]);
 
   function patchCapsule(next: CapsulePatch) {
+    setEvalSummary(null);
     setCapsule((current) => deepMerge(current, next) as ContextCapsule);
   }
 
@@ -174,7 +172,10 @@ export function CapsuleBuilderWizard() {
   }
 
   async function runAssist(action: 'persona' | 'output-schema' | 'sources' | 'few-shot') {
+    if (assistBusy) return;
+    setAssistBusy(true);
     setMessage(`Drafting ${action} suggestions...`);
+    try {
     const response = await fetch(`/api/capsules/assist/${action}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -194,9 +195,23 @@ export function CapsuleBuilderWizard() {
     }
     if (payload.patch) patchCapsule(payload.patch);
     setMessage(payload.summary ?? 'Suggestions applied.');
+    } catch {
+      setMessage('Suggestions could not be loaded. Your draft is unchanged; retry when connected.');
+    } finally {
+      setAssistBusy(false);
+    }
   }
 
   async function runArchitect() {
+    if (architectBusy || intakeBusy) return;
+    if (!architectDocuments.length) {
+      setMessage('Add at least one readable source document before building evidence proposals.');
+      return;
+    }
+    setArchitectBusy(true);
+    const draft = capsule.id === 'new-policy-capsule' ? { ...capsule, id: `capsule-${crypto.randomUUID()}` } : capsule;
+    if (draft !== capsule) setCapsule(draft);
+    try {
     setMessage('Drafting Capsule Architect review cards...');
     const response = await fetch('/api/capsules/assist/architect', {
       method: 'POST',
@@ -205,7 +220,7 @@ export function CapsuleBuilderWizard() {
         job,
         domain: capsule.persona.domain,
         outputFormat: capsule.output.format,
-        capsule,
+        capsule: draft,
         documents: architectDocuments,
         elicitation: {
           decisionHorizon: capsule.temporality.validUntil ?? capsule.temporality.asOf ?? capsule.temporality.timelineAnchors[0]?.date,
@@ -213,7 +228,7 @@ export function CapsuleBuilderWizard() {
           validUntil: capsule.temporality.validUntil ?? capsule.temporality.timelineAnchors.find((anchor) => anchor.kind === 'validity-end')?.date,
           causalDrivers: capsule.causality.causalLinks.map((link) => link.cause).filter(Boolean),
         },
-        situationId: guard.isDemo ? undefined : guard.situation?.id,
+        situationId: guard.isDemo ? undefined : intakeSituationId ?? guard.situation?.id,
         forceRun: true,
       }),
     });
@@ -225,16 +240,26 @@ export function CapsuleBuilderWizard() {
     if (payload.patch) patchCapsule(payload.patch);
     const cardCount = Array.isArray(payload.cards) ? payload.cards.length : 0;
     setArchitectReviewCount(cardCount);
+    setArchitectCapsuleId(payload.capsule?.capsuleId ?? null);
     setMessage(payload.summary ?? `Capsule Architect prepared ${cardCount} review cards.`);
+    } catch {
+      setMessage('Capsule building was interrupted. Your uploaded sources are saved; retry the build.');
+    } finally {
+      setArchitectBusy(false);
+    }
   }
 
   async function saveDraft(): Promise<string | null> {
+    if (saveState === 'saving' || saveState === 'publishing') return null;
     setSaveState('saving');
     setMessage('Saving draft capsule...');
+    const draft = capsule.id === 'new-policy-capsule' ? { ...capsule, id: `capsule-${crypto.randomUUID()}` } : capsule;
+    setCapsule(draft);
+    try {
     const response = await fetch('/api/capsules', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: capsule.id, capsule }),
+      body: JSON.stringify({ id: draft.id, capsule: draft }),
     });
     const payload = await response.json();
     if (!response.ok) {
@@ -243,17 +268,24 @@ export function CapsuleBuilderWizard() {
       return null;
     }
     const id = payload.capsule?.id as string;
+    if (!id) throw new Error('Missing saved capsule id');
     setSavedCapsuleId(id);
     setSaveState('saved');
     setMessage('Draft saved.');
     return id;
+    } catch {
+      setSaveState('error');
+      setMessage('Draft could not be saved. Your current edits are still here; retry saving.');
+      return null;
+    }
   }
 
   async function publish() {
-    const id = savedCapsuleId ?? await saveDraft();
+    const id = await saveDraft();
     if (!id) return;
     setSaveState('publishing');
     setMessage('Publishing capsule...');
+    try {
     const response = await fetch(`/api/capsules/${encodeURIComponent(id)}/publish`, { method: 'POST' });
     const payload = await response.json();
     if (!response.ok) {
@@ -263,56 +295,25 @@ export function CapsuleBuilderWizard() {
     }
     setSaveState('published');
     setMessage('Capsule published and frozen as an immutable version.');
+    } catch {
+      setSaveState('error');
+      setMessage('Publication could not be confirmed. Your draft is saved; check its status before retrying.');
+    }
   }
 
-  async function runDryRunEval() {
-    setMessage('Running dry-run eval...');
-    const samples = sampleQuestions
-      .split('\n')
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .slice(0, 8)
-      .map((prompt, index) => ({
-        prompt,
-        output: {
-          judgment: `Dry-run answer for: ${prompt}`,
-          evidence: ['builder-source'],
-          openQuestions: ['What source would change this assessment?'],
-        },
-        claims: [{
-          id: `sample-${index + 1}`,
-          text: prompt,
-          sourceIds: ['builder-source'],
-        }],
-      }));
-    const response = await fetch('/api/capsules/eval/dry-run', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        capsule,
-        samples,
-        sourceSnippets: [{
-          id: 'builder-source',
-          text: [capsule.persona.systemFrame, capsule.sourcing.allowedDomains.join(' ')].join(' '),
-        }],
-      }),
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      setSaveState('error');
-      setMessage(payload.error ?? 'Dry-run eval failed.');
-      return;
-    }
-    if (payload.patch) patchCapsule(payload.patch);
-    const scores = payload.scores ?? {};
-    setEvalSummary(`Faithfulness ${pct(scores.faithfulness)}, citations ${pct(scores.citationCoverage)}, schema ${pct(scores.schemaConformance)}.`);
-    setMessage(payload.passed ? 'Dry-run eval passed. Publish gate is ready.' : `Dry-run eval found gaps: ${(payload.failures ?? []).join(', ')}`);
+  function runStructuralCheck() {
+    const result = ContextCapsuleSchema.safeParse(capsule);
+    setEvalSummary(result.success
+      ? `Structure is valid. ${architectDocuments.length} readable document(s); ${architectReviewCount} review proposal(s) prepared. This is not an accuracy evaluation or publication approval.`
+      : `Structure needs attention: ${result.error.issues.slice(0, 4).map((issue) => `${issue.path.join('.')}: ${issue.message}`).join('; ')}`);
+    setMessage('Test your questions on real analysis in Ask PRAXIS, then inspect citations, competing explanations and missing evidence.');
   }
 
   function applyJson(value: string) {
     try {
       const parsed = JSON.parse(value) as ContextCapsule;
       setCapsule(parsed);
+      setEvalSummary(null);
       setMessage('');
     } catch {
       setMessage('Advanced JSON has a syntax issue. Live preview shows the exact problem.');
@@ -419,6 +420,8 @@ export function CapsuleBuilderWizard() {
                     <div>
                       <p className="text-sm font-semibold text-[#24211b]">Capsule Architect</p>
                       <p className="mt-1 text-xs text-[#6f675c]">Document-first intake</p>
+                      <p className="mt-1 text-xs text-[#6f675c]">Without a selected case, adding documents creates a private evidence workspace for this capsule.</p>
+                      <p className="mt-2 max-w-xl text-xs leading-5 text-[#6f675c]">Build reviewable source assertions, dated events and ontology proposals. Explicit “Actor:”, “Party:” or “Stakeholder:” fields become actor candidates. Missing identities, dates and causal links stay unknown; check coverage before relying on the graph.</p>
                     </div>
                     <label className="inline-flex cursor-pointer items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium text-[#24211b] hover:bg-[#24211b] hover:text-white">
                       <UploadCloud className="h-4 w-4" />
@@ -426,13 +429,20 @@ export function CapsuleBuilderWizard() {
                           <input
                             type="file"
                             multiple
-                            {...FOLDER_PICKER_INPUT_PROPS}
-                            accept=".pdf,application/pdf,text/plain,.txt,.md,.csv,.json"
+                            accept=".pdf,.docx,.txt,.md,.html,.csv,.json"
+                            disabled={intakeBusy || architectBusy}
                             className="sr-only"
                         onChange={(event) => {
-                          void readArchitectDocuments(event.target.files).then((documents) => {
-                            setArchitectDocuments(documents);
-                          });
+                          const files = Array.from(event.target.files ?? []);
+                          event.target.value = '';
+                          setIntakeBusy(true);
+                          setIntakeWarnings([]);
+                          void ingestArchitectDocuments(files, { situationId: intakeSituationId ?? guard.situation?.id, workspaceName: job })
+                            .then(({ documents, warnings, situationId }) => {
+                              setIntakeSituationId(situationId);
+                              setArchitectDocuments((current) => [...current, ...documents].slice(0, 20));
+                              setIntakeWarnings(warnings);
+                            }).finally(() => setIntakeBusy(false));
                         }}
                       />
                     </label>
@@ -441,17 +451,20 @@ export function CapsuleBuilderWizard() {
                     <ul className="mt-3 grid gap-2 text-xs text-[#4f483f] sm:grid-cols-2">
                       {architectDocuments.map((document) => (
                         <li key={document.documentId} className="border border-[#ebe4d8] px-2 py-1.5">
-                          {document.title}
+                          {document.title} · {document.text.length.toLocaleString()} characters ready
                         </li>
                       ))}
                     </ul>
                   ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <button type="button" onClick={() => void runArchitect()} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
-                      <Sparkles className="h-4 w-4" /> Run Capsule Architect
+                    <button type="button" disabled={intakeBusy || architectBusy || !architectDocuments.length} onClick={() => void runArchitect()} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium disabled:opacity-50">
+                      <Sparkles className="h-4 w-4" /> {intakeBusy ? 'Reading documents…' : architectBusy ? 'Building proposals…' : 'Build evidence proposals'}
                     </button>
                     {architectReviewCount ? <span className="text-xs text-[#6f675c]">{architectReviewCount} review cards ready</span> : null}
                   </div>
+                  {intakeWarnings.length > 0 && <ul role="status" className="mt-3 space-y-1 text-xs text-amber-800">{intakeWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
+                  {architectCapsuleId && <Link href={`/app/capsules?starter=${encodeURIComponent(architectCapsuleId)}&lane=inspect`} className="mt-3 inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white">Inspect and review your capsule</Link>}
+                  <p className="mt-2 text-xs leading-5 text-[#6f675c]">Actors, claims, events and graph links are evidence proposals. Review them before reuse; repeated extraction does not make a claim true.</p>
                 </section>
               </div>
             )}
@@ -728,16 +741,17 @@ export function CapsuleBuilderWizard() {
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
-                    onClick={() => void runDryRunEval()}
+                    onClick={runStructuralCheck}
                     className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium"
                   >
-                    <Check className="h-4 w-4" /> Run dry-run eval
+                    <Check className="h-4 w-4" /> Check draft structure
                   </button>
                   <button type="button" onClick={() => runAssist('few-shot')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
                     <Sparkles className="h-4 w-4" /> Generate few-shot examples
                   </button>
                 </div>
                 {evalSummary ? <p className="text-sm text-[#6f675c]">{evalSummary}</p> : null}
+                <Link href="/app" className="inline-flex min-h-10 items-center text-sm font-semibold underline">Test questions in Ask PRAXIS</Link>
               </div>
             )}
 
@@ -766,20 +780,22 @@ export function CapsuleBuilderWizard() {
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button type="button" onClick={() => void saveDraft()} className="inline-flex items-center gap-2 border border-[#24211b] px-4 py-2 text-sm font-semibold">
+                  <button type="button" disabled={saveState === 'saving' || saveState === 'publishing'} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 border border-[#24211b] px-4 py-2 text-sm font-semibold disabled:opacity-50">
                     <FileJson className="h-4 w-4" /> Save draft
                   </button>
-                  <button type="button" onClick={() => void publish()} className="inline-flex items-center gap-2 bg-[#24211b] px-4 py-2 text-sm font-semibold text-white">
+                  <button type="button" disabled={saveState === 'saving' || saveState === 'publishing'} onClick={() => void publish()} className="inline-flex items-center gap-2 bg-[#24211b] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                     <Rocket className="h-4 w-4" /> Publish capsule
                   </button>
                 </div>
+                <p className="text-xs text-[#6f675c]">Save privately while reviewing. Publication has a separate server-side evaluation gate; the structure check does not unlock it.</p>
+                {savedCapsuleId ? <p role="status" className="text-xs">Draft saved as {savedCapsuleId}.</p> : null}
               </div>
             )}
           </div>
         )}
 
         {message && (
-          <p className={`border px-4 py-3 text-sm ${
+          <p role="status" className={`border px-4 py-3 text-sm ${
             saveState === 'error' ? 'border-[#b65d45] bg-[#fff4ef] text-[#8a3d2c]' : 'border-[#d8d1c5] bg-[#fffdf8] text-[#4f483f]'
           }`}>
             {message}
@@ -788,27 +804,6 @@ export function CapsuleBuilderWizard() {
       </div>
     </section>
   );
-}
-
-async function readArchitectDocuments(files: FileList | null): Promise<ArchitectDocumentDraft[]> {
-  const selected = Array.from(files ?? []).slice(0, 12);
-  return Promise.all(selected.map(async (file, index): Promise<ArchitectDocumentDraft> => {
-    const relativePath = file.webkitRelativePath || file.name || `document-${index + 1}`;
-    const isTextReadable = file.type.startsWith('text/') || /\.(txt|md|csv|json)$/i.test(file.name);
-    const text = isTextReadable ? await file.text().catch(() => '') : '';
-    return {
-      documentId: `${index + 1}-${relativePath}`
-        .trim()
-        .toLowerCase()
-        .replace(/[^a-z0-9_.:-]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 160) || `document-${index + 1}`,
-      title: relativePath,
-      mimeType: file.type || 'application/octet-stream',
-      originalUri: `local-upload:${relativePath}`,
-      text,
-    };
-  }));
 }
 
 function deepMerge(base: unknown, overlay: unknown): unknown {
@@ -1085,8 +1080,4 @@ function humanizeId(value: string): string {
   return value
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function pct(value: unknown): string {
-  return typeof value === 'number' ? `${Math.round(value * 100)}%` : 'n/a';
 }

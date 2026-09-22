@@ -25,20 +25,24 @@ export async function tryLibraryCapsule(
   entry: CapsuleLibraryEntry,
   deps: TryLibraryCapsuleDeps,
 ): Promise<TryLibraryCapsuleResult> {
-  const fetcher = deps.fetch ?? fetch;
-  const available = await ensureStarterCapsuleAvailable(entry.id, fetcher);
-  if (available.status !== 'available') {
-    return available.status === 'needs-auth'
-      ? { status: 'needs-auth', capsuleId: entry.id }
-      : { status: 'failed', capsuleId: entry.id, reason: available.reason };
+  try {
+    const fetcher = deps.fetch ?? fetch;
+    const available = await ensureStarterCapsuleAvailable(entry.id, fetcher);
+    if (available.status !== 'available') {
+      return available.status === 'needs-auth'
+        ? { status: 'needs-auth', capsuleId: entry.id }
+        : { status: 'failed', capsuleId: entry.id, reason: available.reason };
+    }
+
+    await deps.saveStack(activeContextPatchForLibraryEntry(entry, {
+      stack: deps.stack,
+      slotKind: deps.slotKind,
+    }));
+
+    return { status: 'attached', capsuleId: entry.id, seeded: available.seeded };
+  } catch {
+    return { status: 'failed', capsuleId: entry.id, reason: 'The capsule could not be attached. Check your connection and retry.' };
   }
-
-  await deps.saveStack(activeContextPatchForLibraryEntry(entry, {
-    stack: deps.stack,
-    slotKind: deps.slotKind,
-  }));
-
-  return { status: 'attached', capsuleId: entry.id, seeded: available.seeded };
 }
 
 export function activeContextPatchForLibraryEntry(
@@ -71,20 +75,19 @@ async function ensureStarterCapsuleAvailable(
   capsuleId: string,
   fetcher: typeof fetch,
 ): Promise<StarterAvailability> {
-  const listResponse = await fetcher('/api/context/capsules', { credentials: 'include' });
+  const listResponse = await fetcher(`/api/context/capsules/${encodeURIComponent(capsuleId)}`, { credentials: 'include', signal: AbortSignal.timeout(30_000) });
   if (listResponse.status === 401 || listResponse.status === 403) return { status: 'needs-auth' };
-  if (!listResponse.ok) return { status: 'failed', reason: `capsule list failed (${listResponse.status})` };
-
-  const body = await listResponse.json().catch(() => null) as { capsules?: Array<{ capsuleId?: string }> } | null;
-  if (body?.capsules?.some((capsule) => capsule.capsuleId === capsuleId)) {
+  if (listResponse.ok) {
     return { status: 'available', seeded: false };
   }
+  if (listResponse.status !== 404) return { status: 'failed', reason: `Capsule could not be loaded (${listResponse.status}). Please retry.` };
 
   const seedResponse = await fetcher('/api/context/capsules', {
     method: 'POST',
     credentials: 'include',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ action: 'seed-starters' }),
+    body: JSON.stringify({ action: 'seed-starters', starterId: capsuleId }),
+    signal: AbortSignal.timeout(30_000),
   });
   if (seedResponse.status === 401 || seedResponse.status === 403) return { status: 'needs-auth' };
   if (!seedResponse.ok) return { status: 'failed', reason: `starter seed failed (${seedResponse.status})` };

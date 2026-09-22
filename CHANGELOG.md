@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+- Start an isolated, disabled-by-default JEV review adapter and an explicit setup-required conversation control; no user content is sent to an unconfigured provider.
+- Fix document-first builder workspace creation and draft inspection; bound spotlight attachment and narrow case-scoped capsule reads.
+
+- Simplify the public mobile homepage and clarify sign-in, saved-context and builder handoffs.
+- Spotlight twelve policy capsule starting points; expose saved analytical method inputs, procedures, graph templates and review limits, and include them in tool-capsule context.
+- Use canonical document extraction in the builder; preserve real text receipts and unknown dates; remove fabricated evaluation passes and starter ratings.
+- Enable owner-reviewed capsule proposals with transactional decision guards and visible recoverable attachment errors.
+- Update security-affected dependencies, including Next.js 16.3.5 and coordinated OpenTelemetry packages; exclude local browser artifacts from deployment uploads.
+
 Build 2026.07.08.01 (PRAXIS v6.5.0).
 
 - feat(ask): agents-working narrative strip. While an answer streams, a calm

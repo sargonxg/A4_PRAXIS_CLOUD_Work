@@ -3,6 +3,7 @@ node_modules
 .git
 .gitignore
 .codex/
+.serena/
 .code-review-graph/
 graphify-out/
 target/
@@ -30,6 +31,10 @@ docs/
 Thumbs.db
 
 # Test files
+output/
+.playwright-cli/
+test-results/
+playwright-report/
 vitest.config.ts
 src/__tests__/
 

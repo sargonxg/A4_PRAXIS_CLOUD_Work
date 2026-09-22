@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
 import { PraxisMark } from '@/components/brand/praxis-mark';
@@ -21,6 +21,7 @@ export function PublicShell({
 }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 24);
@@ -41,8 +42,21 @@ export function PublicShell({
     };
   }, [mobileMenuOpen]);
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false);
+        menuButton.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [mobileMenuOpen]);
+
   return (
     <div id="top" className={cn('landing-light praxis-public-shell relative min-h-screen', className)}>
+      <a href="#public-main" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-white focus:p-3 focus:text-slate-950">Skip to content</a>
       <div className="landing-sticky-collision-zone sticky top-0 z-50 px-3 pb-2 pt-3 sm:px-5 sm:pb-3 sm:pt-4">
         <header
           className={cn(
@@ -50,7 +64,7 @@ export function PublicShell({
             scrolled ? 'bg-white/90' : 'bg-white/76',
           )}
         >
-          <nav className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5">
+          <nav aria-label="Main navigation" className="flex items-center justify-between gap-3 px-4 py-2.5 sm:px-5">
             <Link href="/" className="group flex shrink-0 items-center gap-2 sm:gap-3">
               <span className="flex h-9 w-9 items-center justify-center rounded-[var(--radius-lg)] border border-emerald-500/35 bg-emerald-500/10 transition-transform duration-300 group-hover:rotate-[8deg]">
                 <PraxisMark size={20} className="text-emerald-700" title="PRAXIS" />
@@ -86,10 +100,13 @@ export function PublicShell({
             </div>
 
             <button
+              ref={menuButton}
+              type="button"
               onClick={() => setMobileMenuOpen((v) => !v)}
               className="praxis-button-secondary h-9 w-9 p-0 lg:hidden"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-menu"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -98,6 +115,8 @@ export function PublicShell({
 
         <div
           id="mobile-menu"
+          inert={!mobileMenuOpen}
+          aria-hidden={!mobileMenuOpen}
           className={cn(
             'praxis-shell-float mx-auto mt-2 max-w-[1180px] overflow-hidden transition-[max-height,opacity] duration-300 ease-out lg:hidden',
             mobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 border-transparent opacity-0 shadow-none',
@@ -139,7 +158,7 @@ export function PublicShell({
         </div>
       </div>
 
-      <main className={cn('relative z-10', contentClassName)}>
+      <main id="public-main" tabIndex={-1} className={cn('relative z-10', contentClassName)}>
         <PraxisRouteTransition>{children}</PraxisRouteTransition>
       </main>
 

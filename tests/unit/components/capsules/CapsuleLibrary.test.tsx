@@ -11,6 +11,7 @@ import {
   filterCapsuleRepositoryEntries,
 } from '@/lib/capsules/library';
 import { sanitizeCapsule } from '@/lib/context/capsule-service';
+import { POLICY_CAPSULE_SPOTLIGHTS } from '@/lib/capsules/spotlights';
 
 describe('CapsuleLibrary', () => {
   it('builds featured entries from real ranked starter capsules for every category', () => {
@@ -29,7 +30,8 @@ describe('CapsuleLibrary', () => {
     for (const category of CAPSULE_LIBRARY_CATEGORIES) {
       const entries = filterCapsuleLibraryEntries(CAPSULE_LIBRARY_ENTRIES, category.id);
       expect(entries.length, category.id).toBeGreaterThan(0);
-      expect(entries.length, category.id).toBeLessThanOrEqual(3);
+      const spotlightIds = new Set<string>(POLICY_CAPSULE_SPOTLIGHTS.map((entry) => entry.id));
+      expect(entries.filter((entry) => !spotlightIds.has(entry.id)).length, category.id).toBeLessThanOrEqual(3);
       expect(entries.every((entry) => entry.id.startsWith('starter-'))).toBe(true);
       expect(entries.every((entry) => entry.ranking.rank > 0 && entry.ranking.score > 0)).toBe(true);
       expect(entries.every((entry) => entry.inside.sources >= 4)).toBe(true);

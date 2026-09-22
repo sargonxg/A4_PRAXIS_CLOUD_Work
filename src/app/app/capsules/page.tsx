@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const CapsuleLibraryWithTry = dynamic(
@@ -22,11 +23,13 @@ export default async function CapsulesPage({ searchParams }: CapsulesPageProps) 
 
   return (
     <>
-      <div className="bg-emerald-50/30 px-4 pt-4 sm:px-6 lg:px-8">
+      {lane === 'inspect' ? <div className="bg-emerald-50/30 px-4 py-3 sm:px-6 lg:px-8">
+        <Link href="/app/capsules" className="text-sm font-semibold underline">Back to capsule library</Link>
+      </div> : <div className="bg-emerald-50/30 px-4 pt-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-[1400px]">
           <CapsuleLibraryWithTry initialCategory="all" />
         </div>
-      </div>
+      </div>}
       <TaskletPraxisWorkbench
         mode="app"
         capsuleId={starter || 'default'}

@@ -6,6 +6,7 @@ import { Eye, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { CapsuleLibraryCard } from '@/components/capsules/CapsuleLibraryCard';
+import { CapsuleSpotlights } from '@/components/capsules/CapsuleSpotlights';
 import {
   CAPSULE_LIBRARY_CATEGORIES,
   CAPSULE_LIBRARY_ENTRIES,
@@ -39,6 +40,9 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
   const [userCapsules, setUserCapsules] = useState<PraxisCapsule[]>([]);
   const [busyCapsuleId, setBusyCapsuleId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [reload, setReload] = useState(0);
   const entries = useMemo(
     () => buildCapsuleRepositoryEntries({
       userCapsules,
@@ -49,18 +53,24 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/context/capsules', { credentials: 'include' })
-      .then((response) => (response.ok ? response.json() : null))
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30_000);
+    fetch('/api/context/capsules', { credentials: 'include', signal: controller.signal })
+      .then((response) => { if (!response.ok) throw new Error('Load failed'); return response.json(); })
       .then((body: { capsules?: PraxisCapsule[] } | null) => {
         if (!cancelled && Array.isArray(body?.capsules)) setUserCapsules(body.capsules);
       })
-      .catch(() => undefined);
+      .catch(() => { if (!cancelled) setLoadError(true); })
+      .finally(() => { clearTimeout(timeout); if (!cancelled) setLoading(false); });
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
+      controller.abort();
     };
-  }, []);
+  }, [reload]);
 
   async function handleTryCapsule(entry: CapsuleLibraryEntry, slotKind: CapsuleDockSlotKind) {
+    if (busyCapsuleId) return;
     setBusyCapsuleId(entry.id);
     setStatus(null);
     const result = entry.origin === 'starter'
@@ -85,6 +95,9 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
   }
 
   return (
+    <>
+    {loading ? <p role="status" className="mb-2 text-sm text-slate-600">Loading your saved capsules…</p> : null}
+    {loadError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm">Your saved capsules could not be loaded. Starters are still shown below. <button type="button" disabled={loading} className="font-semibold underline" onClick={() => { setLoadError(false); setLoading(true); setReload((value) => value + 1); }}>Retry</button></p> : null}
     <CapsuleLibrary
       {...props}
       entries={entries}
@@ -92,6 +105,7 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
       status={status}
       onTryCapsule={(entry, slotKind) => void handleTryCapsule(entry, slotKind)}
     />
+    </>
   );
 }
 
@@ -151,7 +165,7 @@ export function CapsuleLibrary({
           <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Capsule Repository</p>
           <h2 className="mt-1 text-xl font-semibold text-slate-950">Pick the context for this chat.</h2>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Search your saved capsules and reviewed starters. PRAXIS docks sources, claims, ontology, and output rules before chat.
+            Find saved context and starter frameworks. Inspect sources, claims and review gaps, then attach a capsule to your analysis.
           </p>
         </div>
         {status ? (
@@ -161,6 +175,11 @@ export function CapsuleLibrary({
         ) : null}
       </div>
 
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Link href="/app/capsules/builder" className="inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white">Build from your material</Link>
+        <Link href="/app" className="inline-flex min-h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700">Ask PRAXIS</Link>
+      </div>
+      {!hasActiveFilters ? <CapsuleSpotlights entries={entries} busyCapsuleId={busyCapsuleId} onAttach={onTryCapsule} /> : null}
       <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
         <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Capsule categories">
           <CategoryChip active={category === 'all'} label="All" onClick={() => setCategory('all')} />
@@ -265,7 +284,7 @@ export function CapsuleLibrary({
                       addAction={{
                         label: busyCapsuleId === entry.id ? `Adding to ${slotLabel} slot` : `Add to ${slotLabel} slot`,
                         onAdd: () => onTryCapsule?.(entry, proposedSlot),
-                        disabled: !onTryCapsule || busyCapsuleId === entry.id,
+                        disabled: !onTryCapsule || Boolean(busyCapsuleId),
                       }}
                       footerActions={(
                         <Link

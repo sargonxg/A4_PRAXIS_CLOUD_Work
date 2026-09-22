@@ -27,8 +27,9 @@ describe('Capsule Builder UX contract', () => {
     }
     expect(wizard).toContain('/api/capsules');
     expect(wizard).toContain('/publish');
-    expect(wizard).toContain('/api/capsules/eval/dry-run');
-    expect(wizard).toContain('Run dry-run eval');
+    expect(wizard).toContain('Check draft structure');
+    expect(wizard).not.toContain('builder-source');
+    expect(wizard).not.toContain('Publish gate is ready');
   });
 
   it('adds Capsule Architect as a progressive, document-first action without replacing the single-prompt first step', () => {
@@ -38,8 +39,8 @@ describe('Capsule Builder UX contract', () => {
     expect(wizard).toContain('Capsule Architect');
     expect(wizard).toContain('Document-first intake');
     expect(wizard).toContain('/api/capsules/assist/architect');
-    expect(wizard).toContain('readArchitectDocuments');
-    expect(wizard).toContain('webkitdirectory');
+    expect(wizard).toContain('ingestArchitectDocuments');
+    expect(wizard).not.toContain('webkitdirectory');
   });
 
   it('seeds a non-empty GraphLite advisory projection from the required grounding inputs', () => {

@@ -2,6 +2,7 @@ import type { CoreSpecimenKind } from '@/components/cores/specimen-card';
 import type { TacitusCorePrimitive } from '@/lib/graph/core-primitives';
 import { isOntologyId, type OntologyId } from '@/lib/ontology/types';
 import type { DomainId } from '@/types/domain';
+import { applyAnalyticalMethod } from '@/lib/capsules/analytical-methods';
 
 export {
   PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
@@ -9891,7 +9892,8 @@ function applyCatalogWideReasonedGraphVariation(starter: CapsuleStarterDefinitio
 
 export const CAPSULE_STARTER_DEFINITIONS: CapsuleStarterDefinition[] = RAW_CAPSULE_STARTER_DEFINITIONS
   .map(applyHumanGatedPolicyJudgmentPhaseBRewrite)
-  .map(applyCatalogWideReasonedGraphVariation);
+  .map(applyCatalogWideReasonedGraphVariation)
+  .map(applyAnalyticalMethod);
 
 export function getCapsuleStarterDefinition(capsuleId: string | null | undefined): CapsuleStarterDefinition | null {
   if (!capsuleId) return null;

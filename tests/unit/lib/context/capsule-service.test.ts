@@ -22,6 +22,8 @@ import {
   capsuleToStack,
   listCapsuleInventory,
   listCapsules,
+  listCapsuleReviewCards,
+  rejectCapsuleReviewCard,
   promoteCapsuleSourceGaps,
   promoteCapsuleOntologyExtensionToGlobalAco,
   proposeCogneeSeedReviewCards,
@@ -55,6 +57,46 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('queries only capsules linked to the case, retaining active links and deduplicating matches', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'direct', coreRefs: { situationCoreId: 'case-a' }, activeForSituationIds: ['case-a'] }, deps(db));
+    await createCapsule('u1', { capsuleId: 'attached', coreRefs: { situationCoreId: 'case-b' }, activeForSituationIds: ['case-a'] }, deps(db));
+    await createCapsule('u1', { capsuleId: 'unrelated', coreRefs: { situationCoreId: 'case-b' } }, deps(db));
+    const capsules = await listCapsules('u1', { situationId: 'case-a' }, deps(db));
+    expect(capsules.map((capsule) => capsule.capsuleId).sort()).toEqual(['attached', 'direct']);
+    expect(db.queries).toEqual([
+      ['coreRefs.situationCoreId', '==', 'case-a'],
+      ['activeForSituationIds', 'array-contains', 'case-a'],
+    ]);
+  });
+  it('seeds just one requested starter and preserves an existing user snapshot', async () => {
+    const db = new FakeFirestore();
+    const id = CAPSULE_STARTER_DEFINITIONS[0].starterId;
+    const first = await seedStarterCapsules('u1', deps(db), { starterId: id });
+    expect(first.created).toBe(1);
+    expect(first.capsules).toHaveLength(1);
+    expect(await listCapsules('u1', {}, deps(db))).toHaveLength(1);
+    await db.collection('users').doc('u1').collection('capsules').doc(id).set({ label: 'My edited capsule' }, { merge: true });
+    const second = await seedStarterCapsules('u1', deps(db), { starterId: id });
+    expect(second.existing).toBe(1);
+    expect(second.capsules[0].label).toBe('My edited capsule');
+    await expect(seedStarterCapsules('u1', deps(db), { starterId: 'nonexistent-starter' })).rejects.toThrow('Unknown starter');
+  });
+  it('lists owner-scoped proposals and prevents overwriting a completed review decision', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'review-safety', label: 'Review safety' }, deps(db));
+    const card = await createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Proposed summary', sourceType: 'user', target: 'capsuleEnvelope',
+      proposedEnvelopePatch: { summary: 'Reviewed summary' },
+    }, deps(db));
+    expect((await listCapsuleReviewCards('u1', capsule.capsuleId, deps(db))).map((item) => item.reviewCardId)).toEqual([card.reviewCardId]);
+    expect(await listCapsuleReviewCards('u2', capsule.capsuleId, deps(db))).toEqual([]);
+    const metadata = { reviewerUid: 'u1', confirmationReason: 'Checked against the source', diffHash: 'diff:test' };
+    await applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, metadata, deps(db));
+    await expect(applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, metadata, deps(db))).rejects.toThrow(/already decided/i);
+    await expect(rejectCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, metadata, deps(db))).rejects.toThrow(/already decided/i);
+    expect((await getCapsule('u1', capsule.capsuleId, deps(db)))?.version).toBe(2);
+  });
   it('derives embedded graph stats from reviewed nodes and edges', () => {
     const stats = deriveCapsuleGraphStats({
       embeddedGraph: {
@@ -652,8 +694,9 @@ describe('capsule service', () => {
     expect(second.created).toBe(0);
     expect(second.existing).toBe(first.created);
     expect(capsules.filter((capsule) => capsule.community.tags.includes('starter'))).toHaveLength(first.created);
-    expect(capsules.filter((capsule) => capsule.community.favorite && (capsule.community.averageRating ?? 0) >= 4.8)).toHaveLength(first.created);
-    expect(capsules.filter((capsule) => capsule.community.ratingCount >= 10)).toHaveLength(first.created);
+    expect(capsules.every((capsule) => capsule.community.averageRating === null && capsule.community.userRating === null)).toBe(true);
+    expect(capsules.every((capsule) => capsule.community.ratingCount === 0)).toBe(true);
+    expect(capsules.every((capsule) => !capsule.community.listedInMarketplace && !capsule.community.favorite)).toBe(true);
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-source-pack-builder')?.coreRefs.toolCoreIds).toContain('grounded-research');
     expect(capsules.find((capsule) => capsule.capsuleId === 'starter-tool-assumption-audit')?.community.tags).toEqual(expect.arrayContaining([
       'type:tool',
@@ -1905,6 +1948,7 @@ function deps(db: FakeFirestore) {
 
 class FakeFirestore {
   data = new Map<string, Record<string, unknown>>();
+  queries: unknown[][] = [];
 
   collection(path: string) {
     return new FakeCollection(this, path);
@@ -1936,6 +1980,17 @@ class FakeCollection {
 
   orderBy() {
     return this;
+  }
+
+  where(field: string, operation: string, value: string) {
+    this.db.queries.push([field, operation, value]);
+    return { get: async () => {
+      const snapshot = await this.get();
+      return { docs: snapshot.docs.filter((doc) => {
+        const fieldValue = field.split('.').reduce<unknown>((parent, key) => (parent as Record<string, unknown>)?.[key], doc.data());
+        return operation === 'array-contains' ? Array.isArray(fieldValue) && fieldValue.includes(value) : fieldValue === value;
+      }) };
+    } };
   }
 
   async get() {

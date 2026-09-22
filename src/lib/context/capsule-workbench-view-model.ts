@@ -1140,7 +1140,8 @@ function buildReviewQueue(
       why: reviewWhyFor(target, sourceType, evidenceLabels),
       evidenceLabels,
       impact: reviewImpactFor(target),
-      allowedActions: ['approve', 'reject'] as Array<'approve' | 'reject'>,
+      allowedActions: (card.id || card.reviewCardId) && ['proposed', 'owner_review', 'accepted'].includes(card.state ?? '')
+        ? ['approve', 'reject'] as Array<'approve' | 'reject'> : [],
     };
   });
   const derived: CapsuleReviewCardDisplay[] = [];
@@ -1155,7 +1156,7 @@ function buildReviewQueue(
       why: 'The capsule has no attached source or document receipts, so factual claims should not be promoted.',
       evidenceLabels: ['source count: 0', ...evidence.gaps.slice(0, 2)],
       impact: 'Blocks sourced drafting until receipts or a visible evidence gap are added.',
-      allowedActions: ['approve', 'reject'],
+      allowedActions: [],
     });
   }
   if (evidence.unsupportedClaims.length) {
@@ -1169,7 +1170,7 @@ function buildReviewQueue(
       why: 'Unsupported claims need source receipts, explicit caveats, or rejection before final outputs.',
       evidenceLabels: evidence.unsupportedClaims.slice(0, 3),
       impact: 'Keeps weak claims out of canonical capsule context until reviewed.',
-      allowedActions: ['approve', 'reject'],
+      allowedActions: [],
     });
   }
   if ((capsule.readinessSummary?.graphProposalCount ?? 0) > 0 || !capsule.coreRefs?.graphCoreId) {
@@ -1183,7 +1184,7 @@ function buildReviewQueue(
       why: 'Graph structure is advisory until a human accepts the node and edge proposal.',
       evidenceLabels: evidence.sourceIds.slice(0, 3),
       impact: 'Prevents GraphLite or embedded graph suggestions from mutating canonical capsule state silently.',
-      allowedActions: ['approve', 'reject'],
+      allowedActions: [],
     });
   }
   if ((capsule.readinessSummary?.advisoryMemoryHitCount ?? 0) > 0) {
@@ -1197,10 +1198,10 @@ function buildReviewQueue(
       why: 'Advisory memory can guide the turn but must be reviewed before becoming durable context.',
       evidenceLabels: [`${capsule.readinessSummary?.advisoryMemoryHitCount ?? 0} advisory memory hit(s)`],
       impact: 'Keeps tacit memory useful without treating probabilistic recall as canonical evidence.',
-      allowedActions: ['approve', 'reject'],
+      allowedActions: [],
     });
   }
-  return uniqueBy([...explicit, ...derived], (item) => item.id).slice(0, 12);
+  return uniqueBy([...explicit, ...derived], (item) => item.id);
 }
 
 function reviewEvidenceLabels(value: CapsuleWorkbenchReviewCardInput['evidence']): string[] {

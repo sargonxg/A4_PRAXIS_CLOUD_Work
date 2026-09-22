@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CAPSULE_V3_AGENT_ROLES,
@@ -15,6 +15,26 @@ import { normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/
 import { CAPSULE_STARTER_CATALOG_VERSION, CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 
 describe('ContextCapsule v3 contract', () => {
+  // These fixtures describe a May review. Keep time explicit so their quality
+  // assertions do not change when the test suite is run months later.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-14T00:00:00.000Z'));
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('requires renewed review when source and approval freshness expire', () => {
+    const readyV2 = makeCapsule();
+    vi.setSystemTime(new Date('2026-09-21T00:00:00.000Z'));
+    const expired = normalizeContextCapsuleV3(readyV2);
+
+    expect(expired.sourceSpine.staleSourceIds.length).toBeGreaterThan(0);
+    expect(canPublishCapsuleV3(expired, { actor: 'human' })).toMatchObject({
+      allowed: false,
+      status: 'stale',
+    });
+  });
+
   it('normalizes v2 capsules into the full human-gated v3 section contract', () => {
     const capsule = normalizeContextCapsuleV3(makeCapsule());
 

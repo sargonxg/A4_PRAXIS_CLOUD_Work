@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { JevReviewControl } from '@/components/app/jev-review-control';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -1332,6 +1333,8 @@ export function TaskletPraxisWorkbench({
 
   useEffect(() => {
     if (!activeContextHydrated) return;
+    // Inspecting a draft must not switch to the capsule attached to chat.
+    if (initialPanel === 'capsules' && initialFactoryLane === 'inspect') return;
     if (activeCapsuleStack.some((capsule) => capsule.id === currentCapsuleId)) return;
     const nextCapsule = activeCapsuleStack.find((capsule) => capsule.role === 'situation') ?? activeCapsuleStack[0];
     if (nextCapsule) {
@@ -1339,7 +1342,7 @@ export function TaskletPraxisWorkbench({
       return;
     }
     if (currentCapsuleId !== capsuleId) setCurrentCapsuleId(capsuleId);
-  }, [activeCapsuleStack, activeContextHydrated, capsuleId, currentCapsuleId]);
+  }, [activeCapsuleStack, activeContextHydrated, capsuleId, currentCapsuleId, initialPanel, initialFactoryLane]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -2390,6 +2393,18 @@ export function TaskletPraxisWorkbench({
     if (!isAuthenticated) return;
     setCapsulesLoading(true);
     try {
+      if (initialPanel === 'capsules' && initialFactoryLane === 'inspect') {
+        const targetId = selectCapsuleId ?? currentCapsuleId;
+        const response = await fetch(`/api/context/capsules/${encodeURIComponent(targetId)}`, {
+          credentials: 'include', signal: AbortSignal.timeout(30_000),
+        });
+        if (response.status === 404) return; // Unsaved catalogue entries remain inspectable locally.
+        const payload = await response.json();
+        if (!response.ok || !payload.capsule) throw new Error('The selected capsule could not be loaded.');
+        setUserCapsules((current) => [payload.capsule as PraxisCapsuleSummary, ...current.filter((item) => item.capsuleId !== targetId)]);
+        if (selectCapsuleId) setCurrentCapsuleId(targetId);
+        return;
+      }
       let library = await fetchCapsuleLibrary();
       let next = library.capsules;
       setCapsuleInventorySummary(library.summary);
@@ -2425,7 +2440,7 @@ export function TaskletPraxisWorkbench({
     } finally {
       setCapsulesLoading(false);
     }
-  }, [currentCapsuleId, isAuthenticated, persistActiveCapsuleStack]);
+  }, [currentCapsuleId, isAuthenticated, persistActiveCapsuleStack, initialPanel, initialFactoryLane]);
 
   useEffect(() => {
     if (!isAuthenticated || !selectedCapsule) {
@@ -4215,6 +4230,7 @@ export function TaskletPraxisWorkbench({
                   />
                 </div>
                 <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+                  {isAuthenticated ? <JevReviewControl /> : null}
                   <button
                     type="button"
                     onClick={() => {

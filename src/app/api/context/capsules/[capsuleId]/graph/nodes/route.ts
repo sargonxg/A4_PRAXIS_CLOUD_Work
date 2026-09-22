@@ -5,6 +5,7 @@ import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import {
   applyCapsuleReviewCard,
+  CapsuleReviewConflictError,
   proposeCapsuleGraphNodeChange,
   rejectCapsuleReviewCard,
 } from '@/lib/context/capsule-service';
@@ -94,6 +95,7 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       : proposal;
     return NextResponse.json({ card }, { status: 201 });
   } catch (err) {
+    if (err instanceof CapsuleReviewConflictError) return NextResponse.json({ error: err.message }, { status: 409 });
     return handleRouteError(err, 'context/capsules/graph/nodes');
   }
 });
