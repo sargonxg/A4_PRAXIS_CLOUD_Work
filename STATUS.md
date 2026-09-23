@@ -2,6 +2,9 @@
 
 ## 2026-09-23 — Production reliability correction
 
+- Extended live review identified a second Firestore serialization bug: approving a never-rejected proposal included `rejectionMetadata: undefined`. Omit absent review/evidence properties; regression tests now reject undefined Firestore data on both batch and transaction paths. The deployed acceptance journey also checks approval, version increments and, with explicit AI opt-in, capsule-aware Ask and history read-back.
+- Follow-up local validation: 365 files / 1,563 tests pass, build and typecheck pass, and lint has no errors. The dependency audit has zero high/critical findings (44 moderate, three low). Real DOCX failure and approval serialization failures were reproduced before their fixes; see regression commits and the extended live journey.
+
 - First correction `92736cfa` deployed via frontend Cloud Build `fe5c68ee-a674-4d0a-a004-243388c0bacb`; its GCP preflight passed and the custom domain reported revision `praxis-frontend-01067-dgt`. Seven post-deploy login/AI/source-check/mobile checks passed.
 - The live upload matrix confirmed TXT/PDF but caught DOCX failing. A real parser regression test reproduced `DOMParser.parseFromString` rejecting Mammoth's omitted MIME type under the global xmldom 0.9 override. A Mammoth-only override to maintained/security-patched 0.8.15 makes the real DOCX test pass; redeployment and full live journey remain required.
 

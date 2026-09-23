@@ -3402,6 +3402,7 @@ function normalizeReadinessSummary(
 
 function normalizeReviewCard(input: unknown, capsule: PraxisCapsule, fallbackId: string): CapsuleReviewCard {
   const body = isRecord(input) ? input : {};
+  const rejectionMetadata = normalizeExistingRejectionMetadata(body.rejectionMetadata);
   return {
     reviewCardId: cleanId(stringOrNull(body.reviewCardId) ?? fallbackId, fallbackId),
     capsuleId: capsule.capsuleId,
@@ -3413,7 +3414,7 @@ function normalizeReviewCard(input: unknown, capsule: PraxisCapsule, fallbackId:
     evidence: normalizeReviewEvidence(Array.isArray(body.evidence) ? body.evidence : []),
     proposedEnvelopePatch: normalizeReviewEnvelopePatch(isRecord(body.proposedEnvelopePatch) ? body.proposedEnvelopePatch : {}),
     applyMetadata: normalizeExistingApplyMetadata(body.applyMetadata),
-    rejectionMetadata: normalizeExistingRejectionMetadata(body.rejectionMetadata) ?? undefined,
+    ...(rejectionMetadata ? { rejectionMetadata } : {}),
     createdAt: stringOrNull(body.createdAt) ?? capsule.updatedAt,
     updatedAt: stringOrNull(body.updatedAt) ?? capsule.updatedAt,
   };
@@ -3424,11 +3425,12 @@ function normalizeReviewEvidence(values: unknown[]): CapsuleReviewEvidence[] {
     if (!isRecord(value)) return [];
     const id = cleanText(value.id, 160);
     if (!id) return [];
+    const sourceType = cleanText(value.sourceType, 80);
     return [{
       id,
       label: cleanText(value.label, 240) || id,
       advisory: value.advisory !== false,
-      sourceType: cleanText(value.sourceType, 80) || undefined,
+      ...(sourceType ? { sourceType } : {}),
       url: stringOrNull(value.url),
     }];
   }).slice(0, 20);

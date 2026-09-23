@@ -6,7 +6,7 @@ const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('Capsule Studio', () => {
   test('uploads a source, builds reviewable proposals and attaches spotlight context', async ({ page }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(300_000);
     test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
     await page.goto(`${BASE}/app/capsules?lane=repository`);
@@ -56,6 +56,39 @@ test.describe('Capsule Studio', () => {
     const saved = await page.request.get(`${BASE}/api/context/capsules/${encodeURIComponent(capsuleId)}?includeReviewCards=true`);
     expect(saved.ok()).toBe(true);
     expect((await saved.json()).reviewCards.some((card: { state: string }) => card.state === 'rejected')).toBe(true);
+    await drawer.getByLabel('Reason for your next decision').fill('QA: inspected the synthetic source receipts; approving this proposal only in the private canary workspace.');
+    await drawer.getByRole('button', { name: 'approve', exact: true }).first().click();
+    await expect(drawer.getByText('Proposal applied. A new capsule version was saved.')).toBeVisible({ timeout: 30_000 });
+    const approvedResponse = await page.request.get(`${BASE}/api/context/capsules/${encodeURIComponent(capsuleId)}?includeReviewCards=true`);
+    expect(approvedResponse.ok()).toBe(true);
+    const approved = await approvedResponse.json();
+    expect(approved.reviewCards.some((card: { state: string }) => card.state === 'applied')).toBe(true);
+    expect(approved.capsule.version).toBeGreaterThan(payload.capsule.version);
+
+    // Explicit opt-in: use real model quota and prove saved answer continuity.
+    if (process.env.PRAXIS_LIVE_AI_SMOKE === '1') {
+      const threadId = `qa-history-${Date.now()}`;
+      const prompt = 'This is a synthetic QA fixture, not real-world evidence. Summarize the attached Example Council fixture in two sentences, including the review deadline and what remains unconfirmed. Do not browse the web.';
+      const answer = await page.request.post(`${BASE}/api/ai/ask-praxis`, {
+        timeout: 120_000,
+        data: { messages: [{ role: 'user', content: prompt }], capsuleId, threadId, currentPath: '/app' },
+      });
+      expect(answer.status()).toBe(200);
+      const stream = await answer.text();
+      expect(stream).not.toMatch(/^3:/m);
+      const answerText = stream.split('\n').flatMap((line) => {
+        if (!line.startsWith('0:')) return [];
+        try { const token = JSON.parse(line.slice(2)); return typeof token === 'string' ? [token] : []; } catch { return []; }
+      }).join('');
+      expect(answerText.length).toBeGreaterThan(40);
+      expect(answerText).toMatch(/Council/i);
+      await expect.poll(async () => {
+        const history = await page.request.get(`${BASE}/api/ai/chat?${new URLSearchParams({ capsuleId, threadId })}`);
+        if (!history.ok()) return false;
+        const body = await history.json();
+        return body.turns.some((turn: { prompt: string; output: string }) => turn.prompt === prompt && turn.output === answerText);
+      }, { timeout: 30_000 }).toBe(true);
+    }
     await page.screenshot({ path: 'output/playwright/capsule-review-journey.png', fullPage: true });
   });
 

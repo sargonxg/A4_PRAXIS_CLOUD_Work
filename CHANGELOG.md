@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Fix capsule approval writes by omitting absent rejection metadata and optional evidence types; verify both Firestore transaction and batch paths and extend the live journey through approval, versioning and saved Ask history.
+
 - Restore real DOCX extraction with a Mammoth-scoped XML-parser compatibility override; use the maintained 0.8.15 security release and add unmocked Word/Unicode/corrupt-file regression coverage.
 
 - Repair production document uploads by isolating PDF/Word parsers and packaging PDF native runtime files; include Genkit prompts in the container.
