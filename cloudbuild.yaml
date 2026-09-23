@@ -232,7 +232,9 @@ steps:
       - us-central1
       - '--allow-unauthenticated'
       - '--memory'
-      - 1Gi
+      - 2Gi
+      - '--concurrency'
+      - '8'
       - '--cpu'
       - '1'
       - '--min-instances'

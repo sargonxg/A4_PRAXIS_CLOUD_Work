@@ -907,10 +907,39 @@ export async function listCapsules(
   );
 }
 
+// Share only pending work, never completed snapshots: a later request must see
+// intervening writes. Database identity and owner scope are security boundaries.
+const pendingCapsuleInventories = new WeakMap<Firestore, Map<string, Promise<CapsuleInventoryResult>>>();
+
 export async function listCapsuleInventory(
   uid: string,
   input: { situationId?: string; includeArchived?: boolean } = {},
   deps?: CapsuleServiceDeps,
+): Promise<CapsuleInventoryResult> {
+  const db = dbOf(deps);
+  let pendingByScope = pendingCapsuleInventories.get(db);
+  if (!pendingByScope) {
+    pendingByScope = new Map();
+    pendingCapsuleInventories.set(db, pendingByScope);
+  }
+  const scope = JSON.stringify([uid, input.situationId || null]);
+  let pending = pendingByScope.get(scope);
+  if (!pending) {
+    pending = readCapsuleInventory(uid, input.situationId, { ...deps, db })
+      .finally(() => { pendingByScope.delete(scope); });
+    pendingByScope.set(scope, pending);
+  }
+  const inventory = await pending;
+  return {
+    summary: inventory.summary,
+    capsules: inventory.capsules.filter((capsule) => input.includeArchived || !capsule.archivedAt),
+  };
+}
+
+async function readCapsuleInventory(
+  uid: string,
+  situationId: string | undefined,
+  deps: CapsuleServiceDeps,
 ): Promise<CapsuleInventoryResult> {
   const snap = await capsulesCollection(uid, deps).get();
   const rows = snap.docs
@@ -918,16 +947,15 @@ export async function listCapsuleInventory(
     .filter(({ raw }) => recordOwnedBy(raw, uid))
     .map(({ raw }) => ({ raw: { ...raw, ownerUid: ownerUidOrPath(raw, uid) }, capsule: sanitizeCapsule({ ...raw, ownerUid: ownerUidOrPath(raw, uid) }) }))
     .filter(({ capsule }) => {
-      if (!input.situationId) return true;
-      return capsule.coreRefs.situationCoreId === input.situationId ||
-        capsule.activeForSituationIds.includes(input.situationId);
+      if (!situationId) return true;
+      return capsule.coreRefs.situationCoreId === situationId ||
+        capsule.activeForSituationIds.includes(situationId);
     });
   const storedCapsules = rows.map((row) => row.capsule);
   const summary = buildCapsuleInventorySummary(storedCapsules, {
     rawCapsules: rows.map((row) => row.raw),
   });
-  const capsules = sortCapsulesForLibrary(storedCapsules)
-    .filter((capsule) => input.includeArchived || !capsule.archivedAt);
+  const capsules = sortCapsulesForLibrary(storedCapsules);
   return { capsules, summary };
 }
 

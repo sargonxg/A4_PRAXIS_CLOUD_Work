@@ -1,5 +1,14 @@
 # PRAXIS — STATUS
 
+## 2026-09-23 — Production reliability correction
+
+- Reviewed and completed the pending upload, Ask-history, capsule-read and container fixes from the September 22 handoff.
+- Local production build and typecheck pass; 364 test files / 1,558 tests pass. Lint has zero errors and eight tracked warnings. Production dependency audit has zero high/critical findings (40 moderate, three low remain).
+- Existing production revision passed real Firebase login, an Ask answer without supplied capsules, missing-evidence source checking and six mobile checks. The corrected upload journey still requires post-deploy verification.
+- Both deployment definitions use 2 GiB memory / concurrency eight. Frontend-only Cloud Build now checks GCP resources before building. This contains large-library memory pressure; metadata pagination remains necessary.
+- Local gcloud/ADC reauthentication is required. GitHub deploy-on-push is available; Cloud Build's own resource preflight remains enforced. Do not equate local auth failures with missing production resources.
+- Current product gaps and acceptance criteria: `docs/reviews/2026-09-22-praxis-product-status.md`.
+
 ## 2026-07-08 — Generation Transparency + Capsule Adoption Round (build 2026.07.08.01)
 
 Current product checkpoint (HANDOVER P3, P4, P6, P8 + Workstream C):

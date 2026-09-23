@@ -1,6 +1,15 @@
 # PRAXIS TODO
 
-Last updated: 2026-06-12.
+Last updated: 2026-09-23.
+
+## Current continuation priorities
+
+- Verify the September 23 reliability correction on the deployed revision: TXT/PDF/DOCX upload, proposal review and persistent Ask history.
+- Replace full capsule inventory transfers and implicit bulk seeding with owner-scoped metadata pagination and on-demand details.
+- Prove approval followed by grounded analysis and editable brief/export with preserved citations; add scanned-document/OCR and long-document coverage.
+- Complete fresh-account, verification/reset/expiry/deletion and server-enforced free/paid entitlement journeys. Billing requires operator-supplied Polar sandbox configuration before any purchase tests.
+- Keep optional JEV disabled until dependency compatibility, server credentials, consent and live evaluation are proven.
+- Use `docs/reviews/2026-09-22-praxis-product-status.md` for the current acceptance matrix. The dated historical queue below is not current production proof.
 
 ## 2026-06-12 session — shipped and follow-ups
 

@@ -7,7 +7,13 @@ const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 test('live policy services answer without supplied capsules and flag missing evidence', async ({ page }) => {
   test.skip(process.env.PRAXIS_LIVE_AI_SMOKE !== '1' || !hasFirebaseCanaryCredentials(), 'requires explicit live-service opt-in and disposable credentials');
   test.setTimeout(180_000);
-  await authenticateFirebaseCanary(page, BASE, '/app', { finishOnboardingLater: true });
+  await authenticateFirebaseCanary(page, BASE, '/app', { finishOnboardingLater: true, expectComposer: false });
+  await expect(page.getByRole('textbox', { name: 'Ask PRAXIS', exact: true })).toBeVisible({ timeout: 30_000 });
+  const jev = page.locator('[data-testid="jev-review-control"]:visible').first();
+  await expect(jev).toContainText('Not connected');
+  await jev.locator('summary').click();
+  await expect(jev.getByRole('checkbox')).toBeDisabled();
+  await expect(jev.getByRole('checkbox')).not.toBeChecked();
   const answer = await page.request.post(`${BASE}/api/ai/ask-praxis`, {
     timeout: 90_000,
     data: {

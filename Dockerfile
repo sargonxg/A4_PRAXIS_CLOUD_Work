@@ -61,6 +61,8 @@ COPY --from=builder /app/public ./public
 RUN rm -f public/sitemap.xml public/robots.txt
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Genkit loads these by directory at runtime; static import tracing cannot see them.
+COPY --from=builder --chown=nextjs:nodejs /app/prompts ./prompts
 USER nextjs
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \

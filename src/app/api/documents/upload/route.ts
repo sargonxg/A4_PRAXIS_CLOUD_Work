@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { PDFParse } from 'pdf-parse';
-import mammoth from 'mammoth';
 import { withAuth } from '@/lib/api/with-auth';
 import {
   saveDocument,
@@ -233,12 +231,20 @@ export const POST = withAuth(async (request, user) => {
     if (fileType === 'txt' || fileType === 'md' || fileType === 'html') {
       text = await file.text();
     } else if (fileType === 'pdf') {
+      // PDF.js initializes native canvas bindings at import time. Keep that
+      // dependency isolated so its availability cannot disable other uploads.
+      const { PDFParse } = await import('pdf-parse');
       const parserInstance = new PDFParse({ data: fileBuffer });
-      const result = await parserInstance.getText();
-      text = result.text.trim();
+      try {
+        const result = await parserInstance.getText();
+        text = result.text.trim();
+      } finally {
+        await parserInstance.destroy();
+      }
       parser = 'pdf-parse';
       extractionMode = 'inline-structured';
     } else if (fileType === 'docx') {
+      const { default: mammoth } = await import('mammoth');
       const result = await mammoth.extractRawText({ buffer: fileBuffer });
       text = result.value.trim();
       parser = 'mammoth';

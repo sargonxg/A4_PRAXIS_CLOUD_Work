@@ -79,6 +79,39 @@ describe('ask-thread-service', () => {
     expect(result.turns.map((turn) => turn.id)).toEqual(['turn-1', 'turn-2']);
   });
 
+  it('removes undefined optional metadata before persisting without losing defined values or array positions', async () => {
+    const writes: Array<{ path: string; data: unknown }> = [];
+    vi.mocked(getAdminDbOrThrow).mockReturnValue(createDb({
+      onSet: (path, data) => writes.push({ path, data }),
+    }) as never);
+    const timestamp = new Date('2026-09-22T12:00:00.000Z');
+    const runtime = {
+      provider: undefined,
+      model: 'gemini-test',
+      nested: { missing: undefined, disabled: false, zero: 0, empty: '', nullable: null },
+      timestamp,
+    };
+
+    const turn = await persistAskThreadTurn({
+      uid: 'user-1', capsuleId: 'capsule-one', prompt: 'Question', output: 'Answer',
+      runtime,
+      frameworkSteps: [{ id: 'step-1', optional: undefined }, undefined],
+      toolInvocations: [{ result: { missing: undefined, sources: ['source-1', undefined] } }],
+    });
+
+    expect(turn?.runtime).toStrictEqual({
+      model: 'gemini-test',
+      nested: { disabled: false, zero: 0, empty: '', nullable: null },
+      timestamp,
+    });
+    expect(turn?.runtime.timestamp).toBe(timestamp);
+    expect(turn?.frameworkSteps).toStrictEqual([{ id: 'step-1' }, null]);
+    expect(turn?.toolInvocations).toStrictEqual([{ result: { sources: ['source-1', null] } }]);
+    expect(writes[1].data).toStrictEqual(turn);
+    expect(runtime).toHaveProperty('provider', undefined);
+    expect(runtime.nested).toHaveProperty('missing', undefined);
+  });
+
   it('skips persistence when no capsule is active', async () => {
     const db = createDb({});
     vi.mocked(getAdminDbOrThrow).mockReturnValue(db as never);

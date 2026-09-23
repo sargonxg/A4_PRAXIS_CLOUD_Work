@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   activateCapsule,
   archiveCapsule,
@@ -57,6 +57,61 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('shares pending inventory work while preserving per-request archive visibility and fresh later reads', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'active' }, deps(db));
+    await createCapsule('u1', { capsuleId: 'archived' }, deps(db));
+    await archiveCapsule('u1', 'archived', deps(db));
+    const read = vi.spyOn(FakeCollection.prototype, 'get');
+    try {
+      const [active, all] = await Promise.all([
+        listCapsuleInventory('u1', {}, deps(db)),
+        listCapsuleInventory('u1', { includeArchived: true }, deps(db)),
+      ]);
+      expect(read).toHaveBeenCalledTimes(1);
+      expect(active.capsules.map((capsule) => capsule.capsuleId)).toEqual(['active']);
+      expect(all.capsules.map((capsule) => capsule.capsuleId).sort()).toEqual(['active', 'archived']);
+      expect(active.summary).toEqual(all.summary);
+      await createCapsule('u1', { capsuleId: 'new' }, deps(db));
+      const fresh = await listCapsuleInventory('u1', {}, deps(db));
+      expect(read).toHaveBeenCalledTimes(2);
+      expect(fresh.capsules.map((capsule) => capsule.capsuleId)).toContain('new');
+    } finally { read.mockRestore(); }
+  });
+
+  it('isolates concurrent inventories by owner, database identity, and situation', async () => {
+    const db = new FakeFirestore();
+    const otherDb = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'first', coreRefs: { situationCoreId: 'case-a' } }, deps(db));
+    await createCapsule('u1', { capsuleId: 'second', coreRefs: { situationCoreId: 'case-b' } }, deps(db));
+    await createCapsule('u2', { capsuleId: 'other-owner' }, deps(db));
+    await createCapsule('u1', { capsuleId: 'other-database' }, deps(otherDb));
+    const results = await Promise.all([
+      listCapsuleInventory('u1', { situationId: 'case-a' }, deps(db)),
+      listCapsuleInventory('u1', { situationId: 'case-b' }, deps(db)),
+      listCapsuleInventory('u2', {}, deps(db)),
+      listCapsuleInventory('u1', {}, deps(db)),
+      listCapsuleInventory('u1', {}, deps(otherDb)),
+    ]);
+    expect(results.map((result) => result.capsules.map((capsule) => capsule.capsuleId).sort()))
+      .toEqual([['first'], ['second'], ['other-owner'], ['first', 'second'], ['other-database']]);
+  });
+
+  it('cleans up a shared failed inventory read so a later request can retry', async () => {
+    const db = new FakeFirestore();
+    const read = vi.spyOn(FakeCollection.prototype, 'get').mockRejectedValueOnce(new Error('temporary read failure'));
+    try {
+      const results = await Promise.allSettled([
+        listCapsuleInventory('u1', {}, deps(db)),
+        listCapsuleInventory('u1', { includeArchived: true }, deps(db)),
+      ]);
+      expect(results.map((result) => result.status)).toEqual(['rejected', 'rejected']);
+      expect(read).toHaveBeenCalledTimes(1);
+      await expect(listCapsuleInventory('u1', {}, deps(db))).resolves.toMatchObject({ capsules: [] });
+      expect(read).toHaveBeenCalledTimes(2);
+    } finally { read.mockRestore(); }
+  });
+
   it('queries only capsules linked to the case, retaining active links and deduplicating matches', async () => {
     const db = new FakeFirestore();
     await createCapsule('u1', { capsuleId: 'direct', coreRefs: { situationCoreId: 'case-a' }, activeForSituationIds: ['case-a'] }, deps(db));

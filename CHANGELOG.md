@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Repair production document uploads by isolating PDF/Word parsers and packaging PDF native runtime files; include Genkit prompts in the container.
+- Preserve Ask history when optional runtime metadata is absent; share concurrent capsule inventory reads within the same owner and database scope.
+- Bound frontend concurrency to eight requests with 2 GiB memory, and require the GCP preflight in the frontend deployment pipeline.
+
 - Start an isolated, disabled-by-default JEV review adapter and an explicit setup-required conversation control; no user content is sent to an unconfigured provider.
 - Fix document-first builder workspace creation and draft inspection; bound spotlight attachment and narrow case-scoped capsule reads.
 

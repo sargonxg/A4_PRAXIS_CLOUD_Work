@@ -1,11 +1,12 @@
 import { expect, test } from '@playwright/test';
+import { Document, Packer, Paragraph } from 'docx';
 import { authenticateFirebaseCanary, hasFirebaseCanaryCredentials } from './helpers/auth';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('Capsule Studio', () => {
   test('uploads a source, builds reviewable proposals and attaches spotlight context', async ({ page }) => {
-    test.setTimeout(180_000);
+    test.setTimeout(240_000);
     test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
     await page.goto(`${BASE}/app/capsules?lane=repository`);
@@ -17,12 +18,23 @@ test.describe('Capsule Studio', () => {
 
     await page.goto(`${BASE}/app/capsules/builder`);
     await page.getByLabel('What should this capsule do?').fill('QA fixture only: inspect actors and a dated commitment; do not treat this as a real-world event.');
-    await page.locator('input[type=file]').setInputFiles({
-      name: `praxis-qa-${Date.now()}.txt`, mimeType: 'text/plain',
-      buffer: Buffer.from('Synthetic QA fixture, not a real-world event.\nActor: Example Council\nOn 2026-09-20 the Example Council agreed to review the proposal.\nThe review deadline is 2026-10-01.\nFunding approval remains unconfirmed.'),
-    });
+    const fixtureText = 'Synthetic QA fixture, not a real-world event.\nActor: Example Council\nOn 2026-09-20 the Example Council agreed to review the proposal.\nThe review deadline is 2026-10-01.\nFunding approval remains unconfirmed.';
+    const fixturePage = await page.context().newPage();
+    await fixturePage.setContent(`<pre>${fixtureText}</pre>`);
+    const pdf = await fixturePage.pdf();
+    await fixturePage.close();
+    const docx = await Packer.toBuffer(new Document({ sections: [{ children: fixtureText.split('\n').map((text) => new Paragraph(text)) }] }));
+    const fixtureId = `praxis-qa-${Date.now()}`;
+    await page.locator('input[type=file]').setInputFiles([
+      { name: `${fixtureId}.txt`, mimeType: 'text/plain', buffer: Buffer.from(fixtureText) },
+      { name: `${fixtureId}.pdf`, mimeType: 'application/pdf', buffer: pdf },
+      { name: `${fixtureId}.docx`, mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', buffer: docx },
+    ]);
     const build = page.getByRole('button', { name: 'Build evidence proposals', exact: true });
-    await expect(build).toBeEnabled({ timeout: 60_000 });
+    await expect(build).toBeEnabled({ timeout: 90_000 });
+    for (const extension of ['txt', 'pdf', 'docx']) {
+      await expect(page.getByText(new RegExp(`${fixtureId}\\.${extension}.*characters ready`))).toBeVisible({ timeout: 90_000 });
+    }
     const proposalResponse = page.waitForResponse((response) => response.url().endsWith('/api/capsules/assist/architect') && response.request().method() === 'POST');
     await build.click();
     const response = await proposalResponse;

@@ -84,11 +84,11 @@ export async function persistAskThreadTurn(input: PersistAskThreadTurnInput): Pr
     prompt: input.prompt,
     output: input.output,
     capsuleVersion: input.capsuleVersion ?? null,
-    runtime: input.runtime ?? {},
+    runtime: omitUndefinedMetadata(input.runtime ?? {}),
     pathId: input.pathId ?? null,
     pathVersion: input.pathVersion ?? null,
-    frameworkSteps: input.frameworkSteps ?? [],
-    toolInvocations: input.toolInvocations ?? [],
+    frameworkSteps: omitUndefinedMetadata(input.frameworkSteps ?? []),
+    toolInvocations: omitUndefinedMetadata(input.toolInvocations ?? []),
     createdAt,
   };
 
@@ -197,6 +197,24 @@ function cleanDocId(value: string | null | undefined, fallback: string): string 
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** Firestore rejects undefined, including optional fields nested in runtime receipts. */
+function omitUndefinedMetadata<T>(value: T): T {
+  if (Array.isArray(value)) {
+    // Retain positional meaning rather than shifting steps or tool results.
+    return Array.from(value, (entry) => entry === undefined ? null : omitUndefinedMetadata(entry)) as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    const prototype = Object.getPrototypeOf(value);
+    // Preserve Date, Timestamp, DocumentReference, and other Firestore-native values.
+    if (prototype === Object.prototype || prototype === null) {
+      return Object.fromEntries(Object.entries(value)
+        .filter(([, entry]) => entry !== undefined)
+        .map(([key, entry]) => [key, omitUndefinedMetadata(entry)])) as T;
+    }
+  }
+  return value;
 }
 
 function recordOwnedBy(data: DocumentData | undefined, uid: string): boolean {

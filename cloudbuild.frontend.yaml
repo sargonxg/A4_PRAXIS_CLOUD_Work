@@ -21,6 +21,19 @@ steps:
     id: 'preflight-audit-routes'
     waitFor: ['check-model-strings']
 
+  # Match the full pipeline: verify required resources with Cloud Build's
+  # service account before building or changing production traffic.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        set -e
+        apt-get update -qq && apt-get install -y -qq nodejs >/dev/null
+        GCP_PROJECT_ID=$PROJECT_ID node scripts/audit-gcp.mjs
+    id: 'preflight-audit-gcp'
+    waitFor: ['check-model-strings']
+
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: bash
     args:
@@ -74,7 +87,7 @@ steps:
       - 'NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID'
       - '.'
     id: 'build-frontend'
-    waitFor: ['preflight-audit-routes', 'get-backend-url']
+    waitFor: ['preflight-audit-routes', 'preflight-audit-gcp', 'get-backend-url']
 
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}']
@@ -98,7 +111,10 @@ steps:
       - us-central1
       - '--allow-unauthenticated'
       - '--memory'
-      - 1Gi
+      - 2Gi
+      # Bound concurrent large capsule reads; pagination remains a follow-up.
+      - '--concurrency'
+      - '8'
       - '--cpu'
       - '1'
       - '--min-instances'

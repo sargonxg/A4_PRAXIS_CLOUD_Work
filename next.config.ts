@@ -50,7 +50,18 @@ const nextConfig: NextConfig = {
     '@opentelemetry/auto-instrumentations-node',
     'winston',
     '@grafeo-db/js',
+    // PDF.js resolves its worker and native canvas at runtime in Cloud Run.
+    'pdf-parse',
+    'pdfjs-dist',
+    '@napi-rs/canvas',
   ],
+  outputFileTracingIncludes: {
+    '/api/documents/upload': [
+      './node_modules/pdf-parse/dist/**/*',
+      './node_modules/pdfjs-dist/legacy/build/**/*',
+      './node_modules/@napi-rs/canvas*/**/*',
+    ],
+  },
   experimental: {
     serverActions: {
       bodySizeLimit: '10mb',
