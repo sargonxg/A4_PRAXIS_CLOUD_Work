@@ -57,6 +57,44 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('persists review evidence without optional undefined fields', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'evidence-review' }, deps(db));
+    db.rejectUndefined = true;
+    await expect(createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Review source', sourceType: 'agent', target: 'sourceGap',
+      evidence: [{ id: 'source-1', label: 'Source', advisory: true }],
+      proposedEnvelopePatch: { summary: 'Inspected source' },
+    }, deps(db))).resolves.toMatchObject({ state: 'proposed' });
+  });
+
+  it.each(['batch', 'transaction'])('approves a new review card with Firestore-valid writes through %s', async (mode) => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'approval-review' }, deps(db));
+    const card = await createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Review summary', sourceType: 'agent', target: 'sourceGap', evidence: [],
+      proposedEnvelopePatch: { summary: 'Human-reviewed summary' },
+    }, deps(db));
+    db.rejectUndefined = true;
+    if (mode === 'transaction') {
+      Object.assign(db, { runTransaction: async (callback: (tx: {
+        get: (ref: FakeDoc) => ReturnType<FakeDoc['get']>;
+        set: ReturnType<FakeFirestore['batch']>['set'];
+      }) => Promise<unknown>) => {
+        const batch = db.batch();
+        const result = await callback({ get: (ref) => ref.get(), set: batch.set });
+        await batch.commit();
+        return result;
+      } });
+    }
+    const result = await applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, {
+      reviewerUid: 'u1', diffHash: 'review-diff', confirmationReason: 'Inspected the source.',
+    }, deps(db));
+    expect(result?.card.state).toBe('applied');
+    expect(result?.card).not.toHaveProperty('rejectionMetadata');
+    expect((await getCapsule('u1', capsule.capsuleId, deps(db)))?.version).toBe(capsule.version + 1);
+  });
+
   it('shares pending inventory work while preserving per-request archive visibility and fresh later reads', async () => {
     const db = new FakeFirestore();
     await createCapsule('u1', { capsuleId: 'active' }, deps(db));
@@ -2004,6 +2042,7 @@ function deps(db: FakeFirestore) {
 class FakeFirestore {
   data = new Map<string, Record<string, unknown>>();
   queries: unknown[][] = [];
+  rejectUndefined = false;
 
   collection(path: string) {
     return new FakeCollection(this, path);
@@ -2074,8 +2113,16 @@ class FakeDoc {
   }
 
   setSync(value: Record<string, unknown>, options?: { merge?: boolean }) {
+    if (this.db.rejectUndefined) assertFirestoreDefined(value, this.path);
     const current = this.db.data.get(this.path) ?? {};
     this.db.data.set(this.path, options?.merge ? { ...current, ...value } : value);
+  }
+}
+
+function assertFirestoreDefined(value: unknown, path: string): void {
+  if (value === undefined) throw new Error(`Firestore rejects undefined at ${path}`);
+  if (value !== null && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) assertFirestoreDefined(child, `${path}.${key}`);
   }
 }
 
