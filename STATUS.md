@@ -2,6 +2,9 @@
 
 ## 2026-09-23 — Production reliability correction
 
+- First correction `92736cfa` deployed via frontend Cloud Build `fe5c68ee-a674-4d0a-a004-243388c0bacb`; its GCP preflight passed and the custom domain reported revision `praxis-frontend-01067-dgt`. Seven post-deploy login/AI/source-check/mobile checks passed.
+- The live upload matrix confirmed TXT/PDF but caught DOCX failing. A real parser regression test reproduced `DOMParser.parseFromString` rejecting Mammoth's omitted MIME type under the global xmldom 0.9 override. A Mammoth-only override to maintained/security-patched 0.8.15 makes the real DOCX test pass; redeployment and full live journey remain required.
+
 - Reviewed and completed the pending upload, Ask-history, capsule-read and container fixes from the September 22 handoff.
 - Local production build and typecheck pass; 364 test files / 1,558 tests pass. Lint has zero errors and eight tracked warnings. Production dependency audit has zero high/critical findings (40 moderate, three low remain).
 - Existing production revision passed real Firebase login, an Ask answer without supplied capsules, missing-evidence source checking and six mobile checks. The corrected upload journey still requires post-deploy verification.

@@ -251,6 +251,9 @@
     "qs": "6.15.2",
     "dompurify": "3.4.1",
     "@xmldom/xmldom": "0.9.12",
+    "mammoth": {
+      "@xmldom/xmldom": "0.8.15"
+    },
     "node-forge": "1.4.0",
     "axios": "1.15.2",
     "follow-redirects": "1.16.0",

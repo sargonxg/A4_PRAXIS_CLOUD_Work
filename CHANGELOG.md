@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Restore real DOCX extraction with a Mammoth-scoped XML-parser compatibility override; use the maintained 0.8.15 security release and add unmocked Word/Unicode/corrupt-file regression coverage.
+
 - Repair production document uploads by isolating PDF/Word parsers and packaging PDF native runtime files; include Genkit prompts in the container.
 - Preserve Ask history when optional runtime metadata is absent; share concurrent capsule inventory reads within the same owner and database scope.
 - Bound frontend concurrency to eight requests with 2 GiB memory, and require the GCP preflight in the frontend deployment pipeline.
