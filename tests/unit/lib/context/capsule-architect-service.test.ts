@@ -3,8 +3,31 @@ import { describe, expect, it } from 'vitest';
 import {
   createCapsuleArchitectReviewCards,
 } from '@/lib/context/capsule-service';
+import { buildCapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
 
 describe('Capsule Architect review-card service', () => {
+  it('keeps the upload workspace so a later Ask can retrieve the attached document', async () => {
+    const result = await createCapsuleArchitectReviewCards('u1', {
+      jobPrompt: 'Summarize the attached council fixture.',
+      situationId: 'upload-workspace',
+      documents: [{ documentId: 'source-1', title: 'Fixture.txt', text: 'Funding remains unconfirmed.' }],
+    }, deps(new FakeFirestore()));
+    expect(result.capsule.coreRefs.situationCoreId).toBe('upload-workspace');
+    expect(result.capsule.activeForSituationIds).toContain('upload-workspace');
+    const pack = await buildCapsuleEvidencePack({ ownerUid: 'u1', capsuleId: result.capsule.capsuleId, objective: 'Summarize funding.' }, {
+      getCapsule: async () => result.capsule,
+      listKnowledgeDocuments: async () => [],
+      listOutputCapsules: async () => [],
+      listCapsuleMemories: async () => [],
+      retrieveRelevantChunks: async (uid, situationId) => {
+        expect(uid).toBe('u1');
+        expect(situationId).toBe('upload-workspace');
+        return [{ id: 'chunk-1', documentId: 'source-1', text: 'Funding remains unconfirmed.', charStart: 0, charEnd: 28, score: 1, confidence: 1 }] as never;
+      },
+    });
+    expect(pack.sourcedParagraphs[0]?.excerpt).toBe('Funding remains unconfirmed.');
+    expect(result.capsule.latestGateState).toBe('proposed');
+  });
   it('creates a document-first capsule scaffold where graph, claims, sources, ontology, and tacit knowledge stay human-gated', async () => {
     const db = new FakeFirestore();
 
