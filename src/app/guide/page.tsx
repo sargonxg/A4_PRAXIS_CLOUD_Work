@@ -26,23 +26,23 @@ export const metadata: Metadata = {
 const steps = [
   {
     title: 'Start with a policy question',
-    body: 'Use the home cockpit or Ask PRAXIS to state the decision, briefing, research, or handover you need.',
+    body: 'Create an account or sign in, then open Home. Type the decision or question in Ask PRAXIS and send it. You can start without a capsule. Your signed-in conversations are saved so you can return to them.',
   },
   {
     title: 'Add sources or saved context',
-    body: 'Attach sources, a saved context pack, or a verified starter when the answer needs actors, assumptions, output goals, and review gates.',
+    body: 'Open the Context Capsules library to choose a saved capsule or a starter method, then use its attach action to return to chat. Check the attached context beside the composer before asking your next question.',
   },
   {
     title: 'Check sourceability',
-    body: 'Review source receipts, weak claims, stale assumptions, and evidence gaps before treating an answer as a work product.',
+    body: 'Open the answer’s sources and claim checks. Compare important claims with the cited material, and keep unsupported claims, stale assumptions and missing evidence visible.',
   },
   {
-    title: 'Run the right workflow',
-    body: 'Ask PRAXIS can answer directly or route durable work to research memo, sourceability review, red-team, boardroom, formatter, or handover workflows.',
+    title: 'Create context worth reusing',
+    body: 'Use Build context for a quick capsule, or open the document builder from the library. Upload TXT, text-based PDF or Word files, select Build evidence proposals, and inspect the proposals. Approve or reject each one before reusing it as reviewed context.',
   },
   {
     title: 'Save the output',
-    body: 'Move useful results into Memo Studio, a saved output, a source gap, a graph proposal, or a handover package with receipts intact.',
+    body: 'Use the answer’s editor action to refine a useful draft. Return to your saved conversation for follow-up questions. Check the final wording, citations and caveats before exporting or sharing.',
   },
 ];
 
@@ -56,19 +56,19 @@ const guideCards = [
     body: 'Use this for actual analysis, generation, saved conversations, source operations, memos, and durable runtime receipts.',
   },
   {
-    label: 'Context Capsules library',
-    body: 'Use this for reusable policy context: source packs, document links, thinking devices, output contracts, review cards, and locked cores.',
+    label: 'Two ways to build a capsule',
+    body: 'Build context starts with a short description or template. The document builder starts with your files and proposes facts for review. Both create reusable context; uploading a file alone does not approve its claims.',
   },
   {
-    label: 'Proof',
-    body: 'Use runtime receipts, source previews, claim ledgers, and health checks to see what PRAXIS used and what still needs review.',
+    label: 'When something needs attention',
+    body: 'If a file has no readable text, try a text-based PDF or paste its text into a TXT file; scanned PDFs may need OCR first. If an answer fails, retry and check your attached context. Report recurring problems with the time and action, without sharing confidential source material.',
   },
 ];
 
 export default function GuidePage() {
   const guideRailCells = [
     { id: 'profile', label: 'Profile', value: 'Policy team', detail: 'Role-aware guidance', state: 'ready' as const },
-    { id: 'context', label: 'Context', value: 'Saved work attached', detail: 'Generation starts here', state: 'active' as const },
+    { id: 'context', label: 'Context', value: 'Optional', detail: 'Attach when useful', state: 'active' as const },
     { id: 'source', label: 'Sources', value: 'Gaps visible', detail: 'Receipts first', state: 'ready' as const },
     { id: 'output', label: 'Output', value: 'Memo or handover', detail: 'Reviewable work', state: 'quiet' as const },
     { id: 'readiness', label: 'Readiness', value: 'Proof rail', detail: 'No hidden claims', state: 'active' as const },
@@ -93,8 +93,17 @@ export default function GuidePage() {
             Open PRAXIS
           </Link>
           <Link href="/learn" className="inline-flex h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-900">
-            Learn the system
+            Understand saved context
           </Link>
+        </div>
+      </section>
+
+      <section aria-labelledby="guide-capsules" className="mb-12 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6">
+        <h2 id="guide-capsules" className="font-serif text-2xl text-slate-950">Ready to try it with your own material?</h2>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">Sign in, choose a method or build a private capsule, review what it contains, then attach it to a question. The attached capsule supplies context; it does not make every answer verified.</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link href="/app/capsules?lane=repository" className="inline-flex min-h-11 items-center rounded-full border border-emerald-300 bg-white px-5 text-sm font-semibold text-emerald-900">Browse capsules and methods</Link>
+          <Link href="/app/capsules/builder" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white">Build from documents</Link>
         </div>
       </section>
 

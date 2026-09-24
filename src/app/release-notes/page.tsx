@@ -1,7 +1,5 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
-import { CURRENT_PRAXIS_RELEASE, PRAXIS_RELEASE_NOTES } from '@/lib/product/release-notes';
-import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
+import { CURRENT_PRAXIS_RELEASE, PRAXIS_RELEASE_NOTES, type PraxisReleaseNote } from '@/lib/product/release-notes';
 import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
 
 export const metadata: Metadata = {
@@ -35,20 +33,6 @@ export default function ReleaseNotesPage() {
 
   return (
     <PublicPageShell maxWidth="max-w-4xl">
-        <header className="flex items-center justify-between gap-4">
-          <Link href="/" className="flex items-center gap-3">
-            <PraxisGlyphChip size={34} />
-            <span className="font-serif text-xl font-semibold text-[color:var(--color-diplomatic-blue)]">PRAXIS</span>
-          </Link>
-          <nav className="flex flex-wrap items-center justify-end gap-x-4 gap-y-2 text-sm font-semibold text-[color:var(--color-ink)]/65">
-            <Link href="/">Home</Link>
-            <Link href="/pricing" className="hidden md:inline">Pricing</Link>
-            <Link href="/learn" className="hidden md:inline">Learn</Link>
-            <Link href="/guide" className="hidden md:inline">Guide</Link>
-            <Link href="/release-notes" className="hidden md:inline">Release notes</Link>
-            <Link href="/login" className="rounded-full bg-white px-4 py-2 text-[color:var(--color-ink)]">Sign in</Link>
-          </nav>
-        </header>
         <section className="py-14">
           <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-700">
             {CURRENT_PRAXIS_RELEASE.releaseLabel} · Build {CURRENT_PRAXIS_RELEASE.buildNumber}
@@ -62,8 +46,20 @@ export default function ReleaseNotesPage() {
           <LivingContextRail cells={releaseRailCells} compact className="mt-8" />
         </section>
         <section className="space-y-5">
-          {PRAXIS_RELEASE_NOTES.map((note) => (
-            <article key={note.buildNumber} className="rounded-2xl border border-[color:var(--color-rose-gold)]/25 bg-white/70 p-6 shadow-sm">
+          {PRAXIS_RELEASE_NOTES.slice(0, 3).map((note) => <ReleaseNoteCard key={note.buildNumber} note={note} />)}
+          <details className="rounded-2xl border border-slate-200 bg-white/60 p-6">
+            <summary className="cursor-pointer text-base font-semibold text-slate-800">Earlier releases ({PRAXIS_RELEASE_NOTES.length - 3})</summary>
+            <p className="mt-3 text-sm leading-6 text-slate-600">Historical release entries describe the product at that time. See the latest notes and Guide for the current workflow and availability.</p>
+            <div className="mt-5 space-y-5">{PRAXIS_RELEASE_NOTES.slice(3).map((note) => <ReleaseNoteCard key={note.buildNumber} note={note} />)}</div>
+          </details>
+        </section>
+    </PublicPageShell>
+  );
+}
+
+function ReleaseNoteCard({ note }: { note: PraxisReleaseNote }) {
+  return (
+            <article className="rounded-2xl border border-[color:var(--color-rose-gold)]/25 bg-white/70 p-6 shadow-sm">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-mono text-xs uppercase tracking-[0.16em] text-[color:var(--color-ink)]/45">{note.date} · {note.category}</p>
@@ -83,8 +79,5 @@ export default function ReleaseNotesPage() {
                 ))}
               </ul>
             </article>
-          ))}
-        </section>
-    </PublicPageShell>
   );
 }

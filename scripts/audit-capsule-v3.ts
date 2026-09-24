@@ -78,8 +78,8 @@ requireIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
 requireIncludes('src/app/(landing)/learn/page.tsx', [
   'A Wikipedia for Agentic Context',
   'reusable context objects, not prompts',
-  'AI and Cognee can suggest improvements',
-  'human review decides what becomes canonical',
+  'AI can propose improvements and draft review cards',
+  'Human review decides which proposals enter the saved capsule',
   'forkable and inspectable',
   'provenance and review state',
 ]);

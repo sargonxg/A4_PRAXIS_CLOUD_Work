@@ -8,9 +8,9 @@ describe('/learn ContextCapsule v3 contract', () => {
     expect(source).toContain('A Wikipedia for Agentic Context');
     expect(source).toContain('reusable context objects, not prompts');
     expect(source).toContain('sources, assumptions, tacit knowledge, reasoning devices, review gates, and allowed agent behavior');
-    expect(source).toContain('claims, sources, memories, and limitations are labeled');
-    expect(source).toContain('AI and Cognee can suggest improvements');
-    expect(source).toContain('human review decides what becomes canonical');
+    expect(source).toContain('Claims, sources, memories and limitations carry labels');
+    expect(source).toContain('AI can propose improvements and draft review cards');
+    expect(source).toContain('Human review decides which proposals enter the saved capsule');
     expect(source).toContain('forkable and inspectable');
     expect(source).toContain('provenance and review state');
   });
@@ -28,7 +28,7 @@ describe('/learn ContextCapsule v3 contract', () => {
     expect(source).toContain('id={item.id}');
 
     expect(source).toContain('Use it today');
-    expect(source).toContain('Current PRAXIS stays simple');
+    expect(source).toContain('One workspace for the question, context and evidence.');
     expect(source).toContain('roadmap lanes when they are not the visible production surface');
     expect(source).toContain('Home, saved context, Ask PRAXIS, sources, memos, and receipts');
   });

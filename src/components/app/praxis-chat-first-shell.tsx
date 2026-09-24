@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PublicShell } from '@/components/app/public-shell';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState, type ComponentType, type CSSProperties } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -168,13 +169,13 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   }
 
   const body = (
-    <main
+    <div
       className="praxis-app-surface praxis-checker-constellation min-h-screen text-slate-950"
       data-testid="praxis-chat-first-shell"
     >
       <div data-testid={isPublic ? 'marketing-home' : 'app-launchpad'} className="mx-auto flex w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
-        <HomeTopBar isPublic={isPublic} />
-        <div className="mt-5 grid min-h-[calc(100vh-11rem)] gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        {!isPublic ? <HomeTopBar isPublic={isPublic} /> : null}
+        <div className="mt-5 grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
           <HomeSidebar isPublic={isPublic} pathname={pathname ?? '/'} />
           <section className="min-w-0">
             {contextError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{contextError}</p> : null}
@@ -226,11 +227,35 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
             ) : null}
           </section>
         </div>
+        {isPublic ? <PublicIntroduction /> : null}
       </div>
-    </main>
+    </div>
   );
 
-  return body;
+  return isPublic ? <PublicShell>{body}</PublicShell> : body;
+}
+
+function PublicIntroduction() {
+  return (
+    <section aria-labelledby="public-workflow-title" className="mt-12 border-t border-slate-200 py-10">
+      <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">From question to reviewable work</p>
+      <h2 id="public-workflow-title" className="mt-3 max-w-3xl font-serif text-3xl text-slate-950 sm:text-4xl">Bring the question. Keep the context that matters.</h2>
+      <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">For analysts, policy teams and researchers preparing a brief, comparing options or checking a claim. Start with a question; sign in to get an answer and save your conversation. Sources and saved context are optional.</p>
+      <div className="mt-7 grid gap-4 md:grid-cols-3">
+        {[
+          { title: 'Ask and inspect', body: 'Describe the decision and the output you need. Read the answer alongside its sources, assumptions and missing evidence.' },
+          { title: 'Build reusable context', body: 'A Context Capsule saves the background you want to reuse. Start from a template, or upload TXT, PDF or Word documents and review the proposed facts before accepting them.' },
+          { title: 'Keep your work together', body: 'Attach a capsule to the next question, return to a saved conversation, or open a useful answer in the editor. Check the evidence before sharing.' },
+        ].map((item) => <article key={item.title} className="rounded-2xl border border-slate-200 bg-white/80 p-6"><h3 className="font-serif text-2xl text-slate-950">{item.title}</h3><p className="mt-3 text-sm leading-6 text-slate-600">{item.body}</p></article>)}
+      </div>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Link href="/guide" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white">Follow the quick start</Link>
+        <Link href="/learn" className="inline-flex min-h-11 items-center rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800">Learn about saved context</Link>
+        <Link href="/pricing" className="inline-flex min-h-11 items-center px-4 text-sm font-semibold text-emerald-800">Plans and availability</Link>
+      </div>
+      <p className="mt-5 text-sm leading-6 text-slate-500">PRAXIS is in beta. AI answers can be incomplete or wrong; a saved source is not a guarantee that a claim is correct.</p>
+    </section>
+  );
 }
 
 function HomeTopBar({ isPublic }: { isPublic: boolean }) {
@@ -272,6 +297,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
     ? HOME_SIDEBAR_DESTINATIONS.filter((item) => item.id === 'ask' || item.id === 'context')
     : HOME_SIDEBAR_DESTINATIONS;
   const [recents, setRecents] = useState<RecentConversationSummary[]>([]);
+  const [recentsOpen, setRecentsOpen] = useState(false);
 
   useEffect(() => {
     if (isPublic) return;
@@ -291,7 +317,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
   return (
     <aside className={`${isPublic ? 'hidden lg:block ' : ''}praxis-shell-panel h-fit p-3`} aria-label="Primary PRAXIS destinations">
       <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isPublic ? 'Start here' : 'Workspace'}</p>
-      <nav className="mt-3 grid gap-1">
+      <nav className="mt-3 flex flex-wrap gap-1 lg:grid">
         {destinations.map((item) => {
           const Icon = HOME_DESTINATION_ICONS[item.icon] ?? MessageSquareText;
           const href = isPublic ? item.publicHref : item.href;
@@ -301,7 +327,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
               key={item.id}
               href={href}
               className={[
-                'flex items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold transition',
+                'flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold transition',
                 active ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-white hover:text-emerald-900',
               ].join(' ')}
             >
@@ -312,9 +338,10 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
         })}
       </nav>
       {!isPublic && recents.length ? (
-        <nav className="mt-5" aria-label="Recent conversations" data-testid="home-recent-conversations">
-          <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">Recent</p>
-          <div className="mt-2 grid gap-0.5">
+        <nav className="mt-3 lg:mt-5" aria-label="Recent conversations" data-testid="home-recent-conversations">
+          <p className="hidden px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 lg:block">Recent</p>
+          <button type="button" onClick={() => setRecentsOpen((open) => !open)} aria-expanded={recentsOpen} aria-controls="home-recent-list" className="inline-flex min-h-11 items-center px-3 text-sm font-semibold text-slate-600 lg:hidden">{recentsOpen ? 'Hide recent conversations' : 'Recent conversations'}</button>
+          <div id="home-recent-list" className={`${recentsOpen ? 'grid' : 'hidden'} mt-2 gap-0.5 lg:grid`}>
             {recents.map((item) => (
               <Link
                 key={item.conversationId}
@@ -333,14 +360,14 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
           </div>
         </nav>
       ) : null}
-      <div className="mt-5 rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-xs leading-5 text-slate-600">
+      <div className="mt-5 hidden rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-xs leading-5 text-slate-600 lg:block">
         Ask first. Save the context worth reusing.
       </div>
       <a
         href="https://tacitus.me"
         target="_blank"
         rel="noreferrer"
-        className="mt-3 flex items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-emerald-700"
+        className="mt-3 hidden items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-emerald-700 lg:flex"
         aria-label="TACITUS verified context infrastructure"
       >
         TACITUS <span aria-hidden className="text-emerald-600">◳</span> verified context

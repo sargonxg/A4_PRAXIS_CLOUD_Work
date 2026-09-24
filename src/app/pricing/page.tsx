@@ -53,7 +53,7 @@ export default function PricingPage() {
           </p>
           <LivingContextRail cells={pricingRailCells} compact className="mt-8" />
         </section>
-        <section className="grid gap-4 lg:grid-cols-4">
+        <section aria-label="Plans" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {PRICING_TIERS.map((tier) => (
             <article
               key={tier.id}
@@ -80,6 +80,14 @@ export default function PricingPage() {
               <PricingCheckoutButton plan={tier.id} label={tier.cta} />
             </article>
           ))}
+        </section>
+        <section aria-labelledby="pricing-start" className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6">
+          <h2 id="pricing-start" className="font-serif text-2xl text-slate-950">Start with the free workspace</h2>
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">Sign in to ask a question, attach saved context and try the capsule tools within your plan’s limits. A capsule is optional. Paid plans do not remove the need to check sources or review AI-generated work.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link href="/login?mode=signup&redirect=%2Fapp" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white">Start free</Link>
+            <Link href="/guide" className="inline-flex min-h-11 items-center px-4 text-sm font-semibold text-emerald-900">See the quick start</Link>
+          </div>
         </section>
         <section className="mt-16 rounded-2xl border border-[color:var(--color-rose-gold)]/25 bg-white/55 p-6">
           <h2 className="font-serif text-2xl font-semibold text-[color:var(--color-diplomatic-blue)]">What plans include</h2>

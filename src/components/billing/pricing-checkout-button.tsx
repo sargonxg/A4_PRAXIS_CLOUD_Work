@@ -29,6 +29,7 @@ export function PricingCheckoutButton({ plan, label }: PricingCheckoutButtonProp
   const [checkingSession, setCheckingSession] = useState(true);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const waitingForSession = checkingSession && plan !== 'free' && plan !== 'enterprise';
 
   useEffect(() => {
     let cancelled = false;
@@ -56,7 +57,7 @@ export function PricingCheckoutButton({ plan, label }: PricingCheckoutButtonProp
       return;
     }
     if (plan === 'free') {
-      window.location.href = '/login?mode=signup&redirect=%2Fapp%2Fcapsules%2Fbuilder';
+      window.location.href = authenticated ? '/app' : '/login?mode=signup&redirect=%2Fapp';
       return;
     }
     if (!authenticated) {
@@ -97,13 +98,13 @@ export function PricingCheckoutButton({ plan, label }: PricingCheckoutButtonProp
         type="button"
         data-testid={`pricing-checkout-${plan}`}
         onClick={handleClick}
-        disabled={busy || checkingSession}
+        disabled={busy || waitingForSession}
         className={cn(
           'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--color-diplomatic-blue)] px-4 text-sm font-semibold text-white transition hover:bg-[color:var(--color-navy-900)] disabled:cursor-not-allowed disabled:opacity-60',
           plan === 'enterprise' && 'bg-white text-[color:var(--color-diplomatic-blue)] ring-1 ring-[color:var(--color-rose-gold)]/35 hover:bg-white/80',
         )}
       >
-        {busy || checkingSession ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+        {busy || waitingForSession ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
         {label}
       </button>
       {message ? (

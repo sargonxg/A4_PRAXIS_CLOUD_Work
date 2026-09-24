@@ -70,6 +70,7 @@ requireAll('marketing home', sharedHomeSurface, [
   'Context Capsules library',
   'Guide',
   'Pricing',
+  'isPublic ? <PublicShell>{body}</PublicShell> : body',
 ]);
 forbidAll('marketing home', sharedHomeSurface, [
   'SAMPLE_POLICY_ARTIFACTS',
@@ -85,7 +86,6 @@ forbidAll('marketing home', sharedHomeSurface, [
   'catalogued',
   'TaskletPraxisWorkbench',
   'AskPraxisHome',
-  '<PublicShell',
   'PolicyAgentStrip',
   'PublicFlagshipCapsuleStrip',
 ]);

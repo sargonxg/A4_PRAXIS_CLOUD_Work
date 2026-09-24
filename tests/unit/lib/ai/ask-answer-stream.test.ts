@@ -6,7 +6,7 @@ import { requireAnswerText, streamAskAnswer } from '@/lib/ai/ask-answer-stream';
 
 describe('Ask answer completion', () => {
   it('ends repeated tool calls with a synthesis turn that retains the retrieved evidence', async () => {
-    const model = new MockLanguageModelV3({
+    const model: MockLanguageModelV3 = new MockLanguageModelV3({
       doStream: async (options) => ({
         stream: simulateReadableStream({ chunks: [
           { type: 'stream-start' as const, warnings: [] },

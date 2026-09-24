@@ -624,7 +624,7 @@ function buildReadiness(input: {
 
 function actionClassName(dark: boolean, active = false): string {
   return cn(
-    'inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold transition disabled:opacity-60',
+    'inline-flex min-h-11 min-w-11 items-center gap-1.5 rounded-[var(--radius-md)] border px-2.5 text-xs font-semibold transition disabled:opacity-60 sm:min-h-8 sm:min-w-0',
     active
       ? dark
         ? 'border-emerald-400 bg-emerald-400/15 text-emerald-100'

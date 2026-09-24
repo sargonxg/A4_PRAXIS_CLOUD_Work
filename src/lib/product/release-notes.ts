@@ -26,6 +26,21 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.09.23.01',
+    version: '6.5.1',
+    date: '2026-09-23',
+    title: 'Clearer first steps and more reliable capsule work',
+    summary: 'A consistent public site, practical capsule guidance and fixes to document uploads, reviewed context and chat completion.',
+    category: 'product',
+    items: [
+      'Home, Pricing, Learn, Guide and Release notes share navigation on desktop and mobile. Home explains the workflow before sign-in; Guide shows how to create, review and attach capsules.',
+      'TXT, PDF and Word upload handling is repaired. Approving a proposal saves a new capsule version; rejected proposals stay out of canonical context.',
+      'Ask PRAXIS reserves a final answer step after tool inspection and reports empty generation as a failure instead of a completed answer.',
+      'Conversation metadata now saves without undefined fields, and simultaneous capsule reads share the same pending request.',
+      'PRAXIS remains in beta. Paid checkout and optional integrations depend on availability; scanned documents may need OCR before upload. Review sources and claims before sharing AI output.',
+    ],
+  },
+  {
     buildNumber: '2026.06.11.01',
     version: '6.5.0',
     date: '2026-06-11',

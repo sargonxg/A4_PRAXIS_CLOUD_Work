@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { APP_VERSION } from '@/lib/constants/app-version';
 import { Menu, X } from 'lucide-react';
 import { PraxisMark } from '@/components/brand/praxis-mark';
 import { PraxisRouteTransition } from '@/components/ui/praxis-motion';
@@ -19,6 +21,7 @@ export function PublicShell({
   contentClassName?: string;
   showFooter?: boolean;
 }) {
+  const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -82,7 +85,8 @@ export function PublicShell({
                 <a
                   key={link.id}
                   href={link.href}
-                  className="praxis-nav-link relative rounded-[var(--radius-full)] px-3 py-1.5 text-[13px] font-medium text-[color:var(--color-app-text-secondary)] transition-colors duration-200 hover:text-[color:var(--color-app-text)]"
+                  aria-current={pathname === link.href ? 'page' : undefined}
+                  className="praxis-nav-link relative inline-flex min-h-11 items-center aria-[current=page]:bg-emerald-50 aria-[current=page]:text-emerald-800 rounded-[var(--radius-full)] px-3 py-1.5 text-[13px] font-medium text-[color:var(--color-app-text-secondary)] transition-colors duration-200 hover:text-[color:var(--color-app-text)]"
                   {...(link.href.startsWith('http') ? { rel: 'noreferrer' } : {})}
                 >
                   {link.label}
@@ -91,25 +95,27 @@ export function PublicShell({
             </div>
 
             <div className="hidden items-center gap-2 lg:flex">
-              <Link href="/login" prefetch={false} data-testid="public-sign-in-affordance" className="praxis-button-secondary h-9 px-4 text-[14px]">
+              <Link href="/login" prefetch={false} data-testid="public-sign-in-affordance" className="praxis-button-secondary min-h-11 px-4 text-[14px]">
                 Sign in
               </Link>
-              <Link href="/login?mode=signup" prefetch={false} className="praxis-button-primary h-9 px-5 text-[14px]">
+              <Link href="/login?mode=signup&redirect=%2Fapp" prefetch={false} className="praxis-button-primary min-h-11 px-5 text-[14px]">
                 Start work
               </Link>
             </div>
 
+            <div className="lg:hidden">
             <button
               ref={menuButton}
               type="button"
               onClick={() => setMobileMenuOpen((v) => !v)}
-              className="praxis-button-secondary h-9 w-9 p-0 lg:hidden"
+              className="praxis-button-secondary min-h-11 min-w-11 p-0 lg:hidden"
               aria-label="Toggle menu"
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-menu"
             >
               {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
+            </div>
           </nav>
         </header>
 
@@ -119,7 +125,7 @@ export function PublicShell({
           aria-hidden={!mobileMenuOpen}
           className={cn(
             'praxis-shell-float mx-auto mt-2 max-w-[1180px] overflow-hidden transition-[max-height,opacity] duration-300 ease-out lg:hidden',
-            mobileMenuOpen ? 'max-h-[80vh] opacity-100' : 'max-h-0 border-transparent opacity-0 shadow-none',
+            mobileMenuOpen ? 'max-h-[80dvh] overflow-y-auto opacity-100' : 'max-h-0 border-transparent opacity-0 shadow-none',
           )}
         >
           <div className="px-5 pb-5 pt-2">
@@ -128,6 +134,7 @@ export function PublicShell({
                 <a
                   key={link.id}
                   href={link.href}
+                  aria-current={pathname === link.href ? 'page' : undefined}
                   onClick={() => setMobileMenuOpen(false)}
                   className="border-b border-[var(--color-app-border)] py-4 text-base font-medium text-[color:var(--color-app-text-secondary)] transition-colors hover:text-[color:var(--color-app-text)]"
                   {...(link.href.startsWith('http') ? { rel: 'noreferrer' } : {})}
@@ -146,7 +153,7 @@ export function PublicShell({
                 Sign in
               </Link>
               <Link
-                href="/login?mode=signup"
+                href="/login?mode=signup&redirect=%2Fapp"
                 prefetch={false}
                 onClick={() => setMobileMenuOpen(false)}
                 className="praxis-button-primary min-h-11 px-6 text-[15px]"
@@ -173,7 +180,7 @@ export function PublicShell({
                 PRAXIS
               </span>
               <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-app-text-muted)]">
-                by TACITUS · v6.5.0
+                by TACITUS · v{APP_VERSION}
               </span>
             </Link>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-app-text-secondary)]">

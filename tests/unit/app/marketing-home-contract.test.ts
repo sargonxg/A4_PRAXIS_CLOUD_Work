@@ -96,7 +96,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       expect(shellSource).not.toContain(forbidden);
     }
 
-    expect(shellSource).not.toContain('<PublicShell');
+    expect(shellSource).toContain('isPublic ? <PublicShell>{body}</PublicShell> : body');
   });
 
   it('keeps the public composer first and offers clear saved-context entry points', () => {

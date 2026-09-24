@@ -1,5 +1,12 @@
 # PRAXIS — STATUS
 
+## 2026-09-23 — Public experience and Ask completion
+
+- Public Home, Pricing, Learn, Guide and Release notes share responsive navigation. Home explains the pre-login workflow; Guide describes both creation paths and attachment; Learn separates introductory material from technical background. Free-plan entry opens chat; historical release notes are expandable. Current release: 6.5.1 / 2026.09.23.01.
+- Production revision `praxis-frontend-01070-wzv` (`47dcbda4`) proved real TXT/PDF/DOCX upload and proposal rejection/approval with a version increment. The subsequent capsule-aware Ask returned only metadata after 15 tool rounds. The new runtime reserves a sixth/final round for synthesis and rejects empty answer streams. Mock-provider regression tests prove tool results reach the final answer step; live verification follows deployment.
+- Local suite: 366 files / 1,566 tests pass. The five public pages pass mobile/desktop navigation, single heading/main, overflow and free-plan handoff checks. Screenshots were visually inspected. Local GCP audit remains blocked by expired interactive credentials; CI resource preflight is mandatory.
+- See `output/praxis-2026-09-23-release.md` for dated deployment and live-test receipts. Outstanding priorities remain below and in TODO; this is not a claim of full production readiness.
+
 ## 2026-09-23 — Production reliability correction
 
 - Extended live review identified a second Firestore serialization bug: approving a never-rejected proposal included `rejectionMetadata: undefined`. Omit absent review/evidence properties; regression tests now reject undefined Firestore data on both batch and transaction paths. The deployed acceptance journey also checks approval, version increments and, with explicit AI opt-in, capsule-aware Ask and history read-back.

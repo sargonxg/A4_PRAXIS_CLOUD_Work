@@ -178,19 +178,17 @@ export default function LearnPage() {
           <LivingContextRail cells={learnRailCells} compact className="mt-7" />
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
-              href="/login?mode=signup"
+              href="/login?mode=signup&redirect=%2Fapp"
               className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white"
             >
               Start work
             </Link>
-            <a
-              href="https://www.tacitus.me/product/praxis"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/guide"
               className="inline-flex h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-900"
             >
-              PRAXIS product page
-            </a>
+              Follow the quick start
+            </Link>
           </div>
         </div>
 
@@ -214,6 +212,16 @@ export default function LearnPage() {
         </aside>
       </section>
 
+      <section aria-labelledby="learn-capsules" className="mx-auto mb-12 max-w-6xl rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 sm:p-8">
+        <h2 id="learn-capsules" className="font-serif text-3xl text-slate-950">What is a Context Capsule?</h2>
+        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-700">A capsule is saved context you can attach to a conversation: the question you are working on, useful sources, actors, deadlines, assumptions and the kind of output you need. It saves you from explaining the same background every time. You can also ask PRAXIS without one.</p>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2">
+          <div><h3 className="font-semibold text-slate-950">Start with a description or template</h3><p className="mt-2 text-sm leading-6 text-slate-700">Use Build context to describe the work, or choose a starter method in the capsule library. Inspect and adapt the context before attaching it.</p></div>
+          <div><h3 className="font-semibold text-slate-950">Start with documents</h3><p className="mt-2 text-sm leading-6 text-slate-700">The document builder accepts TXT, text-based PDF and Word files. It proposes facts for you to approve or reject. Proposed facts become reviewed context only after your decision.</p></div>
+        </div>
+        <p className="mt-5 text-sm leading-6 text-slate-600">An attached source can still be incomplete, outdated or wrong. Review the original evidence and the answer’s claims before using the work outside PRAXIS.</p>
+      </section>
+
       <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
         <div className="max-w-3xl">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">The app first</span>
@@ -231,7 +239,7 @@ export default function LearnPage() {
           <div>
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Use it today</span>
             <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-              Current PRAXIS stays simple: one cockpit, context attached, evidence visible.
+              One workspace for the question, context and evidence.
             </h2>
             <p className="mt-4 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
               The current app centers on Home, saved context, Ask PRAXIS, sources, memos, and receipts. Upstream TACITUS systems and deeper graph or temporal engines are described as integration layers or roadmap lanes when they are not the visible production surface.
@@ -248,7 +256,9 @@ export default function LearnPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid w-full max-w-6xl gap-5 px-5 pb-16 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
+      <details className="mx-auto mb-10 max-w-6xl rounded-2xl border border-slate-200 bg-white/60">
+        <summary className="cursor-pointer px-6 py-5 text-base font-semibold text-slate-800">Inside a capsule: technical background and roadmap</summary>
+      <section className="mx-auto grid w-full max-w-6xl gap-5 px-5 pb-16 pt-6 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
         <div>
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">For technical readers</span>
           <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
@@ -258,14 +268,14 @@ export default function LearnPage() {
             ContextCapsules are reusable context objects, not prompts. They preserve the parts of policy work that a capable analyst would normally carry in their head: sources, assumptions, tacit knowledge, reasoning devices, review gates, and allowed agent behavior.
           </p>
           <p className="mt-3 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
-            Agents can inherit a capsule safely because claims, sources, memories, and limitations are labeled. The capsule says what is known, what is only remembered, what is stale, what is disputed, and what an agent must stop and hand back for review.
+            Claims, sources, memories and limitations carry labels to help distinguish reviewed context from remembered, stale or disputed material. Those labels support review; they do not guarantee correctness or safe behavior on their own.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <h3 className="font-serif text-xl font-medium text-slate-950">Human review makes truth canonical</h3>
+            <h3 className="font-serif text-xl font-medium text-slate-950">Human review controls the saved record</h3>
             <p className="mt-3 text-sm leading-6 text-slate-700">
-              AI and Cognee can suggest improvements, recall advisory memory, find source gaps, or draft review cards, but human review decides what becomes canonical in the capsule.
+              AI can propose improvements and draft review cards. Human review decides which proposals enter the saved capsule. Optional memory integrations are advisory and depend on deployment configuration.
             </p>
           </article>
           <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
@@ -287,10 +297,10 @@ export default function LearnPage() {
         <div className="max-w-3xl">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">How generation works</span>
           <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-            PRAXIS-augmented generation: four capsules, one dock, agents that check their work
+            PRAXIS-augmented generation: optional context in four slots
           </h2>
           <p className="mt-4 text-base leading-7 text-slate-700">
-            Every answer starts at the Capsule Dock: four typed slots above the Ask box. A <strong>User</strong> capsule says who is asking, a <strong>Situation</strong> capsule carries the case, a <strong>Tool</strong> capsule sets the allowed methods, and an <strong>Output</strong> capsule defines what the work product must look like. That is the whole user-facing model — fill the slots that matter and ask.
+            The Capsule Dock offers four optional slots alongside Ask. A <strong>User</strong> capsule describes who is asking, a <strong>Situation</strong> capsule carries the case, a <strong>Tool</strong> capsule supplies a method, and an <strong>Output</strong> capsule describes the intended format. Attach only what helps the question; empty slots do not prevent you from asking.
           </p>
         </div>
         <div className="mt-6 grid gap-3 md:grid-cols-2">
@@ -423,6 +433,7 @@ export default function LearnPage() {
           </p>
         </div>
       </section>
+      </details>
     </PublicPageShell>
   );
 }

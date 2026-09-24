@@ -1,4 +1,5 @@
-import { streamText, stepCountIs, type FinishReason, type LanguageModelUsage, type ModelMessage } from 'ai';
+import { type FinishReason, type LanguageModelUsage, type ModelMessage } from 'ai';
+import { requireAnswerText, streamAskAnswer } from '@/lib/ai/ask-answer-stream';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
@@ -815,15 +816,14 @@ fabricate sources, figures, dates, or identifiers.`;
             actualModel: candidateModelId,
             modelLifecycleTier: getAskRuntimeOption(candidateModelId).lifecycleTier,
           };
-          const result = streamText({
+          const result = streamAskAnswer({
             model: getModel(candidateModelId),
             system: systemPrompt,
             messages: effectiveMessages as unknown as ModelMessage[],
             tools,
             maxOutputTokens: orchestrationReceipt.generationBudget.maxOutputTokens,
-            stopWhen: stepCountIs(15),
           });
-          for await (const text of result.textStream) {
+          for await (const text of requireAnswerText(result.textStream)) {
             candidateText += text;
             yield text;
           }

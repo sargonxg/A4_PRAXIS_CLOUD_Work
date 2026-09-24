@@ -57,7 +57,7 @@ describe('Capsules route consolidation', () => {
     expect(floatingPraxisSource).not.toContain('/app/repository');
     expect(appShellSource).not.toContain('/app/repository');
     expect(workbenchSource).toContain('/app/capsules?lane=repository');
-    expect(publicShellSource).toContain('by TACITUS · v6.5.0');
+    expect(publicShellSource).toContain('by TACITUS · v{APP_VERSION}');
     expect(publicShellSource).not.toContain('by TACITUS · v6.4');
   });
 

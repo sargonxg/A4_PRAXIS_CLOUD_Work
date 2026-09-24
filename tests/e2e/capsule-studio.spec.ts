@@ -82,6 +82,8 @@ test.describe('Capsule Studio', () => {
       }).join('');
       expect(answerText.length).toBeGreaterThan(40);
       expect(answerText).toMatch(/Council/i);
+      expect(answerText).toMatch(/2026-10-01|October\s+1|1\s+October/i);
+      expect(answerText).toMatch(/funding/i);
       await expect.poll(async () => {
         const history = await page.request.get(`${BASE}/api/ai/chat?${new URLSearchParams({ capsuleId, threadId })}`);
         if (!history.ok()) return false;
