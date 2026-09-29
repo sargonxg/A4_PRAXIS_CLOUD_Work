@@ -2,12 +2,14 @@
 
 import { CalendarClock, Check, Code2, FileJson, GitBranch, Network, Rocket, Sparkles, UploadCloud } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CapsuleJsonMonacoEditor } from '@/components/capsules/CapsuleJsonMonacoEditor';
 import { CapsuleLivePreview } from '@/components/capsules/CapsuleLivePreview';
 import Link from 'next/link';
 import { ingestArchitectDocuments, type ArchitectDocumentDraft } from '@/lib/context/architect-document-intake';
+import { useAuth } from '@/lib/auth/auth-context';
+import { CAPSULE_NOTES_MAX_CHARS, readConversationCapsuleHandoff, clearConversationCapsuleHandoff, prepareArchitectNotes, type ArchitectNotesReceipt } from '@/lib/context/conversation-capsule-handoff';
 import { useSituationGuard } from '@/hooks/use-situation-guard';
 import { CAPSULE_EVAL_JUDGE_MODEL } from '@/lib/ai/model-matrix';
 import { ContextCapsuleSchema } from '@/lib/ai/schemas/context-capsule';
@@ -45,6 +47,11 @@ type DeepPartial<T> = {
 
 export function CapsuleBuilderWizard() {
   const guard = useSituationGuard();
+  const { user } = useAuth();
+  const [sourceNotes, setSourceNotes] = useState('');
+  const handoffLoaded = useRef<string | null>(null);
+  const notesReceipt = useRef<ArchitectNotesReceipt | null>(null);
+  const architectInFlight = useRef(false);
   const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState<BuilderStepId>('job');
   const [advanced, setAdvanced] = useState(false);
@@ -82,7 +89,7 @@ export function CapsuleBuilderWizard() {
     const storedPrompt = typeof window !== 'undefined'
       ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY)
       : null;
-    const plainLanguagePrompt = (prompt ?? storedPrompt ?? '').trim();
+    const plainLanguagePrompt = (prompt ?? storedPrompt ?? '').trim().slice(0, 4000);
     if (!plainLanguagePrompt) return;
     const inferredDomain = inferDomainFromPrompt(plainLanguagePrompt);
 
@@ -110,6 +117,20 @@ export function CapsuleBuilderWizard() {
       },
     }) as ContextCapsule);
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!user?.id || searchParams.get('from') !== 'conversation' || handoffLoaded.current === user.id) return;
+    handoffLoaded.current = user.id;
+    const handoff = readConversationCapsuleHandoff(window.sessionStorage, user.id);
+    if (!handoff) {
+      setMessage('The conversation handoff has expired or is unavailable for this account. Paste your notes below.');
+      return;
+    }
+    setJob(handoff.purpose);
+    setSourceNotes(handoff.notes);
+    setCapsule((current) => deepMerge(current, { persona: { systemFrame: handoff.purpose } }) as ContextCapsule);
+    setMessage('Conversation loaded as working notes. Check the excerpt, then build proposals for review.');
+  }, [searchParams, user?.id]);
 
   function patchCapsule(next: CapsulePatch) {
     setEvalSummary(null);
@@ -203,15 +224,28 @@ export function CapsuleBuilderWizard() {
   }
 
   async function runArchitect() {
-    if (architectBusy || intakeBusy) return;
-    if (!architectDocuments.length) {
-      setMessage('Add at least one readable source document before building evidence proposals.');
+    if (architectInFlight.current || architectBusy || intakeBusy) return;
+    if (!architectDocuments.length && !sourceNotes.trim()) {
+      setMessage('Add a readable document, ideas, notes or a conversation before building proposals.');
       return;
     }
+    architectInFlight.current = true;
     setArchitectBusy(true);
     const draft = capsule.id === 'new-policy-capsule' ? { ...capsule, id: `capsule-${crypto.randomUUID()}` } : capsule;
     if (draft !== capsule) setCapsule(draft);
     try {
+    let documents = architectDocuments;
+    let situationId = intakeSituationId ?? guard.situation?.id;
+    if (sourceNotes.trim()) {
+      if (documents.length >= 20) throw new Error('A build supports 20 sources. Start a new draft or use fewer documents to include notes.');
+      setMessage('Saving your working notes...');
+      const receipt = await prepareArchitectNotes(sourceNotes, { situationId, workspaceName: job, previous: notesReceipt.current });
+      notesReceipt.current = receipt;
+      situationId = receipt.situationId;
+      setIntakeSituationId(situationId);
+      documents = [...documents, receipt.document];
+      if (user?.id) clearConversationCapsuleHandoff(window.sessionStorage, user.id);
+    }
     setMessage('Drafting Capsule Architect review cards...');
     const response = await fetch('/api/capsules/assist/architect', {
       method: 'POST',
@@ -221,14 +255,14 @@ export function CapsuleBuilderWizard() {
         domain: capsule.persona.domain,
         outputFormat: capsule.output.format,
         capsule: draft,
-        documents: architectDocuments,
+        documents,
         elicitation: {
           decisionHorizon: capsule.temporality.validUntil ?? capsule.temporality.asOf ?? capsule.temporality.timelineAnchors[0]?.date,
           validFrom: capsule.temporality.validFrom ?? capsule.temporality.timelineAnchors.find((anchor) => anchor.kind === 'validity-start')?.date,
           validUntil: capsule.temporality.validUntil ?? capsule.temporality.timelineAnchors.find((anchor) => anchor.kind === 'validity-end')?.date,
           causalDrivers: capsule.causality.causalLinks.map((link) => link.cause).filter(Boolean),
         },
-        situationId: guard.isDemo ? undefined : intakeSituationId ?? guard.situation?.id,
+        situationId: guard.isDemo ? undefined : situationId,
         forceRun: true,
       }),
     });
@@ -242,9 +276,10 @@ export function CapsuleBuilderWizard() {
     setArchitectReviewCount(cardCount);
     setArchitectCapsuleId(payload.capsule?.capsuleId ?? null);
     setMessage(payload.summary ?? `Capsule Architect prepared ${cardCount} review cards.`);
-    } catch {
-      setMessage('Capsule building was interrupted. Your uploaded sources are saved; retry the build.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Capsule building was interrupted. Your uploaded sources are saved; retry the build.');
     } finally {
+      architectInFlight.current = false;
       setArchitectBusy(false);
     }
   }
@@ -321,14 +356,15 @@ export function CapsuleBuilderWizard() {
   }
 
   return (
-    <section className="grid gap-6 lg:grid-cols-[260px_minmax(0,1fr)]">
-      <div className="space-y-2">
+    <section className="grid min-w-0 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <nav aria-label="Capsule builder steps" className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:block lg:self-start lg:space-y-2">
         {STEPS.map((step, index) => (
           <button
             key={step.id}
             type="button"
             onClick={() => setActiveStep(step.id)}
-            className={`w-full border px-4 py-3 text-left transition ${
+            aria-current={step.id === activeStep ? 'step' : undefined}
+            className={`shrink-0 rounded-xl border px-3 py-3 text-left transition lg:w-full ${
               step.id === activeStep
                 ? 'border-[#24211b] bg-[#24211b] text-white'
                 : 'border-[#d8d1c5] bg-transparent text-[#4f483f] hover:border-[#9d9486]'
@@ -340,23 +376,23 @@ export function CapsuleBuilderWizard() {
               </span>
               <span>
                 <span className="block text-sm font-semibold">{step.label}</span>
-                <span className={`mt-1 block text-xs ${step.id === activeStep ? 'text-[#ddd6c9]' : 'text-[#786f62]'}`}>
+                <span className={`mt-1 hidden text-xs leading-5 lg:block ${step.id === activeStep ? 'text-[#ddd6c9]' : 'text-[#786f62]'}`}>
                   {step.helper}
                 </span>
               </span>
             </span>
           </button>
         ))}
-      </div>
+      </nav>
 
-      <div className="space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 border border-[#d8d1c5] bg-[#fffdf8] p-4">
+      <div className="min-w-0 space-y-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8d1c5] bg-[#fffdf8] p-4">
           <div>
             <p className="text-sm font-semibold text-[#24211b]">
-              {STEPS[activeIndex]?.label}
+              Step {activeIndex + 1} of {STEPS.length} · {STEPS[activeIndex]?.label}
             </p>
             <p className="text-sm text-[#6f675c]">
-              {guard.showGuard ? 'Finish onboarding or open a situation to attach this capsule to live work.' : 'Guided builder is ready.'}
+              {STEPS[activeIndex]?.helper}
             </p>
           </div>
           <button
@@ -375,18 +411,19 @@ export function CapsuleBuilderWizard() {
             <CapsuleLivePreview json={capsuleJson} />
           </div>
         ) : (
-          <div className="border border-[#d8d1c5] bg-[#fffdf8] p-5">
+          <div className="rounded-2xl border border-[#d8d1c5] bg-[#fffdf8] p-4 sm:p-6">
             {activeStep === 'job' && (
               <div className="space-y-4">
                 <label className="block text-sm font-medium">
                   What should this capsule do?
                   <textarea
                     value={job}
+                    maxLength={4000}
                     onChange={(event) => {
                       setJob(event.target.value);
                       patchCapsule({ persona: { systemFrame: event.target.value } });
                     }}
-                    className="mt-2 min-h-28 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                    className="mt-2 min-h-28 w-full rounded-lg border border-[#cfc6b8] bg-white p-3 text-base leading-7 focus:outline-emerald-700"
                   />
                 </label>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -419,7 +456,7 @@ export function CapsuleBuilderWizard() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[#24211b]">Capsule Architect</p>
-                      <p className="mt-1 text-xs text-[#6f675c]">Document-first intake</p>
+                      <p className="mt-1 text-xs text-[#6f675c]">Documents, ideas and conversations</p>
                       <p className="mt-1 text-xs text-[#6f675c]">Without a selected case, adding documents creates a private evidence workspace for this capsule.</p>
                       <p className="mt-2 max-w-xl text-xs leading-5 text-[#6f675c]">Build reviewable source assertions, dated events and ontology proposals. Explicit “Actor:”, “Party:” or “Stakeholder:” fields become actor candidates. Missing identities, dates and causal links stay unknown; check coverage before relying on the graph.</p>
                     </div>
@@ -442,11 +479,24 @@ export function CapsuleBuilderWizard() {
                               setIntakeSituationId(situationId);
                               setArchitectDocuments((current) => [...current, ...documents].slice(0, 20));
                               setIntakeWarnings(warnings);
-                            }).finally(() => setIntakeBusy(false));
+                            }).catch(() => setIntakeWarnings(['Documents could not be read. Your existing sources are still here; please retry.']))
+                            .finally(() => setIntakeBusy(false));
                         }}
                       />
                     </label>
                   </div>
+                  <label className="mt-4 block text-sm font-medium text-[#24211b]">
+                    Ideas, notes or conversation
+                    <textarea
+                      value={sourceNotes}
+                      maxLength={CAPSULE_NOTES_MAX_CHARS}
+                      disabled={architectBusy || intakeBusy}
+                      onChange={(event) => setSourceNotes(event.target.value)}
+                      placeholder="Describe your idea, paste notes, or bring a conversation from Ask PRAXIS."
+                      className="mt-2 min-h-36 w-full rounded-lg border border-[#cfc6b8] bg-white p-3 text-sm leading-6 focus:outline-emerald-700"
+                    />
+                    <span className="mt-1 block text-xs font-normal text-[#6f675c]">{sourceNotes.length.toLocaleString()} / 12,000 characters. User statements remain supplied context; assistant suggestions are not independent evidence. Building saves a private source and creates review-only proposals. Nothing is automatically approved or published.</span>
+                  </label>
                   {architectDocuments.length ? (
                     <ul className="mt-3 grid gap-2 text-xs text-[#4f483f] sm:grid-cols-2">
                       {architectDocuments.map((document) => (
@@ -457,7 +507,7 @@ export function CapsuleBuilderWizard() {
                     </ul>
                   ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <button type="button" disabled={intakeBusy || architectBusy || !architectDocuments.length} onClick={() => void runArchitect()} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium disabled:opacity-50">
+                    <button type="button" disabled={intakeBusy || architectBusy || (!architectDocuments.length && !sourceNotes.trim())} onClick={() => void runArchitect()} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium disabled:opacity-50">
                       <Sparkles className="h-4 w-4" /> {intakeBusy ? 'Reading documents…' : architectBusy ? 'Building proposals…' : 'Build evidence proposals'}
                     </button>
                     {architectReviewCount ? <span className="text-xs text-[#6f675c]">{architectReviewCount} review cards ready</span> : null}

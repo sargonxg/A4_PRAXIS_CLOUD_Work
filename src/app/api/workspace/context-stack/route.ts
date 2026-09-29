@@ -12,7 +12,6 @@ import {
   createCapsule,
   getCapsule,
   getOrMigrateDefaultCapsule,
-  bumpCapsuleVersion,
   saveContextStackCompat,
   stackToCoreRefs,
 } from '@/lib/context/capsule-service';
@@ -69,13 +68,22 @@ export const PUT = withAuth(async (req, user) => {
   const body = await req.json().catch(() => null);
   const incoming = body && typeof body === 'object' && !Array.isArray(body) ? body as Partial<ActiveContextStackState> : {};
   if (incoming.stackId && incoming.stackId !== DEFAULT_CONTEXT_STACK_ID) {
-    const stack = sanitizeNamedStack(incoming);
-    const existing = await getCapsule(user.uid, stack.stackId);
+    const requested = sanitizeNamedStack(incoming);
+    const existing = await getCapsule(user.uid, requested.stackId);
+    if (existing?.archivedAt) {
+      return NextResponse.json({ error: 'Context capsule is archived' }, { status: 409 });
+    }
+    const active = await getActiveStackPointer(user.uid);
+    // Selecting a capsule changes the workspace pointer, not the saved capsule.
+    // Dock requests carry only refs; preserve its document/source cores and version.
+    const stack = sanitizeNamedStack({
+      ...(existing ? capsuleToStack(existing) : {}),
+      ...(active?.stackId === requested.stackId ? active : {}),
+      ...incoming,
+      stackId: requested.stackId,
+    });
     const capsule = existing
-      ? await bumpCapsuleVersion(user.uid, stack.stackId, {
-          coreRefs: stackToCoreRefs(stack),
-          activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],
-        }) ?? existing
+      ? existing
       : await createCapsule(user.uid, {
           capsuleId: stack.stackId,
           label: `Capsule: ${stack.stackId}`,

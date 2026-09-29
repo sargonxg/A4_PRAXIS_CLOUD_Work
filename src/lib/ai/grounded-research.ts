@@ -24,7 +24,8 @@ export async function searchWeb(
     region: options.region,
     timeRange: options.timeRange,
   });
-  return results.map(fromResearchResult);
+  // Generated research overviews are useful prose, not independent citations.
+  return results.filter((result) => !result.isGroundedSummary).map(fromResearchResult);
 }
 
 export async function scrapeUrl(url: string): Promise<WebSearchResult> {

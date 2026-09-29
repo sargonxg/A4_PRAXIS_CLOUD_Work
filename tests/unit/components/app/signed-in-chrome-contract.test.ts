@@ -45,7 +45,8 @@ describe('signed-in app chrome contract', () => {
     expect(welcome).toContain('localStorage.setItem');
     expect(welcome).toContain('Capsule Dock');
     expect(welcome).toContain('/app/capsules?starter=starter-situation-mediation-track');
-    expect(welcome).toContain('DIALECTICA');
+    expect(welcome).toContain('<details>');
+    expect(welcome).toContain('Ask first. Add context when useful.');
     expect(welcome).not.toContain('aria-modal="true"');
   });
 

@@ -94,6 +94,7 @@ export function AskContextBar({
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const dark = variant === 'floating';
   const isPublic = mode === 'public';
@@ -120,16 +121,20 @@ export function AskContextBar({
 
   async function persistStack(next: ActiveContextStackState) {
     setSaving(true);
+    setSaveError(null);
     try {
       await persistCapsuleDockStack(saveStack, next);
+      return true;
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Your capsule could not be attached. Please retry.');
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
   async function attachCapsuleToSlot(kind: CapsuleDockSlotKind, capsuleId: string) {
-    await persistStack(assignCapsuleToDockSlot(stack, kind, { capsuleId }));
-    setPickerSlot(null);
+    if (await persistStack(assignCapsuleToDockSlot(stack, kind, { capsuleId }))) setPickerSlot(null);
   }
 
   async function clearSlot(kind: CapsuleDockSlotKind) {
@@ -143,6 +148,7 @@ export function AskContextBar({
   async function clearContext() {
     const empty = defaultActiveContextStack();
     setSaving(true);
+    setSaveError(null);
     try {
       await saveStack({
         stackId: DEFAULT_CONTEXT_STACK_ID,
@@ -157,6 +163,8 @@ export function AskContextBar({
         evidenceGaps: [],
         contextBlocks: empty.contextBlocks,
       });
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Context could not be cleared. Please retry.');
     } finally {
       setSaving(false);
     }
@@ -189,6 +197,7 @@ export function AskContextBar({
           : 'border-[var(--color-app-border)] bg-white/90 text-slate-950',
       )}
     >
+      {saveError ? <p role="alert" className="mb-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900">{saveError}</p> : null}
       {/* Capsule Dock — four typed slots: User / Situation / Tool / Output */}
       <div
         data-testid="capsule-dock"

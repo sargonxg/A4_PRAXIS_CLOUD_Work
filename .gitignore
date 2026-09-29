@@ -105,3 +105,4 @@ graphify-out/cache/
 .next-start*.log
 artifacts/*.log
 output/
+.playwright-cli/

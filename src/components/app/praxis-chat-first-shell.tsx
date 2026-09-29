@@ -170,12 +170,12 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
 
   const body = (
     <div
-      className="praxis-app-surface praxis-checker-constellation min-h-screen text-slate-950"
+      className="praxis-app-surface praxis-focus-surface min-h-screen text-slate-950"
       data-testid="praxis-chat-first-shell"
     >
       <div data-testid={isPublic ? 'marketing-home' : 'app-launchpad'} className="mx-auto flex w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
         {!isPublic ? <HomeTopBar isPublic={isPublic} /> : null}
-        <div className="mt-5 grid gap-5 lg:grid-cols-[15rem_minmax(0,1fr)]">
+        <div className="mt-5 grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
           <HomeSidebar isPublic={isPublic} pathname={pathname ?? '/'} />
           <section className="min-w-0">
             {contextError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{contextError}</p> : null}
@@ -315,7 +315,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
   }, [isPublic]);
 
   return (
-    <aside className={`${isPublic ? 'hidden lg:block ' : ''}praxis-shell-panel h-fit p-3`} aria-label="Primary PRAXIS destinations">
+    <aside className={`${isPublic ? 'hidden lg:block ' : ''}h-fit rounded-2xl border border-slate-200/70 bg-white/60 p-3 lg:sticky lg:top-6`} aria-label="Primary PRAXIS destinations">
       <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isPublic ? 'Start here' : 'Workspace'}</p>
       <nav className="mt-3 flex flex-wrap gap-1 lg:grid">
         {destinations.map((item) => {
@@ -326,6 +326,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
             <Link
               key={item.id}
               href={href}
+              aria-current={active ? 'page' : undefined}
               className={[
                 'flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] px-3 py-2 text-sm font-semibold transition',
                 active ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-white hover:text-emerald-900',

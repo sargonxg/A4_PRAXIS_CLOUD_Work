@@ -8,6 +8,7 @@ import { useAgentRunSnapshots } from '@/hooks/useAgentRunSnapshots';
 import { agentRailStageFromEvent, useOrchestratorEvents } from '@/hooks/useOrchestratorEvents';
 import {
   agentRunLifecycleSteps,
+  isTerminalAgentRunStatus,
   canCancelAgentRunStatus,
   canRetryAgentRunStatus,
   shouldPollAgentRunStatus,
@@ -20,6 +21,7 @@ const proofRailOrderLabel = 'Queued -> Dispatched -> Started -> Sources -> Appro
 type RunSummary = {
   runId: string;
   status: string;
+  updatedAt?: string | null;
   outputHref?: string | null;
   policyAgentLabel?: string | null;
   outputTargetLabel?: string | null;
@@ -81,6 +83,22 @@ export function queuedAgentRunFromEnvelope(envelope?: AskAnswerEnvelope): AskOrc
   };
 }
 
+// The Firestore mirror can lag the durable run API. Prefer the newest receipt,
+// and never replace a terminal state with an older in-progress snapshot.
+export function latestAgentRunSummary(runId: string | null, ...candidates: Array<RunSummary | null>): RunSummary | null {
+  return candidates.filter((candidate): candidate is RunSummary => Boolean(candidate && candidate.runId === runId))
+    .reduce<RunSummary | null>((latest, candidate) => {
+      if (!latest) return candidate;
+      const latestTime = Date.parse(latest.updatedAt ?? '');
+      const candidateTime = Date.parse(candidate.updatedAt ?? '');
+      if (Number.isFinite(latestTime) && Number.isFinite(candidateTime) && latestTime !== candidateTime) {
+        return candidateTime > latestTime ? candidate : latest;
+      }
+      if (isTerminalAgentRunStatus(latest.status) && !isTerminalAgentRunStatus(candidate.status)) return latest;
+      return candidate;
+    }, null);
+}
+
 export function AskQueuedAgentRunPanel({
   queuedRun,
   newestActive = true,
@@ -90,20 +108,33 @@ export function AskQueuedAgentRunPanel({
   newestActive?: boolean;
   onRunTerminal?: (run: { runId: string; status: 'succeeded' | 'failed'; outputHref?: string | null }) => void;
 }) {
-  const [overrideRunId, setOverrideRunId] = useState<string | null>(null);
-  const runId = overrideRunId ?? queuedRun?.runId ?? null;
+  const [overrideRunId, setOverrideRunId] = useState<{ sourceId: string | null; runId: string } | null>(null);
+  const runId = overrideRunId && overrideRunId.sourceId === queuedRun?.runId
+    ? overrideRunId.runId : queuedRun?.runId ?? null;
   const [run, setRun] = useState<RunSummary | null>(null);
   const [approvals, setApprovals] = useState<RunApprovalSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState<string | null>(null);
   const [expanded, setExpanded] = useState(false);
   const terminalNotifiedRef = useRef<string | null>(null);
-  const actionStatus = run?.status ?? queuedRun?.fallbackPosture ?? queuedRun?.status ?? null;
-  const streamEnabled = Boolean(runId) && shouldStreamAgentRunStatus(actionStatus, { expanded, newestActive });
+  const activeRunIdRef = useRef(runId);
+  activeRunIdRef.current = runId;
+  const refreshVersionRef = useRef(0);
+  const [recoveredDispatchRunId, setRecoveredDispatchRunId] = useState<string | null>(null);
   const snapshotState = useAgentRunSnapshots(runId, {
     enabled: Boolean(runId),
     limit: 20,
   });
+  const visibleRun = latestAgentRunSummary(runId, run, snapshotState.run);
+  const rawStatus = visibleRun?.status ?? queuedRun?.fallbackPosture ?? queuedRun?.status ?? 'queued';
+  const dispatchFailed = rawStatus === 'dispatch_failed' || (
+    queuedRun?.fallbackPosture === 'dispatch_failed'
+    && runId === queuedRun.runId
+    && recoveredDispatchRunId !== runId
+    && (rawStatus === 'queued' || rawStatus === 'warn')
+  );
+  const status = dispatchFailed ? 'dispatch_failed' : rawStatus;
+  const streamEnabled = Boolean(runId) && shouldStreamAgentRunStatus(status, { expanded, newestActive });
   const eventState = useOrchestratorEvents(runId ? `/api/agents/runs/${encodeURIComponent(runId)}/stream` : null, {
     enabled: streamEnabled,
     limit: 20,
@@ -114,36 +145,42 @@ export function AskQueuedAgentRunPanel({
     setOverrideRunId(null);
     setRun(null);
     setApprovals([]);
+    setError(null);
+    setRecoveredDispatchRunId(null);
     terminalNotifiedRef.current = null;
   }, [queuedRun?.runId]);
 
   const refresh = useCallback(async () => {
     if (!runId) return;
+    const version = ++refreshVersionRef.current;
     try {
       const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}`, { credentials: 'include', cache: 'no-store' });
       const payload = await response.json().catch(() => ({})) as { run?: RunSummary; approvals?: RunApprovalSummary[]; error?: string };
+      if (activeRunIdRef.current !== runId || refreshVersionRef.current !== version) return;
       if (!response.ok) {
         setError(response.status === 503 ? userSafeAgentRunError(payload.error) : payload.error ?? `Agent run lookup failed (${response.status}).`);
         return;
       }
-      setRun(payload.run ?? null);
+      setRun((current) => latestAgentRunSummary(runId, current, payload.run ?? null));
       setApprovals(Array.isArray(payload.approvals) ? payload.approvals : []);
       setError(null);
     } catch {
+      if (activeRunIdRef.current !== runId || refreshVersionRef.current !== version) return;
       setError(userSafeAgentRunError('Agent run status network refresh failed'));
     }
   }, [runId]);
 
   useEffect(() => {
     if (!runId) return;
-    if ((!newestActive && !expanded) || !shouldPollAgentRunStatus(actionStatus)) return;
+    if ((!newestActive && !expanded) || actionPending || !shouldPollAgentRunStatus(status)) return;
     void refresh();
     const interval = window.setInterval(() => void refresh(), 10_000);
     return () => window.clearInterval(interval);
-  }, [actionStatus, expanded, newestActive, refresh, runId]);
+  }, [actionPending, status, expanded, newestActive, refresh, runId]);
 
   const runAction = useCallback(async (action: 'retry' | 'cancel') => {
     if (!runId) return;
+    ++refreshVersionRef.current;
     setActionPending(action);
     try {
       const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}/${action}`, {
@@ -151,23 +188,33 @@ export function AskQueuedAgentRunPanel({
         credentials: 'include',
       });
       const payload = await response.json().catch(() => ({})) as { run?: RunSummary; error?: string };
+      if (activeRunIdRef.current !== runId) return;
       if (!response.ok) {
         setError(payload.error ?? userSafeAgentRunError(`${action} failed (${response.status}).`));
         return;
       }
-      if (action === 'retry' && payload.run?.runId) setOverrideRunId(payload.run.runId);
+      if (action === 'retry' && payload.run?.runId) {
+        // Invalidate the old run immediately, before React commits the new id.
+        activeRunIdRef.current = payload.run.runId;
+        setOverrideRunId({ sourceId: queuedRun?.runId ?? null, runId: payload.run.runId });
+        setRecoveredDispatchRunId(payload.run.runId);
+        setApprovals([]);
+        terminalNotifiedRef.current = null;
+      }
       setRun(payload.run ?? run);
       setError(null);
-      void refresh();
+      // Polling resumes with the new id after the action finishes.
     } catch {
+      if (activeRunIdRef.current !== runId) return;
       setError(userSafeAgentRunError(`${action} could not reach the deep work queue.`));
     } finally {
       setActionPending(null);
     }
-  }, [refresh, run, runId]);
+  }, [queuedRun?.runId, run, runId]);
 
   const decideApproval = useCallback(async (approvalId: string, decision: 'approved' | 'rejected') => {
     if (!runId) return;
+    ++refreshVersionRef.current;
     setActionPending(`approval:${approvalId}:${decision}`);
     try {
       const response = await fetch(`/api/agents/runs/${encodeURIComponent(runId)}/approvals/${encodeURIComponent(approvalId)}`, {
@@ -177,6 +224,7 @@ export function AskQueuedAgentRunPanel({
         body: JSON.stringify({ decision }),
       });
       const payload = await response.json().catch(() => ({})) as { run?: RunSummary; error?: string };
+      if (activeRunIdRef.current !== runId) return;
       if (!response.ok) {
         setError(payload.error ?? userSafeAgentRunError(`Approval ${decision} failed (${response.status}).`));
         return;
@@ -185,15 +233,12 @@ export function AskQueuedAgentRunPanel({
       setError(null);
       void refresh();
     } catch {
+      if (activeRunIdRef.current !== runId) return;
       setError(userSafeAgentRunError('Approval decision could not reach the deep work queue.'));
     } finally {
       setActionPending(null);
     }
   }, [refresh, run, runId]);
-
-  const snapshotRun = snapshotState.run;
-  const visibleRun = snapshotRun ?? run;
-  const status = visibleRun?.status ?? actionStatus ?? queuedRun?.status ?? 'queued';
 
   useEffect(() => {
     if (!runId || !onRunTerminal) return;
@@ -210,7 +255,6 @@ export function AskQueuedAgentRunPanel({
 
   if (!queuedRun || (!runId && queuedRun.status !== 'failed')) return null;
 
-  const dispatchFailed = status === 'dispatch_failed' || queuedRun.fallbackPosture === 'dispatch_failed';
   const expiredRun = status === 'expired';
   const visibleEvents = snapshotState.events.length ? snapshotState.events : eventState.events;
   const recentEvents = expanded ? visibleEvents.slice(-4).reverse() : [];
@@ -225,7 +269,7 @@ export function AskQueuedAgentRunPanel({
   const agentLabel = visibleRun?.policyAgentLabel ?? queuedRun.agentLabel ?? 'Policy agent';
   const sourcePosture = visibleRun?.sourcePosture ?? queuedRun.sourcePosture ?? 'No source receipts saved';
   const groundingPosture = visibleRun?.groundingPosture ?? queuedRun.groundingPosture ?? sourcePosture;
-  const degradedReason = visibleRun?.degradedReason ?? queuedRun.degradedReason ?? null;
+  const degradedReason = visibleRun ? visibleRun.degradedReason ?? null : queuedRun.degradedReason ?? null;
   const sourceReceiptCount = visibleRun?.sourceReceiptIds?.length ?? sourceCount;
   const hasThreadReturnPosted = visibleEvents.some((event) => event.rawType === 'thread_return_posted');
   const hasThreadReturnFailed = visibleEvents.some((event) => event.rawType === 'thread_return_failed');
@@ -253,6 +297,14 @@ export function AskQueuedAgentRunPanel({
     ? 'Dispatch failed'
     : expiredRun
     ? 'Expired'
+    : status === 'succeeded'
+    ? 'Completed'
+    : status === 'failed'
+    ? 'Failed'
+    : status === 'cancelled'
+    ? 'Cancelled'
+    : status === 'waiting_approval'
+    ? 'Needs approval'
     : degradedReason
     ? 'Search degraded'
     : sourceReceiptCount > 0

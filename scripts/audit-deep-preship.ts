@@ -253,12 +253,11 @@ const notificationsService = read('backend/services/notifications/__init__.py');
 const notificationsDelivery = read('backend/services/notifications/delivery.py');
 const notificationsSettings = [
   read('src/app/app/page.tsx'),
-  read('src/components/app/praxis-app-launchpad.tsx'),
   read('src/components/app/praxis-chat-first-shell.tsx'),
 ].join('\n');
 requireIncludes(
   `${notificationsRouter}\n${notificationsService}\n${notificationsDelivery}\n${notificationsSettings}`,
-  ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.put("/preferences")', '@router.post("/dispatch")', 'quiet_hours', 'provider_unconfigured', 'MAX_DELIVERY_ATTEMPTS', 'PraxisAppLaunchpad', 'PraxisChatFirstShell', 'app-launchpad'],
+  ['@router.get("/stream")', '@router.post("/{notification_id}/signal")', '@router.put("/preferences")', '@router.post("/dispatch")', 'quiet_hours', 'provider_unconfigured', 'MAX_DELIVERY_ATTEMPTS', 'PraxisChatFirstShell', 'app-launchpad'],
   '13. Notifications system',
   'notifications-pre-ship',
   'notifications stack',

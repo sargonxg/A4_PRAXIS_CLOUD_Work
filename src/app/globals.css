@@ -1093,6 +1093,16 @@ body {
     0 14px 34px rgba(4, 120, 87, 0.13);
 }
 
+/* A quiet reading surface keeps the prompt, evidence and work in focus. */
+.praxis-focus-surface {
+  background: linear-gradient(180deg, #fafbf8 0%, var(--color-archive-paper-strong) 520px);
+}
+
+.praxis-focus-surface :is(button, a, summary):focus-visible {
+  outline: 2px solid var(--color-emerald-700, #047857);
+  outline-offset: 3px;
+}
+
 .praxis-composer-input-well textarea::placeholder {
   color: color-mix(in srgb, var(--color-mineral) 72%, transparent);
   opacity: 1;

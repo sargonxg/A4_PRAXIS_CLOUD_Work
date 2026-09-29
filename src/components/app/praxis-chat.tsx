@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { JevReviewControl } from '@/components/app/jev-review-control';
+import { useAuth } from '@/lib/auth/auth-context';
+import { saveConversationCapsuleHandoff } from '@/lib/context/conversation-capsule-handoff';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -461,12 +463,12 @@ export function PraxisChat({
     >
       <div className={cn('flex min-h-0 flex-1 flex-col', compact ? 'h-full' : '')}>
         {variant === 'home' ? (
-          <div className={cn('mb-6 text-center', isPublic ? 'order-first' : '')}>
+          <div className={cn('order-first mb-6 text-center', messages.length ? 'sr-only' : 'sm:pb-2')}>
             <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
               <Sparkles className="h-3.5 w-3.5" />
               Ask PRAXIS
             </p>
-            <h1 className="mt-4 font-serif text-4xl font-semibold tracking-normal text-[color:var(--color-app-text)] sm:text-5xl">
+            <h1 className="mt-4 text-balance font-serif text-4xl font-semibold leading-tight tracking-tight text-[color:var(--color-app-text)] sm:text-5xl">
               {isPublic ? 'Policy analysis you can inspect.' : 'Write trusted knowledge products.'}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
@@ -479,7 +481,7 @@ export function PraxisChat({
 
         <div className={cn(
           'min-h-0 flex-1 overflow-y-auto',
-          isPublic && messages.length === 0 ? 'hidden' : '',
+          variant === 'home' && messages.length === 0 ? 'hidden' : '',
           variant === 'floating' ? 'px-3 py-3' : 'rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/80 p-3 shadow-[var(--shadow-card)]',
         )}>
           {messages.length === 0 ? (
@@ -530,6 +532,7 @@ export function PraxisChat({
                 type="button"
                 onClick={() => {
                   setInput(mission.prompt);
+                  inputRef.current?.focus();
                   if (typeof window !== 'undefined') {
                     window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
                   }
@@ -544,8 +547,8 @@ export function PraxisChat({
         ) : null}
 
         <form onSubmit={submit} className={cn(
-          'mt-3 rounded-[var(--radius-lg)] border bg-white p-2 shadow-[var(--shadow-card)]',
-          isPublic ? 'order-first mb-4' : '',
+          'mt-3 rounded-2xl border bg-white p-3 shadow-[0_8px_32px_rgba(15,23,42,0.06)] focus-within:border-emerald-600/50',
+          isPublic || showExamples ? 'order-first mb-4' : '',
           variant === 'floating' ? 'border-slate-700 bg-slate-950 shadow-none' : 'border-[var(--color-app-border)]',
         )}>
           <input type="hidden" name="capsulePrompt" value={input} />
@@ -560,7 +563,7 @@ export function PraxisChat({
             onKeyDown={onKeyDown}
             rows={compact ? 2 : 4}
             className={cn(
-              'w-full resize-none rounded-[var(--radius-md)] border px-4 py-3 text-sm leading-6 outline-none transition placeholder:text-slate-400 focus:border-emerald-500',
+              'w-full resize-none rounded-[var(--radius-md)] border px-4 py-3 text-base leading-7 outline-none transition placeholder:text-slate-500 focus:border-emerald-500',
               variant === 'floating'
                 ? 'border-slate-700 bg-slate-900 text-white'
                 : 'border-transparent bg-[color:var(--color-archive-paper-strong)] text-slate-950',
@@ -573,6 +576,7 @@ export function PraxisChat({
                 <button
                   type="button"
                   data-testid="context-toggle"
+                  aria-expanded={contextOpen}
                   onClick={onToggleContext}
                   className={cn(
                     'inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border px-3 text-xs font-semibold',
@@ -582,8 +586,11 @@ export function PraxisChat({
                   )}
                 >
                   <Plus className="h-3.5 w-3.5" />
-                  {contextLabel}
+                  {contextLabel.replace(/^\+\s*/, '')}
                 </button>
+              ) : null}
+              {!isPublic && !demoMode && (messages.length > 0 || input.trim()) ? (
+                <ConversationCapsuleButton messages={messages} notes={input} threadId={conversationThreadId} capsuleId={activeCapsuleId} disabled={isStreaming} onError={setError} />
               ) : null}
               {messages.length ? (
                 <button
@@ -788,7 +795,7 @@ function AnswerAgentActivity({
             )}
             title="Open the live run workspace: timeline, tool calls, approvals"
           >
-          {queuedRun.status === 'dispatch_enqueued' || queuedRun.status === 'queued' ? 'Run in progress' : `Run ${queuedRun.status.replace(/_/g, ' ')}`}
+            View run
             <ExternalLink className="h-3 w-3" />
           </Link>
         ) : null}
@@ -1047,4 +1054,34 @@ function isProfileMutationIntent(input: unknown): input is { humanSummary: strin
 
 function isRecord(input: unknown): input is Record<string, unknown> {
   return Boolean(input) && typeof input === 'object' && !Array.isArray(input);
+}
+
+/** Auth is scoped to signed-in routes; public chat must not require its provider. */
+function ConversationCapsuleButton({ messages, notes, threadId, capsuleId, disabled, onError }: {
+  messages: ChatMessage[];
+  notes: string;
+  threadId: string;
+  capsuleId: string | null;
+  disabled: boolean;
+  onError: (message: string) => void;
+}) {
+  const { user } = useAuth();
+  const router = useRouter();
+  if (!user?.id) return null;
+  return (
+    <button
+      type="button"
+      data-testid="chat-build-capsule"
+      disabled={disabled}
+      onClick={() => {
+        try {
+          saveConversationCapsuleHandoff(window.sessionStorage, { ownerId: user.id, messages, notes, threadId, capsuleId });
+          router.push('/app/capsules/builder?from=conversation');
+        } catch (failure) { onError(failure instanceof Error ? failure.message : 'Conversation could not be opened in the builder.'); }
+      }}
+      className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border border-emerald-700/30 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 disabled:opacity-50"
+    >
+      <Boxes className="h-3.5 w-3.5" /> Build capsule from conversation
+    </button>
+  );
 }

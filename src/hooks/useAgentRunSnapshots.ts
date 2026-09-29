@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { collection, doc, limit as firestoreLimit, onSnapshot, orderBy, query } from 'firebase/firestore';
+import { collection, doc, limit as firestoreLimit, onSnapshot, orderBy, query, where } from 'firebase/firestore';
 import { useAuth } from '@/lib/auth/auth-context';
 import { db } from '@/lib/firebase/config';
 import { normalizeAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
@@ -11,6 +11,7 @@ import type { OrchestratorEvent } from '@/hooks/useOrchestratorEvents';
 export type AgentRunSnapshotSummary = {
   runId: string;
   status: string;
+  updatedAt?: string | null;
   outputHref?: string | null;
   policyAgentId?: string | null;
   policyAgentLabel?: string | null;
@@ -66,11 +67,29 @@ export function useAgentRunSnapshots(
   const [events, setEvents] = useState<OrchestratorEvent[]>([]);
   const [toolCalls, setToolCalls] = useState<AgentRunToolCallSnapshot[]>([]);
   const [approvals, setApprovals] = useState<AgentRunApprovalSnapshot[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<AgentRunApprovalSnapshot[]>([]);
   const [runConnected, setRunConnected] = useState(false);
   const [eventsConnected, setEventsConnected] = useState(false);
   const [toolCallsConnected, setToolCallsConnected] = useState(false);
   const [approvalsConnected, setApprovalsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const scope = enabled && uid && runId ? `${uid}:${runId}` : null;
+  const [snapshotScope, setSnapshotScope] = useState<string | null>(scope);
+
+  // Reset scoped state before children can observe receipts from another run.
+  if (snapshotScope !== scope) {
+    setSnapshotScope(scope);
+    setRun(null);
+    setEvents([]);
+    setToolCalls([]);
+    setApprovals([]);
+    setPendingApprovals([]);
+    setRunConnected(false);
+    setEventsConnected(false);
+    setToolCallsConnected(false);
+    setApprovalsConnected(false);
+    setError(null);
+  }
 
   useEffect(() => {
     if (!enabled || !uid || !runId) return;
@@ -93,7 +112,7 @@ export function useAgentRunSnapshots(
     if (!enabled || !uid || !runId) return;
     const eventsQuery = query(
       collection(db, 'users', uid, 'runs', runId, 'events'),
-      orderBy('createdAt', 'asc'),
+      orderBy('createdAt', 'desc'),
       firestoreLimit(eventLimit),
     );
     return onSnapshot(
@@ -101,7 +120,7 @@ export function useAgentRunSnapshots(
       (snapshot) => {
         setEventsConnected(true);
         setError(null);
-        setEvents(snapshot.docs.map((eventDoc) => snapshotToOrchestratorEvent(eventDoc.id, eventDoc.data())));
+        setEvents(snapshot.docs.map((eventDoc) => snapshotToOrchestratorEvent(eventDoc.id, eventDoc.data())).reverse());
       },
       (err) => {
         setEventsConnected(false);
@@ -114,7 +133,7 @@ export function useAgentRunSnapshots(
     if (!enabled || !uid || !runId) return;
     const toolCallsQuery = query(
       collection(db, 'users', uid, 'runs', runId, 'toolCalls'),
-      orderBy('createdAt', 'asc'),
+      orderBy('createdAt', 'desc'),
       firestoreLimit(eventLimit),
     );
     return onSnapshot(
@@ -122,7 +141,7 @@ export function useAgentRunSnapshots(
       (snapshot) => {
         setToolCallsConnected(true);
         setError(null);
-        setToolCalls(snapshot.docs.map((toolDoc) => snapshotToToolCall(toolDoc.id, toolDoc.data())));
+        setToolCalls(snapshot.docs.map((toolDoc) => snapshotToToolCall(toolDoc.id, toolDoc.data())).reverse());
       },
       (err) => {
         setToolCallsConnected(false);
@@ -135,7 +154,7 @@ export function useAgentRunSnapshots(
     if (!enabled || !uid || !runId) return;
     const approvalsQuery = query(
       collection(db, 'users', uid, 'runs', runId, 'approvals'),
-      orderBy('requestedAt', 'asc'),
+      orderBy('requestedAt', 'desc'),
       firestoreLimit(eventLimit),
     );
     return onSnapshot(
@@ -143,7 +162,7 @@ export function useAgentRunSnapshots(
       (snapshot) => {
         setApprovalsConnected(true);
         setError(null);
-        setApprovals(snapshot.docs.map((approvalDoc) => snapshotToApproval(approvalDoc.id, approvalDoc.data())));
+        setApprovals(snapshot.docs.map((approvalDoc) => snapshotToApproval(approvalDoc.id, approvalDoc.data())).reverse());
       },
       (err) => {
         setApprovalsConnected(false);
@@ -152,10 +171,32 @@ export function useAgentRunSnapshots(
     );
   }, [enabled, eventLimit, runId, uid]);
 
+  // Outstanding decisions must remain actionable even when newer history fills
+  // the bounded timeline. This equality query uses the default single-field index.
+  useEffect(() => {
+    if (!enabled || !uid || !runId) return;
+    const pendingQuery = query(
+      collection(db, 'users', uid, 'runs', runId, 'approvals'),
+      where('status', '==', 'pending'),
+    );
+    return onSnapshot(
+      pendingQuery,
+      (snapshot) => setPendingApprovals(snapshot.docs.map((approvalDoc) => snapshotToApproval(approvalDoc.id, approvalDoc.data()))),
+      (err) => setError(err.message || 'Pending approval stream unavailable.'),
+    );
+  }, [enabled, runId, uid]);
+
   return useMemo(() => {
+    if (!scope || snapshotScope !== scope) {
+      return { run: null, events: [], toolCalls: [], approvals: [], isConnected: false, error: null };
+    }
     const activeRun = run?.runId === runId ? run : null;
     const activeEvents = events.filter((event) => event.runId === runId);
-    const activeApprovals = approvals.filter((approval) => approval.runId === runId);
+    const activeApprovals = Array.from(new Map(
+      [...pendingApprovals, ...approvals]
+        .filter((approval) => approval.runId === runId)
+        .map((approval) => [approval.id, approval]),
+    ).values()).sort((left, right) => (left.requestedAt ?? '').localeCompare(right.requestedAt ?? ''));
     return {
       run: activeRun,
       events: activeEvents,
@@ -165,7 +206,7 @@ export function useAgentRunSnapshots(
         && (runConnected || eventsConnected || toolCallsConnected || approvalsConnected),
       error,
     };
-  }, [approvals, approvalsConnected, error, events, eventsConnected, run, runConnected, runId, toolCalls, toolCallsConnected]);
+  }, [approvals, approvalsConnected, error, events, eventsConnected, pendingApprovals, run, runConnected, runId, scope, snapshotScope, toolCalls, toolCallsConnected]);
 }
 
 function snapshotToRunSummary(data: Record<string, unknown>): AgentRunSnapshotSummary | null {
@@ -176,6 +217,7 @@ function snapshotToRunSummary(data: Record<string, unknown>): AgentRunSnapshotSu
   return {
     runId,
     status: stringValue(data.status) ?? 'queued',
+    updatedAt: stringValue(data.updatedAt),
     outputHref: stringValue(outputs.href),
     policyAgentId: stringValue(plan.policyAgentId),
     policyAgentLabel: stringValue(plan.policyAgentLabel),

@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+Build 2026.09.29.01 (PRAXIS v6.5.2).
+
+- Streamline Ask and capsule creation with a composer-first layout, compact optional setup and responsive builder steps.
+- Carry conversations and ideas into capsule creation as explicitly labeled working notes, save source receipts and keep proposed changes subject to review.
+- Preserve capsule evidence and versions when attaching saved context; report failed saves without replacing the previous attachment.
+- Enable real grounded search, associate provider-supported text with individual citations, and keep missing evidence and unsupported claims visible.
+- Pass owner-scoped document evidence to the capsule agent; repair recent agent status and approval visibility and preserve starter notes during retries.
+
 Build 2026.09.28.01 (PRAXIS v6.5.2).
 
 - Fix quick capsule context-package persistence when optional user, team or graph references are absent, with a strict Firestore serialization regression test.

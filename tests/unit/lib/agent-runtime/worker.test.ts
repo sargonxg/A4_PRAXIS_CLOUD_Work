@@ -754,7 +754,8 @@ describe('agent runtime no-op worker', () => {
         expect(input.capsuleId).toBe('cap-1');
         expect(input.outputTarget).toBe('policy-memo');
         expect(input.sourceReceiptIds).toEqual(expect.arrayContaining(['doc-src-1', 'web-live-1']));
-        expect(input.unsupportedClaims).toContain('A disputed implementation detail still needs field confirmation.');
+        expect(input.unsupportedClaims).not.toContain('A disputed implementation detail still needs field confirmation.');
+        expect(JSON.stringify(input.blocks)).toContain('A disputed implementation detail still needs field confirmation.');
         expect(input.claimChecks).toEqual(expect.arrayContaining([
           expect.objectContaining({
             status: 'supported',
@@ -763,7 +764,7 @@ describe('agent runtime no-op worker', () => {
         ]));
         expect(input.blocks.some((block) => block.id === 'live-memo-draft')).toBe(true);
         expect(input.blocks.find((block) => block.id === 'live-memo-draft')?.metadata).toMatchObject({
-          weakSourceHighlight: true,
+          weakSourceHighlight: false,
         });
         return { memo: { id: 'memo-live-1' } };
       },
@@ -782,8 +783,8 @@ describe('agent runtime no-op worker', () => {
       expect.objectContaining({ toolId: 'policy-memo', status: 'succeeded' }),
     ]));
     expect(toolCalls.find((call) => call.toolId === 'sourceability-reviewer' && call.output)?.output).toMatchObject({
-      unsupportedClaimCount: 1,
-      checkedClaimCount: 2,
+      unsupportedClaimCount: 0,
+      checkedClaimCount: 1,
       liveSourceReceiptCount: 1,
     });
     expect(mirrored.map((event) => event.phase)).toEqual(expect.arrayContaining([
@@ -804,26 +805,22 @@ describe('agent runtime no-op worker', () => {
       agentId: 'source-checker',
       lane: 'sourceability',
       toolId: 'sourceability-reviewer',
-      checkedClaimCount: 2,
-      unsupportedClaimCount: 1,
+      checkedClaimCount: 1,
+      unsupportedClaimCount: 0,
       sourceabilityVerdicts: expect.arrayContaining([
         expect.objectContaining({
           verdict: 'supported',
           sourceIds: expect.arrayContaining(['doc-src-1', 'web-live-1']),
         }),
-        expect.objectContaining({
-          verdict: 'unsupported',
-          sourceIds: [],
-        }),
       ]),
     });
     expect(mirrored.find((event) => event.phase === 'sourceability.claims_verified')?.data).toMatchObject({
-      unsupportedClaimCount: 1,
+      unsupportedClaimCount: 0,
       liveSourceReceiptCount: 1,
     });
   });
 
-  it('blocks deep research synthesis behind approval when unsupported claims remain', async () => {
+  it('blocks deep research synthesis with no live evidence even when context gaps are not claims', async () => {
     const approvals: AgentApproval[] = [];
     const mirrored: string[] = [];
     let memoSaved = 0;
@@ -881,6 +878,75 @@ describe('agent runtime no-op worker', () => {
     expect(approvals[0]).toMatchObject({ status: 'pending', risk: 'medium' });
     expect(mirrored).toContain('research.synthesis_blocked');
     expect(mirrored).not.toContain('memo.draft_created');
+  });
+
+  it.each([
+    { label: 'empty retrieval with old attached receipts', live: false, unsupported: false, emptySnippet: false, expected: 'waiting_approval' },
+    { label: 'real sources with context gaps only', live: true, unsupported: false, emptySnippet: false, expected: 'succeeded' },
+    { label: 'real sources with an unsupported factual paragraph', live: true, unsupported: true, emptySnippet: false, expected: 'waiting_approval' },
+    { label: 'citation title without supported source text', live: true, unsupported: false, emptySnippet: true, expected: 'waiting_approval' },
+  ])('reports honest evidence and preserves the gate: $label', async ({ live, unsupported, emptySnippet, expected }) => {
+    const approvals: AgentApproval[] = [];
+    const calls: AgentToolCall[] = [];
+    const metadata = {
+      policyAgentId: 'research-memo',
+      selectedToolIds: ['grounded-search', 'sourceability-reviewer', 'policy-memo'],
+      sourceReceiptIds: ['source-core:old-upload'],
+      groundingPlan: { modes: ['google_search'] },
+      minSourcesPerClaim: 2,
+      synthesisGate: 'block_on_unsupported_claims',
+    };
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', metadata),
+      updateStatus: async (input) => makeRun(input.toStatus, metadata),
+      appendEvent: async (event) => event,
+      appendToolCall: async (call) => { calls.push(call); return call; },
+      appendApproval: async (approval) => { approvals.push(approval); return approval; },
+      listApprovals: async () => approvals,
+      buildEvidencePack: async () => makeEvidencePack({
+        sourceReceiptIds: [],
+        sourcedParagraphs: emptySnippet ? [{ ...makeEvidencePack().sourcedParagraphs[0], confidence: 0.5 }] : unsupported ? [{
+          ...makeEvidencePack().sourcedParagraphs[0],
+          sourceReceiptId: null,
+          excerpt: 'Implementation is complete across all jurisdictions.',
+        }] : [],
+        openGaps: ['Time Core is unset.'],
+      }),
+      runGroundedSearch: async ({ query }) => ({
+        query,
+        sourceReceipts: live ? [1, 2].map((index) => ({
+          sourceReceiptId: `web:new-${index}`, title: emptySnippet ? 'Evidence paragraph.' : `Public institutional source ${index}`,
+          url: `https://institution${index}.example.org/methods`, snippet: emptySnippet ? '' : 'Methods for evaluating policy commitments.',
+          confidence: 0.8, provider: 'test-provider',
+        })) : [],
+        degradedReason: null,
+      }),
+      generateText: async () => ({ text: 'Methods brief with uncertainty [web:new-1] [web:new-2].' }),
+      saveMemoDraft: async (_uid, input) => {
+        expect(input.sourceReceiptIds).toContain('source-core:old-upload');
+        expect(JSON.stringify(input.blocks)).toContain('Time Core is unset.');
+        return { memo: { id: 'memo-proof' } };
+      },
+      saveOutputCapsule: async () => ({ id: 'output-proof' }),
+    });
+    expect(result.status).toBe(expected);
+    const search = calls.find((call) => call.toolId === 'grounded-search');
+    expect(search?.status).toBe(live ? 'succeeded' : 'failed');
+    expect(search?.output?.sourceReceiptCount).toBe(live ? 2 : 0);
+    expect(search?.output?.sourceReceiptIds).not.toContain('source-core:old-upload');
+    if (!live) {
+      expect(search?.output?.groundingPosture).toBe('Grounding unavailable');
+      expect(search?.output?.degradedReason).toContain('no live source receipts');
+      expect(calls.find((call) => call.status === 'waiting_approval')?.input.proposedAction).toMatchObject({ missingEvidence: true, unsupportedClaimCount: 0 });
+    }
+    if (emptySnippet) {
+      expect(calls.find((call) => call.status === 'waiting_approval')?.input.proposedAction).toMatchObject({ missingEvidence: true });
+      expect(calls.find((call) => call.toolId === 'sourceability-reviewer' && call.output?.summary)?.output?.summary).toMatchObject({ supportedClaims: 0, weakClaims: 1 });
+    }
+    if (unsupported) {
+      expect(calls.find((call) => call.status === 'waiting_approval')?.input.proposedAction).toMatchObject({ missingEvidence: false, unsupportedClaimCount: 1 });
+    }
+    if (expected === 'succeeded') expect(approvals).toHaveLength(0);
   });
 
   it('routes source-gap scout runs into review-gated source-pack cards', async () => {
@@ -1297,6 +1363,7 @@ describe('agent runtime no-op worker', () => {
     const reviewCards: Array<{ title: string; target: string; patch: Record<string, unknown> | undefined }> = [];
 
     await executeAgentRun(payload, {
+      buildEvidencePack: async () => makeEvidencePack(),
       getRun: async () => makeRun('queued', { policyAgentId: 'capsule-factory' }),
       updateStatus: async (input) => makeRun(input.toStatus, { policyAgentId: 'capsule-factory' }),
       appendEvent: async (event) => event,
@@ -1500,6 +1567,7 @@ describe('agent runtime no-op worker', () => {
     const transitions: AgentRun['status'][] = [];
     const mirrored: { eventType: string; data: Record<string, unknown> }[] = [];
     const result = await executeAgentRun(payload, {
+      buildEvidencePack: async () => makeEvidencePack(),
       getRun: async () => makeRun('queued', { policyAgentId: 'capsule-factory' }),
       updateStatus: async (input) => {
         transitions.push(input.toStatus);

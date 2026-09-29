@@ -49,14 +49,18 @@ const MODEL_EMBED = getModelMatrixEntry('embeddings_text').model;
 // Internal factories
 // ---------------------------------------------------------------------------
 
-function createVertexModel(modelId: string): LanguageModel {
+function createVertexProvider(modelId: string) {
   const location = modelId.startsWith('gemini-3')
     ? (process.env.GOOGLE_VERTEX_GEMINI_LOCATION || 'global')
     : (process.env.GOOGLE_VERTEX_LOCATION || AI_PLATFORM_POSTURE.defaultRegion || 'us-central1');
   return createVertex({
     project:  process.env.GOOGLE_VERTEX_PROJECT!,
     location,
-  })(modelId);
+  });
+}
+
+function createVertexModel(modelId: string): LanguageModel {
+  return createVertexProvider(modelId)(modelId);
 }
 
 function createGoogleModel(modelId: string): LanguageModel {
@@ -199,11 +203,18 @@ export function getThinkingModel(): LanguageModel {
 }
 
 /**
- * Grounded search model — Gemini Flash + Google Search + Maps grounding.
- * Enable grounding per-request: tools: [{ type: 'web_search_20250305', name: 'web_search' }]
+ * Gemini Flash for research; model selection alone does not enable grounding.
+ * Enable grounding per request with tools: { google_search: getGoogleSearchTool() }.
  */
 export function getGroundedModel(_modelId?: string): LanguageModel {
   return getModel(MODEL_FLASH);
+}
+
+/** Provider-executed Google Search tool matching the active Gemini provider. */
+export function getGoogleSearchTool() {
+  return isVertexProviderActive()
+    ? createVertexProvider(MODEL_FLASH).tools.googleSearch({})
+    : createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' }).tools.googleSearch({});
 }
 
 /** User-preference model — routes to the model the user selected in settings. */

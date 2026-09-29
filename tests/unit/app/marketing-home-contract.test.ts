@@ -60,7 +60,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'data-testid="marketing-primary-cta"',
       'data-testid="public-sign-in-affordance"',
       '<HomeTopBar isPublic={isPublic} />',
-      'className="praxis-app-surface praxis-checker-constellation min-h-screen text-slate-950"',
+      'className="praxis-app-surface praxis-focus-surface min-h-screen text-slate-950"',
       'Sign in to save and reuse capsules.',
       'Write trusted knowledge products.',
       'Capsules keep the context clear.',
@@ -104,7 +104,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     const chatSource = readFileSync(praxisChatPath, 'utf8');
     expect(chatSource).toContain('Policy analysis you can inspect.');
     expect(chatSource).toContain('Sign in to run your question and save the work.');
-    expect(chatSource).toContain("isPublic ? 'order-first'");
+    expect(chatSource).toContain("isPublic || showExamples ? 'order-first mb-4'");
     expect(shellSource).toContain('Explore capsules');
     expect(shellSource).toContain('Build your own');
     expect(shellSource).toContain('How saved context guides the analysis');

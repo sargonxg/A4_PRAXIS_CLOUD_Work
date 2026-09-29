@@ -6,7 +6,7 @@
  */
 
 import { generateText } from 'ai';
-import { getGroundedModel } from '@/lib/ai/providers';
+import { getGroundedModel, getGoogleSearchTool } from '@/lib/ai/providers';
 import {
   craftQueriesFromTemplate,
   getToolSourceHints,
@@ -176,8 +176,9 @@ async function searchGoogle(
   const retrievedAt = new Date().toISOString();
   for (const q of queries) {
     try {
-      const { text, sources } = await generateText({
+      const { text, sources, providerMetadata } = await generateText({
         model: getGroundedModel(),
+        tools: { google_search: getGoogleSearchTool() },
         prompt: `Use Google Search grounding to research: ${q}
 
 ${timeRangeInstruction(options.timeRange)}
@@ -201,15 +202,17 @@ Return a concise research brief and a source receipts section. Do not invent URL
         });
       }
 
+      const supportedText = groundedTextBySource(providerMetadata);
       if (Array.isArray(sources)) {
         for (const src of sources as Array<{ url?: string; title?: string }>) {
           if (!src.url || !/^https?:\/\//i.test(src.url)) continue;
           const host = hostnameFromUrl(src.url, 'Google grounded source');
+          const content = supportedText.get(src.url)?.join('\n') ?? '';
           results.push({
             title: src.title ?? host,
             url: src.url,
-            content: `Grounded citation returned for query "${q}".`,
-            snippet: `Grounded citation returned for query "${q}".`,
+            content,
+            snippet: content.slice(0, 900),
             source: host,
             provider: 'google-search',
             reliabilityScore: scoreUrl(src.url),
@@ -223,6 +226,37 @@ Return a concise research brief and a source receipts section. Do not invent URL
     }
   }
   return results;
+}
+
+// SDK metadata uses `vertex` for Vertex AI and `google` for AI Studio.
+// A supported segment belongs only to the grounding chunks named by the provider;
+// neither the query nor the whole generated overview is evidence for each source.
+function groundedTextBySource(metadata: unknown): Map<string, string[]> {
+  const result = new Map<string, string[]>();
+  const record = (value: unknown): Record<string, unknown> => (
+    value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
+  );
+  const providers = record(metadata);
+  for (const provider of ['vertex', 'google']) {
+    const grounding = record(record(providers[provider]).groundingMetadata);
+    const chunks = Array.isArray(grounding.groundingChunks) ? grounding.groundingChunks : [];
+    const supports = Array.isArray(grounding.groundingSupports) ? grounding.groundingSupports : [];
+    for (const value of supports) {
+      const support = record(value);
+      const segment = record(support.segment);
+      const text = typeof segment.text === 'string' ? segment.text.trim() : '';
+      if (!text) continue;
+      for (const index of Array.isArray(support.groundingChunkIndices) ? support.groundingChunkIndices : []) {
+        if (typeof index !== 'number' || !Number.isInteger(index) || index < 0) continue;
+        const uri = record(record(chunks[index]).web).uri;
+        if (typeof uri !== 'string' || !/^https?:\/\//i.test(uri)) continue;
+        const segments = result.get(uri) ?? [];
+        if (!segments.includes(text)) segments.push(text);
+        result.set(uri, segments);
+      }
+    }
+  }
+  return result;
 }
 
 export async function executeWebResearch(

@@ -1,7 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { saveCapsuleStarterNotes } from '@/lib/context/save-capsule-starter-notes';
 import { JevReviewControl } from '@/components/app/jev-review-control';
+import { saveConversationCapsuleHandoff } from '@/lib/context/conversation-capsule-handoff';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
@@ -994,6 +996,9 @@ export function TaskletPraxisWorkbench({
   const [builderLabel, setBuilderLabel] = useState('');
   const [builderNotes, setBuilderNotes] = useState('');
   const [builderLinks, setBuilderLinks] = useState('');
+  const [builderBusy, setBuilderBusy] = useState(false);
+  const [builderError, setBuilderError] = useState('');
+  const builderSave = useRef<{ busy: boolean; capsule?: ActiveCapsuleChip; uploaded?: { documentId: string; notes: string } }>({ busy: false });
   const [builderCategoryId, setBuilderCategoryId] = useState<string>(POLICY_TEAM_CATEGORIES[0]?.id ?? 'research-strategy');
   const [selectedText, setSelectedText] = useState('');
   const [selectedMessageId, setSelectedMessageId] = useState<string | null>(null);
@@ -3385,34 +3390,23 @@ export function TaskletPraxisWorkbench({
   }
 
   async function createCapsuleFromBuilder() {
+    if (builderSave.current.busy) return;
+    builderSave.current.busy = true;
+    setBuilderBusy(true);
+    setBuilderError('');
     const team = getPolicyTeamCategory(builderCategoryId) ?? POLICY_TEAM_CATEGORIES[0] ?? null;
     const label = builderLabel.trim() || (team ? `${team.shortLabel} ContextCapsule` : 'ContextCapsule Lite');
     try {
-      const created = await createCapsuleLite(label, undefined, team);
+      const created = builderSave.current.capsule ?? await createCapsuleLite(label, undefined, team);
       if (!created) return;
+      builderSave.current.capsule = created;
       const notes = [builderNotes.trim(), builderLinks.trim() ? `Links:\n${builderLinks.trim()}` : ''].filter(Boolean).join('\n\n');
-      if (notes) {
-        const response = await fetch('/api/documents/upload', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            title: `${label} starter notes`,
-            html: `<article><h1>${escapeHtml(label)} starter notes</h1><pre>${escapeHtml(notes)}</pre></article>`,
-            situationId: created.id,
-            toolId: 'capsule-builder',
-          }),
-        });
-        const payload = await response.json().catch(() => ({}));
-        if (response.ok && payload?.documentId) {
-          await fetch(`/api/context/capsules/${encodeURIComponent(created.id)}/attach`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ documentIds: [payload.documentId] }),
-          }).catch(() => null);
-        }
-      }
+      await saveCapsuleStarterNotes({
+        capsuleId: created.id, label: created.label, notes,
+        uploaded: builderSave.current.uploaded,
+        onUploaded: (uploaded) => { builderSave.current.uploaded = uploaded; },
+      });
+      builderSave.current = { busy: true };
       setBuilderLabel('');
       setBuilderNotes('');
       setBuilderLinks('');
@@ -3421,7 +3415,12 @@ export function TaskletPraxisWorkbench({
       await refreshCapsules(created.id);
       await refreshRepository();
     } catch (err) {
-      setStatus(err instanceof Error ? `Capsule builder failed: ${err.message}` : 'Capsule builder failed.');
+      const message = err instanceof Error ? err.message : 'Your capsule could not be saved. Your text is still here; please retry.';
+      setBuilderError(message);
+      setStatus(`Capsule builder: ${message}`);
+    } finally {
+      builderSave.current.busy = false;
+      setBuilderBusy(false);
     }
   }
 
@@ -4393,6 +4392,28 @@ export function TaskletPraxisWorkbench({
                       {conversationUrl ?? 'Start talking to create a shareable PRAXIS link.'}
                     </p>
                   </div>
+                  {user?.id ? (
+                    <button
+                      type="button"
+                      data-testid="workbench-build-conversation-capsule"
+                      disabled={isStreaming}
+                      onClick={() => {
+                        try {
+                          saveConversationCapsuleHandoff(window.sessionStorage, {
+                            ownerId: user.id,
+                            messages: chatMessages.map((message) => ({ role: message.role, content: message.text })),
+                            notes: prompt,
+                            threadId: conversationThreadId,
+                            capsuleId: currentCapsuleId,
+                          });
+                          router.push('/app/capsules/builder?from=conversation');
+                        } catch (failure) { setStatus(failure instanceof Error ? failure.message : 'Conversation could not be opened in the builder.'); }
+                      }}
+                      className="inline-flex items-center gap-2 rounded-md border border-emerald-700/30 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-900 disabled:opacity-50"
+                    >
+                      Build capsule from conversation
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => void copyConversationLink()}
@@ -4961,11 +4982,14 @@ export function TaskletPraxisWorkbench({
             notes={builderNotes}
             links={builderLinks}
             categoryId={builderCategoryId}
+            busy={builderBusy}
+            error={builderError}
+            created={Boolean(builderSave.current.capsule)}
             onLabel={setBuilderLabel}
             onNotes={setBuilderNotes}
             onLinks={setBuilderLinks}
             onCategory={setBuilderCategoryId}
-            onClose={() => setBuilderOpen(false)}
+            onClose={() => { if (!builderSave.current.busy) setBuilderOpen(false); }}
             onCreate={() => void createCapsuleFromBuilder()}
           />
         ) : null}
@@ -10091,6 +10115,9 @@ function CapsuleBuilderDialog({
   notes,
   links,
   categoryId,
+  busy,
+  error,
+  created,
   onLabel,
   onNotes,
   onLinks,
@@ -10102,6 +10129,9 @@ function CapsuleBuilderDialog({
   notes: string;
   links: string;
   categoryId: string;
+  busy: boolean;
+  error: string;
+  created: boolean;
   onLabel: (value: string) => void;
   onNotes: (value: string) => void;
   onLinks: (value: string) => void;
@@ -10135,6 +10165,7 @@ function CapsuleBuilderDialog({
             <button
               key={start.id}
               type="button"
+              disabled={busy}
               onClick={() => {
                 if (start.id === 'sources') {
                   document.getElementById('capsule-builder-sources')?.focus();
@@ -10153,8 +10184,8 @@ function CapsuleBuilderDialog({
             </button>
           ))}
         </div>
-        <div className="mt-5 rounded-lg border border-slate-200 bg-white p-3" data-testid="capsule-builder-v2-sections">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Capsule v2 sections</p>
+        <details className="mt-5 rounded-lg border border-slate-200 bg-white p-3" data-testid="capsule-builder-v2-sections">
+          <summary className="cursor-pointer text-sm font-medium text-slate-600">What your capsule can hold</summary>
           <div className="mt-3 grid gap-1.5 sm:grid-cols-2">
             {capsuleBuilderSections.map((section) => (
               <span key={section} className="rounded-md bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-700">
@@ -10162,15 +10193,16 @@ function CapsuleBuilderDialog({
               </span>
             ))}
           </div>
-        </div>
-        <div className="mt-5 grid gap-4">
+        </details>
+        {error ? <p role="alert" className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">{error}</p> : null}
+        <fieldset disabled={busy} className="mt-5 grid min-w-0 gap-4 disabled:opacity-70">
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase text-slate-500">Capsule name</span>
-            <input id="capsule-builder-label" value={label} onChange={(event) => onLabel(event.target.value)} placeholder="Director handover, Syria access brief, HR policy review..." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[color:var(--color-clay)]" />
+            <input id="capsule-builder-label" disabled={created} value={label} onChange={(event) => onLabel(event.target.value)} placeholder="Director handover, Syria access brief, HR policy review..." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[color:var(--color-clay)] disabled:opacity-60" />
           </label>
           <label className="grid gap-1.5">
             <span className="text-xs font-semibold uppercase text-slate-500">Policy team preset</span>
-            <select value={categoryId} onChange={(event) => onCategory(event.target.value)} className="praxis-select-control rounded-md px-3 py-2 text-sm outline-none">
+            <select disabled={created} value={categoryId} onChange={(event) => onCategory(event.target.value)} className="praxis-select-control rounded-md px-3 py-2 text-sm outline-none disabled:opacity-60">
               {POLICY_TEAM_CATEGORIES.map((category) => (
                 <option key={category.id} value={category.id}>{category.label}</option>
               ))}
@@ -10184,10 +10216,10 @@ function CapsuleBuilderDialog({
             <span className="text-xs font-semibold uppercase text-slate-500">Source links or repositories</span>
             <textarea id="capsule-builder-sources" value={links} onChange={(event) => onLinks(event.target.value)} rows={3} placeholder="Paste URLs, Drive folders, source lists, or internal repository notes." className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-[color:var(--color-clay)]" />
           </label>
-        </div>
+        </fieldset>
         <div className="mt-5 flex flex-wrap justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100">Cancel</button>
-          <motion.button type="button" onClick={onCreate} whileTap={reduceMotion ? undefined : { scale: 0.98 }} className="rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800">Create capsule</motion.button>
+          <button type="button" disabled={busy} onClick={onClose} className="min-h-11 rounded-md px-4 py-2 text-sm font-semibold text-slate-500 hover:bg-slate-100 disabled:opacity-50">Cancel</button>
+          <motion.button type="button" disabled={busy} onClick={onCreate} whileTap={reduceMotion ? undefined : { scale: 0.98 }} className="min-h-11 rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">{busy ? 'Saving capsule…' : created ? 'Retry saving notes' : 'Create capsule'}</motion.button>
         </div>
       </motion.section>
     </motion.div>

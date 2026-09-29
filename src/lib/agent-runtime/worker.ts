@@ -757,6 +757,7 @@ async function executeResearchMemoAgentRun(
 
     executionStage = 'memo-persist';
     const combinedSourceReceiptIds = uniqueStrings([
+      ...stringArray(running.metadata.sourceReceiptIds),
       ...evidencePack.sourceReceiptIds,
       ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.sourceReceiptId).filter((value): value is string => Boolean(value)),
       ...liveSearchEvidence.sourceReceiptIds,
@@ -1405,6 +1406,7 @@ async function executeDailyBriefAgentRun(
 
     const since = dailyBriefSinceFromRun(running);
     const combinedSourceReceiptIds = uniqueStrings([
+      ...stringArray(running.metadata.sourceReceiptIds),
       ...evidencePack.sourceReceiptIds,
       ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.sourceReceiptId).filter((value): value is string => Boolean(value)),
       ...liveSearchEvidence.sourceReceiptIds,
@@ -1828,6 +1830,7 @@ async function executeMultiAgentSupervisorRun(
 
     executionStage = 'memo-persist';
     const combinedSourceReceiptIds = uniqueStrings([
+      ...stringArray(running.metadata.sourceReceiptIds),
       ...evidencePack.sourceReceiptIds,
       ...evidencePack.sourcedParagraphs.map((paragraph) => paragraph.sourceReceiptId).filter((value): value is string => Boolean(value)),
       ...liveSearchEvidence.sourceReceiptIds,
@@ -2808,10 +2811,15 @@ async function maybePauseForDeepResearchSynthesisGate(input: {
   liveSearchEvidence: LiveSearchEvidence;
 }): Promise<ApprovalGateOutcome> {
   const minSourcesPerClaim = minSourcesPerClaimFromRun(input.running);
+  const missingLiveEvidence = input.liveSearchEvidence.selectedToolIds.length > 0
+    && !input.liveSearchEvidence.sourceReceipts.some((receipt) => receipt.snippet.trim());
+  const missingAllEvidence = input.sourceabilityLedger.outputReadiness.sourceReceiptIds.length === 0
+    && input.liveSearchEvidence.sourceReceiptIds.length === 0;
+  const missingEvidence = missingLiveEvidence || missingAllEvidence;
   if (
     input.running.metadata.synthesisGate !== 'block_on_unsupported_claims' ||
     minSourcesPerClaim <= 0 ||
-    input.sourceabilityLedger.summary.unsupportedClaims <= 0
+    (input.sourceabilityLedger.summary.unsupportedClaims <= 0 && !missingEvidence)
   ) {
     return { state: 'continue' };
   }
@@ -2819,7 +2827,9 @@ async function maybePauseForDeepResearchSynthesisGate(input: {
   await mirrorWorkerEvent(input.running, {
     substrate: 'praxis',
     phase: 'research.synthesis_blocked',
-    message: 'Deep research synthesis paused because unsupported claims remain below the source gate.',
+    message: missingEvidence
+      ? 'Deep research synthesis paused because no verified retrieval evidence is available.'
+      : 'Deep research synthesis paused because unsupported claims remain below the source gate.',
     data: {
       minSourcesPerClaim,
       unsupportedClaimCount: input.sourceabilityLedger.summary.unsupportedClaims,
@@ -2844,9 +2854,13 @@ async function maybePauseForDeepResearchSynthesisGate(input: {
     toolId: 'sourceability-reviewer',
     risk: 'medium',
     phase: 'research.synthesis_blocked',
-    message: 'Deep research synthesis requires owner review because unsupported claims remain after source verification.',
+    message: missingEvidence
+      ? 'Deep research synthesis requires owner review because no verified retrieval evidence is available.'
+      : 'Deep research synthesis requires owner review because unsupported claims remain after source verification.',
     proposedAction: {
       kind: 'deep_research_synthesis_gate',
+      missingEvidence,
+      contextGaps: input.sourceabilityLedger.contextGaps ?? [],
       minSourcesPerClaim,
       unsupportedClaimCount: input.sourceabilityLedger.summary.unsupportedClaims,
       sourceReceiptIds: input.liveSearchEvidence.sourceReceiptIds,
@@ -3555,6 +3569,7 @@ async function emitSourceabilityLedger(
     data: {
       sourceabilityLedgerId: ledger.ledgerId,
       sourceabilityLedgerSummary: ledger.summary,
+      contextGaps: ledger.contextGaps ?? [],
       unsupportedClaims: ledger.unsupportedClaims.map((claim) => ({
         id: claim.id,
         claim: claim.claim,
@@ -4151,7 +4166,7 @@ async function collectSearchEvidenceForRun(
         liveSearchError = err instanceof Error ? err.message : String(err);
       }
     }
-    sourceReceipts = dedupeSourceReceipts(sourceReceipts);
+    sourceReceipts = dedupeSourceReceipts(sourceReceipts.filter((receipt) => isLiveSourceUrl(receipt.url)));
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: sourceReceipts.length ? 'grounding.live_retrieval_succeeded' : 'grounding.live_retrieval_degraded',
@@ -4167,20 +4182,19 @@ async function collectSearchEvidenceForRun(
       },
     }, deps);
   }
-  const sourceReceiptIds = uniqueStrings([
-    ...stringArray(running.metadata.sourceReceiptIds),
-    ...sourceReceipts.map((receipt) => receipt.sourceReceiptId),
-  ]);
+  // Only receipts returned by this retrieval are live evidence. Attached capsule
+  // receipts remain in the evidence pack and final combined context.
+  const sourceReceiptIds = uniqueStrings(sourceReceipts.map((receipt) => receipt.sourceReceiptId));
   const groundingPlan = isRecord(running.metadata.groundingPlan) ? running.metadata.groundingPlan : null;
   const googleGroundingActive = Array.isArray(groundingPlan?.modes) && groundingPlan.modes.includes('google_search');
   const groundingPosture = sourceReceipts.length
     ? 'Live grounded retrieval completed'
-    : googleGroundingActive
-      ? 'Google Search grounding active'
-      : 'Grounding unavailable';
-  const degradedReason = sourceReceipts.length || googleGroundingActive
+    : 'Grounding unavailable';
+  const degradedReason = sourceReceipts.length
     ? liveSearchError
-    : (liveSearchError ?? 'Google Search grounding is not configured.');
+    : (liveSearchError ?? (googleGroundingActive
+      ? 'Google Search is configured, but no live source receipts were returned.'
+      : 'Google Search grounding is not configured.'));
   const gaps = [
     ...(sourceReceiptIds.length ? [] : ['No current-source receipts were collected for this run.']),
     ...(degradedReason ? [degradedReason] : []),
@@ -4221,7 +4235,7 @@ async function collectSearchEvidenceForRun(
       capsuleId: running.capsuleId,
       toolId,
       risk: getAgentToolDefinition(toolId).risk,
-      status: sourceReceiptIds.length || googleGroundingActive ? 'succeeded' : 'failed',
+      status: sourceReceipts.length ? 'succeeded' : 'failed',
       input: {
         objective: running.objective,
         querySet: searchPlan.queries,
@@ -4332,12 +4346,24 @@ async function runDefaultGroundedSearch(input: Parameters<AgentGroundedSearchRun
     numResults: 5,
     timeRange: /current|latest|today|week/i.test(input.freshnessNeed) ? 'month' : 'all',
   });
-  const sourceReceipts = results.slice(0, 8).map((result) => sourceReceiptFromSearchResult(input.query, result));
+  const sourceReceipts = results.filter((result) => result.success && isLiveSourceUrl(result.url)).slice(0, 8).map((result) => sourceReceiptFromSearchResult(input.query, result));
   return {
     query: input.query,
     sourceReceipts,
     degradedReason: sourceReceipts.length ? null : 'Live grounded search returned no source receipts.',
   };
+}
+
+function isLiveSourceUrl(value: string | null): boolean {
+  if (!value) return false;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return false;
+    // A generated overview's search link is not a cited source.
+    return !(/(^|\.)google\.[a-z.]+$/i.test(url.hostname) && url.pathname === '/search');
+  } catch {
+    return false;
+  }
 }
 
 function sourceReceiptFromSearchResult(query: string, result: WebSearchResult): AgentGroundedSearchReceipt {
@@ -4536,7 +4562,8 @@ function rebuildSourceabilityLedger(
 }
 
 function receiptMatchesClaim(receipt: AgentGroundedSearchReceipt, claim: string): boolean {
-  const haystack = `${receipt.title} ${receipt.snippet}`.toLowerCase();
+  if (!receipt.snippet.trim()) return false;
+  const haystack = receipt.snippet.toLowerCase();
   const tokens = claim.toLowerCase()
     .replace(/[^a-z0-9\s-]/g, ' ')
     .split(/\s+/)

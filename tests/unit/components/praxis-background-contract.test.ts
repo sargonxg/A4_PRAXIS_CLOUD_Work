@@ -23,7 +23,7 @@ describe('PRAXIS shared ordered-connection background', () => {
   it('uses the same background class before and after login without separate inline dot grids', () => {
     expect(login).toContain('praxis-checker-constellation');
     expect(workbench).toContain('praxis-checker-constellation');
-    expect(readFileSync(join(root, 'src/components/app/praxis-chat-first-shell.tsx'), 'utf8')).toContain('praxis-checker-constellation');
+    expect(readFileSync(join(root, 'src/components/app/praxis-chat-first-shell.tsx'), 'utf8')).toContain('praxis-focus-surface');
     expect(login).not.toContain('backgroundImage: `radial-gradient(circle at 1px 1px');
     expect(login).not.toContain('bg-[linear-gradient(rgba(15,23,42,0.035)_1px');
   });

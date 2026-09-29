@@ -74,6 +74,7 @@ export interface SourceabilityLedger {
   outputTarget: PolicyAgentOutputDestination | null;
   generatedAt: string;
   claims: SourceabilityClaim[];
+  contextGaps?: string[];
   summary: SourceabilityLedgerSummary;
   unsupportedClaims: SourceabilityClaim[];
   outputReadiness: {
@@ -209,7 +210,7 @@ export function buildSourceabilityLedgerFromEvidencePack(
     ...pack.sourcedParagraphs.map((paragraph) => claim({
       basis: `${pack.packId}:${paragraph.id}`,
       claim: paragraph.excerpt,
-      supportLabel: paragraph.confidence >= 0.7 ? 'supported' : 'weak',
+      supportLabel: !paragraph.sourceReceiptId ? 'unsupported' : paragraph.confidence >= 0.7 ? 'supported' : 'weak',
       sourceReceiptIds: paragraph.sourceReceiptId ? [paragraph.sourceReceiptId] : [],
       documentParagraphIds: [paragraph.id],
       confidence: paragraph.confidence,
@@ -224,15 +225,7 @@ export function buildSourceabilityLedgerFromEvidencePack(
       confidence: pack.sourceReceiptIds.length ? 0.55 : 0.35,
       reviewNote: pack.sourceReceiptIds.length ? 'Digest claim needs paragraph-level citation before export.' : 'Digest claim has no attached source receipt.',
     }))),
-    ...pack.openGaps.map((gap, index) => claim({
-      basis: `${pack.packId}:gap:${index}`,
-      claim: gap,
-      supportLabel: 'unsupported',
-      sourceReceiptIds: [],
-      documentParagraphIds: [],
-      confidence: 0.1,
-      reviewNote: 'Gap must remain visible until supporting context is attached.',
-    })),
+
   ];
   if (!claims.length) {
     claims.push(claim({
@@ -253,6 +246,7 @@ export function buildSourceabilityLedgerFromEvidencePack(
     outputTarget: options.outputTarget ?? null,
     generatedAt,
     sourceReceiptIds: pack.sourceReceiptIds,
+    contextGaps: pack.openGaps,
     claims,
   });
 }
@@ -299,6 +293,7 @@ function buildLedger(input: {
   generatedAt: string;
   sourceReceiptIds: string[];
   claims: SourceabilityClaim[];
+  contextGaps?: string[];
 }): SourceabilityLedger {
   const summary = summarizeClaims(input.claims);
   const unsupportedClaims = input.claims.filter((item) => item.supportLabel === 'unsupported');
@@ -311,6 +306,7 @@ function buildLedger(input: {
     outputTarget: input.outputTarget,
     generatedAt: input.generatedAt,
     claims: input.claims,
+    contextGaps: input.contextGaps ?? [],
     summary,
     unsupportedClaims,
     outputReadiness: {

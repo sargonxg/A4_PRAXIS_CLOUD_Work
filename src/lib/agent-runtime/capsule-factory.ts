@@ -1,4 +1,5 @@
 import type { AgentRun } from '@/lib/agent-runtime/types';
+import { buildCapsuleEvidencePack, type CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
 import { buildCapsuleWorkerContext, mirrorGenkitFlowEvent, type AgentRuntimeMirrorDeps } from '@/lib/agent-runtime/mirror';
 import {
   capsuleIntakeFlow,
@@ -9,6 +10,7 @@ import {
 import { createCapsuleReviewCard, type CapsuleReviewCard, type CreateCapsuleReviewCardInput } from '@/lib/context/capsule-service';
 import type {
   CapsuleIntakeOutput,
+  CapsuleIntakeInput,
   CapsuleResearchPlanOutput,
   CapsuleSynthesisOutput,
   CapsuleWritingProfileOutput,
@@ -22,6 +24,7 @@ export type CapsuleFactoryDraftOutput = {
 };
 
 export type CapsuleFactoryDeps = AgentRuntimeMirrorDeps & {
+  buildEvidencePack?: typeof buildCapsuleEvidencePack;
   runIntakeFlow?: typeof capsuleIntakeFlow;
   runResearchPlanFlow?: typeof capsuleResearchPlanFlow;
   runSynthesisFlow?: typeof capsuleSynthesisFlow;
@@ -38,21 +41,38 @@ export async function runCapsuleFactoryDraft(
   const runSynthesis = deps.runSynthesisFlow ?? capsuleSynthesisFlow;
   const runWritingProfile = deps.runWritingProfileFlow ?? capsuleWritingProfileFlow;
   const workerContext = buildCapsuleWorkerContext(run);
+  const evidencePack = await (deps.buildEvidencePack ?? buildCapsuleEvidencePack)({
+    ownerUid: run.ownerUid,
+    capsuleId: run.capsuleId,
+    objective: run.objective,
+    maxParagraphs: 20,
+  });
+  if (evidencePack.ownerUid !== run.ownerUid || evidencePack.capsuleId !== run.capsuleId) {
+    throw new Error('Capsule Factory evidence does not belong to this run.');
+  }
+  const evidence = factoryEvidence(evidencePack);
 
   await mirrorGenkitFlowEvent(run, {
     flowName: 'capsuleIntakeFlow',
     phase: 'started',
     schemaName: 'CapsuleIntakeOutput',
     message: 'Capsule AI started intake into draft core proposals.',
-    data: { workerContext },
+    data: {
+      workerContext,
+      evidencePackId: evidencePack.packId,
+      documentCount: evidence.documents.length,
+      sourceSnippetCount: evidence.sourceSnippets.length,
+      evidenceGaps: evidence.gaps,
+    },
   }, deps);
   const intake = await runIntake({
     objective: run.objective,
     prompt: run.objective,
-    documents: [],
-    sourceSnippets: [],
+    documents: evidence.documents,
+    sourceSnippets: evidence.sourceSnippets,
     activeCapsuleId: run.capsuleId,
   });
+  intake.sourceGaps = boundedGaps(evidence.gaps, intake.sourceGaps);
   await mirrorGenkitFlowEvent(run, {
     flowName: 'capsuleIntakeFlow',
     phase: 'succeeded',
@@ -79,8 +99,9 @@ export async function runCapsuleFactoryDraft(
       label: core.label,
       summary: core.summary,
     })),
-    sourceSnippets: [],
+    sourceSnippets: evidence.sourceSnippets,
   });
+  researchPlan.sourceGaps = boundedGaps(evidence.gaps, researchPlan.sourceGaps);
   await mirrorGenkitFlowEvent(run, {
     flowName: 'capsuleResearchPlanFlow',
     phase: 'succeeded',
@@ -102,8 +123,9 @@ export async function runCapsuleFactoryDraft(
     objective: run.objective,
     draftCores: intake.draftCores,
     researchPlan,
-    sourceSnippets: [],
+    sourceSnippets: evidence.sourceSnippets,
   });
+  synthesis.openQuestions = boundedGaps(evidence.gaps, synthesis.openQuestions);
   await mirrorGenkitFlowEvent(run, {
     flowName: 'capsuleSynthesisFlow',
     phase: 'succeeded',
@@ -157,6 +179,58 @@ export async function runCapsuleFactoryDraft(
   return { intake, researchPlan, synthesis, writingProfile };
 }
 
+function factoryEvidence(pack: CapsuleEvidencePack): {
+  documents: CapsuleIntakeInput['documents'];
+  sourceSnippets: CapsuleIntakeInput['sourceSnippets'];
+  gaps: string[];
+} {
+  const titles = new Map(pack.knowledgeDocuments.map((doc) => [doc.documentId, doc.title]));
+  for (const digest of pack.documentDigests) titles.set(digest.documentId, digest.title);
+  const title = (id: string) => (titles.get(id)?.trim() || id).slice(0, 300);
+  const paragraphs = pack.sourcedParagraphs.filter((paragraph) => paragraph.excerpt.trim());
+  const digests = pack.documentDigests.map((digest) => ({
+    ...digest,
+    text: [digest.shortSummary, ...digest.keyClaims].filter((text) => text.trim()).join('\n'),
+  })).filter((digest) => digest.text);
+  const sourceSnippets: CapsuleIntakeInput['sourceSnippets'] = [
+    ...paragraphs.map((paragraph) => ({
+      id: paragraph.id.slice(0, 160),
+      title: title(paragraph.documentId),
+      span: `${paragraph.citationLabel} Document ${paragraph.documentId}: ${paragraph.excerpt}`.slice(0, 4000),
+      source: 'firestore' as const,
+    })),
+    ...digests.map((digest) => ({
+      id: `digest:${digest.documentId}`.slice(0, 160),
+      title: title(digest.documentId),
+      span: `Document digest (generated summary; verify against original):\n${digest.text}`.slice(0, 4000),
+      source: 'firestore' as const,
+    })),
+  ].slice(0, 20);
+  const documentIds = uniqueStrings([...paragraphs.map((paragraph) => paragraph.documentId), ...digests.map((digest) => digest.documentId)]);
+  const documents = documentIds.slice(0, 10).map((id) => ({
+    id: id.slice(0, 160),
+    title: title(id),
+    text: [
+      ...paragraphs.filter((paragraph) => paragraph.documentId === id).map((paragraph) => `${paragraph.citationLabel} ${paragraph.excerpt}`),
+      ...digests.filter((digest) => digest.documentId === id).map((digest) => `Document digest (generated summary; verify against original):\n${digest.text}`),
+    ].join('\n\n').slice(0, 8000),
+  }));
+  return {
+    documents,
+    sourceSnippets,
+    gaps: boundedGaps([
+      ...(!sourceSnippets.length ? ['No readable document excerpts or digests were retrieved. This draft is based on the objective only; attach evidence before use.'] : []),
+      ...(paragraphs.length + digests.length > 20 || documentIds.length > 10 ? ['Evidence exceeds the factory input limits; this draft uses a bounded selection and needs review against the remaining documents.'] : []),
+      ...digests.flatMap((digest) => digest.sourceabilityWarnings),
+      ...pack.openGaps,
+    ]),
+  };
+}
+
+function boundedGaps(...groups: string[][]): string[] {
+  return uniqueStrings(groups.flat().map((gap) => gap.slice(0, 240))).slice(0, 12);
+}
+
 async function createCapsuleFactoryReviewCards(
   run: AgentRun,
   draft: CapsuleFactoryDraftOutput,
@@ -196,7 +270,7 @@ async function createCapsuleFactoryReviewCards(
     ...draft.synthesis.proposedCores.map((core, index) => ({
       claimId: `factory-claim-${index + 1}`,
       text: `${core.label}: ${core.summary}`.slice(0, 900),
-      support: 'partially_supported' as const,
+      support: 'needs_source' as const,
       caveat: `Proposed by Capsule Factory run ${run.id}; requires source receipts before final use.`,
     })),
     ...draft.synthesis.openQuestions.map((question, index) => ({

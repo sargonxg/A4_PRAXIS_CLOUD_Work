@@ -27,10 +27,10 @@ export default function CapsuleBuilderPage() {
             Capsule Builder
           </p>
           <h1 className="text-3xl font-semibold leading-tight text-[#24211b] md:text-5xl">
-            Build a policy capsule without writing JSON.
+            Give your next answer better context.
           </h1>
           <p className="mt-4 max-w-2xl text-base leading-7 text-[#5b5347]">
-            Describe the job, choose sources and outputs, run a light eval, then publish a reusable context capsule for PRAXIS augmented generation.
+            Describe the work, add your sources, and review what PRAXIS should remember. Save a private draft to reuse in your next question.
           </p>
         </section>
         <CapsuleBuilderWizard />

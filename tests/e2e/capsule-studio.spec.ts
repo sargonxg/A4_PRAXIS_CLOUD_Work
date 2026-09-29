@@ -11,7 +11,7 @@ test.describe('Capsule Studio', () => {
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
     await page.goto(`${BASE}/app/capsules?lane=repository`);
     const spotlights = page.getByRole('region', { name: 'Policy capsule spotlights' });
-    await expect(spotlights.locator('article')).toHaveCount(12);
+    await expect(spotlights.locator('article')).toHaveCount(12, { timeout: 30_000 });
     await spotlights.getByRole('button', { name: 'Add method', exact: true }).first().click();
     await page.waitForURL(/\/app$/, { timeout: 60_000 });
     await expect(page.getByTestId('capsule-dock')).toContainText(/Institutional/i);
@@ -44,6 +44,7 @@ test.describe('Capsule Studio', () => {
     expect(payload.cards.length).toBeGreaterThan(0);
     expect(payload.capsule.coreRefs.situationCoreId).toBeTruthy();
     const capsuleId = payload.capsule.capsuleId as string;
+    test.info().annotations.push({ type: 'capsuleId', description: capsuleId });
     await page.getByRole('link', { name: 'Inspect and review your capsule' }).click();
     await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible({ timeout: 30_000 });
     const drawer = page.getByTestId('capsule-workbench-panel').getByTestId('capsule-advanced-drawer');

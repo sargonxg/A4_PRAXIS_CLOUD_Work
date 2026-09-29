@@ -31,6 +31,7 @@ export function useActiveContextStack({ remote = true }: { remote?: boolean } = 
           setPersisted(Boolean(payload.persisted));
         }
       })
+      .catch(() => { if (!cancelled) setPersisted(false); })
       .finally(() => {
         if (!cancelled) setHydrated(true);
       });
@@ -41,9 +42,11 @@ export function useActiveContextStack({ remote = true }: { remote?: boolean } = 
 
   async function saveStack(patch: Partial<ActiveContextStackState>) {
     const next = sanitizeActiveContextStack({ ...stack, ...patch });
-    setStack(next);
-    writeLocalStack(next);
-    if (!remote) return next;
+    if (!remote) {
+      setStack(next);
+      writeLocalStack(next);
+      return next;
+    }
     const response = await fetch('/api/workspace/context-stack', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -57,7 +60,7 @@ export function useActiveContextStack({ remote = true }: { remote?: boolean } = 
       writeLocalStack(saved);
       return saved;
     }
-    return next;
+    throw new Error('Your context could not be saved. The previous capsule is still attached; please retry.');
   }
 
   return { stack, setStack, saveStack, persisted, hydrated };

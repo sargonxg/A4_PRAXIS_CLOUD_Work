@@ -159,8 +159,10 @@ describe('capsule evidence pack', () => {
       generatedAt: '2026-05-16T12:00:00.000Z',
     });
     expect(ledger.summary.totalClaims).toBeGreaterThan(0);
-    expect(ledger.summary.unsupportedClaims).toBeGreaterThan(0);
-    expect(ledger.claims.some((claim) => claim.supportLabel === 'unsupported')).toBe(true);
+    expect(ledger.summary.unsupportedClaims).toBe(0);
+    expect(ledger.claims.some((claim) => claim.supportLabel === 'unsupported')).toBe(false);
+    expect(ledger.contextGaps).toEqual(pack.openGaps);
+    expect(ledger.claims.some((claim) => pack.openGaps.includes(claim.claim))).toBe(false);
     expect(ledger.outputReadiness.generatedAt).toBe('2026-05-16T12:00:00.000Z');
   });
 });

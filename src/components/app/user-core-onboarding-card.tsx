@@ -151,11 +151,12 @@ export function UserCoreOnboardingCard({
   }
 
   return (
-    <section
+    <details
       data-testid="user-core-onboarding-card"
       className="mt-2 rounded-[var(--radius-lg)] border border-emerald-200 bg-emerald-50/70 p-3 shadow-[var(--shadow-card)]"
     >
-      <div className="flex items-start justify-between gap-3">
+      <summary className="cursor-pointer text-sm font-semibold text-emerald-900">Personalize your answers <span className="font-normal text-slate-500">· optional</span></summary>
+      <div className="mt-3 flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-2">
           <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-emerald-200 bg-white text-emerald-700">
             <UserRound className="h-4 w-4" />
@@ -241,7 +242,7 @@ export function UserCoreOnboardingCard({
           Create User Core
         </button>
       </div>
-    </section>
+    </details>
   );
 }
 
