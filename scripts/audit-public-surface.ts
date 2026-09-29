@@ -146,8 +146,11 @@ requireAll('app shell', appShell, [
   "pathname === '/app'",
 ]);
 
-for (const required of ['/learn', '/guide', '/pricing', '/release-notes', '/changelog', '/login']) {
+for (const required of ['/learn', '/guide', '/pricing', '/release-notes']) {
   if (!sitemap.includes(required)) failures.push(`sitemap missing public route: ${required}`);
+}
+for (const excluded of ['/changelog', '/login']) {
+  if (sitemap.includes(excluded)) failures.push(`sitemap includes redirect or non-indexable route: ${excluded}`);
 }
 
 for (const stalePublicFile of ['public/sitemap.xml', 'public/robots.txt']) {

@@ -78,6 +78,7 @@ export interface PraxisChatProps {
   initialPrompt?: string;
   onToggleContext?: () => void;
   storageKey?: string;
+  showHomeHeading?: boolean;
   threadId?: string;
   variant?: 'home' | 'floating';
 }
@@ -100,6 +101,7 @@ export function PraxisChat({
   initialPrompt = '',
   onToggleContext,
   storageKey,
+  showHomeHeading = true,
   threadId,
   variant = 'home',
 }: PraxisChatProps) {
@@ -462,7 +464,7 @@ export function PraxisChat({
       data-testid="simple-home-chat"
     >
       <div className={cn('flex min-h-0 flex-1 flex-col', compact ? 'h-full' : '')}>
-        {variant === 'home' ? (
+        {variant === 'home' && showHomeHeading ? (
           <div className={cn('order-first mb-6 text-center', messages.length ? 'sr-only' : 'sm:pb-2')}>
             <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
               <Sparkles className="h-3.5 w-3.5" />

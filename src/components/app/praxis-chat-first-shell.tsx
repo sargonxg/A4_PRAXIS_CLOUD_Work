@@ -16,6 +16,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   ShieldCheck,
+  Sparkles,
   X,
 } from 'lucide-react';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
@@ -179,8 +180,23 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
           <HomeSidebar isPublic={isPublic} pathname={pathname ?? '/'} />
           <section className="min-w-0">
             {contextError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{contextError}</p> : null}
+            {isPublic ? (
+              <div className="mx-auto mb-6 max-w-3xl text-center sm:pb-2">
+                <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Ask PRAXIS
+                </p>
+                <h1 className="mt-4 text-balance font-serif text-4xl font-semibold leading-tight tracking-tight text-[color:var(--color-app-text)] sm:text-5xl">
+                  Policy analysis you can inspect.
+                </h1>
+                <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
+                  Ask a hard question. Bring your sources and methods. Review the evidence, assumptions and options.
+                </p>
+              </div>
+            ) : null}
             <PraxisChat
               mode={mode}
+              showHomeHeading={!isPublic}
               activeContextStack={stack}
               contextBar={(
                 <>
