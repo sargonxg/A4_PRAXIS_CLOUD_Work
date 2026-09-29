@@ -3,6 +3,31 @@ import { authenticateFirebaseCanary, hasFirebaseCanaryCredentials } from './help
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
+test('late saved history cannot replace a conversation carried into a capsule', async ({ page }) => {
+  test.setTimeout(120_000);
+  test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');
+  let releaseHistory!: () => void;
+  const historyGate = new Promise<void>((resolve) => { releaseHistory = resolve; });
+  await page.route('**/api/ai/chat*', async (route) => {
+    if (route.request().method() === 'GET') {
+      await historyGate;
+      await route.fulfill({ json: { turns: [{ id: 'old', prompt: 'Old unrelated context', output: 'Old saved answer' }] } });
+    } else {
+      await route.fulfill({ contentType: 'text/plain', body: '0:"The new project requires an independent audit."\n' });
+    }
+  });
+  await authenticateFirebaseCanary(page, BASE, '/app', { finishOnboardingLater: true, expectComposer: false });
+  const composer = page.getByRole('textbox', { name: 'Ask PRAXIS', exact: true });
+  await composer.fill('NEW-CONTEXT-417 must complete its independent audit.');
+  await page.getByTestId('marketing-primary-cta').click();
+  await expect(page.getByText('The new project requires an independent audit.', { exact: true })).toBeVisible();
+  const historyResponse = page.waitForResponse((response) => response.url().includes('/api/ai/chat?'));
+  releaseHistory();
+  await historyResponse;
+  await page.getByTestId('chat-build-capsule').click();
+  await expect(page.getByLabel('Ideas, notes or conversation', { exact: true })).toHaveValue(/NEW-CONTEXT-417/, { timeout: 30_000 });
+});
+
 test('mobile and desktop users can create and attach quick context, then reach the document builder', async ({ page }) => {
   test.setTimeout(180_000);
   test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');

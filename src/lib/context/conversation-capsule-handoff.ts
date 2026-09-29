@@ -38,7 +38,7 @@ export function saveConversationCapsuleHandoff(storage: HandoffStorage, input: {
   shortened ||= body.length > remaining;
   const handoff: ConversationCapsuleHandoff = {
     version: 1, ownerId: input.ownerId, createdAt: now,
-    purpose: (input.notes?.trim() || messages.find((message) => message.role === 'user')?.content.trim() || 'Create a capsule from this conversation.').slice(0, 4000),
+    purpose: (input.notes?.trim() || [...messages].reverse().find((message) => message.role === 'user')?.content.trim() || 'Create a capsule from this conversation.').slice(0, 4000),
     notes: header + (shortened ? '[Bounded excerpt: some conversation content was omitted or shortened.]\n\n' : '') + body.slice(0, remaining),
   };
   try { storage.setItem(HANDOFF_KEY, JSON.stringify(handoff)); }

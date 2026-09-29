@@ -195,6 +195,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
               </div>
             ) : null}
             <PraxisChat
+              contextReady={isPublic || hydrated}
               mode={mode}
               showHomeHeading={!isPublic}
               activeContextStack={stack}

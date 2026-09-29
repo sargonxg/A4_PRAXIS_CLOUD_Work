@@ -107,7 +107,7 @@ describe('capsule evidence pack', () => {
     expect(pack.sourcedParagraphs[0]).toMatchObject({
       documentId: 'doc-1',
       chunkId: 'chunk-1',
-      sourceReceiptId: 'src-1',
+      sourceReceiptId: 'document:doc-1',
       paragraphRef: 'para-1',
       charStart: 10,
       charEnd: 34,
@@ -130,6 +130,7 @@ describe('capsule evidence pack', () => {
       getCapsule: async () => capsule,
       listKnowledgeDocuments: async () => [],
       retrieveRelevantChunks: async () => [],
+      getDocumentById: async () => null,
       listOutputCapsules: async () => [],
       listCapsuleMemories: async () => [],
     });
@@ -165,4 +166,28 @@ describe('capsule evidence pack', () => {
     expect(ledger.claims.some((claim) => pack.openGaps.includes(claim.claim))).toBe(false);
     expect(ledger.outputReadiness.generatedAt).toBe('2026-05-16T12:00:00.000Z');
   });
+});
+
+it('reads explicitly attached unindexed documents without assigning unrelated source receipts', async () => {
+  const pack = await buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', objective: 'Draft' }, {
+    getCapsule: async () => capsule,
+    listKnowledgeDocuments: async () => [], retrieveRelevantChunks: async () => [],
+    listOutputCapsules: async () => [], listCapsuleMemories: async () => [],
+    getDocumentById: async (owner, situation, id) => {
+      expect([owner, situation, id]).toEqual(['user-1', 'sit-1', 'doc-1']);
+      return { id, ownerUid: owner, title: 'Working notes', text: 'Synthetic project review deadline: 2026-11-12.',
+        fileType: 'txt', size: 100, status: 'uploaded', uploadedAt: '2026-09-29', entityCount: 0 };
+    },
+  });
+  expect(pack.sourcedParagraphs).toEqual([expect.objectContaining({
+    documentId: 'doc-1', sourceReceiptId: 'document:doc-1', excerpt: 'Synthetic project review deadline: 2026-11-12.',
+  })]);
+  expect(pack.sourceReceiptIds).toContain('document:doc-1');
+  expect(formatEvidencePackPromptBlock(pack)).toContain('not independent verification');
+});
+
+it('rejects evidence capsules belonging to a different owner', async () => {
+  await expect(buildCapsuleEvidencePack({ ownerUid: 'other', capsuleId: 'cap-1', objective: 'Draft' }, {
+    getCapsule: async () => capsule,
+  })).rejects.toThrow('Active ContextCapsule not found');
 });

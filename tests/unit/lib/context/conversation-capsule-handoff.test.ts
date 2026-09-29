@@ -29,6 +29,7 @@ describe('conversation capsule handoff', () => {
     expect(result.purpose.length).toBeLessThanOrEqual(4000);
     expect(result.notes).toContain('Bounded excerpt');
     expect(result.notes).toContain('Turn 79');
+    expect(result.purpose).toContain('Turn 79');
     expect(result.notes).not.toContain('Turn 0:');
   });
 

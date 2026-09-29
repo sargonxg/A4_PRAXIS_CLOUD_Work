@@ -1,7 +1,7 @@
 import { createHash } from 'crypto';
 import { getCapsule, type PraxisCapsule } from '@/lib/context/capsule-service';
 import { listCapsuleMemories, type CapsuleMemory } from '@/lib/context/capsule-details-service';
-import { retrieveRelevantChunks, type DocumentChunk } from '@/lib/firebase/documents-service';
+import { getDocumentById, retrieveRelevantChunks, type DocumentChunk } from '@/lib/firebase/documents-service';
 import { listKnowledgeDocuments, type KnowledgeDocument } from '@/lib/knowledge/library-service';
 import { listOutputCapsules } from '@/lib/output-capsules/storage';
 import type { OutputCapsuleRecord } from '@/lib/output-capsules/types';
@@ -67,6 +67,7 @@ export interface CapsuleEvidencePackDeps {
   getCapsule?: typeof getCapsule;
   listKnowledgeDocuments?: typeof listKnowledgeDocuments;
   retrieveRelevantChunks?: typeof retrieveRelevantChunks;
+  getDocumentById?: typeof getDocumentById;
   listOutputCapsules?: typeof listOutputCapsules;
   listCapsuleMemories?: typeof listCapsuleMemories;
   now?: () => Date;
@@ -78,7 +79,7 @@ export async function buildCapsuleEvidencePack(
 ): Promise<CapsuleEvidencePack> {
   const readCapsule = deps.getCapsule ?? getCapsule;
   const capsule = await readCapsule(input.ownerUid, input.capsuleId);
-  if (!capsule || capsule.archivedAt) {
+  if (!capsule || capsule.archivedAt || capsule.ownerUid !== input.ownerUid || capsule.capsuleId !== input.capsuleId) {
     throw new Error(`Active ContextCapsule not found: ${input.capsuleId}`);
   }
 
@@ -102,15 +103,32 @@ export async function buildCapsuleEvidencePack(
     (deps.listCapsuleMemories ?? listCapsuleMemories)(input.ownerUid, capsule.capsuleId).catch(() => []),
   ]);
 
+  const maxParagraphs = Math.max(1, Math.min(24, input.maxParagraphs ?? 8));
   const chunks = rawChunks.filter((chunk) => (
     capsule.coreRefs.documentCoreIds.length === 0 ||
     capsule.coreRefs.documentCoreIds.includes(chunk.documentId)
   ));
+  // Uploads are immediately usable, even before optional chunk indexing completes.
+  // Read only explicit capsule documents through the owner-scoped storage path.
+  const missingDocumentIds = capsule.coreRefs.documentCoreIds
+    .filter((id) => !chunks.some((chunk) => chunk.documentId === id))
+    .slice(0, maxParagraphs);
+  const storedDocuments = await Promise.all(missingDocumentIds.map((id) => (
+    (deps.getDocumentById ?? getDocumentById)(input.ownerUid, situationId, id).catch(() => null)
+  )));
+  for (const doc of storedDocuments) {
+    if (!doc || (doc.ownerUid && doc.ownerUid !== input.ownerUid) || !missingDocumentIds.includes(doc.id) || !doc.text?.trim()) continue;
+    chunks.push({ id: `${doc.id}:preview`, documentId: doc.id, documentTitle: doc.title,
+      text: doc.text.slice(0, 900), index: 0, charStart: 0, charEnd: Math.min(doc.text.length, 900) });
+  }
   const sourceReceiptIds = uniqueStrings([
     ...capsule.coreRefs.sourceCoreIds,
     ...knowledgeDocuments.flatMap((doc) => doc.digest?.suggestedTags?.filter((tag) => tag.startsWith('receipt:')).map((tag) => tag.slice(8)) ?? []),
   ]);
-  const sourcedParagraphs = chunks.map((chunk, index) => sourcedParagraphFromChunk(chunk, sourceReceiptIds[index] ?? null, index));
+  // A document reference is its own provenance; never assign an unrelated source by array position.
+  const sourcedParagraphs = chunks.slice(0, maxParagraphs).map((chunk, index) => sourcedParagraphFromChunk(chunk, `document:${chunk.documentId}`, index));
+  sourceReceiptIds.push(...uniqueStrings(sourcedParagraphs.flatMap((paragraph) => paragraph.sourceReceiptId ? [paragraph.sourceReceiptId] : []))
+    .filter((id) => !sourceReceiptIds.includes(id)));
   const documentDigests = knowledgeDocuments
     .filter((doc) => doc.digest)
     .map((doc) => ({
@@ -157,9 +175,10 @@ export function formatEvidencePackPromptBlock(pack: CapsuleEvidencePack): string
     `open_gaps: ${pack.openGaps.length ? pack.openGaps.join(' | ') : 'none'}`,
     '',
     '### Sourced Paragraphs',
+    'Uploaded documents are user-supplied context, not independent verification. Preserve synthetic/example and assistant-generated labels.',
   ];
   for (const paragraph of pack.sourcedParagraphs) {
-    lines.push(`- ${paragraph.citationLabel}: ${paragraph.excerpt}`);
+    lines.push(`- ${paragraph.citationLabel} [${paragraph.sourceReceiptId}]: ${paragraph.excerpt}`);
   }
   if (pack.sourcedParagraphs.length === 0) lines.push('- none');
   return lines.join('\n');

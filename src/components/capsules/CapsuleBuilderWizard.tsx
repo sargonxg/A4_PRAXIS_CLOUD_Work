@@ -485,9 +485,13 @@ export function CapsuleBuilderWizard() {
                       />
                     </label>
                   </div>
-                  <label className="mt-4 block text-sm font-medium text-[#24211b]">
+                  <div className="mt-4 block text-sm font-medium text-[#24211b]">
+                    <label htmlFor="capsule-source-notes">
                     Ideas, notes or conversation
+                    </label>
                     <textarea
+                      id="capsule-source-notes"
+                      aria-describedby="capsule-source-notes-help"
                       value={sourceNotes}
                       maxLength={CAPSULE_NOTES_MAX_CHARS}
                       disabled={architectBusy || intakeBusy}
@@ -495,8 +499,8 @@ export function CapsuleBuilderWizard() {
                       placeholder="Describe your idea, paste notes, or bring a conversation from Ask PRAXIS."
                       className="mt-2 min-h-36 w-full rounded-lg border border-[#cfc6b8] bg-white p-3 text-sm leading-6 focus:outline-emerald-700"
                     />
-                    <span className="mt-1 block text-xs font-normal text-[#6f675c]">{sourceNotes.length.toLocaleString()} / 12,000 characters. User statements remain supplied context; assistant suggestions are not independent evidence. Building saves a private source and creates review-only proposals. Nothing is automatically approved or published.</span>
-                  </label>
+                    <span id="capsule-source-notes-help" className="mt-1 block text-xs font-normal text-[#6f675c]">{sourceNotes.length.toLocaleString()} / 12,000 characters. User statements remain supplied context; assistant suggestions are not independent evidence. Building saves a private source and creates review-only proposals. Nothing is automatically approved or published.</span>
+                  </div>
                   {architectDocuments.length ? (
                     <ul className="mt-3 grid gap-2 text-xs text-[#4f483f] sm:grid-cols-2">
                       {architectDocuments.map((document) => (

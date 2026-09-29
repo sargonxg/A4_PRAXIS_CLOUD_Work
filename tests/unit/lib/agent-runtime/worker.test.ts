@@ -665,6 +665,7 @@ describe('agent runtime no-op worker', () => {
     const mirrored: Array<{ phase: string; data: Record<string, unknown> }> = [];
     const toolCalls: Array<{ toolId: string; status: string; output: Record<string, unknown> | null }> = [];
     const generatedPrompts: string[] = [];
+    let completionMetadata: Record<string, unknown> | undefined;
     const result = await executeAgentRun(payload, {
       getRun: async () => makeRun('queued', {
         policyAgentId: 'research-memo',
@@ -681,10 +682,14 @@ describe('agent runtime no-op worker', () => {
           stopConditions: ['Stop before external export.'],
         },
       }),
-      updateStatus: async (input) => makeRun(input.toStatus, {
-        policyAgentId: 'research-memo',
-        selectedToolIds: ['context-resolve', 'grounded-search', 'sourceability-reviewer', 'policy-memo'],
-      }),
+      updateStatus: async (input) => {
+        if (input.toStatus === 'succeeded') completionMetadata = input.metadata;
+        return makeRun(input.toStatus, {
+          policyAgentId: 'research-memo',
+          selectedToolIds: ['context-resolve', 'grounded-search', 'sourceability-reviewer', 'policy-memo'],
+          ...input.metadata,
+        });
+      },
       appendToolCall: async (toolCall) => {
         toolCalls.push({ toolId: toolCall.toolId, status: toolCall.status, output: toolCall.output });
         return toolCall;
@@ -777,6 +782,17 @@ describe('agent runtime no-op worker', () => {
       memoId: 'memo-live-1',
     });
     expect(generatedPrompts.join('\n')).toContain('Capsule Evidence Pack');
+    expect(generatedPrompts[0]).toContain('Current date (UTC):');
+    expect(generatedPrompts[1]).toContain('Treaty analysis memo current sources confirm the access clause.');
+    expect(completionMetadata).toMatchObject({
+      sourceCount: 2,
+      sourceReceiptIds: expect.arrayContaining(['doc-src-1', 'web-live-1']),
+      memoId: 'memo-live-1',
+      capsuleReadReceipt: expect.objectContaining({ sourceCount: 2 }),
+      agentContextPacket: expect.objectContaining({ selected: expect.objectContaining({
+        sources: expect.arrayContaining([expect.objectContaining({ id: 'web-live-1' }), expect.objectContaining({ id: 'doc-src-1' })]),
+      }) }),
+    });
     expect(toolCalls).toEqual(expect.arrayContaining([
       expect.objectContaining({ toolId: 'grounded-search', status: 'succeeded' }),
       expect.objectContaining({ toolId: 'sourceability-reviewer', status: 'succeeded' }),

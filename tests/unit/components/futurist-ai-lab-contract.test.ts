@@ -85,8 +85,8 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(chatShell).not.toContain('Load more capsules');
   });
 
-  it('uses stable sitemap timestamps and human-first OG language', () => {
-    expect(sitemap).toContain('CONTENT_LAST_MODIFIED');
+  it('uses maintained sitemap dates and human-first OG language', () => {
+    expect(sitemap).toContain('new Date(page.updatedAt)');
     expect(sitemap).not.toContain('const lastModified = new Date()');
     expect(ogImage).toContain('Sourced briefs');
     expect(ogImage).toContain('Capsules');

@@ -64,6 +64,7 @@ export interface PraxisChatProps {
   mode: 'public' | 'authenticated';
   activeContextStack?: ActiveContextStackState | null;
   activeSituation?: Situation | null;
+  contextReady?: boolean;
   autoFocus?: boolean;
   autoSendNonce?: number;
   className?: string;
@@ -87,6 +88,7 @@ export function PraxisChat({
   mode,
   activeContextStack,
   activeSituation,
+  contextReady = true,
   autoFocus = false,
   autoSendNonce = 0,
   className,
@@ -114,6 +116,7 @@ export function PraxisChat({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesRef = useRef(messages);
+  const locallyEdited = useRef(false);
   const stack = useMemo(() => activeContextStack ?? defaultActiveContextStack(), [activeContextStack]);
   const activeCapsuleId = stack.capsuleRefs[0]?.capsuleId ?? stack.capsuleId ?? activeSituation?.id ?? null;
   const conversationThreadId = threadId ?? `home-${activeCapsuleId ?? stack.contextPackageId ?? stack.userModelId ?? 'direct'}`;
@@ -173,7 +176,7 @@ export function PraxisChat({
     fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' })
       .then((res) => (res.ok ? res.json() : null))
       .then((history: { turns?: Array<{ id: string; prompt: string; output: string; runtime?: { answerEnvelope?: AskAnswerEnvelope } }> } | null) => {
-        if (cancelled || !history?.turns?.length) return;
+        if (cancelled || locallyEdited.current || !history?.turns?.length) return;
         const hydrated = history.turns.flatMap<ChatMessage>((turn) => [
           { id: `${turn.id}-user`, role: 'user', content: turn.prompt },
           {
@@ -197,7 +200,7 @@ export function PraxisChat({
   const sendWithText = useCallback(
     async (rawText: string) => {
       const text = rawText.trim();
-      if (isStreaming || !text) return;
+      if (isStreaming || !contextReady || !text) return;
       setError(null);
 
       if (typeof window !== 'undefined') {
@@ -214,6 +217,8 @@ export function PraxisChat({
         return;
       }
 
+      // A late history response must never replace turns submitted in this session.
+      locallyEdited.current = true;
       const askStack = stackForAsk(stack, text);
       const assistantId = `assistant-${Date.now()}`;
       const userMessage: ChatMessage = {
@@ -383,6 +388,7 @@ export function PraxisChat({
       activeSituation,
       conversationThreadId,
       currentPath,
+      contextReady,
       currentToolId,
       demoMode,
       deepResearch,
@@ -411,6 +417,7 @@ export function PraxisChat({
   };
 
   const clearChat = () => {
+    locallyEdited.current = true;
     setMessages([]);
     setInput('');
     if (typeof window !== 'undefined') window.localStorage.removeItem(localStorageKey);
@@ -636,7 +643,7 @@ export function PraxisChat({
               <button
                 type="submit"
                 data-testid="marketing-primary-cta"
-                disabled={!input.trim() || isStreaming}
+                disabled={!input.trim() || isStreaming || !contextReady}
                 className={cn(
                   'inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 text-sm font-semibold transition',
                   input.trim() && !isStreaming

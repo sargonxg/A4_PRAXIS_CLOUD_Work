@@ -222,12 +222,15 @@ function isDecisionRelevant(text: string): boolean {
 
 function matchSpanToEvidence(text: string, index: EvidenceIndex): SpanMatch {
   const explicitIds = explicitEvidenceIds(text);
+  const citedReceiptIds = new Set([...text.matchAll(/\[([^\]]+)\]/g)]
+    .flatMap((match) => match[1].split(',').map((id) => id.trim())));
   const claims = uniqueBy([
     ...explicitIds.claims.flatMap((displayId) => claimByDisplayId(displayId, index)),
     ...index.selected.claims.filter((claim) => lexicalMatch(text, claim.text, 0.66)),
   ], (claim) => claim.id);
   const sources = uniqueBy([
     ...explicitIds.sources.flatMap((displayId) => sourceByDisplayId(displayId, index)),
+    ...index.selected.sources.filter((source) => Boolean(source.excerpt?.trim()) && citedReceiptIds.has(source.id)),
     ...sourcesForClaims(claims, index),
     ...index.selected.sources.filter((source) => source.excerpt && lexicalMatch(text, source.excerpt, 0.72)),
   ], (source) => source.id);

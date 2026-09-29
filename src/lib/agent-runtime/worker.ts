@@ -723,7 +723,7 @@ async function executeResearchMemoAgentRun(
     });
     if (synthesisGate.state !== 'continue') return synthesisGate.result;
 
-    const sourceCount = evidencePack.sourceReceiptIds.length + evidencePack.knowledgeDocuments.length;
+    const sourceCount = uniqueStrings([...evidencePack.sourceReceiptIds, ...liveSearchEvidence.sourceReceiptIds]).length;
     const gapItems = evidencePack.openGaps.length
       ? evidencePack.openGaps
       : ['No blocking capsule gaps were detected for this first memo pass.'];
@@ -878,7 +878,20 @@ async function executeResearchMemoAgentRun(
         outputTarget: workflowPlan.outputTarget,
       },
       outputHref,
-      outputText: liveMemoDraft.finalText,
+      outputText: liveMemoDraft.draftText,
+      metadata: {
+        memoId: memoRecord.memo.id,
+        outputCapsuleId: outputCapsule?.id ?? null,
+        sourceReceiptIds: combinedSourceReceiptIds,
+        sourceCount: combinedSourceReceiptIds.length,
+        sourcePosture: `${combinedSourceReceiptIds.length} source receipts saved`,
+        capsuleReadReceipt: { ...capsuleReadReceipt, sourceCount: combinedSourceReceiptIds.length },
+        workflowPlan,
+        sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        groundingPosture: liveSearchEvidence.sourceReceipts.length ? 'Live grounded retrieval completed' : capsuleReadReceipt.groundingPosture,
+        agentContextPacket: researchGroundingPacket(running, evidencePack, liveSearchEvidence),
+        degradedReason: liveMemoDraft.degradedReason,
+      },
       deps,
     });
 
@@ -3165,6 +3178,32 @@ function buildAgentRunGroundingVerification(run: AgentRun, outputText?: string |
   });
 }
 
+function researchGroundingPacket(run: AgentRun, pack: CapsuleEvidencePack, live: LiveSearchEvidence) {
+  const prior = normalizeAgentContextPacket(run.metadata.agentContextPacket);
+  const sources = new Map((prior?.selected.sources ?? []).map((source) => [source.id, source]));
+  for (const receipt of live.sourceReceipts) {
+    if (!receipt.snippet.trim()) continue;
+    sources.set(receipt.sourceReceiptId, { id: receipt.sourceReceiptId, title: receipt.title,
+      url: receipt.url, excerpt: receipt.snippet, salienceScore: 1 });
+  }
+  for (const paragraph of pack.sourcedParagraphs) {
+    if (!paragraph.sourceReceiptId || !paragraph.excerpt.trim()) continue;
+    const previous = sources.get(paragraph.sourceReceiptId);
+    sources.set(paragraph.sourceReceiptId, { id: paragraph.sourceReceiptId, title: paragraph.documentId,
+      excerpt: [previous?.excerpt, paragraph.excerpt].filter(Boolean).join('\n'), salienceScore: 1 });
+  }
+  const groundingMap = { ...(prior?.groundingMap ?? { nodes: {}, edges: {}, claims: {}, paths: {} }),
+    sources: { ...prior?.groundingMap.sources } };
+  for (const id of sources.keys()) {
+    if (Object.values(groundingMap.sources).includes(id)) continue;
+    let index = Object.keys(groundingMap.sources).length + 1;
+    while (groundingMap.sources[`SR-${index}`]) index += 1;
+    groundingMap.sources[`SR-${index}`] = id;
+  }
+  return { selected: { ...(prior?.selected ?? { nodes: [], edges: [], claims: [], paths: [], timeline: [], causalLinks: [] }),
+    sources: [...sources.values()] }, groundingMap };
+}
+
 function normalizeAgentContextPacket(value: unknown): Pick<AgentContextPacketResult, 'selected' | 'groundingMap'> | null {
   const record = isRecord(value) ? value : null;
   if (!record || !isRecord(record.selected) || !isRecord(record.groundingMap)) return null;
@@ -3187,7 +3226,8 @@ async function completeAgentRunExecution(input: {
   deps: WorkerDeps;
 }): Promise<AgentRun | null> {
   const outputHref = cleanOutputHref(input.outputHref);
-  const groundingVerification = buildAgentRunGroundingVerification(input.running, input.outputText);
+  const groundingVerification = buildAgentRunGroundingVerification({ ...input.running,
+    metadata: { ...input.running.metadata, ...input.metadata } }, input.outputText);
   const metadataPatch = {
     ...(input.metadata ?? {}),
     ...(outputHref ? { outputHref } : {}),
@@ -4385,7 +4425,7 @@ function verifySourceabilityLedgerWithLiveSearch(
 ): SourceabilityLedger {
   if (!ledger.claims.length || !liveSearchEvidence.sourceReceipts.length) return ledger;
   const claims = ledger.claims.map((claim) => {
-    if (claim.supportLabel === 'unsupported') return claim;
+    if (claim.supportLabel === 'unsupported' || claim.supportLabel === 'assumption') return claim;
     const matchingReceipts = liveSearchEvidence.sourceReceipts.filter((receipt) => receiptMatchesClaim(receipt, claim.claim));
     if (!matchingReceipts.length) return claim;
     const sourceReceiptIds = uniqueStrings([
@@ -4419,6 +4459,7 @@ async function draftAndCritiqueMemo(
   ].join('\n\n');
   const draftPrompt = [
     `Objective: ${running.objective}`,
+    `Current date (UTC): ${new Date().toISOString().slice(0, 10)}. Do not invent a memo date or substitute a source publication date.`,
     evidencePrompt,
     'Draft a concise policy memo paragraph set. Use inline bracket citations with the available source receipt ids. Flag weak or unsupported claims explicitly.',
   ].join('\n\n');
@@ -4451,6 +4492,7 @@ async function draftAndCritiqueMemo(
       prompt: [
         'Review this memo draft for sourceability gates.',
         draftText,
+        evidencePrompt,
         claimLedgerPromptBlock(sourceabilityLedger),
       ].join('\n\n'),
       temperature: 0,

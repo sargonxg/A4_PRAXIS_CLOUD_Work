@@ -4,6 +4,21 @@ import type { AgentContextGroundingMap } from '@/lib/context/agent-context-packe
 import type { SelectedAgentContext } from '@/lib/context/agent-context-salience';
 
 describe('agent context grounding verifier', () => {
+  it('binds canonical receipt citations only to retrieved nonempty evidence', () => {
+    const packet = makePacket({ claims: [], paths: [], sources: [
+      { id: 'web:live-1', title: 'Receipt', excerpt: 'A retrieved source passage.', salienceScore: 1 },
+      { id: 'web:empty', title: 'Empty receipt', excerpt: '', salienceScore: 1 },
+    ] });
+    packet.groundingMap.sources = { 'SR-1': 'web:live-1', 'SR-2': 'web:empty' };
+    const report = verifyAgentContextGrounding({ packet, outputText: [
+      'The operational indicators require careful review [web:live-1].',
+      'Unseen documents establish a different conclusion [web:unknown].',
+      'Empty citations cannot substantiate this conclusion [web:empty].',
+    ].join('\n') });
+    expect(report.groundedClaims).toHaveLength(1);
+    expect(report.groundedClaims[0].sourceReceiptIds).toEqual(['SR-1']);
+    expect(report.ungroundedSpans).toHaveLength(2);
+  });
   it('grounds generated claims against packet claim cards, source receipts, and graph paths', () => {
     const report = verifyAgentContextGrounding({
       outputText: [

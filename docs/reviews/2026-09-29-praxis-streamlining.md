@@ -25,7 +25,7 @@ The production baseline inspected was commit `062463864ec6d54cf5ef80d8512311da87
 
 | Area | Result and boundary |
 | --- | --- |
-| Deployed capsule journey | Passed with the existing disposable Firebase account: TXT, PDF and DOCX intake; evidence proposals; persisted reject and approve decisions; capsule-aware Ask answer; history retrieval. Existing `capsule-studio.spec.ts`, with `PRAXIS_LIVE_ASK=1`. |
+| Initial deployed capsule journey | TXT, PDF and DOCX intake, evidence proposals and persisted review decisions passed with the disposable Firebase account. The initial invocation used an obsolete opt-in name; it did not establish live AI recall. The later run with the correct `PRAXIS_LIVE_AI_SMOKE=1` passed actual recall and history persistence; see `2026-09-29-praxis-live-release.md`. |
 | Deployed agent infrastructure | Created run `a1336f29-ded4-43c1-b08b-e987319aac40`; observed dispatch, owner approval, research execution and sourceability review. The old deployed grounding implementation exposed the defects repaired here. No completed source-backed memo is claimed. The disposable run was cancelled after inspection. |
 | Real provider call with repaired local code | Final Vertex call at 18:51:37 UTC returned four Google grounding citations, all with substantive provider-attributed text mapped to their source. An earlier attempt failed on transient connection/DNS errors; subsequent calls passed. This proves retrieval wiring and citation text, not deployed final-memo quality or independent verification of every factual statement. |
 | Full unit suite checkpoint | 369 files / 1,579 tests passed before the final grounding repair. Additional focused tests cover the later changes. |
@@ -56,6 +56,12 @@ The starter-note helper can reuse a receipt it received. A network failure after
 - Repository-required graph refresh: passed, with 17,642 nodes and 38,425 edges. Optional Terraform and SQL parsers are absent, so those files are not represented by this refresh. Graphify also reported a pre-existing non-UTF-8 ignore file and refreshed community labels from their hubs.
 
 ## Delivery self-evaluation
+
+### Live verification follow-up
+
+The published `ff90e9b2` release passed the real three-format capsule/Ask test, but deeper live verification found missing completed-run source metadata, absent document evidence before indexing, and a delayed chat-history response replacing freshly submitted turns. The follow-up fixes these paths, preserves independent document provenance, supplies retrieved evidence to critique and grounding checks, anchors memo dates, and improves the builder field's accessible labeling. A browser regression holds the history response until after a new answer and checks that the latest conversation reaches the builder.
+
+The follow-up integrates upstream SEO commit `188da1ae`. Build, TypeScript, release audit gate and lint pass (seven existing warnings). Focused tests: 44 passed. Full suite: 1,612 passed, one stale upstream sitemap assertion failed; correcting it yielded nine passing affected tests. Dependency audit: no high/critical, 44 moderate and three low. Final deployed evidence is recorded separately in `2026-09-29-praxis-live-release.md`.
 
 Pre-release checkpoint: 4.0/5. The local patch is reviewable; production release and complete agent-output proof remain at this checkpoint.
 
