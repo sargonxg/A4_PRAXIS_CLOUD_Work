@@ -11,8 +11,13 @@ const attachRoute = readFileSync(join(root, 'src/app/api/context/capsules/[capsu
 if (!stackRoute.includes("stackId !== DEFAULT_CONTEXT_STACK_ID")) {
   failures.push('/api/workspace/context-stack must support named stack IDs beyond default');
 }
-if (!stackRoute.includes('createCapsule') || !stackRoute.includes('bumpCapsuleVersion')) {
-  failures.push('named context-stack compatibility must write through capsule create/update paths');
+if (!stackRoute.includes('createCapsule') || !stackRoute.includes('capsuleToStack(existing)') || !stackRoute.includes('saveActiveStackPointer')) {
+  failures.push('named stacks must resolve capsule defaults and persist an owner-scoped workspace pointer');
+}
+// Selecting an existing capsule must not erase cores or increment its version.
+// Canonical edits belong to the capsule edit/attachment and review endpoints.
+if (stackRoute.includes('bumpCapsuleVersion')) {
+  failures.push('workspace selection must not rewrite the saved capsule; use capsule edit/review paths');
 }
 if (!capsuleService.includes('archiveCapsule') || !capsuleRoute.includes('export const DELETE')) {
   failures.push('capsules must expose archive/delete semantics without physical deletion');
