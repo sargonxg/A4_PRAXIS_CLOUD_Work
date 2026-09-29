@@ -81,7 +81,7 @@ export function buildCapsuleArchitectProposal(input: CapsuleArchitectBuildInput)
     domainId,
     normalizedAt,
   });
-  const capsuleId = cleanId(input.capsuleId ?? `architect-${stablePart(`${jobPrompt}:${documents.map((doc) => doc.documentId ?? doc.title).join('|')}`)}`, 'architect-capsule');
+  const capsuleId = cleanText(input.capsuleId, 160) || `architect-${stablePart(`${jobPrompt}:${documents.map((doc) => doc.documentId ?? doc.title).join('|')}`)}`;
   const label = titleFromPrompt(jobPrompt);
   const elicitation = normalizeElicitation(input.elicitation);
   const temporality = buildArchitectTemporality(signals.temporality, elicitation, normalizedAt);
@@ -123,7 +123,8 @@ export function buildCapsuleArchitectProposal(input: CapsuleArchitectBuildInput)
     temporality,
     causality,
     tacitKnowledgeQuestions,
-    documentIds: documents.map((document, index) => cleanId(document.documentId ?? document.title, `document-${index + 1}`)),
+    // Stored identifiers are case-sensitive; only generate slugs for unstored input.
+    documentIds: documents.map((document, index) => cleanText(document.documentId, 160) || cleanId(document.title, `document-${index + 1}`)),
     reviewGate: 'human_review' as const,
   };
 

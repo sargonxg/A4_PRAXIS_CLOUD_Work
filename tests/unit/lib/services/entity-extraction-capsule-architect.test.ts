@@ -1,8 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildDocumentFirstCapsuleArchitectSignals } from '@/lib/services/entity-extraction';
+import { buildCapsuleArchitectProposal } from '@/lib/context/capsule-architect';
 
 describe('document-first capsule architect signals', () => {
+  it('preserves case-sensitive storage IDs through proposals and source receipts', () => {
+    const documents = [
+      { documentId: 'AbC123_xYz', sourceId: 'Source_XyZ', title: 'First note', text: 'The review deadline is 2026-11-12.' },
+      { documentId: 'abc123_xyz', title: 'Second note', text: 'Funding remains undecided pending review.' },
+    ];
+    const proposal = buildCapsuleArchitectProposal({ capsuleId: 'Capsule_AbC', jobPrompt: 'Review the two documents', documents });
+    expect(proposal.capsuleId).toBe('Capsule_AbC');
+    expect(proposal.documentIds).toEqual(['AbC123_xYz', 'abc123_xyz']);
+    expect(proposal.sourceRefs.map(source => source.sourceId)).toEqual(['Source_XyZ', 'abc123_xyz']);
+    expect(proposal.claimLedger.map(claim => claim.receipts?.[0].sourceId)).toEqual(['Source_XyZ', 'abc123_xyz']);
+  });
   it('never invents supported claims, dates or causality from a filename or a job prompt', () => {
     const signals = buildDocumentFirstCapsuleArchitectSignals([{ title: 'Unreadable.pdf', text: '' }], {
       jobPrompt: 'The ceasefire has collapsed', normalizedAt: '2026-09-20T00:00:00.000Z',

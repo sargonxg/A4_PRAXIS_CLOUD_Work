@@ -14,7 +14,7 @@ test.describe('Capsule Studio', () => {
     await expect(spotlights.locator('article')).toHaveCount(12, { timeout: 30_000 });
     await spotlights.getByRole('button', { name: 'Add method', exact: true }).first().click();
     await page.waitForURL(/\/app$/, { timeout: 60_000 });
-    await expect(page.getByTestId('capsule-dock')).toContainText(/Institutional/i);
+    await expect(page.getByTestId('capsule-dock')).toContainText(/Institutional/i, { timeout: 30_000 });
 
     await page.goto(`${BASE}/app/capsules/builder`);
     await page.getByLabel('What should this capsule do?').fill('QA fixture only: inspect actors and a dated commitment; do not treat this as a real-world event.');
@@ -43,6 +43,13 @@ test.describe('Capsule Studio', () => {
     expect(payload.reviewRequired).toBe(true);
     expect(payload.cards.length).toBeGreaterThan(0);
     expect(payload.capsule.coreRefs.situationCoreId).toBeTruthy();
+    // Verify references still address the stored originals, not just extracted claims.
+    expect(payload.capsule.coreRefs.documentCoreIds).toHaveLength(3);
+    for (const documentId of payload.capsule.coreRefs.documentCoreIds as string[]) {
+      const document = await page.request.get(`${BASE}/api/documents/${encodeURIComponent(documentId)}?${new URLSearchParams({ situationId: payload.capsule.coreRefs.situationCoreId, maxChars: '16000' })}`);
+      expect(document.ok()).toBe(true);
+      expect((await document.json()).document.previewText).toContain('Example Council');
+    }
     const capsuleId = payload.capsule.capsuleId as string;
     test.info().annotations.push({ type: 'capsuleId', description: capsuleId });
     await page.getByRole('link', { name: 'Inspect and review your capsule' }).click();

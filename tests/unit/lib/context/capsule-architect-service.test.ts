@@ -10,7 +10,7 @@ describe('Capsule Architect review-card service', () => {
     const result = await createCapsuleArchitectReviewCards('u1', {
       jobPrompt: 'Summarize the attached council fixture.',
       situationId: 'upload-workspace',
-      documents: [{ documentId: 'source-1', title: 'Fixture.txt', text: 'Funding remains unconfirmed.' }],
+      documents: [{ documentId: 'Source_AbC1', title: 'Fixture.txt', text: 'Funding remains unconfirmed.' }],
     }, deps(new FakeFirestore()));
     expect(result.capsule.coreRefs.situationCoreId).toBe('upload-workspace');
     expect(result.capsule.activeForSituationIds).toContain('upload-workspace');
@@ -22,7 +22,7 @@ describe('Capsule Architect review-card service', () => {
       retrieveRelevantChunks: async (uid, situationId) => {
         expect(uid).toBe('u1');
         expect(situationId).toBe('upload-workspace');
-        return [{ id: 'chunk-1', documentId: 'source-1', text: 'Funding remains unconfirmed.', charStart: 0, charEnd: 28, score: 1, confidence: 1 }] as never;
+        return [{ id: 'chunk-1', documentId: 'Source_AbC1', text: 'Funding remains unconfirmed.', charStart: 0, charEnd: 28, score: 1, confidence: 1 }] as never;
       },
     });
     expect(pack.sourcedParagraphs[0]?.excerpt).toBe('Funding remains unconfirmed.');

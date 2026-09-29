@@ -527,8 +527,9 @@ function normalizeArchitectDocument(
   index: number,
 ): NormalizedArchitectDocument {
   const title = cleanTextForCapsule(document.title, 180) || `Uploaded document ${index + 1}`;
-  const documentId = cleanIdForCapsule(document.documentId ?? title, `document-${index + 1}`);
-  const sourceId = cleanIdForCapsule(document.sourceId ?? documentId, `source-${index + 1}`);
+  // Preserve opaque storage IDs in references and receipts, including their case.
+  const documentId = cleanTextForCapsule(document.documentId, 160) || cleanIdForCapsule(title, `document-${index + 1}`);
+  const sourceId = cleanTextForCapsule(document.sourceId, 160) || documentId;
   // Do not trim or collapse whitespace: receipt offsets address this exact text.
   const text = typeof document.text === 'string' ? document.text.slice(0, 16000) : '';
   const reliabilityTier = normalizeReliabilityTier(document.reliabilityTier);
