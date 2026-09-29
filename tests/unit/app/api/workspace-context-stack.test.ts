@@ -19,6 +19,8 @@ vi.mock('@/lib/context/capsule-service', () => ({
   }),
 }));
 import { PUT } from '@/app/api/workspace/context-stack/route';
+// withAuth is mocked above so these tests exercise the owner-scoped handler.
+const invokePut = PUT as unknown as (request: Request, user: { uid: string }) => Promise<Response>;
 
 describe('attaching saved capsule context', () => {
   beforeEach(() => {
@@ -29,9 +31,9 @@ describe('attaching saved capsule context', () => {
   it('changes the workspace pointer without erasing saved evidence or bumping the capsule version', async () => {
     const capsule = { capsuleId: 'saved', version: 8, coreRefs: { documentCoreIds: ['document-1'], sourceCoreIds: ['receipt-1'], situationCoreId: 'case-1' } };
     mocks.get.mockResolvedValue(capsule);
-    const response = await PUT(new Request('http://localhost/api/workspace/context-stack', {
+    const response = await invokePut(new Request('http://localhost/api/workspace/context-stack', {
       method: 'PUT', body: JSON.stringify({ stackId: 'saved', capsuleId: 'saved', capsuleRefs: [{ capsuleId: 'saved', role: 'primary' }] }),
-    }), { uid: 'owner' } as never, {} as never);
+    }), { uid: 'owner' });
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body.capsule.version).toBe(8);
@@ -44,9 +46,9 @@ describe('attaching saved capsule context', () => {
 
   it('does not reactivate an archived capsule', async () => {
     mocks.get.mockResolvedValue({ capsuleId: 'saved', archivedAt: '2026-09-29' });
-    const response = await PUT(new Request('http://localhost/api/workspace/context-stack', {
+    const response = await invokePut(new Request('http://localhost/api/workspace/context-stack', {
       method: 'PUT', body: JSON.stringify({ stackId: 'saved' }),
-    }), { uid: 'owner' } as never, {} as never);
+    }), { uid: 'owner' });
     expect(response.status).toBe(409);
     expect(mocks.set).not.toHaveBeenCalled();
   });
@@ -54,9 +56,9 @@ describe('attaching saved capsule context', () => {
   it('preserves previous workspace overrides when a subsequent patch updates only capsule refs', async () => {
     mocks.get.mockResolvedValue({ capsuleId: 'saved', version: 8, coreRefs: { documentCoreIds: ['document-1'], sourceCoreIds: ['receipt-1'], situationCoreId: 'case-1' } });
     mocks.readPointer.mockResolvedValue({ exists: true, data: () => ({ stackId: 'saved', capsuleId: 'saved', userModelId: 'my-model', outputGoal: 'brief', documentIds: ['document-1'], sourceIds: ['receipt-1'] }) });
-    const response = await PUT(new Request('http://localhost/api/workspace/context-stack', {
+    const response = await invokePut(new Request('http://localhost/api/workspace/context-stack', {
       method: 'PUT', body: JSON.stringify({ stackId: 'saved', capsuleRefs: [{ capsuleId: 'saved', role: 'primary' }] }),
-    }), { uid: 'owner' } as never, {} as never);
+    }), { uid: 'owner' });
     expect((await response.json()).stack).toMatchObject({ userModelId: 'my-model', outputGoal: 'brief', documentIds: ['document-1'] });
     expect(mocks.bump).not.toHaveBeenCalled();
   });

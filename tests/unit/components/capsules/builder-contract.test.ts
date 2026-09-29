@@ -32,12 +32,13 @@ describe('Capsule Builder UX contract', () => {
     expect(wizard).not.toContain('Publish gate is ready');
   });
 
-  it('adds Capsule Architect as a progressive, document-first action without replacing the single-prompt first step', () => {
+  it('accepts documents, ideas and conversations without replacing the single-prompt first step', () => {
     const wizard = readFileSync(path.join(root, 'src/components/capsules/CapsuleBuilderWizard.tsx'), 'utf8');
 
     expect(wizard).toContain('What should this capsule do?');
     expect(wizard).toContain('Capsule Architect');
-    expect(wizard).toContain('Document-first intake');
+    expect(wizard).toContain('Documents, ideas and conversations');
+    expect(wizard).toContain('Ideas, notes or conversation');
     expect(wizard).toContain('/api/capsules/assist/architect');
     expect(wizard).toContain('ingestArchitectDocuments');
     expect(wizard).not.toContain('webkitdirectory');
