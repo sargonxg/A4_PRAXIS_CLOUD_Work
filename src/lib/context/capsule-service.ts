@@ -1382,8 +1382,10 @@ export async function createCapsuleArchitectReviewCards(
     label: proposal.label,
     summary: proposal.summary,
     coreRefs: {
+      situationCoreId: input.situationId ?? null,
       documentCoreIds: proposal.documentIds,
     },
+    activeForSituationIds: input.situationId ? [input.situationId] : [],
     provenance: {
       source: 'api',
       createdBy: uid,

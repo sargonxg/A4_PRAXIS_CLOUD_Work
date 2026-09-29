@@ -190,6 +190,7 @@ async function buildArchitectResult(uid: string, input: z.infer<typeof AssistReq
   const result = await createCapsuleArchitectReviewCards(uid, {
     capsuleId: input.capsuleId ?? (typeof input.capsule?.id === 'string' ? input.capsule.id : undefined),
     jobPrompt: input.job,
+    situationId: input.situationId,
     domainId: input.domain,
     documents: input.documents ?? [],
     elicitation: input.elicitation,

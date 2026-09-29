@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   searchApp: vi.fn(),
@@ -20,6 +20,11 @@ vi.mock('@/lib/app-search/app-search', async (importOriginal) => {
 });
 
 describe('/api/app/search route', () => {
+  let GET: typeof import('@/app/api/app/search/route').GET;
+  beforeAll(async () => {
+    // Load the service graph once in setup, outside each request's timeout.
+    ({ GET } = await import('@/app/api/app/search/route'));
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.authUser = { uid: 'user-1', isDemo: false };
@@ -31,8 +36,6 @@ describe('/api/app/search route', () => {
   });
 
   it('passes normalized authenticated search input to the service', async () => {
-    const { GET } = await import('@/app/api/app/search/route');
-
     const response = await GET(new Request('https://praxis.tacitus.me/api/app/search?q=capsule&types=capsule,memo&limit=100'));
     const body = await response.json();
 
@@ -49,8 +52,6 @@ describe('/api/app/search route', () => {
 
   it('returns 400 for invalid query length', async () => {
     mocks.searchApp.mockClear();
-    const { GET } = await import('@/app/api/app/search/route');
-
     const response = await GET(new Request(`https://praxis.tacitus.me/api/app/search?q=${'x'.repeat(201)}`));
     const body = await response.json();
 
@@ -61,8 +62,6 @@ describe('/api/app/search route', () => {
 
   it('marks demo users so the service can restrict private lanes', async () => {
     mocks.authUser = { uid: 'demo-user-001', isDemo: true };
-    const { GET } = await import('@/app/api/app/search/route');
-
     await GET(new Request('https://praxis.tacitus.me/api/app/search?q=brief'));
 
     expect(mocks.searchApp).toHaveBeenCalledWith(expect.objectContaining({

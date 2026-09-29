@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
+Build 2026.09.28.01 (PRAXIS v6.5.2).
+
+- Fix quick capsule context-package persistence when optional user, team or graph references are absent, with a strict Firestore serialization regression test.
+- Move app-search route module loading into test setup to prevent a cold import timeout from leaking a request into the next test.
+
 Build 2026.09.23.01 (PRAXIS v6.5.1).
+
+- Preserve the document upload workspace when creating a capsule so subsequent Ask turns retrieve its source paragraphs, while proposed claims remain review-gated.
 
 - Unify Home, Pricing, Learn, Guide and Release notes navigation across mobile and desktop; explain both capsule creation paths, make context optional, align free-plan entry with chat and publish the September 23 release record.
 - Reserve the last Ask tool-loop step for an evidence-aware answer; surface empty generation as failure. Keep recent conversations collapsible on mobile so the composer stays reachable.

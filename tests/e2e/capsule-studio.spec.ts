@@ -42,6 +42,7 @@ test.describe('Capsule Studio', () => {
     const payload = await response.json();
     expect(payload.reviewRequired).toBe(true);
     expect(payload.cards.length).toBeGreaterThan(0);
+    expect(payload.capsule.coreRefs.situationCoreId).toBeTruthy();
     const capsuleId = payload.capsule.capsuleId as string;
     await page.getByRole('link', { name: 'Inspect and review your capsule' }).click();
     await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible({ timeout: 30_000 });

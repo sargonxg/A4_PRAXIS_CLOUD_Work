@@ -26,6 +26,19 @@ export const CURRENT_PRAXIS_RELEASE = {
 
 export const PRAXIS_RELEASE_NOTES: PraxisReleaseNote[] = [
   {
+    buildNumber: '2026.09.28.01',
+    version: '6.5.2',
+    date: '2026-09-28',
+    title: 'Keep uploaded evidence connected to chat',
+    summary: 'Repairs to both capsule creation paths: quick starter context and document-based proposals.',
+    category: 'runtime',
+    items: [
+      'New document-built capsules retain their source workspace so Ask can retrieve the uploaded paragraphs when the capsule is attached.',
+      'Quick context creation can save its context package when optional user, team or graph references are absent.',
+      'Document proposals still require your review. Older capsules with missing source-workspace links are not automatically migrated.',
+    ],
+  },
+  {
     buildNumber: '2026.09.23.01',
     version: '6.5.1',
     date: '2026-09-23',

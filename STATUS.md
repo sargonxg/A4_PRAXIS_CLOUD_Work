@@ -1,5 +1,12 @@
 # PRAXIS — STATUS
 
+## 2026-09-28 — Capsule creation follow-through
+
+- Commit `857e3e51` is live as `praxis-frontend-01071-tfq`; Cloud Build and its resource preflight passed. All five public pages passed real desktop/mobile navigation, overflow and signup-handoff checks on September 28.
+- Live quick creation exposed undefined optional references in Context Package persistence. Strict serialization regression coverage reproduces this; the repair omits absent fields.
+- Document-created capsules now retain the upload workspace reference, allowing the evidence pack to retrieve their attached paragraphs. The regression test follows capsule creation through evidence-pack retrieval while preserving the proposal review gate.
+- These follow-up fixes require deployment and live acceptance. Final receipts are maintained in `output/praxis-2026-09-28-delivery.md`; do not infer readiness from build or health alone.
+
 ## 2026-09-23 — Public experience and Ask completion
 
 - Public Home, Pricing, Learn, Guide and Release notes share responsive navigation. Home explains the pre-login workflow; Guide describes both creation paths and attachment; Learn separates introductory material from technical background. Free-plan entry opens chat; historical release notes are expandable. Current release: 6.5.1 / 2026.09.23.01.

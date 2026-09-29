@@ -22,6 +22,7 @@ export interface CapsuleArchitectElicitationInput {
 
 export interface CapsuleArchitectBuildInput {
   capsuleId?: string | null;
+  situationId?: string | null;
   jobPrompt: string;
   domainId?: string | null;
   ontologyIds?: string[] | null;

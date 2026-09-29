@@ -375,12 +375,12 @@ ${cited || 'No retrieved evidence yet. Treat factual claims as gaps.'}`;
 
 function normalizeCoreRefs(input: Partial<ContextPackageCoreRefs> & { situationCoreId: string }): ContextPackageCoreRefs {
   return {
-    userCoreId: input.userCoreId,
-    teamCoreId: input.teamCoreId,
+    ...(input.userCoreId ? { userCoreId: input.userCoreId } : {}),
+    ...(input.teamCoreId ? { teamCoreId: input.teamCoreId } : {}),
     situationCoreId: input.situationCoreId,
     sourceCoreIds: cleanStringArray(input.sourceCoreIds),
     documentCoreIds: cleanStringArray(input.documentCoreIds),
-    graphCoreId: input.graphCoreId,
+    ...(input.graphCoreId ? { graphCoreId: input.graphCoreId } : {}),
     outputCoreIds: cleanStringArray(input.outputCoreIds),
   };
 }
