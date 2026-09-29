@@ -26,7 +26,7 @@ vi.mock('@/lib/intelligence/corpus-search', () => ({
 import { listDocuments } from '@/lib/firebase/documents-service';
 import { getConflictGraphAdmin, getSituationById } from '@/lib/firebase/situations';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
-import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
+import { createContextPackage, localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 
 const mockedSearch = vi.mocked(searchSituationCorpus);
 const mockedSituation = vi.mocked(getSituationById);
@@ -34,6 +34,23 @@ const mockedDocuments = vi.mocked(listDocuments);
 const mockedGraph = vi.mocked(getConflictGraphAdmin);
 
 describe('Context Engine local adapter', () => {
+  it('persists a quick context package when optional user, team and graph references are absent', async () => {
+    const set = vi.fn(async (value: unknown) => {
+      // Firestore rejects undefined even in nested core references.
+      expect(value).toStrictEqual(JSON.parse(JSON.stringify(value)));
+    });
+    const query = { where: vi.fn(), limit: vi.fn(), get: vi.fn(async () => ({ docs: [] })) };
+    query.where.mockReturnValue(query);
+    query.limit.mockReturnValue(query);
+    const doc = vi.fn(() => ({ collection, id: 'package-1', set }));
+    const collection = vi.fn(() => ({ ...query, doc }));
+    const { getAdminDbOrThrow } = await import('@/lib/firebase/admin');
+    vi.mocked(getAdminDbOrThrow).mockReturnValue({ collection } as never);
+    const pack = await createContextPackage('u1', { active: true, coreRefs: { situationCoreId: 'sit-1' } });
+    expect(pack.active).toBe(true);
+    expect(pack.coreRefs).toEqual({ situationCoreId: 'sit-1', sourceCoreIds: [], documentCoreIds: [], outputCoreIds: [] });
+    expect(set).toHaveBeenCalledOnce();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     mockedSituation.mockResolvedValue({
