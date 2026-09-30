@@ -1,37 +1,35 @@
 # PRAXIS improvement analysis — 2026-09-30
 
-PRAXIS is live and its tested core journeys work. Its most consequential next improvement is stronger evidence and review handling: a saved, editable memo is operational proof, but does not establish that its claims are correct. The public experience also needs fewer concepts, consistent navigation and clearer distinctions between available beta capabilities and proposed institutional services.
+PRAXIS has passed real signup, capsule-aware Ask, upload/review/reuse, model-route and writing/export journeys on named earlier releases. The integrated merged-source gate passed 440 files/2,396 tests. The fresh production build after the final settings copy passed at `2026-09-30T22:09:25.634Z`; corrective deployment and new live acceptance remain pending. See the [release record](2026-09-30-praxis-live-release.md) for exact source and deployment evidence.
 
-This is a read-only assessment and proposed backlog. Recommendations below have not been implemented by this analysis. Existing unrelated working-tree changes were preserved.
+This analysis retains all 80 findings from the September 30 baseline. Their labels describe that observation, not the present state of every implementation. The [implementation ledger](2026-09-30-praxis-implementation-ledger.md) maps each item to an owner, acceptance criterion and subsequent evidence. Successful execution does not establish analytical accuracy, measured benefit or institutional readiness.
 
-Implementation followed this dated assessment. Consult the [implementation ledger](2026-09-30-praxis-implementation-ledger.md) and [refinement release record](2026-09-30-praxis-live-release.md) for delivered changes, current production evidence and remaining gates. Findings below describe the inspected baseline; they are not a fresh assertion that repaired behavior is still broken.
 
-## Evidence and limits
+## Current priorities
 
-- Live application source: `4480650999b5bd2808b55cba58f16e5a9a83d343`; revision `praxis-frontend-01082-nkw`; Cloud Build `4b8fff18-5a9d-4c4a-9d97-5cff8fe89cb8`.
-- Main/origin documentation head: `6ae479b9ba36bc335448f29e43007439f8eefbc8`. The documentation-only update did not trigger another application deployment.
-- Fresh runtime observation: `2026-09-30T13:15:36.261Z`, matching deployed source/revision and seven healthy checks. Home, privacy, retention, sub-processors and security returned HTTP 200.
-- The [production acceptance record](2026-09-29-praxis-production-acceptance.md) records four serial production journeys: document intake/review/reuse; Home Ask/history/private capsule creation; conversation/notes-to-capsule; research approval/memo editing/responsive controls/logout. Existing-account login passed and logged-out access to protected routes was blocked.
-- Release validation passed 390 test files / 1,830 tests, zero skips. This analysis did not rerun that suite or exercise another account.
-- Fresh public screenshots were inspected at desktop/mobile Home, desktop Pricing and desktop Guide. Screenshot evidence is under ignored `output/playwright/improvement-analysis-20260930/`.
-- Coordinator, interaction/auth and capsule/runtime agents performed focused read-only reviews. Source findings are distinguished from newly reproduced browser behavior.
-- Fresh signup, verification/reset, expiry/deletion, two-account switching, paid entitlements, OCR, capacity and interrupted/concurrent worker recovery remain unproven. Current privileged cloud checks and the post-canary log window await renewed local Google authentication; this is not production-outage evidence.
-- No representative end-user study or measured capsule-versus-baseline quality improvement has been established.
+| Priority / area | Improvement | Proof needed |
+| --- | --- | --- |
+| P0: analytical fidelity | Keep missing information unknown. Make pilot, authority and funding recommendations conditional on actual evidence. | Original outputs and passage-based corrections; independent analyst review of the final body. Larger-model execution alone is insufficient. |
+| P0: claims and sources | Link material claims to original supporting or contradicting passages, accurate publisher/role/date/locator, and explicit unavailable states. | Inspect originals and claim bindings; duplicated formats/cards must not imply independent corroboration. |
+| P0: failed-run recovery | Persist missing optional source metadata safely; recover without duplicate products or overwritten human edits. | Retain the actual publication-date failure, prove the corrected live worker journey, then inject lost responses and interrupted writes. |
+| P0: supported paid plan | Finish corrective runtime and truthful checkout activation for the dedicated $49/month Practitioner plan. | Merchant, product, seven-event raw webhook and secure runtime mounts are verified; checkout is disabled. Hosted checkout and genuine signed subscription lifecycle remain unproven. Team is unavailable. |
+| P1: account lifecycle | Complete verification/reset/expiry recovery and bounded deletion across every configured owner store. | Disposable-account lifecycle and reconciliation receipts. Erasure remains disabled until complete cleanup/retry/Auth removal passes. |
+| P1: useful written products | Improve decision briefs, options, claims maps, narrative comparison and handover; preserve review and source lineage. | Representative analyst tasks and native Word heading/table/link/locator fidelity. |
+| P1: capsule/library scale | Make freshness, review status, actors/topics and older selected documents easy to find. Bound difficult and interrupted uploads. | Large-library/search/pagination tasks, late-file retrieval and ingestion recovery. OCR needs separate acceptance. |
+| P1: economical routing | Use cheap extraction, balanced analysis and premium reasoning where useful; show actual execution/fallback. | Corrected deployed receipts plus matched quality, usage and latency workloads. No assumption that premium is always better. |
+| P1: adoption/accessibility | Shorten copy and first-use steps; make source inspection, capsule creation and review usable on mobile, keyboard and screen reader. | Intended users complete tasks without coaching; measure useful-output time, revision burden, recovery and willingness to pay. |
+| P1: operations | Prove restore, concurrent execution/load, bounded capacity and sanitized outcome monitoring. | Named thresholds, owners, failure/restore receipts and recovery actions. Healthy endpoints are narrower evidence. |
+| P2: maintainability | Share typed context/evidence/review/run contracts and split responsibilities at established ownership seams. | Meaningful regressions and simpler developer entrypoints; keep the visible workbench compact. |
 
-Status labels: **Observed** means inspected public UI or recorded production behavior; **Source** means a code-derived finding that has not necessarily been reproduced live; **Unproven** means a capability lacks adequate acceptance evidence; **Proposal** means a design or product recommendation requiring validation.
+The requested [anti-slop review](https://github.com/miqdadbadjuber/anti-slop) applies to existing content and design: remove repeated explanations and unsupported claims, use concrete actions, and keep visuals only when they help a policy task. Preserve source quotations and necessary limitations. The [quality evaluation](2026-09-30-praxis-quality-evaluation.md) separates model execution, agent critique and independent assessment.
 
-## First priorities and acceptance
+## Dated baseline and limits
 
-| Priority | Work packet | Evidence | Completion criterion |
-| --- | --- | --- | --- |
-| P1 | Original source passages and claim checking | Observed memo errors; source adapter uses generated response segments as evidence text | Material claims resolve to original passages with source identity, date and locator; unavailable originals remain explicit gaps; external sources cannot substantiate private synthetic case facts |
-| P1 | Complete the human review path | Edited memo correctly invalidates old review, but whole-draft approval is unproven | Reviewer can apply corrections, inspect differences and approve a specific saved body/version; subsequent edits invalidate approval; publication/export readiness reflects that body |
-| P1 | Builder persistence and unsaved edits | Source: private draft schema omits several wizard controls; attachment may use old saved state | Every editable preference has explicit scope and round-trips, or is labeled package-only; Save and use attaches the current saved supported state |
-| P1 | Context promotion and retrieval | Source: promoting an attachment can remove the previous primary; retrieval filters selected documents after ranking | Promotion retains all attachments/versions; selected documents constrain retrieval before ranking; late-document evidence remains discoverable amid competing documents |
-| P1 | Account lifecycle and bounded ingestion | Existing-account path passes; signup/recovery/capacity unproven | Disposable accounts prove first use and isolation; advertised upload limits are enforced before expensive work; failure preserves recoverable state |
-| P1 | Duplicate delivery and interrupted persistence | Dispatch claims exist, but worker/status source permits concurrent execution concerns | Concurrent deliveries and lost responses produce one intended output, consistent review/version lineage and recoverable final state |
-| P2 | Clearer public experience and vocabulary | Observed overlapping CTAs; source navigation labels differ | A first-time analyst completes Ask and separate capsule creation without coaching; the same destinations and statuses have consistent names |
-| P2 | Quality evaluation and institutional evidence | No measured analytical benefit; institutional offerings unproven | Inspectable real-provider evaluation and persona studies support claims; each institutional capability has its own verified gate |
+The 80-item catalogue below was assessed against source `4480650999b5bd2808b55cba58f16e5a9a83d343`, revision `praxis-frontend-01082-nkw`, build `4b8fff18-5a9d-4c4a-9d97-5cff8fe89cb8`. Runtime observation `2026-09-30T13:15:36.261Z` found seven healthy checks. Documentation head `6ae479b9ba36bc335448f29e43007439f8eefbc8` did not redeploy the application. Screenshots are under ignored `output/playwright/improvement-analysis-20260930/`.
+
+That baseline retained real user journeys and memo errors; it did not establish representative-user outcomes, measured capsule benefit, complete erasure, paid lifecycle or institutional reliability. Expired local Google access was later refreshed; it never established a production outage. Later exact-source results belong to the release record and ledger.
+
+**Observed** identifies inspected UI or recorded production behavior. **Source** identifies code-derived findings that may lack live reproduction. **Unproven** identifies missing acceptance evidence. **Proposal** identifies a change requiring validation. Read these labels as dated findings; subsequent implementation evidence can close a finding without changing the original observation.
 
 ## 1. Evidence accuracy and analytical trust
 

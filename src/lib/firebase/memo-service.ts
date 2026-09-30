@@ -188,6 +188,8 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     ...(outputReview ? { outputReview } : {}),
   };
 
+  // Optional source dates/passages and block metadata must be Firestore-safe.
+  // Preserve native values and array positions; never invent missing evidence.
   const savedMemo = omitUndefinedMetadata({ ...memo, ...memoMetadata });
   const savedVersion = omitUndefinedMetadata({ ...version, contextSnapshot,
     ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) });
@@ -259,8 +261,8 @@ export async function approveMemoBody(uid: string, memoId: string, input: {
     const humanApproval = signMemoHumanApproval({ memoId, versionId: input.versionId, reviewerUid: uid,
       bodyHash: input.bodyHash, approvedAt: new Date().toISOString(), intendedUse: input.intendedUse,
       limitations: input.limitations.trim() });
-    transaction.set(ref, { ownerUid: uid, status: 'final', humanApproval, updatedAt: humanApproval.approvedAt }, { merge: true });
-    transaction.set(versionRef, { humanApproval }, { merge: true });
+    transaction.set(ref, omitUndefinedMetadata({ ownerUid: uid, status: 'final', humanApproval, updatedAt: humanApproval.approvedAt }), { merge: true });
+    transaction.set(versionRef, omitUndefinedMetadata({ humanApproval }), { merge: true });
   });
   return loadMemoById(uid, memoId, db);
 }

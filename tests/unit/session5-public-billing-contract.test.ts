@@ -49,7 +49,7 @@ describe('Session 5 public surface and billing contract', () => {
     expect(builder).toContain("from '@/lib/product/context-capsule-pending'");
   });
 
-  it('offers free entry and keeps future paid plans unavailable in pricing and settings', () => {
+  it('offers free entry and gates Practitioner checkout by runtime availability', () => {
     const pricingPage = read('src/app/pricing/page.tsx');
     const checkoutButton = read('src/components/billing/pricing-checkout-button.tsx');
     const settings = read('src/components/settings/account-settings-page.tsx');
@@ -62,10 +62,14 @@ describe('Session 5 public surface and billing contract', () => {
     expect(checkoutButton).toContain('/api/billing/checkout');
     expect(checkoutButton).toContain('/api/auth/session');
     expect(settings).toContain('Free experimental access');
-    expect(settings).toContain('Current access has no paid upgrade');
-    expect(settings).not.toContain("fetchJson('/api/billing/checkout'");
+    expect(pricingPage).toContain('await connection()');
+    expect(pricingPage).toContain('getCheckoutAvailability()');
+    expect(pricingPage).toContain('<PricingCheckoutButton plan="analyst"');
+    expect(settings).toContain('checkoutAvailability?.analyst === true');
+    expect(settings).toContain('Continue to Practitioner checkout');
     expect(checkoutRoute).toContain("process.env.PRAXIS_ENABLE_PAID_CHECKOUT !== 'true'");
     expect(checkoutRoute).toContain('available: false');
+    expect(checkoutRoute).toContain('getCheckoutAvailability()[parsed.data.plan]');
   });
 
   it('states experimental operator and processing boundaries without implying a signed agreement', () => {

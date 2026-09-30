@@ -71,8 +71,8 @@ export async function authenticateFirebaseCanary(
 }
 
 export async function finishOnboardingLater(page: Page, baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000') {
-  await expect(page.getByRole('heading', { name: /Set up your analyst profile|Review your analyst profile/i })).toBeVisible({ timeout: 30_000 });
-  await page.getByRole('button', { name: /Finish later/i }).click();
+  await expect(page.getByRole('heading', { level: 1, name: /^(Make PRAXIS yours|Your working preferences)$/ })).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'Finish later', exact: true }).click();
   try {
     await page.waitForURL(/\/app/, { timeout: 30_000 });
     return;

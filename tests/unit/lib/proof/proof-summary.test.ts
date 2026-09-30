@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildMemoOutputReview } from '@/lib/memo/output-review';
+import { buildAskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
+import type { AskContextReceipt } from '@/lib/ai/ask-conversation';
 import {
   buildProofSummaryFromAgentRun,
   buildProofSummaryFromAskEnvelope,
@@ -11,7 +13,7 @@ describe('proof summary normalization', () => {
     expect(modelPolicyLabelFor({ modelTier: 'standard', selectedModelId: 'gemini-3.5-flash' })).toBe('standard policy reasoning');
     expect(modelPolicyLabelFor({ modelTier: 'deep', selectedModelId: 'gemini-3.1-pro-preview' })).toBe('deep policy reasoning');
     expect(modelPolicyLabelFor({ modelPolicy: 'praxis_frontier_deep_model_policy' })).toBe('deep policy reasoning');
-    expect(modelPolicyLabelFor({ lifecycleTier: 'stable_fallback', selectedModelId: 'gemini-2.5-flash' })).toBe('standard policy reasoning (fallback)');
+    expect(modelPolicyLabelFor({ modelTier: 'standard', lifecycleTier: 'stable_fallback', selectedModelId: 'gemini-2.5-flash' })).toBe('standard policy reasoning');
     expect(JSON.stringify(modelPolicyLabelFor({ selectedModelId: 'gemini-2.5-pro' }))).not.toMatch(/gemini|vertex|google|gpt|claude/i);
   });
 
@@ -131,6 +133,59 @@ describe('proof summary normalization', () => {
     });
     expect(summary.degradedStates).toContain('1 unsupported claim');
     expect(summary.improvementActions).toContain('Resolve boardroom open questions before sharing externally.');
+  });
+
+  it('labels an executed economical route without treating fallback availability as execution', () => {
+    const orchestration = buildAskConversationOrchestrationReceipt({
+      prompt: 'Recall the funding status using only the supplied notes. Answer directly; do not use tools or web sources.',
+      intent: 'normal_answer', sourcePreviewCount: 1, activeGapCount: 0,
+      contextReceipt: {
+        capsuleId: 'cap-1', capsuleVersion: 2, health: 'ready', evidenceCount: 1,
+        threadId: 'thread-1', traceId: 'trace-1', historyTurnCount: 0, memoryPersistence: 'firestore',
+        coreRefs: { userCoreId: null, situationCoreId: null, graphCoreId: null, memoryCoreId: null, sourceDocumentCoreIds: ['doc-1'], outputCoreIds: [] }, warnings: [],
+        referenceCapsuleIds: [], referenceCapsuleCount: 0, missingReferenceCapsuleIds: [], retrievalLayers: [], stages: [],
+      } satisfies AskContextReceipt,
+    });
+    expect(orchestration.routingDecision.modelTier).toBe('fast');
+    expect(orchestration.generationBudget.taskKind).toBe('cheap_classify');
+    expect(modelPolicyLabelFor({
+      modelTier: orchestration.routingDecision.modelTier,
+      selectedModelId: orchestration.generationBudget.selectedModelId,
+      lifecycleTier: 'stable_fallback', fallbackPosture: 'Stable fallback ready',
+    })).toBe('economical recall and extraction');
+  });
+
+  it.each([
+    ['fast', 'economical recall and extraction'],
+    ['standard', 'standard policy reasoning'],
+    ['deep', 'deep policy reasoning'],
+    ['sourceability', 'sourceability review'],
+  ])('preserves the effective %s tier for primary and actual fallback execution', (modelTier, label) => {
+    expect(modelPolicyLabelFor({ modelTier, lifecycleTier: 'stable_fallback' })).toBe(label);
+    expect(modelPolicyLabelFor({ modelTier, fallbackPosture: 'fallback' })).toBe(`${label} (fallback)`);
+  });
+
+  it('uses the executed fallback receipt in an Ask proof summary', () => {
+    const summary = buildProofSummaryFromAskEnvelope({
+      orchestrationReceipt: { routingDecision: { modelTier: 'deep' } },
+      generationReceipt: { selectedModel: 'gemini-2.5-pro', fallbackModel: 'gemini-3.1-pro-preview' },
+    });
+    expect(summary.modelPolicyLabel).toBe('deep policy reasoning (fallback)');
+  });
+
+  it('preserves actual fallback proof for historical turns without a generation receipt', () => {
+    expect(buildProofSummaryFromAskEnvelope({}, {
+      selectedModelId: 'gemini-2.5-pro', fallbackPosture: 'fallback',
+    }).modelPolicyLabel).toBe('deep policy reasoning (fallback)');
+    expect(buildProofSummaryFromAskEnvelope({}, {
+      selectedModelId: 'gemini-2.5-pro', lifecycleTier: 'stable_fallback',
+    }).modelPolicyLabel).toBe('deep policy reasoning');
+  });
+
+  it('uses effective economical routing when its actual fallback model also serves deep tasks', () => {
+    expect(modelPolicyLabelFor({
+      selectedModelId: 'gemini-2.5-flash', modelTier: 'fast', fallbackPosture: 'fallback',
+    })).toBe('economical recall and extraction (fallback)');
   });
 
   it('includes grounding verifier coverage and flagged spans in proof metadata', () => {

@@ -86,6 +86,35 @@ describe('Polar webhook subscription mapping', () => {
   it('treats the catch-all canceled state as revoked when cancellation is immediate', () => {
     expect(polarSubscriptionPatchFromEvent({ type: 'subscription.updated', data: { ...baseSubscription, status: 'canceled', cancelAtPeriodEnd: false } }, { analyst: 'prod_analyst' })?.subscriptionStatus).toBe('revoked');
   });
+  it.each([
+    { metadata: { uid: 'uid_other' } },
+    { externalCustomerId: 'uid_other' },
+    { external_customer_id: 'uid_other' },
+    { customer: { ...baseSubscription.customer, external_id: 'uid_other' } },
+  ])('rejects conflicting provided UID bindings', (conflict) => {
+    expect(polarSubscriptionPatchFromEvent({ type: 'subscription.active', data: { ...baseSubscription, ...conflict } }, { analyst: 'prod_analyst' })).toBeNull();
+  });
+  it.each(['nested/profile/target', 'back\\slash', '.', '..', 'x'.repeat(129), ' leading-space', '', 42])('rejects malformed UID bindings', (uid) => {
+    expect(polarSubscriptionPatchFromEvent({
+      type: 'subscription.active',
+      data: { ...baseSubscription, customer: { id: 'cus_123', externalId: uid }, metadata: { uid } },
+    }, { analyst: 'prod_analyst' })).toBeNull();
+  });
+  it('accepts agreeing UID aliases and legacy metadata-only identity', () => {
+    const agreeing = polarSubscriptionPatchFromEvent({
+      type: 'subscription.active',
+      data: { ...baseSubscription, customer: { ...baseSubscription.customer, external_id: 'uid_123' }, externalCustomerId: 'uid_123', external_customer_id: 'uid_123' },
+    }, { analyst: 'prod_analyst' });
+    expect(agreeing?.uid).toBe('uid_123');
+    expect(polarSubscriptionPatchFromEvent({
+      type: 'subscription.active', data: { ...baseSubscription, customer: { id: 'cus_123', externalId: null } },
+    }, { analyst: 'prod_analyst' })?.uid).toBe('uid_123');
+  });
+  it.each(['custom.uid:123', 'x'.repeat(128)])('accepts a valid custom UID within the Firebase length bound', (uid) => {
+    expect(polarSubscriptionPatchFromEvent({
+      type: 'subscription.active', data: { ...baseSubscription, customer: { id: 'cus_123', externalId: uid }, metadata: { uid } },
+    }, { analyst: 'prod_analyst' })?.uid).toBe(uid);
+  });
 });
 
 function fixtureDb(initial: Record<string, unknown> | null) {
@@ -129,6 +158,79 @@ describe('Polar subscription application', () => {
     const later = { ...patch(), subscriptionUpdatedAt: '2026-10-02T00:00:00Z' };
     expect(await applyPolarSubscriptionPatch(fixture.db, later, 'replayed-event')).toBe('stale');
     expect(fixture.account()?.subscription).toBe('free');
+  });
+  it.each(['revoked', 'canceled', 'past_due'] as const)('ignores a later %s event from a superseded subscription', async (status) => {
+    const fixture = fixtureDb({
+      credits: 73, subscription: 'team', subscriptionStatus: 'active',
+      polarSubscriptionId: 'sub_current', polarCustomerId: 'cus_current',
+      subscriptionUpdatedAt: '2026-09-30T12:00:00Z',
+      billingAllowancePeriodEnd: '2026-10-30T12:00:00Z',
+    });
+    const oldSubscription = polarSubscriptionPatchFromEvent({
+      type: `subscription.${status}`,
+      data: {
+        ...baseSubscription, id: 'sub_old', customerId: 'cus_current',
+        customer: { id: 'cus_current', externalId: 'uid_123' },
+        status, cancelAtPeriodEnd: status === 'canceled',
+        modifiedAt: '2026-10-01T12:00:00Z', currentPeriodEnd: '2026-10-30T12:00:00Z',
+      },
+    }, { analyst: 'prod_analyst' })!;
+
+    expect(await applyPolarSubscriptionPatch(fixture.db, oldSubscription, `superseded-${status}`)).toBe('stale');
+    expect(fixture.account()).toMatchObject({
+      credits: 73, subscription: 'team', subscriptionStatus: 'active',
+      polarSubscriptionId: 'sub_current', polarCustomerId: 'cus_current',
+      subscriptionUpdatedAt: '2026-09-30T12:00:00Z',
+    });
+    expect(fixture.writes.mock.calls.filter(([ref]) => ref.collection === 'users')).toHaveLength(0);
+  });
+  it.each(['active', 'revoked'] as const)('rejects a current-subscription %s event with a different customer binding', async (status) => {
+    const fixture = fixtureDb({
+      credits: 73, subscription: 'analyst', subscriptionStatus: 'active',
+      polarSubscriptionId: 'sub_123', polarCustomerId: 'cus_current',
+      subscriptionUpdatedAt: '2026-09-30T12:00:00Z',
+    });
+    const mismatchedCustomer = polarSubscriptionPatchFromEvent({
+      type: `subscription.${status}`, data: { ...baseSubscription, status, modifiedAt: '2026-10-01T12:00:00Z' },
+    }, { analyst: 'prod_analyst' })!;
+    expect(await applyPolarSubscriptionPatch(fixture.db, mismatchedCustomer, 'wrong-customer')).toBe('stale');
+    expect(fixture.account()).toMatchObject({ subscription: 'analyst', polarCustomerId: 'cus_current', credits: 73 });
+    expect(fixture.writes.mock.calls.filter(([ref]) => ref.collection === 'users')).toHaveLength(0);
+  });
+  it.each(['canceled', 'revoked'] as const)('applies the legitimate current subscription %s event', async (status) => {
+    const fixture = fixtureDb({
+      credits: 73, subscription: 'analyst', subscriptionStatus: 'active',
+      polarSubscriptionId: 'sub_123', polarCustomerId: 'cus_123',
+      subscriptionUpdatedAt: '2026-09-30T12:00:00Z',
+      billingAllowancePeriodEnd: '2026-10-30T12:00:00Z',
+    });
+    const currentTerminal = polarSubscriptionPatchFromEvent({
+      type: `subscription.${status}`,
+      data: { ...baseSubscription, status, cancelAtPeriodEnd: status === 'canceled', modifiedAt: '2026-10-01T12:00:00Z', currentPeriodEnd: '2026-10-30T12:00:00Z' },
+    }, { analyst: 'prod_analyst' })!;
+    expect(await applyPolarSubscriptionPatch(fixture.db, currentTerminal, `current-${status}`)).toBe('applied');
+    expect(fixture.account()).toMatchObject({
+      credits: 73, subscription: status === 'revoked' ? 'free' : 'analyst', subscriptionStatus: status,
+      polarSubscriptionId: 'sub_123', polarCustomerId: 'cus_123',
+    });
+  });
+  it.each(['active', 'revoked'] as const)('allows a legitimate new activation to replace an %s binding and grant a new period once', async (previousStatus) => {
+    const fixture = fixtureDb({
+      credits: 73, subscription: previousStatus === 'active' ? 'analyst' : 'free', subscriptionStatus: previousStatus,
+      polarSubscriptionId: 'sub_previous', polarCustomerId: 'cus_previous',
+      subscriptionUpdatedAt: '2026-09-29T12:00:00Z',
+      billingAllowancePeriodEnd: '2026-09-30T12:00:00Z',
+    });
+    const replacement = { ...patch(), polarSubscriptionId: 'sub_replacement' };
+    expect(await applyPolarSubscriptionPatch(fixture.db, replacement, 'new-subscription')).toBe('applied');
+    expect(fixture.account()).toMatchObject({
+      credits: 250_000, subscription: 'analyst', subscriptionStatus: 'active',
+      polarSubscriptionId: 'sub_replacement', polarCustomerId: 'cus_123',
+    });
+    fixture.account()!.credits = 73; // Work consumes the granted allowance.
+    expect(await applyPolarSubscriptionPatch(fixture.db, replacement, 'new-subscription')).toBe('duplicate');
+    expect(await applyPolarSubscriptionPatch(fixture.db, replacement, 'new-subscription-redelivery')).toBe('applied');
+    expect(fixture.account()?.credits).toBe(73);
   });
   it.each([null, { accountDeletionStatus: 'deleting' }, { accountDeletionStatus: 'deleted' }])('does not recreate or upgrade missing/deleting owners', async (account) => {
     const fixture = fixtureDb(account);

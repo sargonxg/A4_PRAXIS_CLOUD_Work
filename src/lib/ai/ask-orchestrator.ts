@@ -182,6 +182,7 @@ export function buildAskConversationOrchestrationReceipt(request: {
   intent: AskIntent;
   contextReceipt: AskContextReceipt;
   sourcePreviewCount: number;
+  sourceCount?: number;
   activeGapCount?: number;
   contextPackageId?: string | null;
   selectedPolicyAgentId?: string | null;
@@ -253,7 +254,7 @@ export function buildAskConversationOrchestrationReceipt(request: {
     capsuleVersion: input.contextReceipt.capsuleVersion,
     selectedTools: selectedToolIds,
     outputTarget: routingDecision.outputDestination,
-    sourceCount: input.sourcePreviewCount,
+    sourceCount: input.sourceCount ?? input.sourcePreviewCount,
     documentCount: input.contextReceipt.coreRefs.sourceDocumentCoreIds.length,
     sourcedParagraphCount: input.contextReceipt.evidenceCount,
     contextGaps: input.contextReceipt.warnings,
@@ -470,7 +471,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       label: 'Building timeline',
       status: 'complete' as const,
       detail: safeStatusDetail('Source-cited temporal ontology requested; ordered timeline and causal links attached to the context packet.'),
-      sourceCount: receipt.capsule.sourcePreviewCount,
+      sourceCount: receipt.capsuleReadReceipt.sourceCount,
       capsuleCount: receipt.capsule.capsuleId ? 1 : 0,
       warningCount,
     }] : []),
@@ -481,7 +482,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       status: 'complete',
       detail: safeStatusDetail(`${receipt.routingDecision.userSafeLabels.policyAgent} selected.`),
       selectedToolIds,
-      sourceCount: receipt.capsule.sourcePreviewCount,
+      sourceCount: receipt.capsuleReadReceipt.sourceCount,
       capsuleCount: receipt.capsule.capsuleId ? 1 : 0,
       groundingPosture,
       sourcePosture,
@@ -493,7 +494,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       label: 'Checking evidence',
       status: receipt.capsule.contextHealth === 'missing' ? 'warn' : 'complete',
       detail: safeStatusDetail(`${receipt.capsule.evidenceCount} evidence paragraph${receipt.capsule.evidenceCount === 1 ? '' : 's'} and ${receipt.capsule.sourcePreviewCount} source preview${receipt.capsule.sourcePreviewCount === 1 ? '' : 's'} attached.`),
-      sourceCount: receipt.capsule.sourcePreviewCount,
+      sourceCount: receipt.capsuleReadReceipt.sourceCount,
       capsuleCount: receipt.capsule.capsuleId ? 1 : 0,
       warningCount,
     },
@@ -505,7 +506,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       detail: safeStatusDetail(`${receipt.toolRouting.selectedToolIds.length} tool route${receipt.toolRouting.selectedToolIds.length === 1 ? '' : 's'} selected; ${receipt.toolRouting.blockedToolIds.length} approval gated.`),
       selectedToolIds,
       approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
-      sourceCount: receipt.capsule.sourcePreviewCount,
+      sourceCount: receipt.capsuleReadReceipt.sourceCount,
       warningCount,
     },
     {
@@ -517,7 +518,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
         ? 'Sourceability and terminology review queued for this research/policy turn.'
         : 'Standard terminology check only; no specialist policy review needed.',
       selectedToolIds,
-      sourceCount: receipt.capsule.sourcePreviewCount,
+      sourceCount: receipt.capsuleReadReceipt.sourceCount,
       warningCount,
     },
     {
@@ -533,7 +534,7 @@ export function buildAskOrchestrationStatusEvents(receipt: AskConversationOrches
       canCancel: queuedRun?.status === 'queued' || queuedRun?.status === 'dispatch_enqueued',
       agentLabel: policyAgent?.label ?? receipt.routingDecision.userSafeLabels.policyAgent,
       selectedToolIds,
-      sourceCount: receipt.capsule.sourcePreviewCount,
+      sourceCount: receipt.capsuleReadReceipt.sourceCount,
       warningCount,
       approvalGateCount: receipt.toolRouting.approvalRequiredToolIds.length,
       outputTarget,

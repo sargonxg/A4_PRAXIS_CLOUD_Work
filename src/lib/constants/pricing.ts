@@ -26,31 +26,27 @@ export const PRICING_TIERS: PricingTier[] = [
     audience: 'Solo researchers and policy workers evaluating PRAXIS',
     availability: 'Current free beta',
     features: [
-      'Direct questions and saved conversations',
-      'Other metered work shares the allowance; see your account remaining',
-      'Attach saved context and inspect source information',
+      'Ask questions and return to saved conversations',
       'Build private context from notes and documents',
-      'Review proposed claims and revise saved drafts',
-      'Guide help for product and context-use questions',
-      'No credit card, no commitment',
+      'Attach saved context and inspect its sources',
+      'Review claims and revise saved drafts',
     ],
   },
   {
     id: 'analyst',
     name: 'Practitioner',
     price: 49,
-    usage: 'Individual policy workspace',
+    usage: '250,000 PRAXIS credits per billing period',
     maxSituations: 10,
     highlighted: true,
     cta: 'Discuss a proposal',
     audience: 'Individual analysts, policy officers, and researchers',
     availability: 'Proposed paid plan',
     features: [
-      'Proposed expanded individual workspace allowance',
-      'Reusable context, research and writing workflows',
-      'Source and review information retained with work',
-      'Export formats and limits subject to activation checks',
-      'Support terms confirmed before subscription',
+      'Individual workspace for policy research and writing',
+      'Private context from notes, TXT, PDF and DOCX files',
+      'Saved conversations with source information',
+      'Reviewed drafts with Markdown and DOCX downloads',
     ],
   },
   {
@@ -63,11 +59,7 @@ export const PRICING_TIERS: PricingTier[] = [
     audience: 'Mediation teams, policy units, and research desks',
     availability: 'Proposed paid plan',
     features: [
-      'Proposed shared context and team workspace workflows',
-      'Permissions and reviewer roles require separate acceptance',
-      'Shared evidence and review records',
-      'Schedules require configured and tested execution',
-      'Seat, usage and support terms confirmed before activation',
+      'Shared context, seats and permissions need separate implementation and verification.',
     ],
   },
   {
@@ -80,11 +72,7 @@ export const PRICING_TIERS: PricingTier[] = [
     audience: 'Institutions requiring governance, scale, and custom controls',
     availability: 'By agreement',
     features: [
-      'Scope, usage and governance agreed for the engagement',
-      'SSO / SAML subject to implementation and verification',
-      'Residency and private deployment require written agreement',
-      'Model access depends on provider and deployment availability',
-      'Security and procurement requirements assessed before onboarding',
+      'Agree on data handling, governance and deployment requirements before an evaluation.',
     ],
   },
 ];
@@ -118,4 +106,4 @@ export const PLAN_USAGE_BUCKETS = [
  * Keep operation-level costs in `src/lib/api/with-credits.ts`.
  */
 export const INTERNAL_COST_DISCLOSURE_NOTICE =
-  'Experimental workspace limits apply. Paid upgrades are unavailable. Future plan prices and features are proposals, not active entitlements or purchase offers.';
+  'Experimental workspace limits apply. Review generated work against its sources before sharing.';

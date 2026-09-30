@@ -68,4 +68,18 @@ function emptyContext(binding: MemoContextSnapshot['binding']): MemoContextSnaps
     conversationId: null, runId: null, outputTarget: null, outputCapsuleId: null };
 }
 
-function copy<T>(value: T): T { return JSON.parse(JSON.stringify(value)) as T; }
+function copy<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return Array.from(value, (entry) => entry === undefined ? null : copy(entry)) as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    const prototype = Object.getPrototypeOf(value);
+    // Copy receipt objects, but retain Firestore-native values and their types.
+    if (prototype === Object.prototype || prototype === null) {
+      return Object.fromEntries(Object.entries(value)
+        .filter(([, entry]) => entry !== undefined)
+        .map(([key, entry]) => [key, copy(entry)])) as T;
+    }
+  }
+  return value;
+}

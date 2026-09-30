@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { FieldValue, Firestore, GeoPoint, Timestamp } from 'firebase-admin/firestore';
 import { approveMemoBody, loadMemoById, memoDocumentId, saveMemoDraft } from '@/lib/firebase/memo-service';
 import { buildMemoOutputReview } from '@/lib/memo/output-review';
 import { readMemoContextSnapshot } from '@/lib/memo/context-snapshot';
@@ -13,6 +14,112 @@ type MemoTestRef = {
 };
 
 describe('memo service helpers', () => {
+  it('persists optional source receipts without losing review lineage or replaying an agent write', async () => {
+    const fixture = createMemoDb({});
+    const body = 'Funding approval remains unconfirmed.';
+    const outputReview = await buildMemoOutputReview({ body, report: null, verifierStatus: 'disabled' });
+    const receipt = {
+      sourceReceiptId: 'receipt-web-1', title: 'Synthetic council statement', url: 'https://example.invalid/statement',
+      snippet: body, provider: 'google_search', publishedDate: undefined, publisher: undefined,
+      confidence: 0, originalPassageStatus: 'captured',
+      passage: { paragraphRef: 'paragraph-2', pageRef: undefined, quote: body },
+      generatedGroundingSegments: [{ sourceIndices: [0, undefined, 2], optional: undefined, reviewRequired: false }],
+    };
+    const input = {
+      caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Source-linked memo', graphSnapshotId: 'graph-1',
+      runId: 'run-1', capsuleId: 'capsule-1', capsuleVersion: 3, conversationId: 'conversation-1',
+      sourceReceiptIds: ['receipt-web-1'], sourceReceipts: [receipt], outputReview,
+      operationId: 'agent:run-1:policy-memo',
+      blocks: [{ id: 'live-memo-draft', type: 'paragraph' as const, content: body,
+        citations: [{ nodeIds: ['claim-1'], sourceReceiptIds: ['receipt-web-1'], surface: 'footnote' as const }],
+        metadata: { sourceReceipts: [receipt], artifactMetadata: { runId: 'run-1', outputReview } } }],
+    };
+    const record = await saveMemoDraft('user-1', input, fixture.db as never);
+    const loaded = await loadMemoById('user-1', record.memo.id, fixture.db as never);
+    const expectedReceipt = {
+      sourceReceiptId: 'receipt-web-1', title: receipt.title, url: receipt.url, snippet: body, provider: 'google_search',
+      confidence: 0, originalPassageStatus: 'captured', passage: { paragraphRef: 'paragraph-2', quote: body },
+      generatedGroundingSegments: [{ sourceIndices: [0, null, 2], reviewRequired: false }],
+    };
+    expect(loaded?.memo).toMatchObject({ runId: 'run-1', capsuleId: 'capsule-1', capsuleVersion: 3,
+      conversationId: 'conversation-1', sourceReceiptIds: ['receipt-web-1'], sourceReceipts: [expectedReceipt],
+      status: 'review', outputReview, humanApproval: null });
+    expect(loaded?.versions[0]).toMatchObject({ operationId: input.operationId, outputReview,
+      graphSnapshotId: 'graph-1', blocks: [{ citations: input.blocks[0].citations,
+        metadata: { sourceReceipts: [expectedReceipt], outputReview, artifactMetadata: { runId: 'run-1', outputReview } } }] });
+    expect(record.memo).toHaveProperty('sourceReceipts', [expectedReceipt]);
+    expect(record.versions[0]).not.toHaveProperty('changeNote');
+    expect(receipt).toHaveProperty('publishedDate', undefined);
+    expect(receipt.generatedGroundingSegments[0].sourceIndices[1]).toBeUndefined();
+    const replay = await saveMemoDraft('user-1', input, fixture.db as never);
+    expect(replay.versions).toHaveLength(1);
+    expect(fixture.writePayloads).toHaveLength(2);
+    const reviewed = await approveMemoBody('user-1', record.memo.id, {
+      versionId: record.memo.currentVersionId, bodyHash: outputReview.bodyHash,
+      intendedUse: 'internal-analysis', limitations: 'Synthetic supplied source; its publication date remains unavailable.',
+    }, fixture.db as never);
+    expect(reviewed?.memo).toMatchObject({ status: 'final', sourceReceipts: [expectedReceipt],
+      sourceReceiptIds: ['receipt-web-1'], runId: 'run-1', capsuleId: 'capsule-1',
+      humanApproval: { versionId: record.memo.currentVersionId, bodyHash: outputReview.bodyHash, reviewerUid: 'user-1' } });
+    expect(reviewed?.versions[0].blocks[0].metadata.sourceReceipts).toStrictEqual([expectedReceipt]);
+    expect(fixture.writePayloads).toHaveLength(4);
+  });
+
+  it('cleans optional nested version metadata on updates while preserving earlier source snapshots', async () => {
+    const fixture = createMemoDb({});
+    const initial = { caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Memo', graphSnapshotId: 'graph-1',
+      sourceReceipts: [{ sourceReceiptId: 'receipt-1', publishedDate: '2026-09-20' }],
+      blocks: [{ id: 'memo-body', type: 'paragraph' as const, content: 'Initial statement.', citations: [],
+        metadata: { sourceReceipts: [{ sourceReceiptId: 'receipt-1', publishedDate: '2026-09-20' }] } }] };
+    await saveMemoDraft('user-1', initial, fixture.db as never);
+    const updated = await saveMemoDraft('user-1', { ...initial,
+      sourceReceipts: [{ sourceReceiptId: 'receipt-2', publishedDate: undefined }],
+      blocks: [{ ...initial.blocks[0], title: undefined, content: 'Funding remains unconfirmed.',
+        metadata: { sourceReceipts: [{ sourceReceiptId: 'receipt-2', publishedDate: undefined }],
+          claimChecks: [{ supported: false, unavailableReason: undefined, confidence: 0, passage: null }] } }] }, fixture.db as never);
+    const loaded = await loadMemoById('user-1', updated.memo.id, fixture.db as never);
+    expect(loaded?.memo.sourceReceipts).toStrictEqual([{ sourceReceiptId: 'receipt-2' }]);
+    expect(loaded?.versions).toHaveLength(2);
+    expect(loaded?.versions[0].blocks[0].metadata.sourceReceipts).toStrictEqual(initial.sourceReceipts);
+    expect(loaded?.versions[1].blocks[0]).not.toHaveProperty('title');
+    expect(loaded?.versions[1].blocks[0].metadata).toStrictEqual({
+      sourceReceipts: [{ sourceReceiptId: 'receipt-2' }],
+      claimChecks: [{ supported: false, confidence: 0, passage: null }],
+    });
+    expect(updated.versions[1].blocks).toStrictEqual(loaded?.versions[1].blocks);
+    expect(fixture.writePayloads).toHaveLength(4);
+  });
+
+  it('preserves Firestore-native values and array positions in memo and version writes', async () => {
+    const fixture = createMemoDb({});
+    const firestore = new Firestore({ projectId: 'praxis-unit-tests' });
+    const sourceRef = firestore.doc('sources/receipt-1');
+    const capturedAt = Timestamp.fromDate(new Date('2026-09-30T12:00:00Z'));
+    const observedAt = new Date('2026-09-29T12:00:00Z');
+    const location = new GeoPoint(40.7, -74);
+    const bytes = Buffer.from('source passage');
+    const metadata = { sourceRef, capturedAt, observedAt, location, bytes, optional: undefined,
+      positions: ['receipt-1', undefined, 'receipt-2'], missing: null, empty: '', enabled: false, confidence: 0 };
+    const record = await saveMemoDraft('user-1', { caseId: 'case-1', templateId: 'policy-memo', title: 'Memo',
+      graphSnapshotId: 'graph-1', sourceReceipts: [metadata],
+      blocks: [{ id: 'memo-body', type: 'paragraph', content: 'Synthetic supplied note.', citations: [], metadata }] }, fixture.db as never);
+    const [parentWrite, versionWrite] = fixture.writePayloads;
+    const parentMetadata = (parentWrite.data.sourceReceipts as Array<typeof metadata>)[0];
+    const versionMetadata = (versionWrite.data.blocks as Array<{ metadata: typeof metadata }>)[0].metadata;
+    for (const saved of [parentMetadata, versionMetadata, record.versions[0].blocks[0].metadata]) {
+      expect(saved.sourceRef).toBe(sourceRef);
+      expect(saved.capturedAt).toBe(capturedAt);
+      expect(saved.observedAt).toBe(observedAt);
+      expect(saved.location).toBe(location);
+      expect(saved.bytes).toBe(bytes);
+      expect(saved).not.toHaveProperty('optional');
+      expect(saved.positions).toStrictEqual(['receipt-1', null, 'receipt-2']);
+      expect(saved).toMatchObject({ missing: null, empty: '', enabled: false, confidence: 0 });
+    }
+    expect(parentWrite.data.updatedAtServer).toBeInstanceOf(FieldValue);
+    expect((parentWrite.data.updatedAtServer as FieldValue).isEqual(FieldValue.serverTimestamp())).toBe(true);
+  });
+
   const contextDraft = { caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Memo', graphSnapshotId: 'graph-1',
     blocks: [{ id: 'memo-body', type: 'paragraph' as const, content: 'A draft.', citations: [], metadata: {} }] };
 
@@ -289,6 +396,7 @@ function createMemoDb(
 ) {
   records['users/user-1'] ??= { uid: 'user-1' };
   const readPaths: string[] = [];
+  const writePayloads: Array<{ path: string; data: Record<string, unknown> }> = [];
   const refFor = (path: string): MemoTestRef => ({
     path,
     collection: (name: string) => refFor(`${path}/${name}`),
@@ -298,8 +406,9 @@ function createMemoDb(
       return { exists: Boolean(records[path]), data: () => records[path] };
     },
     set: async (data, options) => {
-      assertFirestoreData(data);
-      records[path] = JSON.parse(JSON.stringify(options?.merge ? { ...records[path], ...data } : data));
+      assertFirestoreWritable(data);
+      writePayloads.push({ path, data });
+      records[path] = options?.merge ? { ...records[path], ...data } : data;
     },
     orderBy: () => ({
       get: async () => ({ docs: (versions[path.replace(/\/versions$/, '')]
@@ -325,24 +434,26 @@ function createMemoDb(
       runTransaction: async (work: (transaction: { get: (ref: MemoTestRef) => ReturnType<MemoTestRef['get']>; set: (ref: MemoTestRef, data: Record<string, unknown>, options?: { merge: boolean }) => void }) => Promise<void>) => {
         const writes: Array<() => Promise<void>> = [];
         await work({ get: (ref) => ref.get(), set: (ref, data, options) => {
-          assertFirestoreData(data);
+          assertFirestoreWritable(data);
           writes.push(() => ref.set(data, options));
         } });
         for (const write of writes) await write();
       } },
     readPaths,
+    writePayloads,
     where: query.where,
   };
 }
 
-function assertFirestoreData(value: unknown, path = 'document'): void {
-  if (value === undefined) throw new Error(`Firestore cannot persist undefined at ${path}`);
+/** Match Firestore's write-time rejection; JSON cloning used to hide this defect. */
+function assertFirestoreWritable(value: unknown, path = 'document'): void {
+  if (value === undefined) throw new Error(`Firestore rejects undefined at ${path}`);
   if (Array.isArray(value)) {
-    for (let index = 0; index < value.length; index++) assertFirestoreData(value[index], `${path}[${index}]`);
+    Array.from(value).forEach((entry, index) => assertFirestoreWritable(entry, `${path}[${index}]`));
   } else if (value !== null && typeof value === 'object') {
     const prototype = Object.getPrototypeOf(value);
     if (prototype === Object.prototype || prototype === null) {
-      for (const [key, entry] of Object.entries(value)) assertFirestoreData(entry, `${path}.${key}`);
+      for (const [key, entry] of Object.entries(value)) assertFirestoreWritable(entry, `${path}.${key}`);
     }
   }
 }

@@ -35,9 +35,15 @@ describe('account settings page contract', () => {
     }
   });
 
-  it('describes monthly PRAXIS credit usage instead of a weekly free conversation', () => {
-    expect(settingsPage).toContain('Monthly PRAXIS credits left');
-    expect(settingsPage).toContain('Monthly free allowance');
+  it('shows spendable account balance separately from monthly activity without implying a refill', () => {
+    const usageTab = settingsPage.slice(settingsPage.indexOf('function UsageTab('), settingsPage.indexOf('function SecurityTab('));
+    expect(usageTab).toContain('label="Available PRAXIS credits" value={accountCredits}');
+    expect(usageTab).toContain('Activity this month');
+    expect(usageTab).toContain('Monthly activity tracking does not refill your account.');
+    expect(usageTab).not.toContain('usage.remaining');
+    expect(usageTab).not.toContain('usage.allowance');
+    expect(settingsPage).not.toContain('Monthly PRAXIS credits left');
+    expect(settingsPage).not.toContain('Monthly free allowance');
     expect(settingsPage).not.toContain('Weekly free conversation');
     expect(settingsPage).not.toContain('Free conversations left');
   });
@@ -65,13 +71,15 @@ describe('account settings page contract', () => {
     expect(settingsPage).toContain('/api/memory/reject');
   });
 
-  it('keeps prior subscription records but does not initiate unavailable paid upgrades', () => {
+  it('keeps prior subscription management independent of new checkout availability', () => {
     expect(settingsPage).toContain('subscriptionStatus');
     expect(settingsPage).toContain('subscriptionExpiresAt');
     expect(settingsPage).toContain('Free experimental access');
     expect(settingsPage).toContain('Ask about an experimental pilot');
     expect(settingsPage).not.toContain('/api/billing/checkout');
-    expect(settingsPage).not.toContain('checkoutPlan');
+    expect(settingsPage).toContain('checkoutPlan');
+    expect(settingsPage).toContain('checkoutAvailability?.analyst === true');
+    expect(settingsPage).toContain('practitionerAvailable && !hasPaidPlan');
     expect(settingsPage).not.toContain('Start Analyst checkout');
     expect(settingsPage).toContain('hasPriorSubscription');
   });
