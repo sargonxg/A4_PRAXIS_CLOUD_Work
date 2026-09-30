@@ -127,6 +127,8 @@ export function withCalibration(
   creditOpType: string,
   opts: {
     retrievalQuery?: (req: Request, body: Record<string, unknown>) => string | undefined;
+    /** A turn-level veto for workspace facts; explicitly attached capsules remain available. */
+    allowWorkspaceRetrieval?: (req: Request, body: Record<string, unknown>) => boolean;
     situationId?: (req: Request, body: Record<string, unknown>) => string | undefined;
     variant?: 'oneshot' | 'streaming' | 'agent';
     blockOnThinContext?: boolean;
@@ -306,6 +308,7 @@ export function withCalibration(
         situationId,
         toolId,
         retrievalQuery,
+        allowWorkspaceRetrieval: opts.allowWorkspaceRetrieval?.(req, body),
         pathId,
         capsuleId,
         activeContextStack,

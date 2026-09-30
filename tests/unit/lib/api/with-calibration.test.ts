@@ -71,6 +71,7 @@ import { withCalibration } from '@/lib/api/with-calibration';
 import { withContextAware } from '@/lib/api/with-context-aware';
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
+import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
 
 function completeProfile() {
   return {
@@ -344,6 +345,22 @@ describe('withCalibration', () => {
         provenance: expect.objectContaining({ profileVersion: 0 }),
       }),
     }));
+  });
+
+  it('passes the chat turn workspace-retrieval veto into calibration before the handler runs', async () => {
+    const handler = vi.fn().mockResolvedValue(Response.json({ ok: true }));
+    const route = withCalibration('chat', 'ai_chat', {
+      allowWorkspaceRetrieval: (_req, body) => resolveAskExecutionPreference(String(body.prompt)).allowWorkspaceRetrieval,
+      variant: 'streaming',
+    })(handler);
+    const req = new Request('http://x', { method: 'POST', body: JSON.stringify({
+      situationId: 's1', capsuleId: 'selected-capsule',
+      prompt: 'Answer using only this direct conversation, without browsing or agent runs.',
+    }) });
+    const user = { uid: 'u1', email: 'a@b', name: 'A', isDemo: true };
+    await (route as unknown as (r: Request, u: typeof user) => Promise<Response>)(req, user);
+    expect(buildCalibratedContext).toHaveBeenCalledWith(expect.objectContaining({ allowWorkspaceRetrieval: false, capsuleId: 'selected-capsule' }));
+    expect(handler).toHaveBeenCalledOnce();
   });
 
   it('returns 403 when a new user has a partial analyst profile', async () => {

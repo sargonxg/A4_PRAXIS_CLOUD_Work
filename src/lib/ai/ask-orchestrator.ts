@@ -9,6 +9,7 @@ import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 import { buildWorkIntentPlan, type WorkIntentCapsuleInput, type WorkIntentMode, type WorkIntentPlan } from '@/lib/ai/work-intent-router';
 import { buildAskTurnPlan, type AskTurnPlan } from '@/lib/ai/ask-turn-plan';
 import { isTemporalIntent } from '@/lib/context/temporal-timeline';
+import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
 
 export type AskAgenticMode = 'direct_with_receipts' | 'queue_agent_run';
 export type AskOrchestrationComplexity = 'simple' | 'standard' | 'deep';
@@ -174,7 +175,7 @@ export type AskResearchModePreset =
   | 'policy-language-check'
   | 'evidence-annex';
 
-export function buildAskConversationOrchestrationReceipt(input: {
+export function buildAskConversationOrchestrationReceipt(request: {
   prompt: string;
   intent: AskIntent;
   contextReceipt: AskContextReceipt;
@@ -188,8 +189,14 @@ export function buildAskConversationOrchestrationReceipt(input: {
   activeCapsules?: WorkIntentCapsuleInput[];
   contextHealthDegradations?: AskContextHealthDegradation[];
 }): AskConversationOrchestrationReceipt {
+  const preference = resolveAskExecutionPreference(request.prompt);
+  const input = {
+    ...request,
+    prompt: preference.routingPrompt,
+    intent: preference.preferDirectAnswer ? 'normal_answer' as const : request.intent,
+  };
   const workIntent = buildWorkIntentPlan({
-    prompt: input.prompt,
+    prompt: request.prompt,
     activeCapsules: input.activeCapsules ?? workIntentCapsulesFromReceipt(input.contextReceipt),
     selectedSourceIds: input.contextReceipt.coreRefs.sourceDocumentCoreIds,
     attachedSourceCount: input.sourcePreviewCount,
@@ -197,9 +204,9 @@ export function buildAskConversationOrchestrationReceipt(input: {
     contextHealth: input.contextReceipt.health,
   });
   const complexity = classifyComplexity(input.prompt, input.intent, input.contextReceipt, input.activeGapCount ?? 0);
-  const temporal = buildTemporalTriageReceipt(input.prompt);
+  const temporal = buildTemporalTriageReceipt(preference.preferDirectAnswer ? '' : input.prompt);
   const routingDecision = buildTacitusRoutingDecision({
-    prompt: input.prompt,
+    prompt: request.prompt,
     intent: input.intent,
     selectedPolicyAgentId: input.selectedPolicyAgentId,
     userSelectedModelId: input.userSelectedModelId,
@@ -250,6 +257,7 @@ export function buildAskConversationOrchestrationReceipt(input: {
   });
   const workflowPlan = buildAgentWorkflowPlan({
     prompt: input.prompt,
+    allowAgents: !preference.preferDirectAnswer,
     runIntent: policyAgentRunIntent(policyAgentId),
     policyAgentId,
     selectedToolIds,

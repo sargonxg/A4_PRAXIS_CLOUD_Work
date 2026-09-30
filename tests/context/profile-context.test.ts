@@ -55,6 +55,12 @@ vi.mock('@/lib/context/interaction-frame', () => ({
 vi.mock('@/lib/firebase/advisor-history-service', () => ({
   readRecentTurns: vi.fn(async () => []),
 }));
+vi.mock('@/lib/context/capsule-service', () => ({
+  getCapsule: vi.fn(async () => null),
+}));
+vi.mock('@/lib/path/resolve', () => ({
+  resolvePath: vi.fn(async () => null),
+}));
 
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 
@@ -64,6 +70,31 @@ describe('buildCalibratedContext — preferences field', () => {
   it('includes preferences on the returned ContextBlock', async () => {
     const ctx = await buildCalibratedContext({ uid: 'user-test', toolId: 'advisory' });
     expect(ctx.preferences).toEqual(DEFAULT_USER_PREFERENCES);
+  });
+
+  it.each([undefined, 'an explicit workspace query'])('denies workspace facts and retrieval while preserving the selected capsule: %s', async (retrievalQuery) => {
+    const situations = await import('@/lib/firebase/situations');
+    const retrieval = await import('@/lib/knowledge/profile-weighted-retrieval');
+    const episodes = await import('@/lib/firebase/episodes');
+    const interactions = await import('@/lib/context/interaction-frame');
+    const advisorHistory = await import('@/lib/firebase/advisor-history-service');
+    const capsules = await import('@/lib/context/capsule-service');
+    vi.mocked(capsules.getCapsule).mockResolvedValueOnce({
+      capsuleId: 'selected-capsule', ownerUid: 'user-test', label: 'Selected context', version: 1,
+      claimLedger: [{ claimId: 'selected-claim', text: 'Selected evidence stays available.', support: 'supported', sourceRefIds: [] }],
+    } as never);
+    const ctx = await buildCalibratedContext({
+      uid: 'user-test', toolId: 'chat', situationId: 'unselected-situation', advisorId: 'adeyemi',
+      capsuleId: 'selected-capsule', retrievalQuery, allowWorkspaceRetrieval: false,
+    });
+    expect(retrieval.retrieveForProfile).not.toHaveBeenCalled();
+    expect(situations.getSituationById).not.toHaveBeenCalled();
+    expect(episodes.listEpisodes).not.toHaveBeenCalled();
+    expect(interactions.deriveInteractionFrame).not.toHaveBeenCalled();
+    expect(advisorHistory.readRecentTurns).not.toHaveBeenCalled();
+    expect(ctx.toolContext.retrievedChunks).toEqual([]);
+    expect(ctx.toolContext.situation).toBeNull();
+    expect(ctx.systemPromptBlock).toContain('Selected evidence stays available.');
   });
 
   it('sets interaction and advisor frames to null by default (Task 2.1 scope)', async () => {

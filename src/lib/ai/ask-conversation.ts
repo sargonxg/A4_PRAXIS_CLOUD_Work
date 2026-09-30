@@ -1,5 +1,6 @@
 import type { AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
+import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
 
 /** Direct Ask uses this owner-scoped history partition; its model context stays ephemeral. */
 export const DIRECT_ASK_HISTORY_CAPSULE_ID = 'thin-capsule-fallback';
@@ -241,7 +242,9 @@ export function buildAskConversationMessages(
 }
 
 export function classifyAskIntent(prompt: string): AskIntent {
-  const text = prompt.toLowerCase();
+  const preference = resolveAskExecutionPreference(prompt);
+  if (preference.preferDirectAnswer) return 'normal_answer';
+  const text = preference.routingPrompt.toLowerCase();
   if (/\b(handover|handoff|brief my successor|bring .* up to speed|onboard)\b/.test(text)) return 'handover';
   if (/\b(red[- ]?team|challenge|stress test|weakness|counterargument|critique)\b/.test(text)) return 'red_team_review';
   if (/\b(sourceability|source check|evidence gap|citation|cite|grounding|verify sources?)\b/.test(text)) return 'sourceability_review';

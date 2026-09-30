@@ -61,6 +61,7 @@ export const AGENT_WORKFLOW_PROCESS_RAIL: AgentWorkflowPlan['processRail'] = [
 
 export function buildAgentWorkflowPlan(input: {
   prompt?: string;
+  allowAgents?: boolean;
   runIntent: PolicyAgentRunIntent;
   policyAgentId?: string | null;
   selectedToolIds: string[];
@@ -68,8 +69,8 @@ export function buildAgentWorkflowPlan(input: {
   capsuleReadReceipt: CapsuleReadReceipt;
   groundingPosture?: string | null;
 }): AgentWorkflowPlan {
-  const workflowKind = classifyWorkflowKind(input);
-  const requiredPolicyAgentIds = normalizePolicyAgents(input.policyAgentId, workflowKind);
+  const workflowKind = input.allowAgents === false ? 'direct_answer' : classifyWorkflowKind(input);
+  const requiredPolicyAgentIds = input.allowAgents === false ? [] : normalizePolicyAgents(input.policyAgentId, workflowKind);
   const selectedTools = normalizeToolIds(input.selectedToolIds);
   const capsuleGovernance = workflowKind === 'capsule_governance';
   const approvalRequiredToolIds = selectedTools.filter((toolId) => agentToolRequiresApproval(toolId));

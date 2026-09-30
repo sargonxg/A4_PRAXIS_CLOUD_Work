@@ -43,7 +43,6 @@ import {
 } from '@/lib/ai/ask-chat-cache';
 import {
   defaultActiveContextStack,
-  type ActiveContextBlockItem,
   type ActiveContextStackState,
 } from '@/lib/context/active-context-stack';
 import { PENDING_TASKLET_PROMPT_KEY } from '@/lib/product/policy-agents';
@@ -243,7 +242,7 @@ export function PraxisChat({
 
       // A late history response must never replace turns submitted in this session.
       locallyEdited.current = true;
-      const askStack = stackForAsk(stack, text);
+      const askStack = stack;
       const assistantId = `assistant-${Date.now()}`;
       const userMessage: ChatMessage = {
         id: `user-${Date.now()}`,
@@ -1043,55 +1042,6 @@ function VerdictStrip({ verdicts }: { verdicts: SourceabilityClaimVerdict[] }) {
         </span>
       ))}
     </div>
-  );
-}
-
-function stackForAsk(stack: ActiveContextStackState, prompt: string): ActiveContextStackState {
-  if (hasContextSignal(stack)) return stack;
-  const outputBlock: ActiveContextBlockItem = {
-    id: 'direct-ask',
-    capsuleId: null,
-    label: 'Direct PRAXIS answer',
-    role: 'output',
-    primary: true,
-    order: 0,
-  };
-  return {
-    ...stack,
-    outputGoal: 'Direct PRAXIS answer',
-    evidenceGaps: [
-      ...stack.evidenceGaps,
-      {
-        id: `home-gap-${Date.now().toString(36)}`,
-        situationId: null,
-        subjectId: 'home-direct-ask',
-        claimId: 'home-direct-ask',
-        claim: `User asked without saved context: ${prompt.slice(0, 160)}`,
-        status: 'unsupported' as const,
-        sourceHints: [],
-        savedAt: new Date().toISOString(),
-        resolvedAt: null,
-      },
-    ].slice(-5),
-    contextBlocks: {
-      ...stack.contextBlocks,
-      output: [outputBlock],
-    },
-    updatedAt: new Date().toISOString(),
-  };
-}
-
-function hasContextSignal(stack: ActiveContextStackState): boolean {
-  return Boolean(
-    stack.capsuleId ||
-    stack.capsuleRefs.length ||
-    stack.contextPackageId ||
-    stack.userModelId ||
-    stack.situationId ||
-    stack.sourceIds.length ||
-    stack.documentIds.length ||
-    stack.evidenceGaps.length ||
-    stack.outputGoal,
   );
 }
 

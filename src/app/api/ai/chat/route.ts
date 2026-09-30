@@ -81,6 +81,7 @@ import {
   type ResearchGraphReceipt,
 } from '@/lib/research-graph';
 import type { Situation } from '@/types/situation';
+import { filterAskToolsForExecution, readAskMessages, resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
 
 export const maxDuration = 60;
 
@@ -148,6 +149,10 @@ export const GET = withAuth(async (request: Request, user) => {
 });
 
 export const POST = withCalibration('chat', 'ai_chat', {
+  allowWorkspaceRetrieval: (_req, body) => {
+    const messages = readAskMessages(body.messages);
+    return resolveAskExecutionPreference(lastUserPrompt(messages)).allowWorkspaceRetrieval;
+  },
   retrievalQuery: (_req, body) => {
     const messages = Array.isArray(body.messages) ? body.messages as Array<{ role?: string; content?: unknown }> : [];
     const last = messages[messages.length - 1];
@@ -189,7 +194,8 @@ export const POST = withCalibration('chat', 'ai_chat', {
     });
     const requestSituationId = (situation as Situation | undefined)?.id;
     const prompt = lastUserPrompt(messages);
-    const deepResearchRequested = turnMetadata?.toggles?.deepResearch === true;
+    const executionPreference = resolveAskExecutionPreference(prompt);
+    const deepResearchRequested = turnMetadata?.toggles?.deepResearch === true && !executionPreference.preferDirectAnswer;
     const askIntent: AskIntent = deepResearchRequested ? 'research_memo' : classifyAskIntent(prompt);
     if (deepResearchRequested && !_user.isDemo) {
       const creditGate = await checkAndDeductCreditsForUid(
@@ -216,7 +222,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
       );
     }
     const toolInvocations: AskToolInvocationReceipt[] = [];
-    const requestedResearchGraphExtra = aiSettings?.researchGraphExtra === true;
+    const requestedResearchGraphExtra = aiSettings?.researchGraphExtra === true && executionPreference.allowExternalSources;
     const researchGraphServerEnabled = isResearchGraphServerEnabled();
     const researchGraphReceipts: ResearchGraphReceipt[] = requestedResearchGraphExtra && (!researchGraphServerEnabled || _user.isDemo === true)
       ? [buildBlockedResearchGraphReceipt({
@@ -264,7 +270,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
               contextPackageId,
               activeContextStack: isRecord(activeContextStack) ? activeContextStack as Partial<ActiveContextStackState> : null,
               situationId: requestSituationId,
-              query: prompt,
+              query: executionPreference.allowWorkspaceRetrieval ? prompt : undefined,
             }).catch((err) => {
               console.warn('[chat] full capsule resolution failed; using thin fallback context:', err);
               recordContextHealthDegradation(
@@ -422,7 +428,7 @@ You have access to the user's active situation data. When answering questions:
     // Replaces the older `buildAskPraxisCorpusContext` cookie-parsing path with
     // the canonical `searchSituationCorpus` (Lane A, 2026-04-26) so Ask PRAXIS
     // and calibrated internal routes reason over the same evidence layers.
-    if (effectiveSituationId && !_user.isDemo && _user.uid) {
+    if (executionPreference.allowWorkspaceRetrieval && effectiveSituationId && !_user.isDemo && _user.uid) {
       try {
         const lastMessage = messages?.[messages.length - 1];
         const query = typeof lastMessage?.content === 'string' ? lastMessage.content : '';
@@ -486,7 +492,7 @@ You have access to the user's active situation data. When answering questions:
         glaslStage: typeof sit.glaslStage === 'number' ? sit.glaslStage : undefined,
         riskScore: typeof sit.riskScore === 'number' ? sit.riskScore : undefined,
       };
-      if (!_user.isDemo && _user.uid && sit.id) {
+      if (executionPreference.allowWorkspaceRetrieval && !_user.isDemo && _user.uid && sit.id) {
         try {
           graphSnapshot = (await getConflictGraphAdmin(_user.uid, sit.id)) as ConflictGraphSnapshot | null;
           // Derive extended context from graph nodes where available
@@ -525,10 +531,10 @@ You have access to the user's active situation data. When answering questions:
       profileVersion: _user.calibration.provenance.profileVersion ?? 1,
       tier,
       isDemo: _user.isDemo === true,
-      agenticSearchPremiumEnabled: aiSettings?.agenticSearchPremium === true,
+      agenticSearchPremiumEnabled: aiSettings?.agenticSearchPremium === true && executionPreference.allowExternalSources,
       researchGraphExtraEnabled: requestedResearchGraphExtra && researchGraphServerEnabled,
     });
-    const tools = runAskTools({ ...baseTools, ...askPraxisExt }, toolInvocations, researchGraphReceipts);
+    const tools = runAskTools(filterAskToolsForExecution({ ...baseTools, ...askPraxisExt }, executionPreference), toolInvocations, researchGraphReceipts);
     const toolsConsidered = Object.keys(tools).sort();
     const depthDirective = aiSettings?.analysisDepth === 'deep'
       ? '\n\nANALYSIS DEPTH: Provide a more detailed answer with explicit assumptions, alternative interpretations, source/corpus gaps, and practical next actions. Keep it concise enough for an analyst to use.'
@@ -543,7 +549,9 @@ You have access to the user's active situation data. When answering questions:
         ? '\n\nRESEARCH GRAPH: The user requested Research graph, but it is unavailable for this turn. Answer normally from the active capsule and available sources, and surface the degraded Research graph receipt without failing the turn.'
         : '\n\nRESEARCH GRAPH: The free GDELT + Wikidata Research graph extra is off for this turn. Do not use researchGraphSearch unless the user enables the Research graph button in the conversation composer.';
     systemPrompt += '\n\n' + askIntentDirective(askIntent);
-    systemPrompt += instantContextMode
+    systemPrompt += !executionPreference.allowExternalSources
+      ? '\n\n## PROVIDED EVIDENCE ONLY\nThe user prohibited external retrieval for this turn. Answer from the supplied conversation and selected capsule evidence only. Do not browse, search the web, or invent source receipts. If the supplied evidence cannot answer the question, identify the missing evidence and ask the user to supply it.'
+      : instantContextMode
       ? `\n\n## LIVE GROUNDING POLICY (INSTANT CONTEXT)
 No saved ContextCapsule and no situation corpus back this turn. Do NOT answer checkable or current
 factual claims from memory. When the answer depends on external, current, or verifiable facts:
@@ -569,7 +577,7 @@ fabricate sources, figures, dates, or identifiers.`;
       contextPackageId,
       capsule: capsuleContext?.capsule ?? null,
       turnCapsule,
-      corpusSearch: Boolean(effectiveSituationId && !_user.isDemo && _user.uid),
+      corpusSearch: Boolean(executionPreference.allowWorkspaceRetrieval && effectiveSituationId && !_user.isDemo && _user.uid),
       groundedSearch: false,
       effectiveSituationId: effectiveSituationId ?? null,
       retrievedDocumentIds,
@@ -1342,6 +1350,7 @@ async function maybeQueueAskAgentRun(input: {
       internalEstimatedCostCents: null,
       metadata: {
         policyAgentId: receipt.supervisor.policyAgentId,
+        askExecutionPreference: resolveAskExecutionPreference(input.prompt),
         outputDestination: receipt.supervisor.outputDestination,
         executionMode: 'ask-orchestrated',
         sourceAskThreadId: input.threadId ?? null,

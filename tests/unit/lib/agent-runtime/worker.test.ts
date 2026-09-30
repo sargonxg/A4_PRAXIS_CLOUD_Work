@@ -156,6 +156,36 @@ function makeQualityCapsule(overrides: Record<string, unknown> = {}) {
 }
 
 describe('agent runtime no-op worker', () => {
+  it('keeps manual capsule research local despite selected search tool cores and a persisted search plan', async () => {
+    const metadata = {
+      policyAgentId: 'research-memo',
+      selectedToolIds: ['grounded-search', 'policy-memo'],
+      askExecutionPreference: { allowExternalSources: false },
+      searchPlan: { queries: ['must not execute'], sourceClasses: ['public_web'], freshnessNeed: 'current' },
+    };
+    function localRun(status: AgentRun['status']) {
+      const run = makeRun(status, metadata);
+      return { ...run, objective: 'Research the attached capsule. Do not browse.', selectedCoreIds: { ...run.selectedCoreIds, toolCoreIds: ['grounded-search', 'deep-search-agent'] } };
+    }
+    const search = vi.fn(async () => ({ query: 'must not execute', sourceReceipts: [], degradedReason: null }));
+    const events: AgentRunEvent[] = [];
+    const result = await executeAgentRun(payload, {
+      getRun: async () => localRun('queued'),
+      updateStatus: async (input) => localRun(input.toStatus),
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => { events.push(event); return event; },
+      runGroundedSearch: search,
+      buildEvidencePack: async () => makeEvidencePack(),
+      generateText: async () => ({ text: 'Evidence paragraph [D1:p.1].' }),
+      saveMemoDraft: async () => ({ memo: { id: 'local-research-memo' } } as never),
+      saveOutputCapsule: async () => ({ id: 'local-output-capsule' }),
+    });
+    expect(result.status).toBe('succeeded');
+    expect(search).not.toHaveBeenCalled();
+    expect(events.some((event) => event.data.phase === 'grounding.live_retrieval_started')).toBe(false);
+  });
+
   it('posts a succeeded run result to the originating Ask thread with a deterministic turn id', async () => {
     const turns = new Map<string, { prompt: string; output: string; runtime?: Record<string, unknown> }>();
     const events: AgentRunEvent[] = [];

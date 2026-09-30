@@ -1,4 +1,5 @@
 import type { AskIntent } from '@/lib/ai/ask-conversation';
+import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
 import { buildModelFallbackCandidates, getAskPraxisModelRuntimePolicy, type ModelFallbackCandidate } from '@/lib/ai/model-runtime-policy';
 import { getModelMatrixEntry, type TaskKind } from '@/lib/ai/model-matrix';
 import { agentToolRequiresApproval, type AgentToolId } from '@/lib/agent-runtime/tool-registry';
@@ -52,11 +53,13 @@ export function buildTacitusRoutingDecision(input: {
   activeGapCount: number;
   requestedOutputType?: string | null;
 }): TacitusRoutingDecision {
-  const text = input.prompt.toLowerCase();
+  const preference = resolveAskExecutionPreference(input.prompt);
+  const intent = preference.preferDirectAnswer ? 'normal_answer' : input.intent;
+  const text = preference.routingPrompt.toLowerCase();
   const policy = getAskPraxisModelRuntimePolicy();
-  const policyAgentId = selectPolicyAgent({
+  const policyAgentId = preference.preferDirectAnswer ? null : selectPolicyAgent({
     text,
-    intent: input.intent,
+    intent,
     selectedPolicyAgentId: input.selectedPolicyAgentId,
     activeGapCount: input.activeGapCount,
     requestedOutputType: input.requestedOutputType,
@@ -65,7 +68,7 @@ export function buildTacitusRoutingDecision(input: {
   const policyAgent = getPolicyAgent(policyAgentId);
   const modelTier = selectModelTier({
     text,
-    intent: input.intent,
+    intent,
     workerMode,
     capsuleHealth: input.capsuleHealth,
     activeGapCount: input.activeGapCount,
@@ -77,10 +80,14 @@ export function buildTacitusRoutingDecision(input: {
     selectedModelId,
     depth,
   });
-  const selectedToolIds = selectTools(text, input.intent, workerMode, modelTier);
+  const selectedToolIds = !preference.allowTools || (preference.preferDirectAnswer && !preference.allowExternalSources)
+    ? ['context-resolve', 'capsule-evidence-pack'] as AgentToolId[]
+    : selectTools(text, intent, workerMode, modelTier)
+      .filter((id) => (!preference.preferDirectAnswer || id !== 'deep-search-agent')
+        && (preference.allowExternalSources || !['grounded-search', 'deep-search-agent', 'external-export'].includes(id)));
   const approvalRequiredToolIds = selectedToolIds.filter((toolId) => agentToolRequiresApproval(toolId));
   const reasons = buildReasons({
-    intent: input.intent,
+    intent,
     modelTier,
     modelTaskKind,
     workerMode,
@@ -89,6 +96,8 @@ export function buildTacitusRoutingDecision(input: {
     activeGapCount: input.activeGapCount,
     userSelectedModelIgnored: Boolean(input.userSelectedModelId),
   });
+  if (preference.preferDirectAnswer) reasons.push('explicit-direct-answer');
+  if (!preference.allowExternalSources) reasons.push('external-evidence-disabled');
 
   return {
     version: 1,

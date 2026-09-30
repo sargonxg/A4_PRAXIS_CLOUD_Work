@@ -1,4 +1,5 @@
 import type { AskContextReceipt } from '@/lib/ai/ask-conversation';
+import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
 
 export type WorkIntentMode =
   | 'policy_memo'
@@ -268,7 +269,11 @@ export function buildWorkIntentPlan(input: WorkIntentPlanInput): WorkIntentPlan 
   const outputTarget = outputTargetFor(intent);
   const sourceCount = (input.selectedSourceIds?.length ?? 0) + (input.attachedSourceCount ?? 0);
   const recommendedCapsuleIds = capsuleRecommendationsFor(intent, policyContext, input.activeCapsules);
-  const recommendedTools = toolRecommendationsFor(intent, policyContext);
+  const preference = resolveAskExecutionPreference(input.prompt);
+  const recommendedTools = preference.preferDirectAnswer
+    ? ['context-resolve', 'capsule-evidence-pack']
+    : toolRecommendationsFor(intent, policyContext)
+      .filter((id) => preference.allowExternalSources || !['grounded-search', 'deep-search-agent'].includes(id));
   const recommendedMethods = methodRecommendationsFor(intent, policyContext);
   const humanReviewPosture = humanReviewFor(intent, policyContext, input.contextHealth ?? null, sourceCount);
   const suggestedNextActions = capThree([
@@ -388,8 +393,10 @@ function federalSubPreset(id: UsFederalPolicySubPresetId, label: string, sourceE
 }
 
 function selectWorkIntent(input: WorkIntentPlanInput, policyContext: PolicyContextResolution | null): WorkIntentMode {
+  const preference = resolveAskExecutionPreference(input.prompt);
+  if (preference.preferDirectAnswer) return 'general_answer';
   if (input.explicitMode) return input.explicitMode;
-  const text = input.prompt.toLowerCase();
+  const text = preference.routingPrompt.toLowerCase();
   if (/\b(pdf|report|export-ready|export ready|formatted report)\b/.test(text)) return 'pdf_report';
   if (/\b(source pack|source-pack|sources?|citation|evidence pack|verify|sourceability)\b/.test(text)) return 'source_pack';
   if (/\b(stakeholder|actor map|power map|influence|leverage|veto player)\b/.test(text)) return 'stakeholder_map';

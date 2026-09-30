@@ -1,4 +1,5 @@
 import { createHash } from 'crypto';
+import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
 import { generateText as aiGenerateText, type LanguageModel } from 'ai';
 import type {
   AgentApproval,
@@ -4184,15 +4185,17 @@ async function collectSearchEvidenceForRun(
   const selectedToolIds = selectedSearchToolIds(running);
   const searchPlan = normalizeSearchPlan(running.metadata.searchPlan, running.objective);
   if (!selectedToolIds.length) {
+    const externalSourcesDisabled = (isRecord(running.metadata.askExecutionPreference) && running.metadata.askExecutionPreference.allowExternalSources === false)
+      || !resolveAskExecutionPreference(running.objective).allowExternalSources;
     return {
       selectedToolIds: [],
-      querySet: searchPlan.queries,
-      sourceClasses: searchPlan.sourceClasses,
+      querySet: externalSourcesDisabled ? [] : searchPlan.queries,
+      sourceClasses: externalSourcesDisabled ? ['attached_sources'] : searchPlan.sourceClasses,
       freshnessNeed: searchPlan.freshnessNeed,
       timeframe: searchPlan.timeframe,
       sourceReceipts: [],
       sourceReceiptIds: [],
-      groundingPosture: 'No search tool selected',
+      groundingPosture: externalSourcesDisabled ? 'External retrieval disabled for this run' : 'No search tool selected',
       degradedReason: null,
       gaps: [],
     };
@@ -4377,6 +4380,8 @@ async function collectSearchEvidenceForRun(
 }
 
 function selectedSearchToolIds(run: AgentRun): string[] {
+  if ((isRecord(run.metadata.askExecutionPreference) && run.metadata.askExecutionPreference.allowExternalSources === false)
+    || !resolveAskExecutionPreference(run.objective).allowExternalSources) return [];
   const toolIds = [
     ...stringArray(run.metadata.selectedTools),
     ...stringArray(run.metadata.selectedToolIds),

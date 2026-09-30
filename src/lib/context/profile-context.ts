@@ -117,6 +117,8 @@ export async function buildCalibratedContext(opts: {
   situationId?: string;
   toolId: string;
   retrievalQuery?: string;
+  /** False disables situation/history/corpus retrieval, while retaining selected capsules. */
+  allowWorkspaceRetrieval?: boolean;
   retrievalTopK?: number;
   /**
    * If provided and valid, populates `advisor` on the returned ContextBlock
@@ -151,7 +153,7 @@ export async function buildCalibratedContext(opts: {
     console.warn('[profile-context] getPreferences failed:', err);
   }
 
-  if (opts.situationId) {
+  if (opts.situationId && opts.allowWorkspaceRetrieval !== false) {
     try {
       situation = await getSituationById(opts.uid, opts.situationId);
     } catch (err) {
@@ -221,7 +223,7 @@ export async function buildCalibratedContext(opts: {
   });
   const retrievalQuery = opts.retrievalQuery ?? defaultRetrievalQuery;
 
-  if (retrievalQuery) {
+  if (retrievalQuery && opts.allowWorkspaceRetrieval !== false) {
     try {
       const hits = await retrieveForProfile({
         uid: opts.uid,
