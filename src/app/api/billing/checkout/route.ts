@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { createPolarClient, isPolarBillingConfigured, polarBillingMode, polarProductIdForPlan } from '@/lib/billing/polar-server';
 import { getCheckoutAvailability } from '@/lib/billing/checkout-availability';
+import { resolveBillingPublicOrigin } from '@/lib/billing/public-origin';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +25,15 @@ export const POST = withAuth(async (request, user) => {
     return NextResponse.json({ error: 'Invalid checkout request', details: parsed.error.flatten() }, { status: 400 });
   }
 
+  const origin = resolveBillingPublicOrigin();
+  if (!origin) {
+    return NextResponse.json({
+      error: 'Billing callback URL is not configured correctly.',
+      configured: false,
+      fallbackHref: '/pricing',
+    }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  }
+
   if (!getCheckoutAvailability()[parsed.data.plan]) {
     return NextResponse.json({
       error: parsed.data.plan === 'team' ? 'Team subscriptions are not available.' : 'Practitioner checkout is not available.',
@@ -42,7 +52,6 @@ export const POST = withAuth(async (request, user) => {
     }, { status: 503 });
   }
 
-  const origin = new URL(request.url).origin;
   const checkout = await createPolarClient().checkouts.create({
     products: [productId],
     externalCustomerId: user.uid,

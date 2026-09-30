@@ -1,4 +1,5 @@
 import { isPolarBillingConfigured, polarBillingMode } from '@/lib/billing/polar-server';
+import { resolveBillingPublicOrigin } from '@/lib/billing/public-origin';
 
 export type CheckoutAvailability = {
   analyst: boolean;
@@ -9,7 +10,8 @@ export type CheckoutAvailability = {
 /** Public availability contains no provider credentials or product identifiers. */
 export function getCheckoutAvailability(): CheckoutAvailability {
   const analyst = process.env.PRAXIS_ENABLE_PAID_CHECKOUT === 'true'
-    && isPolarBillingConfigured('analyst');
+    && isPolarBillingConfigured('analyst')
+    && resolveBillingPublicOrigin() !== null;
   return {
     analyst,
     // Shared workspaces and seats have not passed their own activation gate.

@@ -11,6 +11,7 @@ describe('public checkout availability', () => {
     vi.stubEnv('POLAR_PRODUCT_ANALYST', 'synthetic-practitioner');
     vi.stubEnv('POLAR_PRODUCT_TEAM', 'synthetic-team');
     vi.stubEnv('POLAR_SERVER', 'production');
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://praxis.tacitus.me');
   });
   afterEach(() => vi.unstubAllEnvs());
 
@@ -31,5 +32,10 @@ describe('public checkout availability', () => {
   it('labels configured sandbox checkout separately', () => {
     vi.stubEnv('POLAR_SERVER', 'sandbox');
     expect(getCheckoutAvailability()).toEqual({ analyst: true, team: false, mode: 'sandbox' });
+  });
+
+  it('does not advertise paid access with an invalid callback configuration', () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://0.0.0.0:8080');
+    expect(getCheckoutAvailability()).toEqual({ analyst: false, team: false, mode: 'unconfigured' });
   });
 });
