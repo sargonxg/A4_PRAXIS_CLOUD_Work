@@ -199,8 +199,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-/** Firestore rejects undefined, including optional fields nested in runtime receipts. */
-function omitUndefinedMetadata<T>(value: T): T {
+/** Shared by Ask persistence paths: Firestore rejects nested optional undefined values. */
+export function omitUndefinedMetadata<T>(value: T): T {
   if (Array.isArray(value)) {
     // Retain positional meaning rather than shifting steps or tool results.
     return Array.from(value, (entry) => entry === undefined ? null : omitUndefinedMetadata(entry)) as T;

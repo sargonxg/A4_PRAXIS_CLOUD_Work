@@ -14,6 +14,7 @@ import {
 } from '@/lib/context/capsule-service';
 import { parseCorePackage } from '@/lib/context/core-package';
 import { CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
+import { CapsuleBuilderDraftError, CapsuleBuilderDraftSchema, saveCapsuleBuilderDraft } from '@/lib/context/capsule-builder-draft';
 
 export const dynamic = 'force-dynamic';
 
@@ -104,6 +105,7 @@ export const GET = withAuth(async (request, user) => {
     const inventory = await listCapsuleInventory(user.uid, {
       situationId: url.searchParams.get('situationId') ?? undefined,
       includeArchived: url.searchParams.get('includeArchived') === 'true',
+      metadataOnly: true,
     });
     return NextResponse.json({ ...inventory, persisted: true });
   } catch (err) {
@@ -117,6 +119,13 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json({ error: 'Sample mode cannot create private capsules' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));
+
+    if (raw?.action === 'save-builder-draft') {
+      const parsed = CapsuleBuilderDraftSchema.safeParse(raw);
+      if (!parsed.success) return NextResponse.json({ error: 'Invalid builder draft', details: parsed.error.flatten() }, { status: 400 });
+      const result = await saveCapsuleBuilderDraft(user.uid, parsed.data);
+      return NextResponse.json({ capsule: result.capsule, persisted: true }, { status: result.created ? 201 : 200 });
+    }
 
     if (raw?.action === 'seed-starters') {
       const seedParsed = SeedStartersSchema.safeParse(raw);
@@ -189,6 +198,9 @@ export const POST = withAuth(async (request, user) => {
     });
     return NextResponse.json({ capsule }, { status: 201 });
   } catch (err) {
+    if (err instanceof CapsuleBuilderDraftError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return handleRouteError(err, 'context/capsules/create');
   }
 });

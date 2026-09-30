@@ -43,13 +43,14 @@ import { toLegacyDataStreamResponse } from '@/lib/ai/legacy-data-stream';
 import { buildToolPromptContract } from '@/lib/tools/tool-operating-contracts';
 import { PRAXIS_CANONICAL_TOOLS } from '@/lib/tools/canonical';
 import { inferResponseActionKinds } from '@/lib/assistant/response-action-kinds';
-import { listAskThreadTurns, persistAskThreadTurn, type AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
+import { listAskThreadTurns, omitUndefinedMetadata, persistAskThreadTurn, type AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
 import { PRAXIS_ASK_TOKEN_COST, currentMonthlyUsageKey, monthlyUsageDocId } from '@/lib/billing/usage-policy';
 import { buildThinCapsuleFallback, hasConversationCapsuleSignal } from '@/lib/conversations/capsule-signal';
 import { normalizeAppliedCapsules, type AppliedConversationCapsule } from '@/lib/conversations/entitlements';
 import { isAskThreadSqlConfigured, listAskThreadTurnsSql, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
 import {
   askIntentDirective,
+  askHistoryCapsuleId,
   buildAskContextReceipt,
   buildAskConversationMessages,
   classifyAskIntent,
@@ -579,9 +580,14 @@ fabricate sources, figures, dates, or identifiers.`;
     });
     runtimeReceipt.suggestedCapsules = normalizedSuggestedCapsules;
     const askStartedAt = Date.now();
+    const historyCapsuleId = askHistoryCapsuleId({
+      instantContextMode,
+      resolvedCapsuleId: capsuleContext?.capsule?.capsuleId,
+      requestedCapsuleId: capsuleId,
+    });
     const persistedHistory = await loadServerAskHistory({
       uid: _user.uid,
-      capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+      capsuleId: historyCapsuleId,
       threadId,
     });
     runtimeReceipt.contextReceipt = buildAskContextReceipt({
@@ -715,7 +721,7 @@ fabricate sources, figures, dates, or identifiers.`;
       await persistAskThreadTurn({
         uid: _user.uid,
         situationId: effectiveSituationId,
-        capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+        capsuleId: historyCapsuleId,
         threadId,
         prompt,
         capsuleVersion: capsuleContext?.capsule?.version ?? null,
@@ -729,7 +735,7 @@ fabricate sources, figures, dates, or identifiers.`;
       await persistAskThreadTurnSql({
         uid: _user.uid,
         situationId: effectiveSituationId,
-        capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? null,
+        capsuleId: historyCapsuleId,
         threadId,
         prompt,
         capsuleVersion: capsuleContext?.capsule?.version ?? null,
@@ -1739,7 +1745,7 @@ async function persistAskTurn(input: {
     .collection('threads').doc(safeThreadId)
     .collection('turns').doc(`turn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`);
 
-  await turnRef.set({
+  await turnRef.set(omitUndefinedMetadata({
     ownerUid: input.uid,
     prompt: input.prompt,
     capsuleId: input.capsule?.capsuleId ?? null,
@@ -1751,7 +1757,7 @@ async function persistAskTurn(input: {
     toolInvocations: input.toolInvocations,
     output: input.output,
     ts: new Date().toISOString(),
-  });
+  }));
 }
 
 async function persistConversationTurn(input: {
@@ -1785,7 +1791,7 @@ async function persistConversationTurn(input: {
     const createdAt = typeof existingConversation.data()?.createdAt === 'string'
       ? existingConversation.data()?.createdAt
       : now;
-    tx.set(conversationRef, {
+    tx.set(conversationRef, omitUndefinedMetadata({
       ownerUid: input.uid,
       conversationId: cleanConversationId,
       capsuleId: input.capsuleId,
@@ -1805,8 +1811,8 @@ async function persistConversationTurn(input: {
       turnCount: FieldValue.increment(1),
       createdAt,
       updatedAt: now,
-    }, { merge: true });
-    tx.set(turnRef, {
+    }), { merge: true });
+    tx.set(turnRef, omitUndefinedMetadata({
       ownerUid: input.uid,
       prompt: input.prompt,
       output: input.output,
@@ -1836,7 +1842,7 @@ async function persistConversationTurn(input: {
       frameworkSteps: input.frameworkSteps,
       toolInvocations: input.toolInvocations,
       createdAt: now,
-    });
+    }));
     if (isFirstTurn) {
       tx.set(
         db.collection('users').doc(input.uid).collection('usage').doc(monthlyUsageDocId(currentMonthlyUsageKey())),

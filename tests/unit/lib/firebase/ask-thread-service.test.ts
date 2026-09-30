@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { FieldValue } from 'firebase-admin/firestore';
 
 vi.mock('@/lib/firebase/admin', () => ({ getAdminDbOrThrow: vi.fn() }));
 
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
-import { listAskThreadTurns, persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
+import { listAskThreadTurns, omitUndefinedMetadata, persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
+import { askHistoryCapsuleId, DIRECT_ASK_HISTORY_CAPSULE_ID } from '@/lib/ai/ask-conversation';
 
 type TestRef = {
   path: string;
@@ -79,6 +81,34 @@ describe('ask-thread-service', () => {
     expect(result.turns.map((turn) => turn.id)).toEqual(['turn-1', 'turn-2']);
   });
 
+  it('persists direct turns in the same owner history and reloads them without ephemeral context IDs', async () => {
+    const writes: Array<{ path: string; data: unknown }> = [];
+    vi.mocked(getAdminDbOrThrow).mockReturnValue(createDb({ onSet: (path, data) => writes.push({ path, data }), threadData: null }) as never);
+    for (const [index, contextId] of ['instant-first', 'instant-second'].entries()) {
+      await persistAskThreadTurn({
+        uid: 'analyst-a',
+        capsuleId: askHistoryCapsuleId({ instantContextMode: true, resolvedCapsuleId: contextId }),
+        threadId: 'home-direct', turnId: `direct-${index}`, prompt: `Question ${index}`, output: `Answer ${index}`,
+        runtime: { contextCapsuleId: contextId },
+        now: new Date(`2026-09-29T12:0${index}:00.000Z`),
+      });
+    }
+    expect(writes[0].path).toBe('users/analyst-a/capsules/thin-capsule-fallback/askThreads/home-direct');
+    expect(writes[2].path).toBe(writes[0].path);
+    const turnDocs = [writes[1], writes[3]]
+      .map((write, index) => ({ id: `direct-${index}`, data: write.data as Record<string, unknown> }))
+      .reverse(); // Firestore returns createdAt descending; the service resumes oldest first.
+    vi.mocked(getAdminDbOrThrow).mockReturnValue(createDb({ threadData: writes[2].data as Record<string, unknown>, turnDocs }) as never);
+    const resumed = await listAskThreadTurns({ uid: 'analyst-a', capsuleId: DIRECT_ASK_HISTORY_CAPSULE_ID, threadId: 'home-direct' });
+    expect(resumed.turns.map((turn) => turn.prompt)).toEqual(['Question 0', 'Question 1']);
+    expect(resumed.turns[0].runtime).toMatchObject({ contextCapsuleId: 'instant-first' });
+    expect(resumed.turns[1].runtime).toMatchObject({ contextCapsuleId: 'instant-second' });
+
+    vi.mocked(getAdminDbOrThrow).mockReturnValue(createDb({ onSet: (path, data) => writes.push({ path, data }), threadData: null }) as never);
+    await persistAskThreadTurn({ uid: 'analyst-b', capsuleId: DIRECT_ASK_HISTORY_CAPSULE_ID, threadId: 'home-direct', prompt: 'Separate user question', output: 'Separate answer' });
+    expect(writes[4].path).toBe('users/analyst-b/capsules/thin-capsule-fallback/askThreads/home-direct');
+  });
+
   it('removes undefined optional metadata before persisting without losing defined values or array positions', async () => {
     const writes: Array<{ path: string; data: unknown }> = [];
     vi.mocked(getAdminDbOrThrow).mockReturnValue(createDb({
@@ -124,6 +154,51 @@ describe('ask-thread-service', () => {
 
     expect(turn).toBeNull();
     expect(db.collection).not.toHaveBeenCalled();
+  });
+
+  it('keeps source provenance in both saved answer envelopes when source page locators are absent', () => {
+    const envelope = {
+      sourceCards: [{
+        id: 'document-1:paragraph-2',
+        documentId: 'document-1',
+        sourceReceiptId: 'receipt-1',
+        quotePreview: 'Example Council has not confirmed the funding.',
+        pageRef: undefined,
+        paragraphRef: 'paragraph-2',
+        confidence: 0,
+      }],
+      workflow: { optional: undefined, approved: false },
+    };
+    const increment = FieldValue.increment(1);
+    const timestamp = new Date('2026-09-29T23:32:00.000Z');
+    const input = {
+      answerEnvelope: envelope,
+      runtime: { answerEnvelope: envelope },
+      toolInvocations: [{ sources: ['receipt-1', undefined, 'receipt-2'] }],
+      nullable: null,
+      empty: '',
+      turnCount: increment,
+      timestamp,
+    };
+
+    const saved = omitUndefinedMetadata(input);
+    const expectedCard = {
+      id: 'document-1:paragraph-2',
+      documentId: 'document-1',
+      sourceReceiptId: 'receipt-1',
+      quotePreview: 'Example Council has not confirmed the funding.',
+      paragraphRef: 'paragraph-2',
+      confidence: 0,
+    };
+    expect(saved.answerEnvelope.sourceCards).toStrictEqual([expectedCard]);
+    expect(saved.runtime.answerEnvelope.sourceCards).toStrictEqual([expectedCard]);
+    expect(saved.answerEnvelope.workflow).toStrictEqual({ approved: false });
+    expect(saved.toolInvocations).toStrictEqual([{ sources: ['receipt-1', null, 'receipt-2'] }]);
+    expect(saved.nullable).toBeNull();
+    expect(saved.empty).toBe('');
+    expect(saved.turnCount).toBe(increment);
+    expect(saved.timestamp).toBe(timestamp);
+    expect(envelope.sourceCards[0]).toHaveProperty('pageRef', undefined);
   });
 });
 

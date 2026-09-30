@@ -162,7 +162,8 @@ describe('agent runtime proof smoke', () => {
       saveOutputCapsule: async (_uid, input) => {
         expect(input.provenance.traceId).toBe('trace-runtime-proof');
         expect(input.citations).toHaveLength(1);
-        expect(input.gaps).toHaveLength(1);
+        expect(input.gaps).toHaveLength(2);
+        expect(input.gaps).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'generated-memo-review' })]));
         return { id: 'output-runtime-proof' };
       },
     });

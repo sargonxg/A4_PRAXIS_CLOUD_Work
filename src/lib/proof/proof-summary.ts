@@ -1,4 +1,5 @@
 import { getAskPraxisModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
+import { normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 
 export type ProofContextHealth = 'ready' | 'review' | 'thin' | 'missing' | 'degraded';
 
@@ -49,7 +50,9 @@ export interface UiProofSummary {
   activeCapsule: string | null;
   appliedCapsules: string[];
   sourceability: ProofSourceabilitySummary;
+  sourceabilityScope: 'input_evidence' | 'generated_answer';
   groundingVerification: ProofGroundingVerificationSummary | null;
+  outputReview: MemoOutputReviewReceipt | null;
   degradedStates: string[];
   improvementActions: string[];
   exportBlocked: boolean;
@@ -156,14 +159,19 @@ export function buildProofSummaryFromAgentRun(
   boardroomOutput?: unknown,
 ): UiProofSummary {
   const value = asRecord(run);
+  const metadata = asRecord(value?.metadata);
   const output = asRecord(boardroomOutput) ?? asRecord(value?.boardroomOutput);
   const evidenceStats = asRecord(output?.evidenceStats);
   const contextReceipt = asRecord(value?.contextReceipt);
   const readReceipt = asRecord(value?.capsuleReadReceipt);
   const outputHref = safeAppHref(value?.outputHref);
   const artifactIds = outputHref ? artifactIdsFromHref(outputHref) : {};
-  const sourceability = normalizeSourceabilitySummary(value?.sourceabilityLedgerSummary);
-  const groundingVerification = normalizeGroundingVerificationReport(value?.groundingVerification);
+  const sourceability = normalizeSourceabilitySummary(value?.sourceabilityLedgerSummary ?? metadata?.sourceabilityLedgerSummary);
+  const groundingVerification = normalizeGroundingVerificationReport(value?.groundingVerification ?? metadata?.groundingVerification);
+  const outputReview = normalizeMemoOutputReview(value?.outputReview ?? metadata?.outputReview);
+  const requiresMemoReview = Boolean(value?.memoId ?? metadata?.memoId ?? artifactIds.memoId)
+    || Object.prototype.hasOwnProperty.call(value ?? {}, 'outputReview')
+    || Object.prototype.hasOwnProperty.call(metadata ?? {}, 'outputReview');
 
   return normalizeProofSummary({
     contextHealth: stringField(contextReceipt?.contextHealth) ?? stringField(value?.contextHealth),
@@ -182,7 +190,10 @@ export function buildProofSummaryFromAgentRun(
       ?? numberField(value?.unsupportedClaimCount)
       ?? 0,
     sourceability,
+    sourceabilityScope: 'input_evidence',
     groundingVerification,
+    outputReview,
+    requiresMemoReview,
     outputHref,
     outputTarget: stringField(contextReceipt?.outputDestination) ?? stringField(value?.outputDestination),
     memoId: stringField(value?.memoId) ?? artifactIds.memoId,
@@ -215,7 +226,10 @@ function normalizeProofSummary(input: {
   documentCount?: number | null;
   unsupportedClaimCount?: number | null;
   sourceability?: ProofSourceabilitySummary;
+  sourceabilityScope?: UiProofSummary['sourceabilityScope'];
   groundingVerification?: ProofGroundingVerificationSummary | null;
+  outputReview?: MemoOutputReviewReceipt | null;
+  requiresMemoReview?: boolean;
   outputHref?: string | null;
   outputTarget?: string | null;
   memoId?: string | null;
@@ -232,6 +246,9 @@ function normalizeProofSummary(input: {
   const documentCount = clampCount(input.documentCount);
   const sourceability = input.sourceability ?? emptySourceabilitySummary();
   const groundingVerification = input.groundingVerification ?? null;
+  const outputReview = input.outputReview ?? null;
+  const generatedReviewBlocked = Boolean(input.requiresMemoReview && (!outputReview || outputReview.reviewRequired || !outputReview.exportReady));
+  const groundingFlags = (groundingVerification?.ungroundedSpanCount ?? 0) + (groundingVerification?.contradictedSpanCount ?? 0);
   const unsupportedClaimCount = clampCount(input.unsupportedClaimCount ?? sourceability.unsupportedClaims);
   const contextHealth = normalizeContextHealth(input.contextHealth, sourceCount, documentCount, unsupportedClaimCount);
   const degradedStates = buildDegradedStates({
@@ -247,6 +264,7 @@ function normalizeProofSummary(input: {
     status: input.status,
   });
   const gaps = uniqueStrings([...(input.gaps ?? []), ...(input.warnings ?? [])]);
+  if (generatedReviewBlocked) degradedStates.push('generated memo review required');
 
   return {
     contextHealth,
@@ -262,18 +280,23 @@ function normalizeProofSummary(input: {
     activeCapsule: input.activeCapsule ?? null,
     appliedCapsules: uniqueStrings(input.appliedCapsules ?? []),
     sourceability,
+    sourceabilityScope: input.sourceabilityScope ?? 'generated_answer',
     groundingVerification,
+    outputReview,
     degradedStates,
-    improvementActions: buildImprovementActions({
-      contextHealth,
-      sourceCount,
-      documentCount,
-      unsupportedClaimCount,
-      gaps,
-      outputHref: input.outputHref,
-      outputTarget: input.outputTarget,
-    }),
-    exportBlocked: unsupportedClaimCount > 0,
+    improvementActions: uniqueStrings([
+      ...(generatedReviewBlocked ? ['Review the whole generated memo and apply feedback before external export.'] : []),
+      ...buildImprovementActions({
+        contextHealth,
+        sourceCount,
+        documentCount,
+        unsupportedClaimCount,
+        gaps,
+        outputHref: input.outputHref,
+        outputTarget: input.outputTarget,
+      }),
+    ]),
+    exportBlocked: unsupportedClaimCount > 0 || groundingFlags > 0 || generatedReviewBlocked,
   };
 }
 

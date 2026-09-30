@@ -952,17 +952,19 @@ describe('Tasklet PRAXIS workbench contract', () => {
   });
 
   it('keeps guide chat public handoff and local state separate from main Ask', () => {
-    expect(source).toContain('const [guideMessages, setGuideMessages] = useState<ChatMessage[]>([])');
-    expect(source).toContain('const [guidePrompt, setGuidePrompt] = useState');
-    expect(source).toContain('const [guideThreadId, setGuideThreadId] = useState<string | null>(null)');
-    expect(source).toContain("const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1'");
+    expect(source.includes('guideChatCacheKey(isAuthenticated, user?.id)')).toBe(true);
+    expect(source.includes('scopedGuideChatState(ownedGuideState, guideScopeKey, DEFAULT_GUIDE_CHAT_PROMPT)')).toBe(true);
+    expect(source.includes('updateGuideChatState(previous, guideScopeKey')).toBe(true);
+    expect(source.includes("const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1'")).toBe(false);
     expect(source).toContain('type GuideChatStorageState');
     expect(source).toContain('function loadGuideChatState');
     expect(source).toContain('function persistGuideChatState');
     expect(source).toContain('function guideAppliedCapsules');
-    expect(source).toContain('window.localStorage.getItem(GUIDE_CHAT_STORAGE_KEY)');
-    expect(source).toContain('window.localStorage.setItem(GUIDE_CHAT_STORAGE_KEY');
-    expect(source).toContain('setGuideChatOpen(Boolean(restored.open))');
+    expect(source.includes('window.localStorage.getItem(cacheKey)')).toBe(true);
+    expect(source.includes('window.localStorage.setItem(cacheKey')).toBe(true);
+    expect(source.includes('hydrated: Boolean(guideScopeKey)')).toBe(true);
+    expect(source.includes('guideRequestRef.current?.abort()')).toBe(true);
+    expect(source.includes('if (!guideHydrated || !activeContextHydrated || !user?.id) return')).toBe(true);
     expect(source).toContain('open: guideChatOpen');
     expect(source).toContain('sendPublicToLogin(`PRAXIS guide question');
     expect(source).toContain('setGuideMessages((current) => [...current, userMessage, { role:');

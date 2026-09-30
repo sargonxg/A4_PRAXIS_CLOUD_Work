@@ -1,15 +1,16 @@
 # PRAXIS TODO
 
-Last updated: 2026-09-23.
+Last updated: 2026-09-29.
 
 ## Current continuation priorities
 
-- Verify the September 23 reliability correction on the deployed revision: TXT/PDF/DOCX upload, proposal review and persistent Ask history.
-- Replace full capsule inventory transfers and implicit bulk seeding with owner-scoped metadata pagination and on-demand details.
-- Prove approval followed by grounded analysis and editable brief/export with preserved citations; add scanned-document/OCR and long-document coverage.
+- Use the [current user-readiness receipt](docs/reviews/2026-09-29-praxis-user-readiness.md) for evidence, release checks and next-session scope; earlier receipts remain dated evidence.
+- Finish final local validation and the direct Ask history/retry repair, then obtain scoped external release approval and repeat real login, Ask, attachment, separate TXT/PDF/DOCX and conversation/idea capsule creation, review and later reuse on the served revision.
+- Reopen/edit/export the real approved research memo with preserved citations and lineage; the observed pre-repair memo read failed. Prove duplicate/lost-response recovery separately.
+- Metadata inventory projection and on-demand details are implemented locally; finish inventory pagination and capacity/load proof. Add scanned-document/OCR and long-document coverage.
 - Complete fresh-account, verification/reset/expiry/deletion and server-enforced free/paid entitlement journeys. Billing requires operator-supplied Polar sandbox configuration before any purchase tests.
 - Keep optional JEV disabled until dependency compatibility, server credentials, consent and live evaluation are proven.
-- Use `docs/reviews/2026-09-22-praxis-product-status.md` for the current acceptance matrix. The dated historical queue below is not current production proof.
+- Retain a small policy/narrative output corpus to compare plain-source answers against reviewed-capsule answers; contract tests do not prove analytical quality gains. The dated historical queue below is not current production proof.
 
 ## 2026-06-12 session — shipped and follow-ups
 

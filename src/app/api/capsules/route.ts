@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { createCapsule, listCapsules } from '@/lib/capsules/storage';
+import { CapsuleWriteError, createCapsule, listCapsules } from '@/lib/capsules/storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,6 +37,9 @@ export const POST = withAuth(async (request, user) => {
     const capsule = await createCapsule(user.uid, parsed.data);
     return NextResponse.json({ capsule }, { status: 201 });
   } catch (err) {
+    if (err instanceof CapsuleWriteError) {
+      return NextResponse.json({ error: err.message }, { status: err.status });
+    }
     return handleRouteError(err, 'capsules/create');
   }
 });

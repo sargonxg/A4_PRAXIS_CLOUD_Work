@@ -23,6 +23,8 @@ const service = vi.hoisted(() => ({
     integrityWarnings: [],
   })),
   forkCapsule: vi.fn(),
+  getCapsule: vi.fn(),
+  bumpCapsuleVersion: vi.fn(),
   listCapsuleInventory: vi.fn(),
   seedStarterCapsules: vi.fn(),
 }));
@@ -84,6 +86,7 @@ describe('GET /api/context/capsules', () => {
     expect(service.listCapsuleInventory).toHaveBeenCalledWith('u1', {
       situationId: undefined,
       includeArchived: true,
+      metadataOnly: true,
     });
     expect(payload.persisted).toBe(true);
     expect(payload.capsules).toHaveLength(1);
@@ -141,5 +144,42 @@ describe('POST /api/context/capsules selected starter', () => {
     expect(response.status).toBe(400);
     expect(service.seedStarterCapsules).not.toHaveBeenCalled();
     expect(service.createCapsule).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/context/capsules canonical builder draft', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('saves a private author draft in the canonical library used by Ask', async () => {
+    service.getCapsule.mockResolvedValueOnce(null);
+    service.createCapsule.mockResolvedValueOnce({ capsuleId: 'builder-draft', label: 'Committee transit comparison' });
+    const { POST } = await import('@/app/api/context/capsules/route');
+    const response = await (POST as unknown as MockedAuthRouteHandler)(new Request('http://localhost/api/context/capsules', {
+      method: 'POST', body: JSON.stringify({
+        action: 'save-builder-draft', capsuleId: 'builder-draft', purpose: 'Committee transit comparison',
+        systemFrame: 'Compare three alternatives and identify evidence gaps.', domain: 'generic', outputFormat: 'json',
+      }),
+    }), { uid: 'u1', isDemo: false });
+
+    expect(response.status).toBe(201);
+    expect(await response.json()).toMatchObject({ capsule: { capsuleId: 'builder-draft' }, persisted: true });
+    expect(service.createCapsule).toHaveBeenCalledWith('u1', expect.objectContaining({
+      capsuleId: 'builder-draft', access: { visibility: 'private' }, latestGateState: 'draft',
+      memoryPosture: expect.objectContaining({ builderDraft: expect.objectContaining({ purpose: 'Committee transit comparison' }) }),
+    }), undefined);
+  });
+
+  it('rejects author payloads that try to mark claimed facts or graph proposals approved', async () => {
+    const { POST } = await import('@/app/api/context/capsules/route');
+    const response = await (POST as unknown as MockedAuthRouteHandler)(new Request('http://localhost/api/context/capsules', {
+      method: 'POST', body: JSON.stringify({
+        action: 'save-builder-draft', capsuleId: 'builder-draft', purpose: 'A policy brief',
+        outputFormat: 'brief', sourceRefs: [{ sourceId: 'unreviewed' }], latestGateState: 'applied',
+      }),
+    }), { uid: 'u1', isDemo: false });
+
+    expect(response.status).toBe(400);
+    expect(service.createCapsule).not.toHaveBeenCalled();
+    expect(service.bumpCapsuleVersion).not.toHaveBeenCalled();
   });
 });

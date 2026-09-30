@@ -5,6 +5,7 @@ import type { AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 import { normalizeAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import { buildProofSummaryFromAgentRun } from '@/lib/proof/proof-summary';
+import { normalizeMemoOutputReview } from '@/lib/memo/output-review';
 import { destinationHref, getPolicyAgent, type PolicyAgentOutputDestination } from '@/lib/product/policy-agents';
 
 export const AgentTriggerTypeSchema = z.enum([
@@ -170,6 +171,8 @@ export const AgentRunOutputSchema = z.object({
       modelPriorClaims: z.number().int().nonnegative(),
       assumptionClaims: z.number().int().nonnegative(),
     }),
+    sourceabilityScope: z.enum(['input_evidence', 'generated_answer']).default('input_evidence'),
+    outputReview: z.unknown().transform(normalizeMemoOutputReview),
     groundingVerification: z.object({
       coverageScore: z.number().min(0).max(1),
       groundedClaimCount: z.number().int().nonnegative(),
@@ -235,6 +238,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
   const workflowPlan = isRecord(run.metadata?.workflowPlan) ? run.metadata.workflowPlan as unknown as AgentWorkflowPlan : undefined;
   const sourceabilityLedgerSummary = normalizeSourceabilityLedgerSummary(run.metadata?.sourceabilityLedgerSummary);
   const groundingVerification = isRecord(run.metadata?.groundingVerification) ? run.metadata.groundingVerification : undefined;
+  const outputReview = normalizeMemoOutputReview(run.metadata?.outputReview);
   const artifactIds = normalizeArtifactIds(run.metadata);
   const latestMirroredEvent = normalizeLatestMirroredEvent(run.metadata?.latestMirroredEvent);
   const failureSummary = normalizeAgentRunFailureSummary(run.metadata?.failureSummary);
@@ -264,7 +268,8 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
     || capsuleReadReceipt
     || workflowPlan
     || sourceabilityLedgerSummary
-    || groundingVerification,
+    || groundingVerification
+    || run.metadata?.outputReview !== undefined,
   );
   return AgentRunOutputSchema.parse({
     runId: run.id,
@@ -317,6 +322,7 @@ export function toAgentRunOutput(run: AgentRun): AgentRunOutput {
         workflowPlan,
         sourceabilityLedgerSummary,
         groundingVerification,
+        ...(run.metadata?.outputReview !== undefined ? { outputReview } : {}),
         sourcePosture,
         groundingPosture,
         degradedReason,

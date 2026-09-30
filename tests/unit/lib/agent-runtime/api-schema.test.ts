@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { buildMemoOutputReview } from '@/lib/memo/output-review';
 import {
   AgentRunOutputSchema,
   CreateManualAgentRunRequestSchema,
@@ -404,6 +405,32 @@ describe('agent run API validation schema', () => {
       },
     });
     expect(JSON.stringify(dto.proofSummary)).not.toMatch(/gemini|vertex|google|gpt|claude/i);
+  });
+
+  it.each(['checked', 'disabled'] as const)('round-trips generated-body review and input ledger scope through the actual API serializer: %s', async (verifierStatus) => {
+    const body = 'The budget doubled to 50 million.';
+    const outputReview = await buildMemoOutputReview({ body, verifierStatus, report: verifierStatus === 'checked' ? {
+      groundedClaims: [], ungroundedSpans: [{ text: body, start: 0, end: body.length, reason: 'no_packet_binding',
+        claimCardIds: [], sourceReceiptIds: [], graphPathIds: [] }], contradictedSpans: [], coverageScore: 0, notes: [],
+    } : null });
+    const dto = toAgentRunOutput({ id: 'run-review', status: 'succeeded', capsuleId: 'cap-1',
+      createdAt: '2026-09-29T12:00:00.000Z', updatedAt: '2026-09-29T12:05:00.000Z', objective: 'Draft a memo.',
+      metadata: { policyAgentId: 'research-memo', memoId: 'memo-1', outputReview,
+        sourceabilityLedgerSummary: { totalClaims: 3, supportedClaims: 3, unsupportedClaims: 0 } },
+    } as never);
+    const parsed = AgentRunOutputSchema.parse(JSON.parse(JSON.stringify(dto)));
+    expect(parsed.proofSummary).toMatchObject({ outputReview, sourceabilityScope: 'input_evidence',
+      unsupportedClaimCount: 0, exportBlocked: true });
+    expect(parsed.proofSummary?.degradedStates).toContain('generated memo review required');
+  });
+
+  it('exposes legacy generated memo review as unknown without silently approving it', () => {
+    const dto = toAgentRunOutput({ id: 'run-legacy', status: 'succeeded', capsuleId: 'cap-1',
+      createdAt: '2026-09-29T12:00:00.000Z', updatedAt: '2026-09-29T12:05:00.000Z', objective: 'Draft a memo.',
+      metadata: { policyAgentId: 'research-memo', memoId: 'memo-old' },
+    } as never);
+    expect(AgentRunOutputSchema.parse(JSON.parse(JSON.stringify(dto))).proofSummary)
+      .toMatchObject({ outputReview: null, sourceabilityScope: 'input_evidence', exportBlocked: true });
   });
 
   it('exposes grounding verifier proof metadata from run metadata', () => {

@@ -22,6 +22,13 @@ export interface CapsuleStorageDeps {
   idFactory?: () => string;
 }
 
+export class CapsuleWriteError extends Error {
+  constructor(public readonly status: 403 | 409, message: string) {
+    super(message);
+    this.name = 'CapsuleWriteError';
+  }
+}
+
 export interface CapsuleWriteInput {
   id?: string;
   capsule?: DeepPartial<ContextCapsule>;
@@ -58,21 +65,36 @@ export async function createCapsule(
   deps?: CapsuleStorageDeps,
 ): Promise<CapsuleRecord> {
   const now = nowIso(deps);
-  const id = cleanId(input.id ?? input.capsule?.id ?? 'capsule', deps?.idFactory?.() ?? randomUUID());
-  const capsule = buildCapsule(uid, {
-    ...input.capsule,
-    id,
-    status: 'draft',
-    immutable: false,
-    provenance: mergeNested(input.capsule?.provenance, {
-      author: { uid },
-      createdAt: now,
-    }),
-  }, now);
-  const record = withRecordMetadata(uid, capsule, now, now);
+  const id = cleanId(input.id ?? input.capsule?.id, deps?.idFactory?.() ?? randomUUID());
+  const ref = capsulesCollection(deps).doc(id);
+  // The builder reuses its ID when saving a draft. Read and write together so
+  // a retry or concurrent create cannot replace another owner's capsule.
+  return dbOf(deps).runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(ref);
+    const existing = snapshot.exists ? sanitizeRecord(snapshot.data(), snapshot.id) : null;
+    if (existing && existing.ownerUid !== uid) {
+      throw new CapsuleWriteError(403, 'This capsule identifier is unavailable. Create a new capsule.');
+    }
+    if (existing && (existing.status !== 'draft' || existing.immutable)) {
+      throw new CapsuleWriteError(409, 'Capsule is published or immutable; fork it before editing.');
+    }
 
-  await capsulesCollection(deps).doc(record.id).set(record);
-  return record;
+    const draft = deepMerge(existing ?? {}, input.capsule ?? {}) as DeepPartial<ContextCapsule>;
+    const createdAt = existing?.createdAt ?? now;
+    const capsule = buildCapsule(uid, {
+      ...draft,
+      id,
+      status: 'draft',
+      immutable: false,
+      provenance: mergeNested(draft.provenance, {
+        author: { uid },
+        createdAt: existing?.provenance.createdAt ?? now,
+      }),
+    }, now);
+    const record = withRecordMetadata(uid, capsule, createdAt, now, existing?.publishedVersionHash ?? null);
+    transaction.set(ref, record);
+    return record;
+  });
 }
 
 export async function getCapsule(
@@ -92,7 +114,7 @@ export async function listCapsules(
   deps?: CapsuleStorageDeps,
 ): Promise<CapsuleRecord[]> {
   const limit = Math.max(1, Math.min(100, Math.floor(input.limit ?? 50)));
-  const snap = await capsulesCollection(deps).limit(limit).get();
+  const snap = await capsulesCollection(deps).where('ownerUid', '==', uid).limit(limit).get();
   const scope = input.scope ?? 'mine';
   return snap.docs
     .map((doc) => sanitizeRecord(doc.data(), doc.id))

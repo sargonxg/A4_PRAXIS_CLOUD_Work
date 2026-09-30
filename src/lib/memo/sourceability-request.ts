@@ -1,5 +1,6 @@
 import type { GenkitSourceabilityInput, GenkitSourceabilityOutput } from '@/lib/genkit/schemas/sourceability';
 import { outputTargetRequiresSourceability } from '@/lib/policy-work-file/output-targets';
+import { normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 
 export type MemoSourceabilityRequest = GenkitSourceabilityInput & {
   memoId?: string;
@@ -109,8 +110,28 @@ export function buildMemoSourceabilityRequest(input: {
 export function memoExportReadiness(input: {
   outputTarget?: string | null;
   sourceabilityResult?: MemoSourceabilityResult | null;
+  outputReview?: MemoOutputReviewReceipt | null;
+  bodyHash?: string | null;
 }): MemoExportReadiness {
   const required = outputTargetRequiresSourceability(input.outputTarget);
+  // A selected-claim sourceability result never approves the generated body.
+  if (Object.prototype.hasOwnProperty.call(input, 'outputReview')) {
+    const review = normalizeMemoOutputReview(input.outputReview);
+    if (!review || !input.bodyHash) {
+      return { ready: false, required: true, label: 'Draft review needed',
+        detail: 'Whole-draft review is required before export-ready use.' };
+    }
+    if (input.bodyHash !== review.bodyHash) {
+      return { ready: false, required: true, label: 'Draft review outdated',
+        detail: 'The primary draft changed after this receipt. Review the edited draft before export-ready use.' };
+    }
+    if (review.reviewRequired || !review.exportReady) {
+      return { ready: false, required: true, label: 'Draft review needed',
+        detail: review.verifierStatus !== 'checked'
+          ? 'Generated-body verification is unavailable or disabled. Whole-draft review is required.'
+          : `${review.findingCount} generated-body review finding(s). Review the whole draft and apply feedback before export-ready use.` };
+    }
+  }
   const status = input.sourceabilityResult?.status ?? null;
   if (!status) {
     return required

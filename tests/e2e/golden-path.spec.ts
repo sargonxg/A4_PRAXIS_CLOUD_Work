@@ -153,7 +153,7 @@ test.describe('golden path — app usability smoke', () => {
 
     await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false, finishOnboardingLater: true });
     await page.goto(`${BASE}/app/capsules/builder?capsulePrompt=${encodeURIComponent(mission)}`);
-    await expect(page.getByRole('heading', { name: /Build a policy capsule/i })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Give your next answer better context.', exact: true })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByLabel(/What should this capsule do/i)).toHaveValue(mission, { timeout: 30_000 });
 
     await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);

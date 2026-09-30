@@ -1,10 +1,13 @@
 # PRAXIS Documentation Map
 
-Date: 2026-05-30
+Updated: 2026-09-29
 Status: canonical documentation entrypoint
 
 Start here when orienting the repo. Historical documents remain useful, but the
 files below define the current product, runtime, validation, and ship posture.
+
+Current checkpoint: [user readiness](reviews/2026-09-29-praxis-user-readiness.md)
+separates local repairs, dated production evidence and pending live acceptance.
 
 ## Current Entrypoints
 
@@ -24,8 +27,8 @@ files below define the current product, runtime, validation, and ship posture.
 - PRAXIS is a ContextCapsule-native policy workspace.
 - Public and pre-login UX should be human-first: ask the question, attach
   sources or saved context when needed, and leave with reviewable work.
-- The visible app stays simple: public Home plus signed-in Home, Capsules, and
-  Boardroom as the current primary work surfaces.
+- The visible app stays simple: public Home plus signed-in Home and Capsules;
+  Ask, writing and inspection stay inside the existing cockpit/workbench.
 - Firestore ContextCapsules remain canonical.
 - Graph, ontology, Cognee, SQL projection, and advisory memory enrichment stay
   proposed/non-canonical until a human review gate promotes them.

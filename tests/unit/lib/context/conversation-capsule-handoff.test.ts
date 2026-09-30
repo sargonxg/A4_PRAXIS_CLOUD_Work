@@ -91,7 +91,7 @@ describe('notes to canonical evidence intake', () => {
     expect(builder).toContain('documents = [...documents, receipt.document]');
     expect(builder).toContain('/api/capsules/assist/architect');
     const chat = readFileSync('src/components/app/praxis-chat.tsx', 'utf8');
-    expect(chat.slice(chat.indexOf('export function PraxisChat'), chat.indexOf('function ConversationCapsuleButton'))).not.toContain('useAuth()');
+    expect(chat.slice(chat.indexOf('export function PraxisChat'), chat.indexOf('function ConversationCapsuleButton'))).toContain('ownerId: user?.id');
     expect(chat).toContain('!isPublic && !demoMode');
   });
 });

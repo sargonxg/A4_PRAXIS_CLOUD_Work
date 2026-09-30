@@ -6,6 +6,10 @@ a managed capsule/core library, source-grounded research, memo drafting,
 review-gated graph work, and persistent agent runs so analysts can move from
 question to evidence to write-up to handover in one place.
 
+Current user readiness: [September 29 receipt](docs/reviews/2026-09-29-praxis-user-readiness.md).
+Local recovery work is under validation; this repair wave still requires release
+and real login, Ask/writing, and separate capsule build/reuse proof.
+
 Live app:
 
 - Public front door: `https://praxis.tacitus.me`

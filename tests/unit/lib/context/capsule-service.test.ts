@@ -9,6 +9,7 @@ import {
   combineCapsules,
   approveAdvisoryMemoryCandidate,
   createCapsuleReviewCard,
+  createCapsuleArchitectReviewCards,
   createCapsuleIntakeReviewCards,
   createEmptyCapsuleInventorySummary,
   createCapsule,
@@ -57,6 +58,80 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('keeps new source documents attached when rebuilding an existing architect capsule', async () => {
+    const db = new FakeFirestore();
+    const input = { capsuleId: 'architect-rebuild', situationId: 'case-a', jobPrompt: 'Inspect synthetic commitments.', domainId: 'generic', documents: [
+      { documentId: 'Source_A', title: 'First source', text: 'Actor: Example Council\nThe proposal remains unconfirmed.' },
+    ] };
+    await createCapsuleArchitectReviewCards('u1', input, deps(db));
+    const rebuilt = await createCapsuleArchitectReviewCards('u1', { ...input, documents: [
+      ...input.documents, { documentId: 'Source_B', title: 'Second source', text: 'Actor: Example Assembly\nFunding remains unconfirmed.' },
+    ] }, deps(db));
+    expect(rebuilt.capsule.coreRefs.documentCoreIds).toEqual(['Source_A', 'Source_B']);
+    expect(rebuilt.capsule.coreRefs.situationCoreId).toBe('case-a');
+  });
+
+  it('retains an architect decision on an unchanged rebuild and reviews materially changed input separately', async () => {
+    const db = new FakeFirestore();
+    const input = { capsuleId: 'architect-decisions', jobPrompt: 'Inspect synthetic commitments.', documents: [
+      { documentId: 'Source_A', title: 'First source', text: 'Actor: Example Council\nThe proposal remains unconfirmed.' },
+    ] };
+    const first = await createCapsuleArchitectReviewCards('u1', input, deps(db));
+    const firstCard = first.cards.find((card) => card.target === 'sourceGap')!;
+    await applyCapsuleReviewCard('u1', first.capsule.capsuleId, firstCard.reviewCardId, { reviewerUid: 'u1', diffHash: 'reviewed', confirmationReason: 'Checked source.' }, deps(db));
+    const repeated = await createCapsuleArchitectReviewCards('u1', input, deps(db));
+    expect(repeated.cards.find((card) => card.target === 'sourceGap')).toMatchObject({ reviewCardId: firstCard.reviewCardId, state: 'applied', applyMetadata: { reviewerUid: 'u1' } });
+    const changed = await createCapsuleArchitectReviewCards('u1', { ...input, documents: [
+      { ...input.documents[0], text: 'Actor: Example Council\nThe proposal is now funded.' },
+    ] }, deps(db));
+    const changedCard = changed.cards.find((card) => card.target === 'sourceGap')!;
+    expect(changedCard.reviewCardId).not.toBe(firstCard.reviewCardId);
+    expect(changedCard.state).toBe('proposed');
+    expect((await listCapsuleReviewCards('u1', first.capsule.capsuleId, deps(db))).find((card) => card.reviewCardId === firstCard.reviewCardId)?.state).toBe('applied');
+  });
+
+  it('does not erase an applied review decision when extraction proposes the same card again', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'repeat-extraction' }, deps(db));
+    const input = { reviewCardId: 'stable-review', title: 'Review supplied constraints', sourceType: 'user' as const, target: 'capsuleEnvelope' as const, proposedEnvelopePatch: { summary: 'Reviewed constraints.' } };
+    const card = await createCapsuleReviewCard('u1', capsule.capsuleId, input, deps(db));
+    await applyCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { reviewerUid: 'u1', diffHash: 'reviewed', confirmationReason: 'Checked source.' }, deps(db));
+    const repeated = await createCapsuleReviewCard('u1', capsule.capsuleId, input, deps(db));
+    expect(repeated.state).toBe('applied');
+    expect(repeated.applyMetadata).toMatchObject({ reviewerUid: 'u1', confirmationReason: 'Checked source.' });
+  });
+
+  it('reads lightweight inventory at the database boundary and retains full evidence on individual reads', async () => {
+    const db = new FakeFirestore();
+    const largeEvidence = 'private source paragraph '.repeat(6000);
+    for (let index = 0; index < 20; index++) {
+      await createCapsule('u1', { capsuleId: `large-${index}`, coreRefs: { documentCoreIds: [`doc-${index}`] } }, deps(db));
+      const path = `users/u1/capsules/large-${index}`;
+      db.data.set(path, { ...db.data.get(path), humanTacitKnowledge: { notes: largeEvidence }, embeddedGraph: { notes: largeEvidence } });
+    }
+
+    const inventory = await listCapsuleInventory('u1', { metadataOnly: true }, deps(db));
+    expect(inventory.capsules).toHaveLength(20);
+    expect(inventory.summary.documentReferences).toBe(20);
+    expect(JSON.stringify(inventory).length).toBeLessThan(200_000);
+    expect(inventory.capsules.every((capsule) => !capsule.humanTacitKnowledge && !capsule.embeddedGraph && !capsule.v3)).toBe(true);
+    expect(db.projections).toHaveLength(1);
+    expect(db.projections[0]).toContain('coreRefs');
+    expect(db.projections[0]).not.toContain('humanTacitKnowledge');
+    expect((await getCapsule('u1', 'large-0', deps(db)))?.humanTacitKnowledge).toEqual({ notes: largeEvidence });
+  });
+
+  it('never shares a projected inventory with a request for full details', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'scope-detail', humanTacitKnowledge: { notes: 'Private instructions.' } }, deps(db));
+    const [metadata, full] = await Promise.all([
+      listCapsuleInventory('u1', { metadataOnly: true }, deps(db)),
+      listCapsuleInventory('u1', {}, deps(db)),
+    ]);
+    expect(metadata.capsules[0].humanTacitKnowledge).toBeUndefined();
+    expect(full.capsules[0].humanTacitKnowledge).toEqual({ notes: 'Private instructions.' });
+  });
+
   it('persists review evidence without optional undefined fields', async () => {
     const db = new FakeFirestore();
     const capsule = await createCapsule('u1', { capsuleId: 'evidence-review' }, deps(db));
@@ -2042,6 +2117,7 @@ function deps(db: FakeFirestore) {
 class FakeFirestore {
   data = new Map<string, Record<string, unknown>>();
   queries: unknown[][] = [];
+  projections: string[][] = [];
   rejectUndefined = false;
 
   collection(path: string) {
@@ -2062,7 +2138,12 @@ class FakeFirestore {
 }
 
 class FakeCollection {
-  constructor(private db: FakeFirestore, private path: string, private maxDocs?: number) {}
+  constructor(private db: FakeFirestore, private path: string, private maxDocs?: number, private selectedFields?: string[]) {}
+
+  select(...fields: string[]) {
+    this.db.projections.push(fields);
+    return new FakeCollection(this.db, this.path, this.maxDocs, fields);
+  }
 
   doc(id = `doc-${this.db.data.size + 1}`) {
     return new FakeDoc(this.db, `${this.path}/${id}`, id);
@@ -2091,7 +2172,9 @@ class FakeCollection {
     const prefix = `${this.path}/`;
     const docs = Array.from(this.db.data.entries())
       .filter(([path]) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/'))
-      .map(([path, value]) => new FakeSnapshot(true, value, path.split('/').pop() ?? 'unknown'));
+      .map(([path, value]) => new FakeSnapshot(true, this.selectedFields
+        ? Object.fromEntries(this.selectedFields.filter((field) => value[field] !== undefined).map((field) => [field, value[field]]))
+        : value, path.split('/').pop() ?? 'unknown'));
     return { docs: typeof this.maxDocs === 'number' ? docs.slice(0, this.maxDocs) : docs };
   }
 }

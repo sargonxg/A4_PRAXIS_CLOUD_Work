@@ -8,6 +8,35 @@ export type ChatMessage = {
   routingReceipt?: unknown;
 };
 
+export type OwnedGuideChatState = {
+  cacheKey: string | null;
+  messages: ChatMessage[];
+  prompt: string;
+  threadId: string | null;
+  capsuleId: string | null;
+  open: boolean;
+  updatedAt: string;
+  hydrated: boolean;
+  streaming: boolean;
+};
+
+export function guideChatCacheKey(authenticated: boolean, ownerId?: string | null): string | null {
+  if (!authenticated) return 'praxis-guide-chat-state:v2:guest';
+  return ownerId ? `praxis-guide-chat-state:v2:${JSON.stringify(['owner', ownerId])}` : null;
+}
+
+export function emptyGuideChatState(cacheKey: string | null, defaultPrompt: string): OwnedGuideChatState {
+  return { cacheKey, messages: [], prompt: defaultPrompt, threadId: null, capsuleId: null, open: false, updatedAt: '', hydrated: false, streaming: false };
+}
+
+export function scopedGuideChatState(state: OwnedGuideChatState, cacheKey: string | null, defaultPrompt: string): OwnedGuideChatState {
+  return cacheKey && state.cacheKey === cacheKey ? state : emptyGuideChatState(cacheKey, defaultPrompt);
+}
+
+export function updateGuideChatState(state: OwnedGuideChatState, cacheKey: string | null, update: Partial<OwnedGuideChatState>): OwnedGuideChatState {
+  return cacheKey && state.cacheKey === cacheKey ? { ...state, ...update } : state;
+}
+
 type ThreadHistoryTurn = { prompt?: string; output?: string; createdAt?: string };
 
 export type SavedConversationTurn = {

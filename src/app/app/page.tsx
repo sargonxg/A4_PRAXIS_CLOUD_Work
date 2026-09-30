@@ -7,12 +7,33 @@ const PraxisChatFirstShell = dynamic(
   { loading: () => <AppLaunchpadLoadingSkeleton /> },
 );
 
-export default function AppIndexPage() {
+const TaskletPraxisWorkbench = dynamic(
+  () => import('@/components/praxis/tasklet-praxis-workbench').then((module) => module.TaskletPraxisWorkbench),
+  { loading: () => <AppLaunchpadLoadingSkeleton /> },
+);
+
+type AppIndexPageProps = {
+  searchParams: Promise<{ memoId?: string | string[]; capsuleId?: string | string[] }>;
+};
+
+export default async function AppIndexPage({ searchParams }: AppIndexPageProps) {
+  const query = await searchParams;
+  // Repeated or oversized IDs are ambiguous; let the normal Home view handle them.
+  const memoId = singleResourceId(query.memoId);
+  if (memoId) {
+    return <TaskletPraxisWorkbench mode="app" capsuleId={singleResourceId(query.capsuleId) || 'default'} initialMemoId={memoId} initialPanel="ask" />;
+  }
   return (
     <Suspense fallback={null}>
       <PraxisChatFirstShell mode="authenticated" />
     </Suspense>
   );
+}
+
+function singleResourceId(value: string | string[] | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const id = value.trim();
+  return id && id.length <= 256 && !/[\u0000-\u001f\u007f/\\]/.test(id) ? id : null;
 }
 
 function AppLaunchpadLoadingSkeleton() {

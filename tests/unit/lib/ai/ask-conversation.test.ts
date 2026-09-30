@@ -5,10 +5,24 @@ import {
   buildAskTimelineMessages,
   buildAskConversationMessages,
   classifyAskIntent,
+  askHistoryCapsuleId,
 } from '@/lib/ai/ask-conversation';
 import type { AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
 
 describe('ask conversation continuity', () => {
+  it('uses one resumable direct history partition across ephemeral instant context turns', () => {
+    const first = askHistoryCapsuleId({ instantContextMode: true, resolvedCapsuleId: 'instant-turn-one' });
+    const second = askHistoryCapsuleId({ instantContextMode: true, resolvedCapsuleId: 'instant-turn-two' });
+    expect(first).toBe('thin-capsule-fallback');
+    expect(second).toBe(first);
+  });
+
+  it('keeps explicitly attached capsule histories separate and preserves their actual identities', () => {
+    expect(askHistoryCapsuleId({ instantContextMode: false, resolvedCapsuleId: 'capsule-a' })).toBe('capsule-a');
+    expect(askHistoryCapsuleId({ instantContextMode: false, resolvedCapsuleId: 'capsule-b' })).toBe('capsule-b');
+    expect(askHistoryCapsuleId({ instantContextMode: false, requestedCapsuleId: 'saved-request' })).toBe('saved-request');
+  });
+
   it('builds an auditable context receipt from Ask runtime metadata', () => {
     const receipt = buildAskContextReceipt({
       capsuleId: 'capsule-1',

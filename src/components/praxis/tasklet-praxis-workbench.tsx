@@ -5,7 +5,7 @@ import { saveCapsuleStarterNotes } from '@/lib/context/save-capsule-starter-note
 import { JevReviewControl } from '@/components/app/jev-review-control';
 import { saveConversationCapsuleHandoff } from '@/lib/context/conversation-capsule-handoff';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode, type SetStateAction } from 'react';
 import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -158,20 +158,26 @@ import {
   sourceSnippetsFromMemoReceipts,
   type MemoSourceabilityResult,
 } from '@/lib/memo/sourceability-request';
+import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import type { MemoBlock } from '@/types/memo';
 import {
   answerEnvelopeFromDataStreamLine,
   buildConversationPath,
   buildConversationUrl,
   createConversationThreadId,
+  emptyGuideChatState,
   ensureConversationRecord,
+  guideChatCacheKey,
   loadLegacyAskThreadHistory,
   pushConversationUrl,
   safeMarkdownHref,
   sanitizeConversationThreadId,
   savedConversationHref,
   savedConversationTurnsToMessages,
+  scopedGuideChatState,
+  updateGuideChatState,
   type ChatMessage,
+  type OwnedGuideChatState,
   type SavedConversationSummary,
   type SavedConversationTurn,
 } from './tasklet-workbench-conversation';
@@ -367,6 +373,9 @@ type MemoArtifactState = {
   gaps: string[];
   sourceabilityResult?: MemoSourceabilityResult | null;
   sourceabilityCheckedText?: string | null;
+  outputReview?: MemoOutputReviewReceipt | null;
+  bodyHash?: string | null;
+  reviewFeedback?: string | null;
   originLabel: string;
   originHref?: string | null;
   updatedAt: string;
@@ -473,7 +482,6 @@ type CapsuleEnrichmentReceipt = {
   writebackProposalIds: string[];
 };
 
-const GUIDE_CHAT_STORAGE_KEY = 'praxis-guide-chat-state:v1';
 const GUIDE_CHAT_MESSAGE_LIMIT = 40;
 const DEFAULT_GUIDE_CHAT_PROMPT = 'How do I use PRAXIS with the active capsule, sources, agents, and outputs?';
 
@@ -504,10 +512,10 @@ function cleanStoredGuideString(value: unknown, maxLength: number): string {
   return typeof value === 'string' ? value.slice(0, maxLength) : '';
 }
 
-function loadGuideChatState(): GuideChatStorageState | null {
-  if (typeof window === 'undefined') return null;
+function loadGuideChatState(cacheKey: string | null): GuideChatStorageState | null {
+  if (!cacheKey || typeof window === 'undefined') return null;
   try {
-    const raw = window.localStorage.getItem(GUIDE_CHAT_STORAGE_KEY);
+    const raw = window.localStorage.getItem(cacheKey);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
@@ -525,10 +533,10 @@ function loadGuideChatState(): GuideChatStorageState | null {
   }
 }
 
-function persistGuideChatState(state: GuideChatStorageState) {
-  if (typeof window === 'undefined') return;
+function persistGuideChatState(cacheKey: string | null, state: GuideChatStorageState) {
+  if (!cacheKey || typeof window === 'undefined') return;
   try {
-    window.localStorage.setItem(GUIDE_CHAT_STORAGE_KEY, JSON.stringify({
+    window.localStorage.setItem(cacheKey, JSON.stringify({
       ...state,
       messages: cleanStoredGuideMessages(state.messages),
       prompt: state.prompt.slice(0, 500),
@@ -935,13 +943,22 @@ export function TaskletPraxisWorkbench({
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
   const [currentCapsuleId, setCurrentCapsuleId] = useState(capsuleId);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [guideMessages, setGuideMessages] = useState<ChatMessage[]>([]);
-  const [guidePrompt, setGuidePrompt] = useState(DEFAULT_GUIDE_CHAT_PROMPT);
-  const [guideThreadId, setGuideThreadId] = useState<string | null>(null);
-  const [guideChatOpen, setGuideChatOpen] = useState(false);
-  const [guideCapsuleId, setGuideCapsuleId] = useState<string | null>(null);
-  const [guideHydrated, setGuideHydrated] = useState(false);
-  const [guideStreaming, setGuideStreaming] = useState(false);
+  const guideScopeKey = guideChatCacheKey(isAuthenticated, user?.id);
+  const [ownedGuideState, setOwnedGuideState] = useState<OwnedGuideChatState>(() => emptyGuideChatState(guideScopeKey, DEFAULT_GUIDE_CHAT_PROMPT));
+  const currentGuide = scopedGuideChatState(ownedGuideState, guideScopeKey, DEFAULT_GUIDE_CHAT_PROMPT);
+  const { messages: guideMessages, prompt: guidePrompt, threadId: guideThreadId, open: guideChatOpen, capsuleId: guideCapsuleId, hydrated: guideHydrated, streaming: guideStreaming } = currentGuide;
+  const guideRequestRef = useRef<AbortController | null>(null);
+  function setGuideField<K extends keyof OwnedGuideChatState>(field: K, value: OwnedGuideChatState[K]) {
+    setOwnedGuideState((previous) => updateGuideChatState(previous, guideScopeKey, { [field]: value }));
+  }
+  const setGuideMessages = (update: SetStateAction<ChatMessage[]>) => setOwnedGuideState((previous) => updateGuideChatState(previous, guideScopeKey, {
+    messages: typeof update === 'function' ? update(previous.messages) : update,
+  }));
+  const setGuidePrompt = (value: string) => setGuideField('prompt', value);
+  const setGuideThreadId = (value: string | null) => setGuideField('threadId', value);
+  const setGuideChatOpen = (value: boolean) => setGuideField('open', value);
+  const setGuideCapsuleId = (value: string | null) => setGuideField('capsuleId', value);
+  const setGuideStreaming = (value: boolean) => setGuideField('streaming', value);
   const [conversationThreadId, setConversationThreadId] = useState<string | null>(
     sanitizeConversationThreadId(initialConversationId),
   );
@@ -1012,7 +1029,6 @@ export function TaskletPraxisWorkbench({
   const [researchGraphExtraEnabled, setResearchGraphExtraEnabled] = useState(false);
   const [workflowDryRunChecks, setWorkflowDryRunChecks] = useState<WorkflowDryRunCheck[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const starterSeededRef = useRef(false);
   const selectedAgent = PRAXIS_POLICY_AGENTS.find((agent) => agent.id === selectedAgentId) ?? PRAXIS_POLICY_AGENTS[0]!;
   const reduceMotion = useReducedMotion();
   const dndSensors = useSensors(
@@ -1222,20 +1238,21 @@ export function TaskletPraxisWorkbench({
   }, [prompt]);
 
   useEffect(() => {
-    const restored = loadGuideChatState();
-    if (restored) {
-      setGuideMessages(restored.messages);
-      setGuidePrompt(restored.prompt || DEFAULT_GUIDE_CHAT_PROMPT);
-      setGuideThreadId(restored.threadId);
-      setGuideCapsuleId(restored.capsuleId);
-      setGuideChatOpen(Boolean(restored.open));
-    }
-    setGuideHydrated(true);
-  }, []);
+    let cancelled = false;
+    const restored = loadGuideChatState(guideScopeKey);
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setOwnedGuideState({ ...emptyGuideChatState(guideScopeKey, DEFAULT_GUIDE_CHAT_PROMPT), ...restored, hydrated: Boolean(guideScopeKey) });
+    });
+    return () => {
+      cancelled = true;
+      guideRequestRef.current?.abort();
+    };
+  }, [guideScopeKey]);
 
   useEffect(() => {
     if (!guideHydrated) return;
-    persistGuideChatState({
+    persistGuideChatState(guideScopeKey, {
       messages: guideMessages,
       prompt: guidePrompt,
       threadId: guideThreadId,
@@ -1243,7 +1260,7 @@ export function TaskletPraxisWorkbench({
       open: guideChatOpen,
       updatedAt: new Date().toISOString(),
     });
-  }, [guideCapsuleId, guideChatOpen, guideHydrated, guideMessages, guidePrompt, guideThreadId]);
+  }, [guideScopeKey, guideCapsuleId, guideChatOpen, guideHydrated, guideMessages, guidePrompt, guideThreadId]);
 
   const activeCapsuleSummaryForStrip = selectedCapsule ?? capsuleSummaryForChip(activeCapsuleStack[0], userCapsules);
   const activeStarterForStrip = starterDefinitionForCapsule(activeCapsuleSummaryForStrip);
@@ -1641,6 +1658,9 @@ export function TaskletPraxisWorkbench({
       return;
     }
 
+    if (!guideHydrated || !activeContextHydrated || !user?.id) return;
+    const requestController = new AbortController();
+    guideRequestRef.current = requestController;
     setGuideStreaming(true);
     const nextThreadId = ensureGuideThread();
     const scopedCapsuleId = targetCapsule?.capsuleId ?? currentCapsuleId;
@@ -1649,6 +1669,7 @@ export function TaskletPraxisWorkbench({
       ? buildActiveContextStack(targetCapsule.capsuleId, appliedGuideCapsules, activeContextStackState)
       : activeContextStack;
     await ensureConversationRecord(nextThreadId, scopedCapsuleId, appliedGuideCapsules);
+    if (requestController.signal.aborted) return;
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
     const enrichedPrompt = buildGuideChatPrompt(cleanPrompt, targetCapsule, nextThreadId);
     setGuideMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
@@ -1659,6 +1680,7 @@ export function TaskletPraxisWorkbench({
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
+        signal: requestController.signal,
         body: JSON.stringify({
           messages: [...guideMessages, { ...userMessage, text: enrichedPrompt }].map((message) => ({
             role: message.role,
@@ -1698,6 +1720,7 @@ export function TaskletPraxisWorkbench({
       let answer = '';
       while (true) {
         const { value, done } = await reader.read();
+        if (requestController.signal.aborted) return;
         if (done) break;
         const chunk = decoder.decode(value);
         for (const line of chunk.split('\n')) {
@@ -1716,6 +1739,7 @@ export function TaskletPraxisWorkbench({
       }
       if (!answer.trim()) throw new Error('PRAXIS guide returned no answer text.');
     } catch (err) {
+      if (requestController.signal.aborted) return;
       const message = err instanceof Error ? err.message : 'unknown error';
       setGuidePrompt(cleanPrompt);
       setGuideMessages((current) => {
@@ -1725,7 +1749,7 @@ export function TaskletPraxisWorkbench({
         return next;
       });
     } finally {
-      setGuideStreaming(false);
+      if (!requestController.signal.aborted) setGuideStreaming(false);
     }
   }
 
@@ -2025,6 +2049,7 @@ export function TaskletPraxisWorkbench({
     if (requireAuthForAction(`Save this PRAXIS memo side artifact:\n\n${memoArtifact.title}`)) return;
     setMemoArtifactSaving(true);
     try {
+      const draftToSave = { ...memoArtifact, bodyHash: await memoOutputBodyHash(memoArtifact.body).catch(() => null) };
       const response = await fetch('/api/memos', {
         method: 'POST',
         credentials: 'include',
@@ -2034,9 +2059,9 @@ export function TaskletPraxisWorkbench({
           templateId: 'policy-memo',
           title: memoArtifact.title.trim() || 'PRAXIS memo draft',
           graphSnapshotId: `${memoArtifact.caseId || currentCapsuleId || 'default'}:memo-artifact:${memoArtifact.memoId ?? Date.now()}`,
-          status: 'draft',
+          status: memoArtifact.outputReview !== undefined ? 'review' : 'draft',
           changeNote: 'Saved from PRAXIS memo side artifact.',
-          blocks: memoArtifactBodyToBlocks(memoArtifact),
+          blocks: memoArtifactBodyToBlocks(draftToSave),
           capsuleId: memoArtifact.capsuleId ?? currentCapsuleId,
           capsuleVersion: memoArtifact.capsuleVersion,
           conversationId: memoArtifact.conversationId,
@@ -2410,24 +2435,9 @@ export function TaskletPraxisWorkbench({
         if (selectCapsuleId) setCurrentCapsuleId(targetId);
         return;
       }
-      let library = await fetchCapsuleLibrary();
-      let next = library.capsules;
+      const library = await fetchCapsuleLibrary(selectCapsuleId ?? currentCapsuleId);
+      const next = library.capsules;
       setCapsuleInventorySummary(library.summary);
-      const visibleCount = library.summary?.activeCapsules ?? next.filter((capsule) => !capsule.archivedAt).length;
-      if (!starterSeededRef.current && visibleCount < CAPSULE_STARTER_DEFINITIONS.length) {
-        starterSeededRef.current = true;
-        const seedResponse = await fetch('/api/context/capsules', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ action: 'seed-starters' }),
-        });
-        const seedPayload = await seedResponse.json().catch(() => ({}));
-        if (!seedResponse.ok) throw new Error(seedPayload?.error ?? 'starter capsule seed failed');
-        library = await fetchCapsuleLibrary();
-        next = library.capsules;
-        setCapsuleInventorySummary(library.summary);
-      }
       setUserCapsules(next);
       const selected = selectCapsuleId
         ? next.find((capsule) => capsule.capsuleId === selectCapsuleId)
@@ -6382,12 +6392,24 @@ function sourceTypeForSelectionZone(zone: SelectionZone | null): 'assistant-mess
   return 'document-selection';
 }
 
-async function fetchCapsuleLibrary(): Promise<CapsuleLibraryPayload> {
+async function fetchCapsuleLibrary(selectedCapsuleId?: string): Promise<CapsuleLibraryPayload> {
   const response = await fetch('/api/context/capsules?includeArchived=true', { credentials: 'include' });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload?.error ?? 'capsule list failed');
+  const capsules = Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [];
+  // Inventory reads contain metadata. Inspect only the selected saved capsule's
+  // full evidence; catalogue starters are saved individually when the user adds one.
+  if (selectedCapsuleId && capsules.some((capsule) => capsule.capsuleId === selectedCapsuleId)) {
+    const detailResponse = await fetch(`/api/context/capsules/${encodeURIComponent(selectedCapsuleId)}`, {
+      credentials: 'include', signal: AbortSignal.timeout(30_000),
+    });
+    const detail = await detailResponse.json().catch(() => ({}));
+    if (!detailResponse.ok || !detail.capsule) throw new Error('The selected capsule details could not be loaded. Please retry.');
+    const index = capsules.findIndex((capsule) => capsule.capsuleId === selectedCapsuleId);
+    capsules[index] = detail.capsule as PraxisCapsuleSummary;
+  }
   return {
-    capsules: Array.isArray(payload?.capsules) ? payload.capsules as PraxisCapsuleSummary[] : [],
+    capsules,
     summary: isCapsuleInventorySummary(payload?.summary) ? payload.summary : null,
     persisted: payload?.persisted === true,
   };
@@ -11464,11 +11486,21 @@ function MemoArtifactOverlay({
   const unsupportedCount = artifact.unsupportedClaims.length;
   const sourceCount = artifact.sourceReceiptIds.length || artifact.sourceReceipts.length;
   const sourceabilityResult = artifact.sourceabilityResult ?? null;
+  const [bodyDigest, setBodyDigest] = useState<{ body: string; hash: string | null }>({ body: '', hash: null });
+  useEffect(() => {
+    let cancelled = false;
+    void memoOutputBodyHash(artifact.body).then((hash) => {
+      if (!cancelled) setBodyDigest({ body: artifact.body, hash });
+    }).catch(() => { /* An unavailable digest cannot establish review readiness. */ });
+    return () => { cancelled = true; };
+  }, [artifact.body]);
+  const bodyHash = bodyDigest.body === artifact.body ? bodyDigest.hash : null;
   const exportReadiness = memoExportReadiness({
     outputTarget: artifact.outputTarget,
     sourceabilityResult,
+    ...(artifact.outputReview !== undefined ? { outputReview: artifact.outputReview, bodyHash } : {}),
   });
-  const sourceabilityStatus = unsupportedCount
+  const sourceabilityStatus = artifact.outputReview !== undefined ? 'generated draft requires review' : unsupportedCount
     ? `${unsupportedCount} unsupported claim${unsupportedCount === 1 ? '' : 's'}`
     : sourceCount
       ? 'source-backed draft'
@@ -11484,7 +11516,7 @@ function MemoArtifactOverlay({
   }
   return (
     <motion.div
-      className="fixed inset-0 z-50 bg-slate-950/30 px-3 py-4 backdrop-blur-sm sm:px-6"
+      className="fixed inset-0 z-[70] bg-slate-950/30 px-3 py-4 backdrop-blur-sm sm:px-6"
       data-testid="memo-artifact-overlay"
       initial={reduceMotion ? false : { opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -11587,6 +11619,15 @@ function MemoArtifactOverlay({
 
             {tab === 'sourceability' ? (
               <section className="space-y-4">
+                {artifact.outputReview !== undefined ? (
+                  <section className="rounded-md border border-amber-200 bg-amber-50 p-3" data-testid="memo-body-review">
+                    <p className="text-sm font-semibold text-amber-950">{exportReadiness.label}</p>
+                    <p className="mt-1 text-sm leading-6 text-amber-950">{exportReadiness.detail}</p>
+                    {artifact.outputReview ? <p className="mt-2 text-sm text-amber-950">Saved review: {artifact.outputReview.ungroundedSpanCount} passages need source review; {artifact.outputReview.contradictedSpanCount} contradictions recorded. These counts describe the checked body, not a factual accuracy score.</p> : <p className="mt-2 text-sm text-amber-950">No valid whole-draft review receipt is available.</p>}
+                    {artifact.outputReview?.findings.map((finding, index) => <p key={index} className="mt-2 rounded bg-white p-2 text-sm text-slate-700">{finding.text}</p>)}
+                    {artifact.reviewFeedback ? <div className="mt-3 border-t border-amber-200 pt-3"><p className="text-xs font-semibold text-amber-950">Review feedback — not applied to the draft</p><p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700">{artifact.reviewFeedback}</p></div> : null}
+                  </section>
+                ) : null}
                 <section className="rounded-md border border-slate-200 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Unsupported claims</p>
@@ -11635,7 +11676,7 @@ function MemoArtifactOverlay({
                   <div className="mt-3 space-y-2">
                     {artifact.unsupportedClaims.length ? artifact.unsupportedClaims.map((claim, index) => (
                       <p key={`${claim}-${index}`} className="rounded-md bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-950">{claim}</p>
-                    )) : <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm leading-6 text-emerald-950">No unsupported claims were recorded in the preserved PRAXIS metadata.</p>}
+                    )) : <p className="rounded-md bg-slate-50 px-3 py-2 text-sm leading-6 text-slate-700">No unsupported claims were recorded in the preserved claim metadata. This does not verify the generated memo.</p>}
                   </div>
                 </section>
                 <section className="rounded-md border border-slate-200 p-3">
@@ -11931,6 +11972,18 @@ function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactSt
   const latestVersion = versions[versions.length - 1] ?? null;
   const blocks = Array.isArray(latestVersion?.blocks) ? latestVersion.blocks as MemoBlock[] : [];
   const metadata = firstMemoArtifactMetadata(blocks);
+  const primaryDraft = blocks.find((block) => block.id === 'live-memo-draft' || block.id === 'artifact-body');
+  const reviewValue = latestVersion?.outputReview ?? metadata?.outputReview ?? primaryDraft?.metadata?.outputReview ?? memo?.outputReview ?? fallback?.outputReview;
+  const generatedMemo = Boolean(stringFieldFromUnknown(memo?.runId) ?? stringFieldFromUnknown(metadata?.runId) ?? fallback?.runId);
+  const outputReview = reviewValue === undefined && !generatedMemo ? undefined : normalizeMemoOutputReview(reviewValue);
+  const critique = blocks.find((block) => /critique/.test(block.id));
+  // Older research runs appended unapplied feedback to this exact primary block.
+  const legacyBody = generatedMemo && !outputReview && !critique && primaryDraft?.id === 'live-memo-draft'
+    ? primaryDraft.content.replace(/\r\n/g, '\n') : null;
+  const legacyCritiqueMarker = '\n\nSourceability self-critique:\n';
+  const legacyCritiqueOffset = legacyBody?.indexOf(legacyCritiqueMarker) ?? -1;
+  const primaryBody = legacyBody && legacyCritiqueOffset >= 0 ? legacyBody.slice(0, legacyCritiqueOffset).trimEnd() : primaryDraft?.content;
+  const legacyFeedback = legacyBody && legacyCritiqueOffset >= 0 ? legacyBody.slice(legacyCritiqueOffset + legacyCritiqueMarker.length).trim() : null;
   const title = stringFieldFromUnknown(memo?.title) ?? fallback?.title ?? 'PRAXIS memo draft';
   const caseId = stringFieldFromUnknown(memo?.caseId) ?? stringFieldFromUnknown(memo?.situationId) ?? fallback?.caseId ?? 'default';
   const sourceReceiptIds = uniqueStringList([
@@ -11950,7 +12003,7 @@ function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactSt
   return {
     memoId: stringFieldFromUnknown(memo?.id) ?? stringFieldFromUnknown(memo?.memoId) ?? fallback?.memoId ?? null,
     title,
-    body: memoBlocksToArtifactBody(blocks) || fallback?.body || `# ${title}\n\nStart drafting here.`,
+    body: (primaryDraft ? primaryBody : memoBlocksToArtifactBody(blocks.filter((block) => !/critique/.test(block.id)))) || fallback?.body || `# ${title}\n\nStart drafting here.`,
     status: stringFieldFromUnknown(memo?.status) ?? fallback?.status ?? 'draft',
     caseId,
     capsuleId: stringFieldFromUnknown(memo?.capsuleId) ?? stringFieldFromUnknown(metadata?.capsuleId) ?? fallback?.capsuleId ?? caseId,
@@ -11969,6 +12022,9 @@ function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactSt
     ]),
     sourceabilityResult: fallback?.sourceabilityResult ?? null,
     sourceabilityCheckedText: fallback?.sourceabilityCheckedText ?? null,
+    outputReview,
+    bodyHash: null,
+    reviewFeedback: critique?.content ?? legacyFeedback ?? stringFieldFromUnknown(metadata?.reviewFeedback) ?? fallback?.reviewFeedback ?? null,
     originLabel: 'Ask PRAXIS conversation',
     originHref: fallback?.originHref ?? null,
     updatedAt: stringFieldFromUnknown(memo?.updatedAt) ?? fallback?.updatedAt ?? new Date().toISOString(),
@@ -12018,6 +12074,8 @@ function memoArtifactBodyToBlocks(artifact: MemoArtifactState): MemoBlock[] {
           gaps: artifact.gaps,
           sourceabilityResult: artifact.sourceabilityResult,
           sourceabilityCheckedText: artifact.sourceabilityCheckedText,
+          ...(artifact.outputReview !== undefined ? { outputReview: artifact.outputReview } : {}),
+          reviewFeedback: artifact.reviewFeedback ?? null,
           outputCapsuleId: artifact.outputCapsuleId,
           outputTarget: artifact.outputTarget,
           updatedAt: artifact.updatedAt,
@@ -12031,9 +12089,10 @@ function memoArtifactBodyToBlocks(artifact: MemoArtifactState): MemoBlock[] {
       content: '',
       items: [
         `Source receipts: ${artifact.sourceReceiptIds.length ? artifact.sourceReceiptIds.join(', ') : 'none'}`,
-        `Unsupported claims: ${artifact.unsupportedClaims.length}`,
+        `Recorded unsupported claims: ${artifact.unsupportedClaims.length}; this count alone does not verify the generated body.`,
         artifact.sourceabilityResult ? `Latest check: ${artifact.sourceabilityResult.status}` : 'Latest check: not run',
-        `Export gate: ${memoExportReadiness({ outputTarget: artifact.outputTarget, sourceabilityResult: artifact.sourceabilityResult }).label}`,
+        `Export gate: ${memoExportReadiness({ outputTarget: artifact.outputTarget, sourceabilityResult: artifact.sourceabilityResult, ...(artifact.outputReview !== undefined ? { outputReview: artifact.outputReview, bodyHash: artifact.bodyHash } : {}) }).label}`,
+        ...(artifact.outputReview ? [`Generated body review: ${artifact.outputReview.ungroundedSpanCount} passages need source review; ${artifact.outputReview.contradictedSpanCount} contradictions recorded.`] : []),
         ...artifact.unsupportedClaims.map((claim) => `Unsupported: ${claim}`),
       ],
       citations,

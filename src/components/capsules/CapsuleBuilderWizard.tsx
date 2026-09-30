@@ -52,6 +52,7 @@ export function CapsuleBuilderWizard() {
   const handoffLoaded = useRef<string | null>(null);
   const notesReceipt = useRef<ArchitectNotesReceipt | null>(null);
   const architectInFlight = useRef(false);
+  const saveInFlight = useRef(false);
   const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState<BuilderStepId>('job');
   const [advanced, setAdvanced] = useState(false);
@@ -285,16 +286,34 @@ export function CapsuleBuilderWizard() {
   }
 
   async function saveDraft(): Promise<string | null> {
-    if (saveState === 'saving' || saveState === 'publishing') return null;
+    if (saveInFlight.current || intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing') return null;
+    saveInFlight.current = true;
     setSaveState('saving');
-    setMessage('Saving draft capsule...');
-    const draft = capsule.id === 'new-policy-capsule' ? { ...capsule, id: `capsule-${crypto.randomUUID()}` } : capsule;
+    setMessage('Saving your private capsule...');
+    const id = architectCapsuleId ?? savedCapsuleId ?? (capsule.id === 'new-policy-capsule' ? `capsule-${crypto.randomUUID()}` : capsule.id);
+    const draft = { ...capsule, id };
     setCapsule(draft);
     try {
-    const response = await fetch('/api/capsules', {
+    let documents = architectDocuments;
+    let situationId = intakeSituationId ?? guard.situation?.id;
+    if (sourceNotes.trim()) {
+      if (documents.length >= 20) throw new Error('A draft supports 20 sources. Use fewer documents to include working notes.');
+      const receipt = await prepareArchitectNotes(sourceNotes, { situationId, workspaceName: job, previous: notesReceipt.current });
+      notesReceipt.current = receipt;
+      situationId = receipt.situationId;
+      setIntakeSituationId(situationId);
+      documents = [...documents, receipt.document];
+    }
+    const response = await fetch('/api/context/capsules', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: draft.id, capsule: draft }),
+      body: JSON.stringify({
+        action: 'save-builder-draft', capsuleId: id, purpose: job,
+        systemFrame: draft.persona.systemFrame, domain: draft.persona.domain,
+        frameworks: draft.persona.frameworks, outputFormat: draft.output.format,
+        responseJsonSchema: draft.output.responseJsonSchema, propertyOrdering: draft.output.propertyOrdering,
+        situationId, documentIds: documents.map((document) => document.documentId),
+      }),
     });
     const payload = await response.json();
     if (!response.ok) {
@@ -302,26 +321,39 @@ export function CapsuleBuilderWizard() {
       setMessage(payload.detail ?? payload.error ?? 'Save failed.');
       return null;
     }
-    const id = payload.capsule?.id as string;
-    if (!id) throw new Error('Missing saved capsule id');
-    setSavedCapsuleId(id);
+    const savedId = payload.capsule?.capsuleId as string;
+    if (!savedId) throw new Error('Missing saved capsule id');
+    setSavedCapsuleId(savedId);
+    setArchitectCapsuleId(savedId);
     setSaveState('saved');
-    setMessage('Draft saved.');
-    return id;
-    } catch {
+    if (user?.id) clearConversationCapsuleHandoff(window.sessionStorage, user.id);
+    setMessage('Private capsule saved to your library. Use it in Ask PRAXIS; source and graph proposals still need review.');
+    return savedId;
+    } catch (error) {
       setSaveState('error');
-      setMessage('Draft could not be saved. Your current edits are still here; retry saving.');
+      setMessage(error instanceof Error ? error.message : 'Draft could not be saved. Your current edits are still here; retry saving.');
       return null;
+    } finally {
+      saveInFlight.current = false;
     }
   }
 
   async function publish() {
-    const id = await saveDraft();
-    if (!id) return;
+    if (saveInFlight.current || saveState === 'saving' || saveState === 'publishing') return;
     setSaveState('publishing');
-    setMessage('Publishing capsule...');
+    setMessage('Evaluating the capsule package for publication...');
     try {
-    const response = await fetch(`/api/capsules/${encodeURIComponent(id)}/publish`, { method: 'POST' });
+    const draft = capsule.id === 'new-policy-capsule' ? { ...capsule, id: `capsule-${crypto.randomUUID()}` } : capsule;
+    setCapsule(draft);
+    const packageResponse = await fetch('/api/capsules', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: draft.id, capsule: draft }),
+    });
+    const packagePayload = await packageResponse.json();
+    if (!packageResponse.ok) throw new Error(packagePayload.error ?? 'The capsule package could not be saved.');
+    const packageId = packagePayload.capsule?.id;
+    if (!packageId) throw new Error('Missing capsule package receipt.');
+    const response = await fetch(`/api/capsules/${encodeURIComponent(packageId)}/publish`, { method: 'POST' });
     const payload = await response.json();
     if (!response.ok) {
       setSaveState('error');
@@ -330,9 +362,9 @@ export function CapsuleBuilderWizard() {
     }
     setSaveState('published');
     setMessage('Capsule published and frozen as an immutable version.');
-    } catch {
+    } catch (error) {
       setSaveState('error');
-      setMessage('Publication could not be confirmed. Your draft is saved; check its status before retrying.');
+      setMessage(error instanceof Error ? error.message : 'Publication could not be confirmed. Check the package status before retrying.');
     }
   }
 
@@ -834,19 +866,25 @@ export function CapsuleBuilderWizard() {
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button type="button" disabled={saveState === 'saving' || saveState === 'publishing'} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 border border-[#24211b] px-4 py-2 text-sm font-semibold disabled:opacity-50">
-                    <FileJson className="h-4 w-4" /> Save draft
-                  </button>
                   <button type="button" disabled={saveState === 'saving' || saveState === 'publishing'} onClick={() => void publish()} className="inline-flex items-center gap-2 bg-[#24211b] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                     <Rocket className="h-4 w-4" /> Publish capsule
                   </button>
                 </div>
-                <p className="text-xs text-[#6f675c]">Save privately while reviewing. Publication has a separate server-side evaluation gate; the structure check does not unlock it.</p>
-                {savedCapsuleId ? <p role="status" className="text-xs">Draft saved as {savedCapsuleId}.</p> : null}
+                <p className="text-xs text-[#6f675c]">Publishing creates a separate immutable package after its server-side evaluation gate passes. Save your private working capsule below to reuse it in Ask.</p>
               </div>
             )}
           </div>
         )}
+
+        <div className="flex flex-wrap items-center gap-3 border-t border-[#d8d1c5] pt-4">
+          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing'} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 border border-[#24211b] px-4 py-2 text-sm font-semibold disabled:opacity-50">
+            <FileJson className="h-4 w-4" /> {saveState === 'saving' ? 'Saving...' : 'Save draft'}
+          </button>
+          {savedCapsuleId ? <>
+            <Link href={`/app?capsuleId=${encodeURIComponent(savedCapsuleId)}`} className="inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white">Use in Ask</Link>
+            <Link href={`/app/capsules?starter=${encodeURIComponent(savedCapsuleId)}&lane=inspect`} className="text-sm underline">View saved capsule</Link>
+          </> : <p className="text-xs text-[#6f675c]">Save privately to keep your purpose, output preferences and supplied sources together.</p>}
+        </div>
 
         {message && (
           <p role="status" className={`border px-4 py-3 text-sm ${

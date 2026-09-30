@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import {
   AgentWorkerError,
   executeAgentRun,
@@ -542,6 +543,62 @@ describe('agent runtime no-op worker', () => {
     expect(savedBlocks.join('\n')).toContain('Addressed: Clarify unsupported implementation dependency.');
   });
 
+  it.each(['enabled', 'disabled'] as const)('persists one exact-body review receipt before all research-memo artifacts with verifier %s', async (verifier) => {
+    vi.stubEnv('PRAXIS_GROUNDING_VERIFIER', verifier === 'enabled' ? 'true' : 'false');
+    const body = 'The budget doubled to 50 million in 2028.';
+    const critique = 'No export blockers remain.';
+    let generated = 0;
+    let savedReview: MemoOutputReviewReceipt | null = null;
+    let completion: Record<string, unknown> | undefined;
+    try {
+      const result = await executeAgentRun(payload, {
+        getRun: async () => makeRun('queued', { policyAgentId: 'research-memo' }),
+        updateStatus: async (input) => {
+          if (input.toStatus === 'succeeded') completion = input.metadata;
+          return makeRun(input.toStatus, { policyAgentId: 'research-memo', ...input.metadata });
+        },
+        appendToolCall: async (call) => call,
+        appendApproval: async (approval) => approval,
+        appendEvent: async (event) => event,
+        buildEvidencePack: async () => makeEvidencePack(),
+        generateText: async () => ({ text: ++generated === 1 ? body : critique }),
+        saveMemoDraft: async (_uid, input) => {
+          savedReview = normalizeMemoOutputReview(input.outputReview);
+          expect(savedReview).toMatchObject({ bodyHash: await memoOutputBodyHash(body), exportReady: false,
+            reviewRequired: true, critiqueApplied: false, verifierStatus: verifier === 'enabled' ? 'checked' : 'disabled' });
+          expect(input.status).toBe('review');
+          expect(input.blocks.find((block) => block.id === 'live-memo-draft')).toMatchObject({
+            content: body, metadata: { outputReview: savedReview, sourceabilityScope: 'input_evidence' },
+          });
+          expect(input.blocks.find((block) => block.id === 'live-memo-critique')).toMatchObject({
+            content: critique, metadata: { critiqueApplied: false },
+          });
+          expect(input.blocks.find((block) => block.id === 'claim-ledger-summary')?.items?.[0]).toContain('input evidence');
+          return { memo: { id: 'memo-review-1' } };
+        },
+        saveOutputCapsule: async (_uid, input) => {
+          expect(savedReview).not.toBeNull();
+          expect(input.payload).toMatchObject({ outputReview: savedReview, sourceabilityScope: 'input_evidence' });
+          expect(input.gaps?.some((gap) => gap.id === 'generated-memo-review')).toBe(true);
+          expect(JSON.stringify(input.payload)).not.toContain('No blocking gaps detected.');
+          return { id: 'output-review-1' };
+        },
+      });
+      expect(result.status).toBe('succeeded');
+      expect(completion).toMatchObject({ outputReview: savedReview, sourceabilityScope: 'input_evidence' });
+      if (verifier === 'enabled') {
+        expect(normalizeMemoOutputReview(completion?.outputReview)?.findingCount).toBeGreaterThan(0);
+        expect(completion?.groundingVerification).toMatchObject({ ungroundedSpans: expect.arrayContaining([
+          expect.objectContaining({ text: body }),
+        ]) });
+      } else {
+        expect(completion?.groundingVerification).toBeNull();
+      }
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('routes research-memo runs into memo and output capsule receipts', async () => {
     const transitions: AgentRun['status'][] = [];
     const mirrored: AgentRunEvent[] = [];
@@ -616,7 +673,8 @@ describe('agent runtime no-op worker', () => {
       saveOutputCapsule: async (_uid, input) => {
         expect(input.templateId).toBe('options-memo');
         expect(input.citations).toHaveLength(1);
-        expect(input.gaps).toHaveLength(1);
+        expect(input.gaps).toHaveLength(2);
+        expect(input.gaps?.[1]?.id).toBe('generated-memo-review');
         return { id: 'output-1' };
       },
     });

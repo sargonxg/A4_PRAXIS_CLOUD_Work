@@ -135,7 +135,8 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).not.toContain('block truncate text-[13px] font-medium text-slate-700');
     expect(shellSource).not.toContain('PRAXIS sample artifacts');
     expect(source).not.toContain('AskPraxisHome');
-    expect(source).not.toContain('TaskletPraxisWorkbench');
+    expect(source.slice(source.indexOf('return ('))).not.toContain('TaskletPraxisWorkbench');
+    expect(source).toMatch(/if\s*\(memoId\)\s*\{\s*return\s+<TaskletPraxisWorkbench\b[^>]*\binitialMemoId=\{memoId\}[^>]*\/>;\s*\}/);
     expect(source).not.toContain('listExampleCases');
   });
 });

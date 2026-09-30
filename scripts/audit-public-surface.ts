@@ -30,6 +30,7 @@ const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx')
 const appIndex = read('src/app/app/page.tsx');
 const chatShell = read('src/components/app/praxis-chat-first-shell.tsx');
 const praxisChat = read('src/components/app/praxis-chat.tsx');
+const publicHomeSurface = `${marketingHome}\n${chatShell}\n${praxisChat}`;
 const sharedHomeSurface = `${marketingHome}\n${appIndex}\n${chatShell}\n${praxisChat}`;
 const policyMissions = read('src/lib/product/policy-missions.ts');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
@@ -56,7 +57,7 @@ requireAll('marketing home wrapper', marketingHome, [
   'PraxisChatFirstShell',
   'mode="public"',
 ]);
-requireAll('marketing home', sharedHomeSurface, [
+requireAll('marketing home', publicHomeSurface, [
   'marketing-home',
   'data-testid="praxis-chat-first-shell"',
   'data-testid="simple-home-chat"',
@@ -72,7 +73,7 @@ requireAll('marketing home', sharedHomeSurface, [
   'Pricing',
   'isPublic ? <PublicShell>{body}</PublicShell> : body',
 ]);
-forbidAll('marketing home', sharedHomeSurface, [
+forbidAll('marketing home', publicHomeSurface, [
   'SAMPLE_POLICY_ARTIFACTS',
   'PublicMarketingSections',
   'PRAXIS sample artifacts',
@@ -90,7 +91,7 @@ forbidAll('marketing home', sharedHomeSurface, [
   'PublicFlagshipCapsuleStrip',
 ]);
 
-const primaryCtaCount = sharedHomeSurface.split('data-testid="marketing-primary-cta"').length - 1;
+const primaryCtaCount = publicHomeSurface.split('data-testid="marketing-primary-cta"').length - 1;
 if (primaryCtaCount !== 1) {
   failures.push(`marketing home should expose exactly one primary CTA test id, found ${primaryCtaCount}`);
 }
@@ -99,7 +100,23 @@ requireAll('signed-in app index', appIndex, [
   'PraxisChatFirstShell',
   'mode="authenticated"',
 ]);
-forbidAll('signed-in app index', appIndex, ['AskPraxisHome', 'TaskletPraxisWorkbench']);
+forbidAll('signed-in app index', appIndex, ['AskPraxisHome']);
+// Saved output links reuse the existing workbench. Ordinary Home must retain
+// the simple chat shell; app-page behavior tests cover missing/invalid IDs.
+if (appIndex.includes('TaskletPraxisWorkbench')) {
+  requireAll('saved memo dispatch', appIndex, [
+    'const memoId = singleResourceId(query.memoId);',
+  ]);
+  if (!/if\s*\(memoId\)\s*\{\s*return\s+<TaskletPraxisWorkbench\b[^>]*\binitialMemoId=\{memoId\}[^>]*\/>;\s*\}/.test(appIndex)) {
+    failures.push('workbench dispatch must return only inside the validated memoId branch');
+  }
+  const homeReturnIndex = appIndex.indexOf('return (');
+  if (homeReturnIndex < 0) failures.push('signed-in app index missing ordinary Home return');
+  else forbidAll('ordinary signed-in Home', appIndex.slice(homeReturnIndex), ['TaskletPraxisWorkbench']);
+  if ((appIndex.match(/<TaskletPraxisWorkbench\b/g) ?? []).length !== 1) {
+    failures.push('saved memo dispatch must be the only workbench render in the app index');
+  }
+}
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
   'Write trusted knowledge products.',

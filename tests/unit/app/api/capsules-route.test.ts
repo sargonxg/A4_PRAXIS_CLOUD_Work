@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const storage = vi.hoisted(() => ({
+  CapsuleWriteError: class extends Error {
+    constructor(public status: 403 | 409, message: string) { super(message); }
+  },
   createCapsule: vi.fn(),
   forkCapsule: vi.fn(),
   getCapsule: vi.fn(),
@@ -40,6 +43,20 @@ describe('/api/capsules routes', () => {
       id: 'cap-new',
       capsule: { persona: { systemFrame: 'Frame.' } },
     });
+  });
+
+  it.each([
+    { status: 403 as const, message: 'This capsule identifier is unavailable. Create a new capsule.' },
+    { status: 409 as const, message: 'Capsule is published or immutable; fork it before editing.' },
+  ])('returns a recoverable $status response for a rejected capsule save', async ({ status, message }) => {
+    storage.createCapsule.mockRejectedValueOnce(new storage.CapsuleWriteError(status, message));
+    const route = await import('@/app/api/capsules/route');
+    const response = await route.POST(new Request('https://praxis.tacitus.me/api/capsules', {
+      method: 'POST', body: JSON.stringify({ id: 'existing-capsule' }),
+    }));
+
+    expect(response.status).toBe(status);
+    expect(await response.json()).toEqual({ error: message });
   });
 
   it('gets and updates draft capsules by id', async () => {

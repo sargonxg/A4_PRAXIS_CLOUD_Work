@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+Current validation and release state: [user-readiness receipt](docs/reviews/2026-09-29-praxis-user-readiness.md).
+This recovery wave is local and production acceptance remains pending.
+
+- Scope Ask, guide chat and attachment state to each owner, including unsent drafts and late request callbacks.
+- Read capsule inventory metadata at the Firestore boundary, load full selected details on demand and remove implicit bulk starter creation.
+- Save builder drafts through canonical private capsule storage and preserve reviewed decisions across unchanged Architect rebuilds; changed source material produces separate proposals.
+- Remove optional undefined fields from Ask writes and reopen canonical saved memos directly through their owner/case path.
+
 Build 2026.09.29.01 (PRAXIS v6.5.2).
 
 - Streamline Ask and capsule creation with a composer-first layout, compact optional setup and responsive builder steps.

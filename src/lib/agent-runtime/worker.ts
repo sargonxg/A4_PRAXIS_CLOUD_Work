@@ -19,6 +19,7 @@ import {
 import { isAskThreadSqlConfigured, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
 import { persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
+import { buildMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import { searchWeb, type WebSearchResult } from '@/lib/ai/grounded-research';
 import { getDeepThinkModel, getModel, getProModel, hasServerAiProvider } from '@/lib/ai/providers';
 import { getModelMatrixEntry, type TaskKind } from '@/lib/ai/model-matrix';
@@ -50,7 +51,7 @@ import { mirrorAdkResearchMemoDryRun } from '@/lib/agent-runtime/adk-bridge';
 import { buildAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-runtime/capsule-factory';
 import type { AgentContextPacketResult } from '@/lib/context/agent-context-packet';
-import { shouldEnableAgentContextVerifier, verifyAgentContextGrounding } from '@/lib/context/agent-context-verifier';
+import { shouldEnableAgentContextVerifier, verifyAgentContextGrounding, type AgentContextGroundingReport } from '@/lib/context/agent-context-verifier';
 import { createCapsuleReviewCard, getCapsule, type CreateCapsuleReviewCardInput, type CapsuleReviewCard } from '@/lib/context/capsule-service';
 import {
   buildCapsuleQualityReviewAnalysis,
@@ -731,6 +732,17 @@ async function executeResearchMemoAgentRun(
     const title = `Research memo - ${running.objective.slice(0, 80)}`;
     executionStage = 'memo-draft';
     const liveMemoDraft = await draftAndCritiqueMemo(running, evidencePack, sourceabilityLedger, liveSearchEvidence, deps);
+    const agentContextPacket = researchGroundingPacket(running, evidencePack, liveSearchEvidence);
+    const verifierEnabled = shouldEnableAgentContextVerifier(process.env.PRAXIS_GROUNDING_VERIFIER);
+    let groundingVerification: AgentContextGroundingReport | null = null;
+    try {
+      groundingVerification = buildAgentRunGroundingVerification({ ...running,
+        metadata: { ...running.metadata, agentContextPacket } }, liveMemoDraft.draftText);
+    } catch {
+      // An unavailable verifier is unknown, never approval of the saved draft.
+    }
+    const outputReview = await buildMemoOutputReview({ body: liveMemoDraft.draftText, report: groundingVerification,
+      verifierStatus: verifierEnabled ? (groundingVerification ? 'checked' : 'unavailable') : 'disabled' });
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'memo.draft_created',
@@ -747,11 +759,14 @@ async function executeResearchMemoAgentRun(
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'memo.self_critique_completed',
-      message: 'Research Memo Agent completed sourceability self-critique before finalizing the artifact.',
+      message: 'Research Memo Agent saved sourceability feedback for human revision; it has not been applied to the draft.',
       data: {
         critiquePreview: liveMemoDraft.critiqueText.slice(0, 900),
         unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
         weakClaimCount: sourceabilityLedger.summary.weakClaims,
+        sourceabilityScope: 'input_evidence',
+        critiqueApplied: false,
+        outputReview,
       },
     }, deps);
 
@@ -776,6 +791,8 @@ async function executeResearchMemoAgentRun(
       caseId,
       templateId: 'policy-memo',
       title,
+      status: 'review',
+      outputReview,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:graph-gap`,
       changeNote: `Created by Research Memo Agent run ${running.id}.`,
       capsuleId: running.capsuleId,
@@ -790,6 +807,7 @@ async function executeResearchMemoAgentRun(
         liveMemoDraft,
         liveSearchEvidence,
         combinedSourceReceiptIds,
+        outputReview,
       }),
     });
     await persistToolCall(makeAgentToolCall({
@@ -800,14 +818,14 @@ async function executeResearchMemoAgentRun(
       risk: getAgentToolDefinition('policy-memo').risk,
       status: 'succeeded',
       input: { evidencePackId: evidencePack.packId, objective: running.objective },
-      output: { memoId: memoRecord.memo.id },
+      output: { memoId: memoRecord.memo.id, outputReview },
       startedAt: new Date().toISOString(),
       completedAt: new Date().toISOString(),
     }));
     executionStage = 'output-capsule-persist';
     const outputCapsule = await persistOutputCapsule(
       running.ownerUid,
-      buildOutputCapsuleInput(running, evidencePack, memoRecord.memo.id, sourceabilityLedger),
+      buildOutputCapsuleInput(running, evidencePack, memoRecord.memo.id, sourceabilityLedger, outputReview, liveMemoDraft.draftText),
     );
     if (outputCapsule) {
       await persistToolCall(makeAgentToolCall({
@@ -841,18 +859,22 @@ async function executeResearchMemoAgentRun(
         capsuleReadReceipt,
         workflowPlan,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        sourceabilityScope: 'input_evidence',
+        outputReview,
       },
     }, deps);
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'artifact.finalized',
-      message: 'Research Memo Agent finalized the memo artifact link and sourceability gate receipt.',
+      message: 'Research Memo Agent saved the reviewable draft and its generated-body review receipt.',
       data: {
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
         outputHref,
         sourceReceiptIds: combinedSourceReceiptIds,
         unsupportedClaimCount: sourceabilityLedger.summary.unsupportedClaims,
+        sourceabilityScope: 'input_evidence',
+        outputReview,
       },
     }, deps);
 
@@ -862,7 +884,7 @@ async function executeResearchMemoAgentRun(
       running,
       payload,
       executionMode: 'research-memo',
-      message: 'Research Memo Agent completed the capsule-aware memo draft.',
+      message: 'Research Memo Agent saved a reviewable capsule-aware memo draft.',
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,
@@ -873,12 +895,15 @@ async function executeResearchMemoAgentRun(
         capsuleReadReceipt,
         workflowPlan,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        sourceabilityScope: 'input_evidence',
+        outputReview,
         selectedTools: workflowPlan.selectedTools,
         groundingPosture: workflowPlan.groundingPosture,
         outputTarget: workflowPlan.outputTarget,
       },
       outputHref,
       outputText: liveMemoDraft.draftText,
+      preparedGroundingVerification: groundingVerification,
       metadata: {
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
@@ -888,8 +913,10 @@ async function executeResearchMemoAgentRun(
         capsuleReadReceipt: { ...capsuleReadReceipt, sourceCount: combinedSourceReceiptIds.length },
         workflowPlan,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        sourceabilityScope: 'input_evidence',
+        outputReview,
         groundingPosture: liveSearchEvidence.sourceReceipts.length ? 'Live grounded retrieval completed' : capsuleReadReceipt.groundingPosture,
-        agentContextPacket: researchGroundingPacket(running, evidencePack, liveSearchEvidence),
+        agentContextPacket,
         degradedReason: liveMemoDraft.degradedReason,
       },
       deps,
@@ -3222,23 +3249,27 @@ async function completeAgentRunExecution(input: {
   data: Record<string, unknown>;
   outputHref?: string | null;
   outputText?: string | null;
+  preparedGroundingVerification?: AgentContextGroundingReport | null;
   metadata?: Record<string, unknown>;
   deps: WorkerDeps;
 }): Promise<AgentRun | null> {
   const outputHref = cleanOutputHref(input.outputHref);
-  const groundingVerification = buildAgentRunGroundingVerification({ ...input.running,
-    metadata: { ...input.running.metadata, ...input.metadata } }, input.outputText);
+  const hasPreparedVerification = Object.prototype.hasOwnProperty.call(input, 'preparedGroundingVerification');
+  const groundingVerification = hasPreparedVerification
+    ? input.preparedGroundingVerification
+    : buildAgentRunGroundingVerification({ ...input.running,
+      metadata: { ...input.running.metadata, ...input.metadata } }, input.outputText);
   const metadataPatch = {
     ...(input.metadata ?? {}),
     ...(outputHref ? { outputHref } : {}),
-    ...(groundingVerification ? { groundingVerification } : {}),
+    ...(groundingVerification || hasPreparedVerification ? { groundingVerification: groundingVerification ?? null } : {}),
   };
   const succeeded = await input.updateStatus({
     ownerUid: input.running.ownerUid,
     runId: input.running.id,
     toStatus: 'succeeded',
     message: input.message,
-    data: groundingVerification ? { ...input.data, groundingVerification } : input.data,
+    data: groundingVerification || hasPreparedVerification ? { ...input.data, groundingVerification: groundingVerification ?? null } : input.data,
     metadata: metadataPatch,
   });
   const terminalRun = mergeTerminalRun(input.running, succeeded, 'succeeded', metadataPatch);
@@ -4702,6 +4733,7 @@ function buildMemoBlocks(
     liveMemoDraft?: LiveMemoDraft;
     liveSearchEvidence?: LiveSearchEvidence;
     combinedSourceReceiptIds?: string[];
+    outputReview?: MemoOutputReviewReceipt;
   } = {},
 ): SaveMemoDraftInput['blocks'] {
   const citedReceiptIds = uniqueStrings([
@@ -4753,7 +4785,7 @@ function buildMemoBlocks(
       id: 'live-memo-draft',
       type: 'paragraph' as const,
       title: 'Draft memo with inline citations',
-      content: options.liveMemoDraft.finalText,
+      content: options.liveMemoDraft.draftText,
       citations: paragraphCitation,
       metadata: {
         runId: running.id,
@@ -4764,6 +4796,8 @@ function buildMemoBlocks(
         sourceReceiptIds: citedReceiptIds,
         liveSourceReceiptIds: options.liveSearchEvidence?.sourceReceiptIds ?? [],
         sourceabilityLedgerSummary: sourceabilityLedger?.summary,
+        sourceabilityScope: 'input_evidence',
+        ...(options.outputReview ? { outputReview: options.outputReview } : {}),
         paragraphSourceability: sourceabilityLedger?.claims.map((claim) => ({
           claimId: claim.id,
           status: claim.supportLabel,
@@ -4771,6 +4805,13 @@ function buildMemoBlocks(
           sourceReceiptIds: claim.sourceReceiptIds,
         })) ?? [],
       },
+    }, {
+      id: 'live-memo-critique',
+      type: 'paragraph' as const,
+      title: 'Sourceability feedback - not applied to the draft',
+      content: options.liveMemoDraft.critiqueText,
+      citations: [],
+      metadata: { runId: running.id, critiqueApplied: false },
     }] : []),
     {
       id: 'source-receipt',
@@ -4791,9 +4832,13 @@ function buildMemoBlocks(
       type: 'bullets',
       title: 'Gap receipt',
       content: '',
-      items: evidencePack.openGaps.length ? evidencePack.openGaps : ['No blocking capsule gaps were detected for this first memo pass.'],
+      items: [
+        ...(evidencePack.openGaps.length ? evidencePack.openGaps : ['No input evidence gaps were detected.']),
+        ...(options.outputReview ? [generatedMemoReviewMessage(options.outputReview)] : []),
+      ],
       citations: [],
-      metadata: { gapCount: evidencePack.openGaps.length },
+      metadata: { gapCount: evidencePack.openGaps.length + (options.outputReview?.reviewRequired ? 1 : 0),
+        ...(options.outputReview ? { outputReview: options.outputReview } : {}) },
     },
     {
       id: 'next-moves',
@@ -4814,7 +4859,7 @@ function buildMemoBlocks(
       title: 'Claim ledger summary',
       content: '',
       items: [
-        `${sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+        `${sourceabilityLedger.summary.totalClaims} input evidence claim(s) reviewed; this ledger does not approve the generated memo body.`,
         `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
         `Generated ${sourceabilityLedger.outputReadiness.generatedAt} for run ${running.id}.`,
       ],
@@ -4825,6 +4870,7 @@ function buildMemoBlocks(
         agentRunId: running.id,
         sourceabilityLedgerId: sourceabilityLedger.ledgerId,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
+        sourceabilityScope: 'input_evidence',
         unsupportedClaims: sourceabilityLedger.unsupportedClaims.map((claim) => claim.id),
         generatedAt: sourceabilityLedger.generatedAt,
         outputDestination: 'memo_studio',
@@ -4927,6 +4973,8 @@ function buildOutputCapsuleInput(
   evidencePack: CapsuleEvidencePack,
   memoId: string,
   sourceabilityLedger?: SourceabilityLedger,
+  outputReview?: MemoOutputReviewReceipt,
+  draftText?: string,
 ): SaveOutputCapsuleInput {
   const citations = evidencePack.sourcedParagraphs.map((paragraph) => ({
     id: paragraph.id,
@@ -4940,6 +4988,10 @@ function buildOutputCapsuleInput(
     reason: 'Evidence pack sourceability check flagged this as unresolved.',
     severity: index === 0 ? 'high' as const : 'medium' as const,
   }));
+  if (outputReview?.reviewRequired) {
+    gaps.push({ id: 'generated-memo-review', claim: generatedMemoReviewMessage(outputReview),
+      reason: 'Generated-body findings and unapplied feedback require whole-draft human review.', severity: 'high' });
+  }
 
   return {
     id: `run-${running.id}-options-memo`,
@@ -4955,6 +5007,8 @@ function buildOutputCapsuleInput(
           body: running.objective,
           citationIds: citations.slice(0, 3).map((citation) => citation.id),
         },
+        ...(draftText ? [{ heading: 'Generated memo body', body: draftText,
+          citationIds: citations.map((citation) => citation.id) }] : []),
         {
           heading: 'Evidence receipt',
           body: evidencePack.sourcedParagraphs.length
@@ -4964,13 +5018,13 @@ function buildOutputCapsuleInput(
         },
         {
           heading: 'Gaps',
-          body: evidencePack.openGaps.length ? evidencePack.openGaps.join('\n') : 'No blocking gaps detected.',
+          body: gaps.length ? gaps.map((gap) => gap.claim).join('\n') : 'No input evidence gaps detected.',
           citationIds: [],
         },
         ...(sourceabilityLedger ? [{
           heading: 'Claim ledger',
           body: [
-            `${sourceabilityLedger.summary.totalClaims} material claim(s) reviewed.`,
+            `${sourceabilityLedger.summary.totalClaims} input evidence claim(s) reviewed; this ledger does not approve the generated memo body.`,
             `${sourceabilityLedger.summary.unsupportedClaims} unsupported claim(s) remain visible.`,
             `Generated ${sourceabilityLedger.outputReadiness.generatedAt}.`,
           ].join('\n'),
@@ -4978,6 +5032,8 @@ function buildOutputCapsuleInput(
         }] : []),
       ],
       sourceabilityLedgerSummary: sourceabilityLedger?.summary,
+      sourceabilityScope: 'input_evidence',
+      ...(outputReview ? { outputReview } : {}),
       unsupportedClaims: sourceabilityLedger?.unsupportedClaims.map((claim) => ({
         id: claim.id,
         claim: claim.claim,
@@ -4994,6 +5050,12 @@ function buildOutputCapsuleInput(
       traceId: running.traceId,
     },
   };
+}
+
+function generatedMemoReviewMessage(review: MemoOutputReviewReceipt): string {
+  if (review.verifierStatus !== 'checked') return `Generated memo verification ${review.verifierStatus}; whole-draft review is required.`;
+  if (review.totalSpanCount === 0) return 'No generated claim spans were verified; whole-draft review is required.';
+  return `${review.findingCount} generated-body review finding(s), including ${review.contradictedSpanCount} contradiction(s). Feedback is unapplied; whole-draft review is required.`;
 }
 
 function buildBoardroomMemoBlocks(

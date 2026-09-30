@@ -1,6 +1,19 @@
 import type { AskThreadTurnRecord } from '@/lib/firebase/ask-thread-service';
 import type { AskAnswerEnvelope } from '@/lib/ai/ask-answer-envelope';
 
+/** Direct Ask uses this owner-scoped history partition; its model context stays ephemeral. */
+export const DIRECT_ASK_HISTORY_CAPSULE_ID = 'thin-capsule-fallback';
+
+export function askHistoryCapsuleId(input: {
+  instantContextMode: boolean;
+  resolvedCapsuleId?: string | null;
+  requestedCapsuleId?: string | null;
+}): string | null {
+  return input.instantContextMode
+    ? DIRECT_ASK_HISTORY_CAPSULE_ID
+    : input.resolvedCapsuleId ?? input.requestedCapsuleId ?? null;
+}
+
 export type AskConversationMessage = {
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: unknown;

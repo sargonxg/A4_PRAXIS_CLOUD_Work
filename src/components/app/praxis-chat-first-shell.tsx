@@ -3,8 +3,8 @@
 import Link from 'next/link';
 import { PublicShell } from '@/components/app/public-shell';
 import dynamic from 'next/dynamic';
-import { useEffect, useMemo, useState, type ComponentType, type CSSProperties } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   CheckCircle2,
   Boxes,
@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
+import { useAuth } from '@/lib/auth/auth-context';
+import { attachSavedCapsuleForAsk } from '@/lib/capsules/ask-handoff';
 import {
   DEFAULT_CONTEXT_STACK_ID,
   attachCapsuleRef,
@@ -72,12 +74,51 @@ const HOME_DESTINATION_ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ cla
 export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated' }) {
   const isPublic = mode === 'public';
   const pathname = usePathname();
+  const router = useRouter();
+  const { user } = useAuth();
   const searchParams = useSearchParams();
+  const query = searchParams.toString();
+  const requestedCapsuleId = searchParams.get('capsuleId')?.trim() ?? '';
+  const ownerId = user?.id;
+  const handoffKey = !isPublic && requestedCapsuleId ? JSON.stringify([ownerId ?? null, requestedCapsuleId]) : null;
   const initialPrompt = searchParams.get('prompt') ?? searchParams.get('capsulePrompt') ?? '';
   const { stack, saveStack, persisted, hydrated } = useActiveContextStack({ remote: !isPublic });
+  const attachmentRef = useRef({ stack, saveStack });
+  const [handoff, setHandoff] = useState<{ key: string | null; status: 'loading' | 'failed' }>({ key: null, status: 'loading' });
+  const [handoffRetry, setHandoffRetry] = useState(0);
+  const handoffReady = !handoffKey;
+  const handoffFailed = handoffKey === handoff.key && handoff.status === 'failed';
   const [contextOpen, setContextOpen] = useState(false);
   const [savingContext, setSavingContext] = useState(false);
   const [contextError, setContextError] = useState('');
+
+  useEffect(() => { attachmentRef.current = { stack, saveStack }; }, [stack, saveStack]);
+
+  const consumeCapsuleQuery = useCallback(() => {
+    const params = new URLSearchParams(query);
+    params.delete('capsuleId');
+    const remaining = params.toString();
+    router.replace(`${pathname ?? '/app'}${remaining ? `?${remaining}` : ''}`, { scroll: false });
+  }, [pathname, query, router]);
+
+  useEffect(() => {
+    if (isPublic || !ownerId || !requestedCapsuleId || !handoffKey || !hydrated) return;
+    const controller = new AbortController();
+    const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(30_000)]);
+    queueMicrotask(() => {
+      if (!controller.signal.aborted) setHandoff({ key: handoffKey, status: 'loading' });
+    });
+    void attachSavedCapsuleForAsk({ capsuleId: requestedCapsuleId, ownerId, signal }, {
+      getStack: () => attachmentRef.current.stack,
+      saveStack: (patch) => attachmentRef.current.saveStack(patch, { signal }),
+    }).then(() => {
+      if (controller.signal.aborted) return;
+      consumeCapsuleQuery();
+    }).catch(() => {
+      if (!controller.signal.aborted) setHandoff({ key: handoffKey, status: 'failed' });
+    });
+    return () => controller.abort();
+  }, [consumeCapsuleQuery, handoffKey, handoffRetry, hydrated, isPublic, ownerId, requestedCapsuleId]);
   const selectedCapsuleRefs = stack.capsuleRefs;
   const activeCapsuleId = selectedCapsuleRefs[0]?.capsuleId ?? stack.capsuleId;
   const showUserCoreOnboarding = !isPublic && hydrated && !selectedCapsuleRefs.length && !activeCapsuleId;
@@ -180,6 +221,13 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
           <HomeSidebar isPublic={isPublic} pathname={pathname ?? '/'} />
           <section className="min-w-0">
             {contextError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{contextError}</p> : null}
+            {handoffKey && !handoffReady ? (
+              <div role={handoffFailed ? 'alert' : 'status'} className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                {handoffFailed ? (
+                  <>Your saved capsule could not be attached. Your previous context is still active. <button type="button" className="font-semibold underline" onClick={() => setHandoffRetry((value) => value + 1)}>Retry</button> or <button type="button" className="font-semibold underline" onClick={consumeCapsuleQuery}>use current context</button>.</>
+                ) : 'Attaching your saved capsule…'}
+              </div>
+            ) : null}
             {isPublic ? (
               <div className="mx-auto mb-6 max-w-3xl text-center sm:pb-2">
                 <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
@@ -195,7 +243,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
               </div>
             ) : null}
             <PraxisChat
-              contextReady={isPublic || hydrated}
+              contextReady={isPublic || (hydrated && !savingContext && handoffReady)}
               mode={mode}
               showHomeHeading={!isPublic}
               activeContextStack={stack}

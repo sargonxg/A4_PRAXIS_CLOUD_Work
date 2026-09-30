@@ -553,6 +553,7 @@ export interface CapsuleInventoryResult {
 
 export interface CapsuleInventorySummaryOptions {
   rawCapsules?: unknown[];
+  metadataOnly?: boolean;
 }
 
 export interface CapsuleSourceGapProposal {
@@ -911,9 +912,20 @@ export async function listCapsules(
 // intervening writes. Database identity and owner scope are security boundaries.
 const pendingCapsuleInventories = new WeakMap<Firestore, Map<string, Promise<CapsuleInventoryResult>>>();
 
+// Read list fields in Firestore, before large dossiers/graphs are transferred or
+// normalized. Full evidence remains available through the individual capsule read.
+const CAPSULE_INVENTORY_FIELDS = [
+  'ownerUid', 'capsuleId', 'label', 'summary', 'scope', 'version', 'schemaVersion',
+  'createdAt', 'updatedAt', 'archivedAt', 'parentCapsuleId', 'forkedFromVersion',
+  'associatedCapsuleIds', 'activeForSituationIds', 'lockedCoreKinds', 'coreRefs',
+  'retrievalPolicy', 'health', 'access', 'community', 'trust', 'provenance',
+  'activeOntologyStackId', 'activeReadContractId', 'readinessSummary',
+  'latestGateState', 'graphStats',
+];
+
 export async function listCapsuleInventory(
   uid: string,
-  input: { situationId?: string; includeArchived?: boolean } = {},
+  input: { situationId?: string; includeArchived?: boolean; metadataOnly?: boolean } = {},
   deps?: CapsuleServiceDeps,
 ): Promise<CapsuleInventoryResult> {
   const db = dbOf(deps);
@@ -922,10 +934,10 @@ export async function listCapsuleInventory(
     pendingByScope = new Map();
     pendingCapsuleInventories.set(db, pendingByScope);
   }
-  const scope = JSON.stringify([uid, input.situationId || null]);
+  const scope = JSON.stringify([uid, input.situationId || null, Boolean(input.metadataOnly)]);
   let pending = pendingByScope.get(scope);
   if (!pending) {
-    pending = readCapsuleInventory(uid, input.situationId, { ...deps, db })
+    pending = readCapsuleInventory(uid, input.situationId, Boolean(input.metadataOnly), { ...deps, db })
       .finally(() => { pendingByScope.delete(scope); });
     pendingByScope.set(scope, pending);
   }
@@ -939,13 +951,19 @@ export async function listCapsuleInventory(
 async function readCapsuleInventory(
   uid: string,
   situationId: string | undefined,
+  metadataOnly: boolean,
   deps: CapsuleServiceDeps,
 ): Promise<CapsuleInventoryResult> {
-  const snap = await capsulesCollection(uid, deps).get();
+  const collection = capsulesCollection(uid, deps);
+  const snap = await (metadataOnly ? collection.select(...CAPSULE_INVENTORY_FIELDS) : collection).get();
   const rows = snap.docs
     .map((doc) => ({ raw: { ...doc.data(), capsuleId: doc.id } }))
     .filter(({ raw }) => recordOwnedBy(raw, uid))
-    .map(({ raw }) => ({ raw: { ...raw, ownerUid: ownerUidOrPath(raw, uid) }, capsule: sanitizeCapsule({ ...raw, ownerUid: ownerUidOrPath(raw, uid) }) }))
+    .map(({ raw }) => {
+      const capsule = sanitizeCapsule({ ...raw, ownerUid: ownerUidOrPath(raw, uid) });
+      if (metadataOnly) delete capsule.v3;
+      return { raw: { ...raw, ownerUid: capsule.ownerUid }, capsule };
+    })
     .filter(({ capsule }) => {
       if (!situationId) return true;
       return capsule.coreRefs.situationCoreId === situationId ||
@@ -954,6 +972,7 @@ async function readCapsuleInventory(
   const storedCapsules = rows.map((row) => row.capsule);
   const summary = buildCapsuleInventorySummary(storedCapsules, {
     rawCapsules: rows.map((row) => row.raw),
+    metadataOnly,
   });
   const capsules = sortCapsulesForLibrary(storedCapsules);
   return { capsules, summary };
@@ -1016,7 +1035,7 @@ export function buildCapsuleInventorySummary(
     const isArchived = Boolean(capsule.archivedAt);
     const isStarter = capsule.community.tags.includes('starter') || Boolean(capsule.starterSnapshot?.starterId);
     const collapsedCoreRefSlots = new Set<string>();
-    reportEnvelopeIntegrity(summary.integrityWarnings, capsule, rawCapsule);
+    if (!options.metadataOnly) reportEnvelopeIntegrity(summary.integrityWarnings, capsule, rawCapsule);
     const sourceRefs = normalizedCoreRefList(capsule, rawCapsule, 'sourceCoreIds', collapsedCoreRefSlots);
     const documentRefs = normalizedCoreRefList(capsule, rawCapsule, 'documentCoreIds', collapsedCoreRefSlots);
     const toolRefs = normalizedCoreRefList(capsule, rawCapsule, 'toolCoreIds', collapsedCoreRefSlots);
@@ -1041,14 +1060,14 @@ export function buildCapsuleInventorySummary(
         detail: `Archived capsule still lists active situation ids: ${capsule.activeForSituationIds.join(', ')}.`,
       });
     }
-    if (isStarter && !capsule.starterSnapshot) {
+    if (!options.metadataOnly && isStarter && !capsule.starterSnapshot) {
       summary.integrityWarnings.push({
         capsuleId: capsule.capsuleId,
         severity: 'warning',
         reason: 'starter_missing_snapshot',
         detail: 'Starter-tagged capsule is missing starterSnapshot.',
       });
-    } else if (isStarter && capsule.starterSnapshot) {
+    } else if (!options.metadataOnly && isStarter && capsule.starterSnapshot) {
       const missingHints = starterSnapshotMissingHints(capsule.starterSnapshot);
       if (missingHints.length) {
         summary.integrityWarnings.push({
@@ -1377,7 +1396,7 @@ export async function createCapsuleArchitectReviewCards(
     normalizedAt: input.normalizedAt ?? nowIso(deps),
   });
   const existing = input.capsuleId ? await getCapsule(uid, input.capsuleId, deps) : null;
-  const capsule = existing ?? await createCapsule(uid, {
+  let capsule = existing ?? await createCapsule(uid, {
     capsuleId: proposal.capsuleId,
     label: proposal.label,
     summary: proposal.summary,
@@ -1403,10 +1422,32 @@ export async function createCapsuleArchitectReviewCards(
     },
   }, deps);
 
+  if (existing) {
+    if (existing.coreRefs.documentCoreIds.length && existing.coreRefs.situationCoreId && input.situationId && existing.coreRefs.situationCoreId !== input.situationId) {
+      throw new Error('These documents belong to a different source workspace. Start a new capsule to keep every source readable.');
+    }
+    const documentCoreIds = uniqueStrings([...existing.coreRefs.documentCoreIds, ...proposal.documentIds]);
+    const situationCoreId = existing.coreRefs.situationCoreId ?? input.situationId ?? null;
+    if (documentCoreIds.length !== existing.coreRefs.documentCoreIds.length || situationCoreId !== existing.coreRefs.situationCoreId) {
+      capsule = await bumpCapsuleVersion(uid, existing.capsuleId, {
+        coreRefs: { documentCoreIds, situationCoreId },
+      }, deps) ?? existing;
+    }
+  }
+
+  // Bind generated proposals to the supplied evidence and preferences, rather
+  // than only their display title. Changed input needs a fresh human decision.
+  const buildFingerprint = stableId(JSON.stringify({
+    jobPrompt: input.jobPrompt,
+    domainId: input.domainId ?? null,
+    ontologyIds: input.ontologyIds ?? [],
+    documents: input.documents ?? [],
+    elicitation: input.elicitation ?? null,
+  }));
   const cards: CapsuleReviewCard[] = [];
   for (const draft of proposal.reviewCards) {
     const card = await createCapsuleReviewCard(uid, capsule.capsuleId, {
-      reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:architect:${draft.target}:${draft.title}`)}`,
+      reviewCardId: `review-card-${stableId(`${uid}:${capsule.capsuleId}:architect:${draft.target}:${draft.title}:${buildFingerprint}`)}`,
       title: draft.title,
       sourceType: draft.sourceType,
       target: draft.target,
@@ -1781,11 +1822,21 @@ export async function createCapsuleReviewCard(
   const state = input.sourceType === 'public'
     ? 'moderation_required'
     : normalizeReviewState(input.state ?? 'proposed');
-  const reviewCardId = cleanId(input.reviewCardId ?? `review-card-${stableId(`${uid}:${capsule.capsuleId}:${input.title}:${timestamp}`)}`, `review-card-${stableId(timestamp)}`);
+  const proposalFingerprint = stableId(JSON.stringify({
+    title: input.title,
+    target: input.target,
+    sourceType: input.sourceType,
+    evidence: input.evidence ?? [],
+    proposedEnvelopePatch: input.proposedEnvelopePatch ?? {},
+  }));
+  const reviewCardId = cleanId(input.reviewCardId ?? `review-card-${stableId(`${uid}:${capsule.capsuleId}:${proposalFingerprint}:${timestamp}`)}`, `review-card-${stableId(timestamp)}`);
   const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
   const cardRef = ref.collection('reviewCards').doc(reviewCardId);
-  const existingCardSnap = await cardRef.get().catch(() => null);
+  const existingCardSnap = await cardRef.get();
   const existingCardData = existingCardSnap?.exists ? existingCardSnap.data() : null;
+  if (existingCardData && !['proposed', 'moderation_required'].includes(normalizeReviewState(existingCardData.state))) {
+    return normalizeReviewCard(existingCardData, capsule, reviewCardId);
+  }
   const existingCreatedAt = existingCardData ? stringOrNull(existingCardData.createdAt) : null;
   let proposedEnvelopePatch: CapsuleEnvelopePatch;
   try {
@@ -1808,6 +1859,27 @@ export async function createCapsuleReviewCard(
     createdAt: existingCreatedAt ?? timestamp,
     updatedAt: timestamp,
   };
+  const db = dbOf(deps);
+  if (typeof db.runTransaction === 'function') {
+    return db.runTransaction(async (transaction) => {
+      const [latestCapsuleSnap, latestCardSnap] = await Promise.all([transaction.get(ref), transaction.get(cardRef)]);
+      if (!latestCapsuleSnap.exists) throw new Error('Capsule no longer exists.');
+      const latestCapsule = sanitizeCapsule(latestCapsuleSnap.data());
+      const latestCardData = latestCardSnap.exists ? latestCardSnap.data() : null;
+      if (latestCardData && !['proposed', 'moderation_required'].includes(normalizeReviewState(latestCardData.state))) {
+        return normalizeReviewCard(latestCardData, latestCapsule, reviewCardId);
+      }
+      const nextCard = { ...card, createdAt: stringOrNull(latestCardData?.createdAt) ?? card.createdAt };
+      const readinessSummary = normalizeReadinessSummary({
+        ...(latestCapsule.readinessSummary ?? {}),
+        reviewCardCount: Math.max(latestCapsule.readinessSummary?.reviewCardCount ?? 0, 0) + (latestCardSnap.exists ? 0 : 1),
+        reviewRequired: true,
+      }, latestCapsule.coreRefs, state, timestamp);
+      transaction.set(cardRef, nextCard, { merge: true });
+      transaction.set(ref, { latestGateState: state, readinessSummary, updatedAt: timestamp }, { merge: true });
+      return nextCard;
+    });
+  }
   await cardRef.set(card, { merge: true });
   const readinessSummary = normalizeReadinessSummary({
     ...(capsule.readinessSummary ?? {}),
@@ -2251,6 +2323,11 @@ export async function bumpCapsuleVersion(
     ...capsule,
     label: patch.label ?? capsule.label,
     summary: patch.summary ?? capsule.summary,
+    ...(Array.isArray(patch.outputContracts) ? { outputContracts: patch.outputContracts } : {}),
+    ...(isRecord(patch.memoryPosture) ? { memoryPosture: {
+      ...(isRecord(capsule.memoryPosture) ? capsule.memoryPosture : {}),
+      ...patch.memoryPosture,
+    } } : {}),
     scope: patch.scope ?? capsule.scope,
     associatedCapsuleIds: patch.associatedCapsuleIds
       ? uniqueStrings(cleanStringArray(patch.associatedCapsuleIds).filter((id) => id !== capsule.capsuleId)).slice(0, 20)

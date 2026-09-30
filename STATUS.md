@@ -1,5 +1,12 @@
 # PRAXIS — STATUS
 
+## 2026-09-29 — User workflow recovery prepared for release
+
+- Current receipt: [user readiness](docs/reviews/2026-09-29-praxis-user-readiness.md), with evidence, remaining gaps and release steps.
+- Real production journeys found inventory/upload heap failures, rejected Ask writes and a memo read requiring a missing index. Local repairs cover metadata inventory, owner-scoped state, canonical builder drafts, durable review decisions and Ask/memo persistence.
+- Local production build, all audit lanes and the full 384-file / 1,712-test suite pass. Lint has zero errors and seven tracked warnings. Capsule Save/attachment and memo edit/save/reopen have isolated local browser proof; final dialog hit-tests are recorded in the receipt. Publish approval and real deployed journeys remain pending.
+- Fresh-account lifecycle and billing are not fully proven. JEV remains optional and disabled; dependency audit reports 44 moderate and three low advisories, zero high/critical.
+
 ## 2026-09-28 — Capsule creation follow-through
 
 - Commit `857e3e51` is live as `praxis-frontend-01071-tfq`; Cloud Build and its resource preflight passed. All five public pages passed real desktop/mobile navigation, overflow and signup-handoff checks on September 28.

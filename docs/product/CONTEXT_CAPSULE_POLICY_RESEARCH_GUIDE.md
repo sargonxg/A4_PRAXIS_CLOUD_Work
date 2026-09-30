@@ -19,6 +19,42 @@ prompt -> capsule -> sources/tools -> memo/brief/handover
 
 The ContextCapsule is the working policy object that makes this possible.
 
+## Working loop for analysts and policymakers
+
+Workflow instructions updated 2026-09-29. Deployment and live acceptance remain
+tracked in the [current user-readiness receipt](../reviews/2026-09-29-praxis-user-readiness.md).
+
+Start in **Home** to ask a question or draft a brief. State the audience,
+decision and desired product, for example: “Draft a one-page options brief for
+the council. Distinguish agreed commitments from completed implementation,
+cite the attached documents and keep unconfirmed funding explicit.” Attach a
+saved capsule when its evidence applies; check the visible capsule label before
+sending. Inspect the answer's sources, assumptions and gaps, then ask a focused
+follow-up. Treat generated writing as a draft for review.
+
+Build reusable context separately in **Capsules**:
+
+1. Describe the capsule's purpose and intended output. Add documents, notes or
+   source links; keep author instructions distinct from factual evidence.
+2. Inspect source extracts and any proposed content. Accept or reject proposals
+   with a reason. Saving a capsule alone does not approve its proposed claims.
+3. Choose **Save draft** to retain a private working capsule. Confirm the save,
+   then choose **Use in Ask**. Wait for the saved capsule to appear in Home's
+   context dock before sending the question.
+4. Ask for a product that uses specific facts from that context. Check citations
+   and uncertainty; reopen the capsule and conversation to continue later.
+
+For a saved research memo, open its output link, review the primary body and
+the separate feedback, apply corrections, then save and reopen the draft.
+Feedback labeled “not applied” has not changed the body. A supported selected
+claim does not approve the whole memo; an edited body makes its earlier review
+receipt outdated. This repair wave keeps generated memos under whole-draft
+review and does not provide a human approval action that clears export readiness.
+
+Policy briefs should separate options, tradeoffs and unresolved evidence.
+Analytical products should preserve claim-to-source links. Narrative analysis
+should distinguish what an actor said from the analyst's inferred frame.
+
 ## PRAXIS Augmented Generation Contract
 
 Capsules are PRAXIS' answer to generic LLM context loss. A mature capsule should

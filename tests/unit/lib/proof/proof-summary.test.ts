@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { buildMemoOutputReview } from '@/lib/memo/output-review';
 import {
   buildProofSummaryFromAgentRun,
   buildProofSummaryFromAskEnvelope,
@@ -182,5 +183,23 @@ describe('proof summary normalization', () => {
       ],
     });
     expect(summary.degradedStates).toContain('2 grounding verifier flags');
+    expect(summary.exportBlocked).toBe(true);
+    expect(summary.unsupportedClaimCount).toBe(0);
+  });
+
+  it('blocks unknown generated review without inflating the input-evidence unsupported count', async () => {
+    const outputReview = await buildMemoOutputReview({ body: 'A draft.', report: null, verifierStatus: 'disabled' });
+    const summary = buildProofSummaryFromAgentRun({ status: 'succeeded', memoId: 'memo-1',
+      sourceabilityLedgerSummary: { totalClaims: 3, supportedClaims: 3, unsupportedClaims: 0 }, outputReview });
+    expect(summary).toMatchObject({ outputReview, exportBlocked: true, unsupportedClaimCount: 0,
+      sourceabilityScope: 'input_evidence' });
+    expect(summary.degradedStates).toContain('generated memo review required');
+  });
+
+  it('blocks legacy generated memos with missing or empty verification', () => {
+    for (const groundingVerification of [undefined, { groundedClaims: [], ungroundedSpans: [], contradictedSpans: [], coverageScore: 1 }]) {
+      expect(buildProofSummaryFromAgentRun({ policyAgentId: 'research-memo', memoId: 'memo-old',
+        groundingVerification, sourceabilityLedgerSummary: { unsupportedClaims: 0 } }).exportBlocked).toBe(true);
+    }
   });
 });

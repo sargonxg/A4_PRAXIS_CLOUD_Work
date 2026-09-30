@@ -4,6 +4,10 @@ Date: 2026-05-21
 Canonical domain: `https://praxis.tacitus.me`  
 Status: source-of-truth product and infrastructure structure for the next build waves
 
+Current implementation and live acceptance: [user-readiness receipt](../reviews/2026-09-29-praxis-user-readiness.md).
+This architecture document includes target capabilities; check the receipt
+before treating any workflow as deployed and proven.
+
 ## North Star
 
 PRAXIS is a ContextCapsule-native capsule manager and agent workbench for
@@ -199,15 +203,31 @@ GKE candidates later:
 
 ## State Boundaries
 
-Use both Firestore and Cloud SQL deliberately.
+Use both Firestore and Cloud SQL deliberately. The table distinguishes current
+document reads from the planned SQL retrieval cutover; a configured SQL mirror
+does not establish that cutover.
 
 | State | Canonical store | Reason |
 |---|---|---|
 | active capsule, context stack, user-facing workspace state | Firestore | owner-scoped app state already works and matches current rules |
 | agent runs, run events, tool calls, approvals | Cloud SQL Postgres | relational auditability, querying, joins, reporting, retry inspection |
-| documents, chunks, embeddings | Cloud SQL + Cloud Storage | pgvector for MVP retrieval, object storage for files |
+| uploaded document records, chunks, embeddings used by current Ask/agent reads | Firestore; originals in Cloud Storage | owner-scoped `documents-service` retrieval; optional SQL ingestion mirror |
+| SQL document/chunk retrieval target | Cloud SQL Postgres + pgvector | target path requires a verified retrieval cutover before becoming canonical |
 | graph projections / vector-heavy search | Postgres now, AlloyDB AI or Vertex AI Vector Search later | start simple, scale when volume demands it |
 | generated memo/export files | Cloud Storage plus Firestore/SQL metadata | durable artifacts with app references |
+
+Current implementation pointers:
+
+- `src/app/api/documents/upload/route.ts` owns document extraction and ingestion.
+  SQL mirroring through `src/lib/agent-runtime/document-postgres.ts` is
+  best-effort and must not be mistaken for proof of a SQL read path.
+- `src/lib/firebase/documents-service.ts` reads owner/situation-scoped document
+  records and chunks. `src/lib/agent-runtime/evidence-pack.ts` uses those reads
+  and bounded stored-document previews when attached documents have no chunks
+  yet. Source availability and indexing completion are separate states.
+- Preserve document IDs, source receipts, owner scope, and equivalent evidence
+  across any future read-path cutover; verify capsule reuse and later Ask before
+  changing this document's canonical-store claim.
 
 Do not introduce Supabase, Inngest, Trigger.dev, Prisma, or a second primary
 database in this repo. They are valid for greenfield products, but PRAXIS has a
@@ -274,7 +294,8 @@ users/{uid}/capsules/{capsuleId}
 users/{uid}/contextStacks/default
 users/{uid}/cores/*
 users/{uid}/situations/*
-users/{uid}/documents/*
+users/{uid}/situations/{situationId}/documents/{documentId}
+users/{uid}/situations/{situationId}/documents/{documentId}/chunks/{chunkId}
 ```
 
 The agent run ledger can mirror summary fields back into Firestore for live UI,

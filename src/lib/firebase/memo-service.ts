@@ -1,6 +1,7 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { createMemoVersion } from '@/lib/memo/export';
+import { buildMemoOutputReview, memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import { MemoBlockSchema, MemoTemplateIdSchema, type Memo, type MemoBlock, type MemoStatus, type MemoTemplateId, type MemoVersion } from '@/types/memo';
 
 export interface SaveMemoDraftInput {
@@ -21,6 +22,7 @@ export interface SaveMemoDraftInput {
   unsupportedClaims?: string[];
   claimChecks?: unknown[];
   outputCapsuleId?: string | null;
+  outputReview?: MemoOutputReviewReceipt | null;
 }
 
 export interface MemoDraftRecord {
@@ -56,8 +58,25 @@ export async function loadMemoById(uid: string, memoId: string, db: Firestore = 
   const rootRef = db.collection('users').doc(uid).collection('memos').doc(cleanMemoId);
   const rootSnap = await rootRef.get();
   if (rootSnap.exists) {
+    const data = rootSnap.data() ?? {};
+    if (!matchesMemoIdentity(data, uid, cleanMemoId)) return null;
     const versionsSnap = await rootRef.collection('versions').orderBy('versionNumber', 'asc').get().catch(() => null);
-    return normalizeLoadedMemo(cleanMemoId, rootSnap.data() ?? {}, versionsSnap?.docs.map((doc) => doc.data()) ?? []);
+    return normalizeLoadedMemo(cleanMemoId, data, versionsSnap?.docs.map((doc) => doc.data()) ?? []);
+  }
+
+  // saveMemoDraft already provides an exact owner-scoped address. Reading it
+  // directly avoids a collection-group index just to reopen a newly saved memo.
+  const location = canonicalMemoLocation(cleanMemoId);
+  if (location) {
+    const memoRef = memoRefFor(db, uid, location.caseId, location.templateId);
+    const memoSnap = await memoRef.get();
+    if (!memoSnap.exists) return null;
+    const data = memoSnap.data() ?? {};
+    if (stringField(data.ownerUid) !== uid || stringField(data.id) !== cleanMemoId
+      || sanitizeDocId(stringField(data.caseId) ?? '') !== location.caseId
+      || data.templateId !== location.templateId) return null;
+    const versionsSnap = await memoRef.collection('versions').orderBy('versionNumber', 'asc').get().catch(() => null);
+    return normalizeLoadedMemo(cleanMemoId, data, versionsSnap?.docs.map((doc) => doc.data()) ?? []);
   }
 
   const byId = await db
@@ -68,9 +87,32 @@ export async function loadMemoById(uid: string, memoId: string, db: Firestore = 
     .get();
   const match = byId.docs[0];
   if (!match) return null;
+  const data = match.data() ?? {};
+  if (!match.ref.path.startsWith(`users/${uid}/`)
+    || stringField(data.ownerUid) !== uid || stringField(data.id) !== cleanMemoId) return null;
 
   const versionsSnap = await match.ref.collection('versions').orderBy('versionNumber', 'asc').get().catch(() => null);
-  return normalizeLoadedMemo(cleanMemoId, match.data() ?? {}, versionsSnap?.docs.map((doc) => doc.data()) ?? []);
+  return normalizeLoadedMemo(cleanMemoId, data, versionsSnap?.docs.map((doc) => doc.data()) ?? []);
+}
+
+function canonicalMemoLocation(memoId: string): { caseId: string; templateId: MemoTemplateId } | null {
+  // Template IDs have no '__'; case IDs may contain it, so only the final
+  // delimiter plus a known template suffix identifies the canonical contract.
+  const separator = memoId.lastIndexOf('__');
+  if (separator <= 0) return null;
+  const templateId = MemoTemplateIdSchema.safeParse(memoId.slice(separator + 2));
+  if (!templateId.success) return null;
+  const caseId = memoId.slice(0, separator);
+  return memoDocumentId(caseId, templateId.data) === memoId
+    ? { caseId, templateId: templateId.data }
+    : null;
+}
+
+function matchesMemoIdentity(data: Record<string, unknown>, uid: string, memoId: string): boolean {
+  // Legacy root records may omit identity fields; the root path is uid-scoped.
+  const ownerUid = stringField(data.ownerUid) ?? stringField(data.uid);
+  const storedId = stringField(data.id) ?? stringField(data.memoId);
+  return (!ownerUid || ownerUid === uid) && (!storedId || storedId === memoId);
 }
 
 export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: Firestore = getAdminDbOrThrow()): Promise<MemoDraftRecord> {
@@ -78,13 +120,36 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
   const memoId = memoDocumentId(input.caseId, input.templateId);
   const memoRef = memoRefFor(db, uid, input.caseId, input.templateId);
   const existing = await loadMemoDraft(uid, input.caseId, input.templateId, db);
+  const primaryBlock = input.blocks.find((block) => block.id === 'live-memo-draft')
+    ?? input.blocks.find((block) => Object.prototype.hasOwnProperty.call(block.metadata, 'outputReview')
+      || Object.prototype.hasOwnProperty.call(artifactMetadata(block.metadata), 'outputReview'))
+    ?? input.blocks.find((block) => block.id === 'memo-body');
+  const primaryArtifactMetadata = artifactMetadata(primaryBlock?.metadata);
+  const existingReview = (existing?.memo as (Memo & Record<string, unknown>) | undefined)?.outputReview;
+  const hasOutputReview = input.outputReview !== undefined
+    || Object.prototype.hasOwnProperty.call(primaryBlock?.metadata ?? {}, 'outputReview')
+    || Object.prototype.hasOwnProperty.call(primaryArtifactMetadata, 'outputReview') || existingReview !== undefined;
+  let outputReview = normalizeMemoOutputReview(input.outputReview ?? primaryBlock?.metadata.outputReview
+    ?? primaryArtifactMetadata.outputReview ?? existingReview);
+  if (hasOutputReview) {
+    outputReview ??= await buildMemoOutputReview({ body: primaryBlock?.content ?? '', report: null, verifierStatus: 'unavailable' });
+    if (!primaryBlock || await memoOutputBodyHash(primaryBlock.content) !== outputReview.bodyHash) {
+      // Retain the hash of the reviewed body; replacing it would falsely bind
+      // the old findings to a newly edited draft.
+      outputReview = { ...outputReview, reviewRequired: true, exportReady: false };
+    }
+  }
+  const blocks = outputReview ? input.blocks.map((block) => block === primaryBlock
+    ? { ...block, metadata: { ...block.metadata, outputReview,
+      ...(Object.prototype.hasOwnProperty.call(primaryArtifactMetadata, 'outputReview')
+        ? { artifactMetadata: { ...primaryArtifactMetadata, outputReview } } : {}) } } : block) : input.blocks;
   const version = createMemoVersion({
     memoId,
     templateId: input.templateId,
     title: input.title,
     authorUid: uid,
     graphSnapshotId: input.graphSnapshotId,
-    blocks: input.blocks,
+    blocks,
     previousVersions: existing?.versions,
     changeNote: input.changeNote,
   });
@@ -95,7 +160,7 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     ownerUid: uid,
     templateId: input.templateId,
     title: input.title,
-    status: input.status ?? existing?.memo.status ?? 'draft',
+    status: hasOutputReview ? 'review' : input.status ?? existing?.memo.status ?? 'draft',
     currentVersionId: version.id,
     createdAt: existing?.memo.createdAt ?? now,
     updatedAt: now,
@@ -111,11 +176,18 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     ...(input.unsupportedClaims ? { unsupportedClaims: input.unsupportedClaims } : {}),
     ...(input.claimChecks ? { claimChecks: input.claimChecks } : {}),
     ...(input.outputCapsuleId ? { outputCapsuleId: input.outputCapsuleId } : {}),
+    ...(outputReview ? { outputReview } : {}),
   };
 
   await memoRef.set({ ...memo, ...memoMetadata, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
-  await memoRef.collection('versions').doc(version.id).set(version);
-  return { memo, versions: [...(existing?.versions ?? []), version] };
+  const savedVersion = { ...version, ...(outputReview ? { outputReview } : {}) };
+  await memoRef.collection('versions').doc(version.id).set(savedVersion);
+  return { memo: { ...memo, ...memoMetadata }, versions: [...(existing?.versions ?? []), savedVersion] };
+}
+
+function artifactMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> {
+  const value = metadata?.artifactMetadata;
+  return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
 function validateMemoDraft(input: SaveMemoDraftInput): void {

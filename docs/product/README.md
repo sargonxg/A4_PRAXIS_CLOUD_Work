@@ -1,7 +1,11 @@
 # PRAXIS Product Documentation Index
 
-Date: 2026-05-30
+Updated: 2026-09-29
 Status: canonical index for the current app structure
+
+Start with the [current user-readiness receipt](../reviews/2026-09-29-praxis-user-readiness.md)
+for what is verified, what is pending and the next release proof. Architecture
+direction and historical receipts do not establish a working live journey.
 
 ## Read These First
 
@@ -35,9 +39,9 @@ Status: canonical index for the current app structure
    - Defines core anatomy, PRAXIS augmented generation, generic versus
      path-bound users, personas, combination rules, tools, connectors,
      outputs, and usable app shape.
-   - _(The v3 human-gated context-infrastructure doc was removed 2026-06-01 and
-     superseded by the Tasklet-style runtime; the live capsule contract is now
-     `src/lib/context/capsule-v3.ts` plus the canonical app structure doc.)_
+   - `CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md` remains a
+     background design reference. The live capsule contract is
+     `src/lib/context/capsule-v3.ts` plus the canonical app structure doc.
 8. [`TASKLET_RESEARCH_INTAKE_2026-05-15.md`](./TASKLET_RESEARCH_INTAKE_2026-05-15.md)
    - Intake note for the external Tasklet-class browser-agent research.
    - Records what PRAXIS adopted, deferred, or rejected.
@@ -109,7 +113,6 @@ Keep the visible app simple:
 ```text
 Home
 Capsules
-Boardroom
 ```
 
 Pricing and Release notes are public pages. Login remains operational but is
@@ -119,10 +122,9 @@ library, memo, canvas, or advanced tools.
 - Home: prompt bar, active capsule, recent work, and direct Ask PRAXIS.
 - Capsules: searchable stored ContextCapsules with ids, versions, categories,
   source/document refs, upload, improve, archive, and AI-guided build actions.
-- Boardroom: simple personal knowledge board for chaired discussion around a
-  policy question, attached context, source posture, and synthesis.
-- Deeper memo, canvas, library, run-log, and diagnostic behavior should open as
-  panels/actions inside the capsule manager or remain admin/debug-only.
+- Boardroom, memo, canvas, library, run-log, and diagnostic behavior opens as
+  panels/actions inside the existing cockpit/workbench, with admin-only tools
+  kept in their scoped surfaces.
 - Legacy signed-in URLs and focused run links may redirect or deep-link into
   the shared cockpit for compatibility. They should not become new primary app
   surfaces.

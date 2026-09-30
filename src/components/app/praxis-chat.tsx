@@ -33,6 +33,15 @@ import type { SourceabilityClaimVerdict } from '@/lib/agent-runtime/sourceabilit
 import { DEFAULT_MODEL_PREFERENCE } from '@/lib/ai/model-preferences';
 import type { AskAnswerEnvelope, SourcePreviewCard } from '@/lib/ai/ask-answer-envelope';
 import {
+  askChatCacheKey,
+  loadAskChatCache,
+  persistAskChatCache,
+  scopedAskChatDraft,
+  scopedAskChatMessages,
+  updateAskChatCache,
+  type AskChatCacheState,
+} from '@/lib/ai/ask-chat-cache';
+import {
   defaultActiveContextStack,
   type ActiveContextBlockItem,
   type ActiveContextStackState,
@@ -41,6 +50,8 @@ import { PENDING_TASKLET_PROMPT_KEY } from '@/lib/product/policy-agents';
 import { POLICY_MISSION_EXAMPLES } from '@/lib/product/policy-missions';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
+import { DIRECT_ASK_HISTORY_CAPSULE_ID } from '@/lib/ai/ask-conversation';
+import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import type { Situation } from '@/types/situation';
 
 type ChatProposal = {
@@ -108,19 +119,30 @@ export function PraxisChat({
   variant = 'home',
 }: PraxisChatProps) {
   const router = useRouter();
-  const [input, setInput] = useState(initialPrompt);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const { user } = useAuth();
+  const draftOwnerScope = mode === 'public' ? 'public' : `authenticated:${user?.id ?? 'pending'}`;
+  const [draft, setDraft] = useState({ ownerScope: draftOwnerScope, text: initialPrompt });
+  const input = scopedAskChatDraft(draft, draftOwnerScope);
+  const setInput = useCallback((text: string) => setDraft({ ownerScope: draftOwnerScope, text }), [draftOwnerScope]);
+  const [messageCache, setMessageCache] = useState<AskChatCacheState<ChatMessage>>({ cacheKey: null, messages: [] });
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deepResearch, setDeepResearch] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesRef = useRef(messages);
+  const activeRequestRef = useRef<AbortController | null>(null);
+  const consumedAutoSendNonce = useRef(0);
   const locallyEdited = useRef(false);
   const stack = useMemo(() => activeContextStack ?? defaultActiveContextStack(), [activeContextStack]);
   const activeCapsuleId = stack.capsuleRefs[0]?.capsuleId ?? stack.capsuleId ?? activeSituation?.id ?? null;
   const conversationThreadId = threadId ?? `home-${activeCapsuleId ?? stack.contextPackageId ?? stack.userModelId ?? 'direct'}`;
-  const localStorageKey = storageKey ?? `praxis-chat:${mode}:${conversationThreadId}`;
+  const localStorageKey = askChatCacheKey({ mode, ownerId: user?.id, capsuleId: activeCapsuleId, threadId: conversationThreadId, namespace: storageKey });
+  const messages = useMemo(() => scopedAskChatMessages(messageCache, localStorageKey), [messageCache, localStorageKey]);
+  const messagesRef = useRef(messages);
+  const cacheReady = Boolean(localStorageKey && messageCache.cacheKey === localStorageKey);
+  const setMessages = useCallback((update: ChatMessage[] | ((previous: ChatMessage[]) => ChatMessage[])) => {
+    setMessageCache((previous) => updateAskChatCache(previous, localStorageKey, update));
+  }, [localStorageKey]);
   const isPublic = mode === 'public';
   const showExamples = variant === 'home' && messages.length === 0;
   const promptPlaceholder = isPublic
@@ -132,7 +154,7 @@ export function PraxisChat({
   }, [messages]);
 
   useEffect(() => {
-    setInput(initialPrompt);
+    setDraft((previous) => ({ ...previous, text: initialPrompt }));
   }, [initialPrompt]);
 
   useEffect(() => {
@@ -147,27 +169,31 @@ export function PraxisChat({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    locallyEdited.current = false;
+    messagesRef.current = [];
+    setError(null);
+    setIsStreaming(false);
     try {
-      const saved = window.localStorage.getItem(localStorageKey);
-      setMessages(saved ? (JSON.parse(saved) as ChatMessage[]).slice(-50) : []);
+      setMessageCache(loadAskChatCache<ChatMessage>(window.localStorage, localStorageKey));
     } catch {
-      setMessages([]);
+      setMessageCache({ cacheKey: localStorageKey, messages: [] });
     }
+    return () => activeRequestRef.current?.abort();
   }, [localStorageKey]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
-      window.localStorage.setItem(localStorageKey, JSON.stringify(messages.slice(-50)));
+      persistAskChatCache(window.localStorage, localStorageKey, messageCache);
     } catch {
-      // Local storage can be unavailable in private browsing or full profiles.
+      // Some browsers block access to the storage object itself.
     }
-  }, [localStorageKey, messages]);
+  }, [localStorageKey, messageCache]);
 
   useEffect(() => {
-    if (isPublic || demoMode) return;
+    if (isPublic || demoMode || !localStorageKey) return;
     let cancelled = false;
-    const capsuleForHistory = activeCapsuleId ?? 'thin-capsule-fallback';
+    const capsuleForHistory = activeCapsuleId ?? DIRECT_ASK_HISTORY_CAPSULE_ID;
     const params = new URLSearchParams({
       capsuleId: capsuleForHistory,
       threadId: conversationThreadId,
@@ -195,19 +221,16 @@ export function PraxisChat({
     return () => {
       cancelled = true;
     };
-  }, [activeCapsuleId, conversationThreadId, demoMode, isPublic]);
+  }, [activeCapsuleId, conversationThreadId, demoMode, isPublic, localStorageKey, setMessages]);
 
   const sendWithText = useCallback(
     async (rawText: string) => {
       const text = rawText.trim();
-      if (isStreaming || !contextReady || !text) return;
+      if (isStreaming || !contextReady || !cacheReady || !text) return;
       setError(null);
 
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, text);
-      }
-
       if (isPublic) {
+        try { window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, text); } catch { /* URL handoff still works. */ }
         const params = new URLSearchParams();
         params.set('mode', 'signup');
         params.set('redirect', '/app');
@@ -216,6 +239,7 @@ export function PraxisChat({
         router.push(`/login?${params.toString()}`);
         return;
       }
+      try { window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY); } catch { /* Storage can be blocked. */ }
 
       // A late history response must never replace turns submitted in this session.
       locallyEdited.current = true;
@@ -227,6 +251,15 @@ export function PraxisChat({
         content: text,
       };
       const priorMessages = messagesRef.current;
+      const requestController = new AbortController();
+      activeRequestRef.current = requestController;
+      const restoreFailedPrompt = () => {
+        if (!requestController.signal.aborted) {
+          setDraft((previous) => previous.ownerScope === draftOwnerScope && !previous.text.trim()
+            ? { ...previous, text }
+            : previous);
+        }
+      };
 
       setMessages((prev) => [
         ...prev,
@@ -240,12 +273,13 @@ export function PraxisChat({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
+        signal: requestController.signal,
       })
         .then((res) => (res.ok ? res.json() : null))
         .catch(() => null);
 
       const appendAssistantText = (token: string) => {
-        if (!token) return;
+        if (!token || requestController.signal.aborted) return;
         setMessages((prev) => prev.map((message) => (
           message.id === assistantId
             ? { ...message, content: `${message.content}${token}` }
@@ -254,6 +288,7 @@ export function PraxisChat({
       };
 
       const updateAssistant = (patch: Partial<ChatMessage>) => {
+        if (requestController.signal.aborted) return;
         setMessages((prev) => prev.map((message) => (
           message.id === assistantId ? { ...message, ...patch } : message
         )));
@@ -287,7 +322,9 @@ export function PraxisChat({
           return;
         }
         if (line.startsWith('3:')) {
-          appendAssistantText('\n\nAsk PRAXIS stream failed before completion.');
+          const streamError = parseDataStreamError(line) ?? 'Ask PRAXIS stream failed before completion.';
+          restoreFailedPrompt();
+          appendAssistantText(`\n\n${describeAskFailure(streamError)}`);
         }
       };
 
@@ -295,6 +332,7 @@ export function PraxisChat({
         const response = await fetch('/api/ai/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: requestController.signal,
           body: JSON.stringify({
             messages: [...priorMessages, userMessage].map((message) => ({
               role: message.role,
@@ -334,6 +372,7 @@ export function PraxisChat({
         });
 
         if (!response.ok || !response.body) {
+          restoreFailedPrompt();
           const payload = await response.json().catch(() => null) as { error?: string; code?: string; message?: string; redirectTo?: string } | null;
           if (response.status === 403 && (payload?.code === 'onboarding_required' || payload?.redirectTo === '/onboarding')) {
             updateAssistant({
@@ -363,12 +402,14 @@ export function PraxisChat({
         }
         if (lineBuffer.trim()) consumeDataLine(lineBuffer.trimEnd());
       } catch {
+        restoreFailedPrompt();
         updateAssistant({ content: 'Network error. Please check the connection and try again.' });
       } finally {
-        setIsStreaming(false);
+        if (!requestController.signal.aborted) setIsStreaming(false);
       }
 
       const intent = await intentPromise;
+      if (requestController.signal.aborted) return;
       if (isProfileMutationIntent(intent)) {
         updateAssistant({
           proposal: {
@@ -386,24 +427,31 @@ export function PraxisChat({
     },
     [
       activeSituation,
+      cacheReady,
       conversationThreadId,
       currentPath,
       contextReady,
       currentToolId,
+      draftOwnerScope,
       demoMode,
       deepResearch,
       isPublic,
       isStreaming,
       router,
+      setInput,
+      setMessages,
       stack,
     ],
   );
 
   useEffect(() => {
-    if (!autoSendNonce || isPublic || isStreaming) return;
+    if (!autoSendNonce || autoSendNonce === consumedAutoSendNonce.current || isPublic || isStreaming || !contextReady || !cacheReady) return;
     const text = input.trim();
-    if (text) void sendWithText(text);
-  }, [autoSendNonce, input, isPublic, isStreaming, sendWithText]);
+    if (!text) return;
+    // One automatic submission per request; restored failures wait for a user retry.
+    consumedAutoSendNonce.current = autoSendNonce;
+    void sendWithText(text);
+  }, [autoSendNonce, cacheReady, contextReady, input, isPublic, isStreaming, sendWithText]);
 
   const submit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -420,7 +468,7 @@ export function PraxisChat({
     locallyEdited.current = true;
     setMessages([]);
     setInput('');
-    if (typeof window !== 'undefined') window.localStorage.removeItem(localStorageKey);
+    if (typeof window !== 'undefined' && localStorageKey) window.localStorage.removeItem(localStorageKey);
   };
 
   const continueWithoutOnboarding = useCallback(async (prompt: string) => {
@@ -438,7 +486,7 @@ export function PraxisChat({
     } catch {
       setError('Network error while skipping onboarding.');
     }
-  }, [sendWithText]);
+  }, [sendWithText, setMessages]);
 
   const exportMessageToEditor = useCallback(async (message: ChatMessage): Promise<string | null> => {
     const pack = message.answerEnvelope?.documentPackCandidate;
@@ -543,7 +591,7 @@ export function PraxisChat({
                   setInput(mission.prompt);
                   inputRef.current?.focus();
                   if (typeof window !== 'undefined') {
-                    window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
+                    if (isPublic) window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
                   }
                 }}
                 className="rounded-[var(--radius-md)] border border-[var(--color-app-border)] bg-white px-3 py-3 text-left text-sm transition hover:-translate-y-0.5 hover:border-emerald-500/50 hover:bg-[color:var(--color-archive-paper-strong)] hover:shadow-[0_4px_14px_rgba(16,185,129,0.12)]"
@@ -599,7 +647,7 @@ export function PraxisChat({
                 </button>
               ) : null}
               {!isPublic && !demoMode && (messages.length > 0 || input.trim()) ? (
-                <ConversationCapsuleButton messages={messages} notes={input} threadId={conversationThreadId} capsuleId={activeCapsuleId} disabled={isStreaming} onError={setError} />
+                <ConversationCapsuleButton messages={messages} notes={input} threadId={conversationThreadId} capsuleId={activeCapsuleId} disabled={isStreaming || !cacheReady} onError={setError} />
               ) : null}
               {messages.length ? (
                 <button
@@ -643,7 +691,7 @@ export function PraxisChat({
               <button
                 type="submit"
                 data-testid="marketing-primary-cta"
-                disabled={!input.trim() || isStreaming || !contextReady}
+                disabled={!input.trim() || isStreaming || !contextReady || !cacheReady}
                 className={cn(
                   'inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 text-sm font-semibold transition',
                   input.trim() && !isStreaming

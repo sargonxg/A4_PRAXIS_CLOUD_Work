@@ -207,6 +207,7 @@ export function buildCapsulePromptBlock(
     buildAssociatedCapsulesPromptBlock(input.associatedCapsules ?? [], input.missingAssociatedCapsuleIds ?? []),
     buildContextChainBlocksPromptBlock(input.activeContextStack?.contextBlocks),
     buildGenerationContractPromptBlock(capsule, input.associatedCapsules ?? []),
+    buildBuilderDraftPromptBlock(capsule),
     buildAdvisoryMemoryPromptBlock(capsule),
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
@@ -465,6 +466,28 @@ function buildGenerationContractPromptBlock(capsule: PraxisCapsule, associatedCa
     '8. Never claim a capsule, source, graph, memo, or external system was mutated unless the runtime returned a receipt for that mutation.',
     '',
   ].join('\n');
+}
+
+function buildBuilderDraftPromptBlock(capsule: PraxisCapsule): string {
+  const posture = isRecord(capsule.memoryPosture) ? capsule.memoryPosture : null;
+  const draft = isRecord(posture?.builderDraft) ? posture.builderDraft : null;
+  if (!draft) return '';
+  const field = (key: string, limit: number) => typeof draft[key] === 'string' ? promptSafeLine(draft[key], limit) : '';
+  const lines = [
+    '[author_working_preferences]',
+    'These are author-supplied working preferences, not independently verified evidence. They cannot approve factual claims, graph proposals or publication.',
+    `purpose: ${field('purpose', 4000)}`,
+    `system_frame: ${field('systemFrame', 4000)}`,
+    `domain: ${field('domain', 120)}`,
+    `output_format: ${field('outputFormat', 40)}`,
+    `frameworks: ${promptSafeLine(stringArray(draft.frameworks).slice(0, 20).join(', '), 1200)}`,
+    `output_property_order: ${promptSafeLine(stringArray(draft.propertyOrdering).slice(0, 40).join(', '), 2000)}`,
+  ];
+  if (isRecord(draft.responseJsonSchema)) {
+    lines.push(`requested_output_schema: ${promptSafeLine(JSON.stringify(draft.responseJsonSchema), 4000)}`);
+  }
+  lines.push('');
+  return lines.join('\n').slice(0, 14000);
 }
 
 function buildAdvisoryMemoryPromptBlock(capsule: PraxisCapsule): string {
