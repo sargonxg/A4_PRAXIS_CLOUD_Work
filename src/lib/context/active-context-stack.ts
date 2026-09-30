@@ -242,13 +242,14 @@ export function swapCapsuleRef(
   const nextRefs = current.capsuleRefs.flatMap((ref) => {
     if (ref.capsuleId !== target) return [ref];
     replaced = true;
+    const sameCapsule = replacementId === ref.capsuleId;
     return [{
       capsuleId: replacementId,
-      label: nextRef.label ?? ref.label,
+      label: nextRef.label !== undefined ? nextRef.label : sameCapsule ? ref.label : null,
       role: nextRef.role ?? ref.role,
       primary: nextRef.primary ?? ref.primary,
       order: ref.order,
-      version: nextRef.version ?? ref.version,
+      version: nextRef.version !== undefined ? nextRef.version : sameCapsule ? ref.version : null,
     }];
   });
   if (!replaced) {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defaultActiveContextStack, sanitizeActiveContextStack } from '@/lib/context/active-context-stack';
+import { defaultActiveContextStack, sanitizeActiveContextStack, swapCapsuleRef } from '@/lib/context/active-context-stack';
 import { CAPSULE_LIBRARY_ENTRIES } from '@/lib/capsules/library';
 import { activeContextPatchForLibraryEntry } from '@/lib/capsules/library-try';
 import { capsuleToStack, sanitizeCapsule } from '@/lib/context/capsule-service';
@@ -186,6 +186,88 @@ describe('attaching saved capsule context', () => {
     expect(mocks.bump).not.toHaveBeenCalled();
     expect(mocks.create).not.toHaveBeenCalled();
     expect(mocks.set).toHaveBeenCalledWith(expect.objectContaining({ documentIds: ['document-1'] }), { merge: true });
+  });
+
+  it('resolves an ID-only picker swap to the selected capsule metadata through PUT and reload', async () => {
+    const selected = sanitizeCapsule({ capsuleId: 'document-capsule', ownerUid: 'owner', label: 'Fresh document evidence', version: 4, coreRefs: { documentCoreIds: ['document-1', 'document-2'], sourceCoreIds: ['receipt-1'], situationCoreId: 'case-1' } });
+    let pointer = sanitizeActiveContextStack({
+      stackId: 'conversation-capsule', capsuleId: 'conversation-capsule',
+      capsuleRefs: [
+        { capsuleId: 'conversation-capsule', label: 'Previous conversation notes', role: 'primary', version: 11 },
+        { capsuleId: 'method-capsule', label: 'Institutional lens', role: 'tool', version: 2 },
+      ],
+    });
+    const method = pointer.capsuleRefs[1];
+    mocks.readPointer.mockImplementation(async () => ({ exists: true, data: () => pointer }));
+    mocks.set.mockImplementation(async (next) => { pointer = next; });
+    mocks.get.mockResolvedValue(selected);
+    const swapped = swapCapsuleRef(pointer, 'conversation-capsule', { capsuleId: selected.capsuleId, role: 'primary', primary: true });
+    const put = await invokePut(new Request('http://localhost/api/workspace/context-stack', {
+      method: 'PUT', body: JSON.stringify({ stackId: swapped.capsuleId, capsuleId: swapped.capsuleId, capsuleRefs: swapped.capsuleRefs }),
+    }), { uid: 'owner' });
+    expect(put.status).toBe(200);
+    const saved = await put.json();
+    const get = await invokeGet(new Request('http://localhost/api/workspace/context-stack'), { uid: 'owner' });
+    const reloaded = await get.json();
+    expect(saved.stack.capsuleRefs[0]).toMatchObject({ capsuleId: selected.capsuleId, label: selected.label, version: 4, role: 'primary', primary: true, order: 0 });
+    expect(reloaded.stack.capsuleRefs).toEqual(saved.stack.capsuleRefs);
+    expect(reloaded.stack.capsuleRefs[1]).toEqual(method);
+    expect(reloaded.stack).toMatchObject({ documentIds: ['document-1', 'document-2'], sourceIds: ['receipt-1'], situationId: 'case-1' });
+    expect(saved.capsule).toEqual(selected);
+    expect(reloaded.capsule).toEqual(selected);
+    expect(mocks.compat).not.toHaveBeenCalled();
+    expect(mocks.bump).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it.each([null, 2])('repairs a legacy saved label on read while preserving composition and explicit version %s', async (version) => {
+    const selected = sanitizeCapsule({ capsuleId: 'document-capsule', ownerUid: 'owner', label: 'Fresh document evidence', version: 4, coreRefs: { documentCoreIds: ['document-1'], sourceCoreIds: ['receipt-1'] } });
+    const pointer = sanitizeActiveContextStack({
+      ...capsuleToStack(selected), outputGoal: 'brief', contextPackageId: 'pinned-context-package',
+      capsuleRefs: [
+        { capsuleId: selected.capsuleId, label: 'Wrong previous conversation label', role: 'situation', version },
+        { capsuleId: 'method-capsule', label: 'Institutional lens', role: 'tool', version: 3 },
+        { capsuleId: 'comparison-capsule', label: 'Comparison case', role: 'comparison', version: 1 },
+      ],
+    });
+    mocks.readPointer.mockResolvedValue({ exists: true, data: () => pointer });
+    mocks.get.mockResolvedValue(selected);
+    const get = await invokeGet(new Request('http://localhost/api/workspace/context-stack'), { uid: 'owner' });
+    const reloaded = await get.json();
+    expect(reloaded.stack.capsuleRefs).toEqual([
+      { ...pointer.capsuleRefs[0], label: selected.label, version: version ?? selected.version },
+      ...pointer.capsuleRefs.slice(1),
+    ]);
+    expect(reloaded.stack).toMatchObject({ documentIds: ['document-1'], sourceIds: ['receipt-1'], outputGoal: 'brief', contextPackageId: 'pinned-context-package' });
+    expect(reloaded.capsule).toEqual(selected);
+    expect(pointer.capsuleRefs[0].label).toBe('Wrong previous conversation label');
+    expect(mocks.set).not.toHaveBeenCalled();
+    expect(mocks.compat).not.toHaveBeenCalled();
+    expect(mocks.bump).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('repairs primary metadata on PUT without changing pinned versions or other composed refs', async () => {
+    const selected = sanitizeCapsule({ capsuleId: 'saved', ownerUid: 'owner', label: 'Canonical case label', version: 8, coreRefs: { documentCoreIds: ['document-1'], sourceCoreIds: ['receipt-1'] } });
+    const requested = sanitizeActiveContextStack({
+      ...capsuleToStack(selected), contextPackageId: 'pinned-context-package',
+      capsuleRefs: [
+        { capsuleId: 'saved', label: 'Incorrect old label', role: 'situation', version: 2 },
+        { capsuleId: 'method-capsule', label: 'Institutional lens', role: 'tool', version: 3 },
+      ],
+    });
+    mocks.get.mockResolvedValue(selected);
+    const response = await invokePut(new Request('http://localhost/api/workspace/context-stack', {
+      method: 'PUT', body: JSON.stringify(requested),
+    }), { uid: 'owner' });
+    const saved = await response.json();
+    expect(saved.stack.capsuleRefs).toEqual([{ ...requested.capsuleRefs[0], label: selected.label }, requested.capsuleRefs[1]]);
+    expect(saved.stack).toMatchObject({ contextPackageId: 'pinned-context-package', documentIds: ['document-1'], sourceIds: ['receipt-1'] });
+    expect(saved.capsule).toEqual(selected);
+    expect(mocks.set).toHaveBeenCalledWith(expect.objectContaining({ capsuleRefs: saved.stack.capsuleRefs }), { merge: true });
+    expect(mocks.compat).not.toHaveBeenCalled();
+    expect(mocks.bump).not.toHaveBeenCalled();
+    expect(mocks.create).not.toHaveBeenCalled();
   });
 
   it.each(['saved', 'default'])('does not reactivate an archived %s capsule', async (capsuleId) => {

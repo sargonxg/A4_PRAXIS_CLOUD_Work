@@ -113,6 +113,29 @@ describe('active context stack block arrays', () => {
     expect(detached.capsuleRefs.map((ref) => ref.capsuleId)).toEqual(['cap-humanitarian', 'cap-legal']);
   });
 
+  it('does not transfer the old capsule label or version when the picker selects a different ID', () => {
+    const stack = sanitizeActiveContextStack({
+      capsuleId: 'conversation-capsule',
+      capsuleRefs: [
+        { capsuleId: 'conversation-capsule', label: 'Previous conversation notes', role: 'primary', version: 11 },
+        { capsuleId: 'method-capsule', label: 'Institutional lens', role: 'tool', version: 2 },
+      ],
+    });
+    const swapped = swapCapsuleRef(stack, 'conversation-capsule', { capsuleId: 'document-capsule', role: 'primary', primary: true });
+    expect(swapped.capsuleRefs[0]).toMatchObject({ capsuleId: 'document-capsule', label: null, version: null, role: 'primary', primary: true, order: 0 });
+    expect(swapped.capsuleRefs[1]).toEqual(stack.capsuleRefs[1]);
+    expect(buildCapsuleDockModel(swapped).items[0]).toMatchObject({ label: 'document-capsule', versionLabel: 'latest' });
+  });
+
+  it('preserves same-ID metadata and honors explicit replacement metadata', () => {
+    const stack = sanitizeActiveContextStack({ capsuleId: 'saved', capsuleRefs: [{ capsuleId: 'saved', label: 'Saved case', role: 'situation', version: 7 }] });
+    expect(swapCapsuleRef(stack, 'saved', { capsuleId: 'saved' }).capsuleRefs).toEqual(stack.capsuleRefs);
+    expect(swapCapsuleRef(stack, 'saved', { capsuleId: 'replacement', label: 'Replacement case', version: 3 }).capsuleRefs[0])
+      .toMatchObject({ capsuleId: 'replacement', label: 'Replacement case', version: 3, role: 'situation', primary: true });
+    expect(swapCapsuleRef(stack, 'saved', { capsuleId: 'saved', label: null, version: null }).capsuleRefs[0])
+      .toMatchObject({ capsuleId: 'saved', label: null, version: null, role: 'situation', primary: true });
+  });
+
   it('preserves semantic workbench capsule bucket roles while keeping one primary ref', () => {
     const stack = sanitizeActiveContextStack({
       capsuleId: 'cap-situation',

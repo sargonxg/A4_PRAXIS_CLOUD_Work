@@ -45,11 +45,11 @@ export const GET = withAuth(async (req, user) => {
     const capsule = await getCapsule(user.uid, activeSnap.capsuleId ?? activeSnap.stackId);
     if (capsule && !capsule.archivedAt) {
       return NextResponse.json({
-        stack: {
+        stack: reconcileGoverningCapsuleRef({
           ...capsuleToStack(capsule),
           ...activeSnap,
           capsuleId: capsule.capsuleId,
-        },
+        }, capsule),
         capsule,
         migrated: false,
         persisted: true,
@@ -104,17 +104,31 @@ export const PUT = withAuth(async (req, user) => {
           activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],
           provenance: { source: 'api', createdBy: user.uid },
         });
-    const activeStack = {
+    const activeStack = reconcileGoverningCapsuleRef({
       ...stack,
       capsuleId: capsule.capsuleId,
       stackId: capsule.capsuleId,
-    };
+    }, capsule);
     await saveActiveStackPointer(user.uid, activeStack);
     return NextResponse.json({ stack: activeStack, capsule, persisted: true });
   }
   const result = await saveContextStackCompat(user.uid, incoming);
   return NextResponse.json(result);
 });
+
+function reconcileGoverningCapsuleRef(
+  stack: ActiveContextStackState,
+  capsule: { capsuleId: string; label: string; version: number },
+): ActiveContextStackState {
+  // Labels belong to capsule identity; a saved pointer may contain old chooser
+  // metadata. Preserve composed refs and explicit version pins while repairing it.
+  return {
+    ...stack,
+    capsuleRefs: stack.capsuleRefs.map((ref) => ref.capsuleId === capsule.capsuleId
+      ? { ...ref, label: capsule.label, version: ref.version ?? capsule.version }
+      : ref),
+  };
+}
 
 function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveContextStackState {
   return sanitizeActiveContextStack({
