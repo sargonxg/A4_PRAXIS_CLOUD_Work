@@ -13,6 +13,7 @@ const directPrompts = [
   'From the attached synthetic capsule purpose, what project code, review deadline and pre-launch condition were supplied? Distinguish supplied context from verified evidence. Answer briefly, without browsing or agent runs.',
   'What test code and review deadline did I give in the previous turn? Use only this conversation; answer briefly without browsing or agent runs.',
   'What had to happen before public launch, and what remained undecided in our previous synthetic context? Use this capsule and the earlier exchange only; no browsing or agent runs.',
+  'This is an explicitly synthetic private QA project, not a real-world event. Its identifier is PRAXIS-QA-C-1790746791331-96d31aff. Its review deadline is 2026-11-12. Public launch is prohibited before the independent audit is complete. Funding is undecided. Summarize only these user-supplied constraints and ask one follow-up question for a reusable policy context capsule. Do not browse, use public sources, or run research.',
 ];
 
 describe('explicit Ask conversation restrictions', () => {
@@ -84,6 +85,32 @@ describe('explicit Ask conversation restrictions', () => {
     expect(receipt.workflowPlan.requiredPolicyAgentIds).toEqual([]);
   });
 
+  it.each([null, 'research-memo'])('keeps the exact supplied-only live prompt direct with selected agent %s and Deep Research', (selectedPolicyAgentId) => {
+    const prompt = directPrompts.at(-1)!;
+    const preference = resolveAskExecutionPreference(prompt);
+    const routing = buildTacitusRoutingDecision({ prompt, intent: 'research_memo', selectedPolicyAgentId, capsuleHealth: 'ready', sourcePreviewCount: 0, activeGapCount: 0 });
+    const receipt = buildAskConversationOrchestrationReceipt({ prompt, intent: 'research_memo', selectedPolicyAgentId, contextReceipt, sourcePreviewCount: 0 });
+    expect(preference).toMatchObject({ preferDirectAnswer: true, allowExternalSources: false, allowWorkspaceRetrieval: false });
+    expect(routing.workerMode).toBe('direct-answer');
+    expect(routing.toolRoute.selectedToolIds).toEqual(['context-resolve', 'capsule-evidence-pack']);
+    expect(receipt.triage.intent).toBe('normal_answer');
+    expect(receipt.supervisor.action).toBe('direct_answer');
+    expect(receipt.workflowPlan.requiredPolicyAgentIds).toEqual([]);
+    expect(receipt.turnPlan.requiredAgents).toEqual([]);
+    expect(receipt.turnPlan.continuationPolicy).not.toBe('queue_agent');
+    expect(filterAskToolsForExecution({ runDeepResearch: {}, writeToTool: {}, webSearch: {}, analyzeDocument: {} }, preference)).toEqual({});
+  });
+
+  it.each(['run research', 'do research', 'perform research', 'conduct further research'])('honors an explicit negative research invocation: %s', (invocation) => {
+    const prompt = `Write the supplied policy brief. Please do not ${invocation}.`;
+    const preference = resolveAskExecutionPreference(prompt);
+    expect(preference).toMatchObject({ preferDirectAnswer: true, allowExternalSources: false, allowWorkspaceRetrieval: false });
+    expect(classifyAskIntent(prompt)).toBe('normal_answer');
+    expect(buildWorkIntentPlan({ prompt }).intent).toBe('general_answer');
+    const tools = { runDeepResearch: {}, writeToTool: {}, proposeGraphDelta: {}, webSearch: {}, groundedSearchFetch: {}, analyzeDocument: {} };
+    expect(filterAskToolsForExecution(tools, preference)).toEqual({});
+  });
+
   it('keeps supplied-only local research from reading the fallback sample graph', () => {
     const preference = resolveAskExecutionPreference('Research using only the attached documents.');
     expect(preference).toMatchObject({ preferDirectAnswer: false, allowExternalSources: false, allowWorkspaceRetrieval: false });
@@ -96,6 +123,9 @@ describe('explicit Ask conversation restrictions', () => {
     "Research the effect of the quoted instruction 'Do not browse or dispatch agents' on policy teams.",
     'Explain why some research tools do not browse and why agents should respect restrictions.',
     'Research how teams answer without browsing and how agent runs affect accountability.',
+    'Research the effect of the quoted instruction "Do not run research" on policy teams.',
+    'Explain why some policy teams do not conduct research and how they summarize supplied notes.',
+    'Do not explain why teams run research; instead compare the attached documents.',
   ])('does not turn quoted instructions or conceptual mentions into restrictions: %s', (prompt) => {
     expect(resolveAskExecutionPreference(prompt)).toMatchObject({ preferDirectAnswer: false, allowTools: true, allowExternalSources: true });
   });
@@ -105,6 +135,23 @@ describe('explicit Ask conversation restrictions', () => {
     const preference = resolveAskExecutionPreference(prompt);
     expect(preference).toMatchObject({ preferDirectAnswer: false, allowTools: true, allowExternalSources: false });
     expect(classifyAskIntent(prompt)).toBe('research_memo');
+    const routing = buildTacitusRoutingDecision({ prompt, intent: 'research_memo', selectedPolicyAgentId: 'research-memo', capsuleHealth: 'ready', sourcePreviewCount: 2, activeGapCount: 0 });
+    expect(routing.workerMode).toBe('research-memo');
+    expect(routing.toolRoute.selectedToolIds).not.toContain('grounded-search');
+    expect(routing.toolRoute.selectedToolIds).not.toContain('deep-search-agent');
+    expect(Object.keys(filterAskToolsForExecution({ analyzeDocument: {}, webSearch: {}, runDeepResearch: {} }, preference))).toEqual(['analyzeDocument']);
+  });
+
+  it.each(['run external research', 'conduct external research', 'perform any new external research'])('preserves expressly requested attached-document research after prohibiting %s', (invocation) => {
+    const prompt = `Do not ${invocation}, but research the attached documents for a memo.`;
+    const preference = resolveAskExecutionPreference(prompt);
+    const routing = buildTacitusRoutingDecision({ prompt, intent: 'research_memo', selectedPolicyAgentId: 'research-memo', capsuleHealth: 'ready', sourcePreviewCount: 2, activeGapCount: 0 });
+    expect(preference).toMatchObject({ preferDirectAnswer: false, allowTools: true, allowExternalSources: false });
+    expect(classifyAskIntent(prompt)).toBe('research_memo');
+    expect(routing.workerMode).toBe('research-memo');
+    expect(routing.toolRoute.selectedToolIds).not.toContain('grounded-search');
+    expect(routing.toolRoute.selectedToolIds).not.toContain('deep-search-agent');
+    expect(Object.keys(filterAskToolsForExecution({ analyzeDocument: {}, webSearch: {}, runDeepResearch: {} }, preference))).toEqual(['analyzeDocument']);
   });
 
   it('keeps deliberate local research available without external tools', () => {

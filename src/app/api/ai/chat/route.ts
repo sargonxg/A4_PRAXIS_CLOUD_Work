@@ -82,6 +82,7 @@ import {
 } from '@/lib/research-graph';
 import type { Situation } from '@/types/situation';
 import { filterAskToolsForExecution, readAskMessages, resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
+import { appendSuppliedContextAnswerPolicy } from '@/lib/ai/ask-answer-policy';
 
 export const maxDuration = 60;
 
@@ -654,6 +655,7 @@ fabricate sources, figures, dates, or identifiers.`;
     runtimeReceipt.orchestrationReceipt = orchestrationReceipt;
     runtimeReceipt.routeDecision = buildAskRouteDecisionReceipt(orchestrationReceipt);
     systemPrompt += '\n\n' + formatWorkIntentPromptBlock(orchestrationReceipt.triage.workIntent);
+    systemPrompt = appendSuppliedContextAnswerPolicy(systemPrompt, executionPreference);
     const sourceCardsForEnvelope = () => [
       ...sourcePreviewCards,
       ...buildResearchGraphSourcePreviewCards(researchGraphReceipts),

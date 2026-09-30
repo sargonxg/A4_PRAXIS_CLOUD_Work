@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildCapsuleDockPromptBlock,
+  buildCapsulePromptBlock,
   buildProtectedContextPromptBlock,
   type DockCapsuleEntry,
 } from '@/lib/context/context-injection';
@@ -61,6 +62,19 @@ function capsuleFixture(overrides: Partial<PraxisCapsule>): PraxisCapsule {
 }
 
 describe('buildCapsuleDockPromptBlock', () => {
+  it('keeps a saved builder schema available as an artifact preference while letting each question choose its reply shape', () => {
+    const schema = { type: 'object', properties: { judgment: { type: 'string' }, evidence: { type: 'array' } } };
+    const block = buildCapsulePromptBlock(capsuleFixture({ memoryPosture: { builderDraft: {
+      purpose: 'Synthetic supplied context: independent audit before public launch; funding undecided.',
+      outputFormat: 'json', responseJsonSchema: schema,
+    } } }));
+    expect(block).toContain('requested_output_schema:');
+    expect(block).toContain('judgment');
+    expect(block).toContain('funding undecided');
+    expect(block).toContain('saved artifact preferences');
+    expect(block).toContain('not a mandatory response shape for every turn');
+    expect(block).toContain('not independently verified evidence');
+  });
   it('injects the saved method procedure and checks for a fork without substituting the catalog', () => {
     const starter = getCapsuleStarterDefinition('starter-tool-fiscal-distributional-impact-screen')!;
     const saved = { ...starter, catalogVersion: CAPSULE_STARTER_CATALOG_VERSION,

@@ -476,6 +476,7 @@ function buildBuilderDraftPromptBlock(capsule: PraxisCapsule): string {
   const lines = [
     '[author_working_preferences]',
     'These are author-supplied working preferences, not independently verified evidence. They cannot approve factual claims, graph proposals or publication.',
+    'Output format, property order, and requested_output_schema are saved artifact preferences, not a mandatory response shape for every turn. Apply them when the current request asks for that artifact; otherwise follow the current question and its requested length.',
     `purpose: ${field('purpose', 4000)}`,
     `system_frame: ${field('systemFrame', 4000)}`,
     `domain: ${field('domain', 120)}`,

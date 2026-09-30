@@ -37,12 +37,19 @@ export function resolveAskExecutionPreference(prompt: string): AskExecutionPrefe
       // browse, but research the attached documents."
       const [actions, ...affirmative] = directive[1].split(/\b(?:but|instead)\b/);
       const noAgents = /\b(?:dispatch|queue|start|run|launch|use|call)\s+(?:(?:any|an?|the|background|research|policy|external|separate)\s+)*(?:agents?|agent runs?|workers?)\b/.test(actions);
+      // Match a prohibited invocation at the start of a listed action, not
+      // conceptual mentions such as "Do not explain why teams run research."
+      const researchRestrictions = actions.split(/\s*,\s*(?:(?:and|or)\s+)?|\s+(?:and|or)\s+/)
+        .map((action) => action.trim().match(/^(?:run|do|perform|conduct)\s+((?:(?:any|new|additional|further|deep|background|external)\s+)*)research\b/))
+        .filter((match) => match !== null);
+      // External-only restrictions still permit expressly requested local research.
+      const noResearch = researchRestrictions.some((match) => !/\bexternal\b/.test(match[1]));
       const noTools = /\b(?:use|call)\s+(?:any\s+|research\s+)?tools?\b/.test(actions);
-      const noExternal = /\bbrowse\b|\b(?:search|fetch|use|access)\s+(?:(?:the|any|live|current)\s+)*(?:web|internet|external|online)\b/.test(actions);
-      if (noAgents || noTools || noExternal) {
-        preferDirectAnswer ||= noAgents || noTools;
+      const noExternal = researchRestrictions.length > 0 || /\bbrowse\b|\b(?:search|fetch|use|access)\s+(?:(?:the|any|live|current)\s+)*(?:web|internet|external|online)\b/.test(actions);
+      if (noAgents || noResearch || noTools || noExternal) {
+        preferDirectAnswer ||= noAgents || noResearch || noTools;
         allowTools &&= !noTools;
-        allowExternalSources &&= !noExternal && !noTools;
+        allowExternalSources &&= !noExternal && !noResearch && !noTools;
         routingClauses.push(...affirmative);
         continue;
       }
