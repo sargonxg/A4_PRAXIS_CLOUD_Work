@@ -275,9 +275,7 @@ function OnboardingWizard() {
                   onComplete={complete}
                 />
                 <p className="mt-4 text-xs leading-5 text-slate-600">
-                  Your analyst profile helps PRAXIS adapt to your mandate and audience.
-                  Add a Context Capsule when you want to reuse reviewed background,
-                  sources and methods across questions or written products.
+                  Add a capsule later to reuse sources and reviewed background.
                 </p>
               </>
             )}

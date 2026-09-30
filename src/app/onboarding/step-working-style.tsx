@@ -67,13 +67,7 @@ export function StepWorkingStyle({
     <div className="praxis-enter space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-navy-900">Working style</h3>
-        <p className="mt-1 text-sm text-navy-500">How you want PRAXIS to produce output.</p>
-        <p className="mt-2 text-xs leading-relaxed text-navy-600">
-          <span className="font-medium text-navy-700">Why this matters: </span>
-          Output language, source preferences, red lines, and analytical style become hard
-          constraints on every drafting tool — what PRAXIS will never say, what sources it
-          weights highest, and how long-form vs. bullet the brief should be.
-        </p>
+        <p className="mt-1 text-sm text-[var(--color-graphite)]">Choose language, source preferences and writing style. These guide drafts; check the output before use.</p>
       </div>
 
       {/* Source categories */}
@@ -124,7 +118,6 @@ export function StepWorkingStyle({
                     : 'border-navy-200 text-navy-700 hover:border-navy-300',
                 )}
               >
-                <span aria-hidden="true">{LANGUAGE_LABEL[l].flag}</span>
                 <span>{LANGUAGE_LABEL[l].name}</span>
               </button>
             );

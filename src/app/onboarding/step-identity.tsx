@@ -41,13 +41,7 @@ export function StepIdentity({
     <div className="praxis-enter space-y-6">
       <div>
         <h3 className="text-lg font-semibold text-navy-900">Who are you?</h3>
-        <p className="mt-1 text-sm text-navy-500">Three quick fields. Takes 30 seconds.</p>
-        <p className="mt-2 text-xs leading-relaxed text-navy-600">
-          <span className="font-medium text-navy-700">Why this matters: </span>
-          PRAXIS uses your role, seniority and organisation to pick the right tool defaults,
-          tone, and reporting register — a UN desk officer briefing a principal sees a
-          different draft than a researcher writing for publication.
-        </p>
+        <p className="mt-1 text-sm text-[var(--color-graphite)]">Your role and organisation help guide drafting defaults.</p>
       </div>
 
       {/* Role */}

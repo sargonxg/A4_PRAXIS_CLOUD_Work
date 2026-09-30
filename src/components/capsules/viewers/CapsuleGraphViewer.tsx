@@ -428,7 +428,7 @@ function CapsuleGraphViewerComponent({
         </div>
       ) : (
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_19rem]">
-          <div ref={graphContainer} className="min-w-0 overflow-hidden bg-[#f6f9f7]" aria-label="Interactive projection of recorded context">
+          <div ref={graphContainer} role="region" className="min-w-0 overflow-hidden bg-[#f6f9f7]" aria-label="Interactive projection of recorded context">
             <ForceGraph2D
               ref={graphRef}
               graphData={styledGraphData}

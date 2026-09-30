@@ -73,7 +73,7 @@ describe('login readiness', () => {
   it('shows the actual question only when one is supplied', () => {
     runtime.query += '&capsulePrompt=Compare%20the%20two%20positions';
     const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('Your question will be carried forward');
+    expect(html).toContain('Your question is saved for sign-in');
     expect(html).toContain('Compare the two positions');
   });
   it('carries the question in the safe return URL when browser storage is blocked', async () => {

@@ -233,7 +233,7 @@ export function CapsuleLibrary({
         <div>
           <Heading className={cn('font-serif font-semibold text-[var(--color-deep-ink)]', standalone ? 'praxis-page-heading text-3xl' : 'text-2xl')}>Your context library</Heading>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
-            Reuse your sources, assumptions and analytical approach. Preview saved context or adapt a starter, then attach it to your question.
+            Inspect saved context or adapt a starter, then use it in chat.
           </p>
         </div>
         {status ? (
@@ -303,7 +303,7 @@ export function CapsuleLibrary({
         <p role="status" className="pb-2 text-xs text-slate-500">{filtered.length} match{filtered.length === 1 ? '' : 'es'} in loaded capsules</p>
       </div>
       </details>
-      <p className="mt-3 text-xs leading-5 text-[var(--color-graphite)]">Saved context still needs review. Starter templates need your sources; structure scores do not measure factual accuracy.</p>
+      <p className="mt-3 text-xs leading-5 text-[var(--color-graphite)]">Starters need your sources. Structure scores do not measure factual accuracy.</p>
 
       {categoryGroups.length ? (
         <div className="mt-4 grid gap-5">
@@ -311,7 +311,7 @@ export function CapsuleLibrary({
             <section key={group.id} aria-label={`${group.label} capsules`}>
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
                 <GroupHeading className="text-sm font-semibold text-slate-900">{group.label}</GroupHeading>
-                <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{group.entries.length} shown</span>
+                <span className="text-xs text-[var(--color-graphite)]">{group.entries.length} shown</span>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {group.entries.map((entry) => {
@@ -364,7 +364,7 @@ export function CapsuleLibrary({
                         </Link>
                         {entry.origin === 'user' && onManageCapsule ? <details className="relative"><summary className="inline-flex min-h-11 cursor-pointer items-center px-2 text-sm font-medium underline">More</summary><div className="flex flex-wrap gap-2 pb-2">
                           <button type="button" disabled={Boolean(busyCapsuleId)} onClick={() => onManageCapsule(entry, 'fork')} className="inline-flex min-h-11 items-center gap-1 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"><Copy className="h-3.5 w-3.5" />Private copy</button>
-                          {entry.reviewState !== 'archived' ? <button type="button" disabled={Boolean(busyCapsuleId) || attachedCapsuleIds.includes(entry.id)} title={attachedCapsuleIds.includes(entry.id) ? 'Detach this capsule in Home before archiving.' : 'Archive; sources and review history are retained.'} onClick={() => setArchiveCandidate(entry.id)} className="inline-flex min-h-11 items-center gap-1 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button> : null}
+                          {entry.reviewState !== 'archived' ? <button type="button" disabled={Boolean(busyCapsuleId) || attachedCapsuleIds.includes(entry.id)} title={attachedCapsuleIds.includes(entry.id) ? 'Detach this capsule in Chat before archiving.' : 'Archive; sources and review history are retained.'} onClick={() => setArchiveCandidate(entry.id)} className="inline-flex min-h-11 items-center gap-1 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button> : null}
                           {archiveCandidate === entry.id ? <span className="w-full rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">Archive this capsule? Its sources and review history remain available.<span className="mt-2 flex gap-3"><button type="button" onClick={() => { onManageCapsule(entry, 'archive'); setArchiveCandidate(null); }} className="min-h-9 font-semibold underline">Confirm archive</button><button type="button" onClick={() => setArchiveCandidate(null)} className="min-h-9 underline">Keep capsule</button></span></span> : null}
                         </div></details> : null}
                       </>}
@@ -379,13 +379,13 @@ export function CapsuleLibrary({
         <div className="mt-4 rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center">
           <p className="text-sm font-semibold text-slate-800">{entries.length ? 'No capsules match these filters.' : 'No capsules yet.'}</p>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            {originFacet === 'user' && !scopedEntries.length ? 'Build a private capsule from your documents or notes, or adapt a starter template.' : entries.length ? 'Try another facet, category, or search title, ontology, source, claim, or output term.' : 'Starter capsules will still appear here when the library loads.'}
+            {originFacet === 'user' && !scopedEntries.length ? 'Create one from documents or notes, or adapt a starter.' : entries.length ? 'Change your search or reset the filters.' : 'Starter templates will appear when the library loads.'}
           </p>
           {hasActiveFilters ? (
             <button
               type="button"
               onClick={resetFilters}
-              className="mt-3 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="mt-3 min-h-11 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               Reset filters
             </button>

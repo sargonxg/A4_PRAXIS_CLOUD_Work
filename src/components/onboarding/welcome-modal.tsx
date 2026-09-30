@@ -64,9 +64,9 @@ export function WelcomeModal({ onStartTour, onExploreFree }: WelcomeModalProps) 
               <span className="font-serif text-2xl font-bold text-white">P</span>
             </div>
 
-            <h1 className="font-serif text-2xl font-semibold text-navy-900 tracking-wide">
+            <h2 className="font-serif text-2xl font-semibold text-navy-900">
               Welcome to PRAXIS
-            </h1>
+            </h2>
             <p className="mt-1 text-xs font-semibold uppercase tracking-widest text-navy-400">
               by TACITUS
             </p>

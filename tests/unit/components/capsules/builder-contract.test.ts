@@ -45,7 +45,7 @@ describe('Capsule Builder UX contract', () => {
 
     expect(wizard).toContain('What should this capsule do?');
     expect(wizard).toContain('Capsule Architect');
-    expect(wizard).toContain('Documents, ideas and conversations');
+    expect(wizard).toContain('Your source material');
     expect(wizard).toContain('Ideas, notes or conversation');
     expect(wizard).toContain('/api/capsules/assist/architect');
     expect(wizard).toContain('ingestArchitectDocuments');

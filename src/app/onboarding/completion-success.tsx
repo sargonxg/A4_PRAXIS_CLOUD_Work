@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import type { AnalystProfile } from '@/types/analyst-profile';
 import { recommendToolsForRole } from '@/lib/dashboard/role-recommendations';
 import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
@@ -41,14 +41,10 @@ export function CompletionSuccess({
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-full)] bg-gold-500/10">
-          <Sparkles className="h-5 w-5 text-gold-600" />
-        </div>
         <div>
-          <h3 className="text-lg font-semibold text-navy-900">Profile ready — PRAXIS is calibrated</h3>
+          <h3 className="text-lg font-semibold text-navy-900">Your preferences are ready</h3>
           <p className="mt-1 text-sm text-navy-500">
-            Every tool now reads from the perspective below. Edit any of it later from
-            Settings; each save bumps your profile version and refreshes the calibration.
+            Review the profile below. You can edit it later in Settings.
           </p>
         </div>
       </div>
@@ -56,7 +52,7 @@ export function CompletionSuccess({
       {/* Calibration summary */}
       <div className="praxis-shell-panel p-5">
         <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-500">
-          Calibration summary
+          Profile summary
         </p>
         <dl className="mt-3 grid gap-3 sm:grid-cols-2 text-xs">
           <div>
@@ -102,8 +98,8 @@ export function CompletionSuccess({
             <dt className="text-navy-500">Red lines</dt>
             <dd className="mt-0.5 text-navy-900">
               {redLineCount === 0
-                ? 'None — drafts will use default neutral register.'
-                : `${redLineCount} active constraint${redLineCount === 1 ? '' : 's'} applied to every drafting tool.`}
+                ? 'None set.'
+                : `${redLineCount} saved writing preference${redLineCount === 1 ? '' : 's'}.`}
             </dd>
           </div>
         </dl>
@@ -113,7 +109,7 @@ export function CompletionSuccess({
       {recommendations.length > 0 && (
         <div className="praxis-shell-card p-5">
           <p className="text-[10px] font-semibold uppercase tracking-wider text-navy-500">
-            Tools PRAXIS will surface first for you
+            Suggested tools
           </p>
           <ul className="mt-3 grid gap-2 sm:grid-cols-2">
             {recommendations.map((rec) => (
@@ -127,8 +123,8 @@ export function CompletionSuccess({
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-[10px] text-navy-400">
-            Based on your role and primary domain. Reorder anytime from the dashboard.
+          <p className="mt-3 text-xs text-[var(--color-graphite)]">
+            Based on your role and primary domain.
           </p>
         </div>
       )}
@@ -144,9 +140,8 @@ export function CompletionSuccess({
           Go to dashboard
         </button>
       </div>
-      <p className="text-center text-[11px] text-navy-400">
-        A situation is the case file every tool reads from — sources, documents, graph,
-        tool outputs, and citations are all anchored to it.
+      <p className="text-center text-xs text-[var(--color-graphite)]">
+        A situation groups sources, documents and outputs for a case.
       </p>
     </div>
   );

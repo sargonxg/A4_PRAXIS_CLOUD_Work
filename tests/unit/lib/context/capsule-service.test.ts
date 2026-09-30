@@ -116,7 +116,7 @@ describe('capsule service', () => {
   });
 
   it('keeps new source documents attached when rebuilding an existing architect capsule', async () => {
-    const db = new FakeFirestore();
+    const db = architectDb();
     const input = { capsuleId: 'architect-rebuild', situationId: 'case-a', jobPrompt: 'Inspect synthetic commitments.', domainId: 'generic', documents: [
       { documentId: 'Source_A', title: 'First source', text: 'Actor: Example Council\nThe proposal remains unconfirmed.' },
     ] };
@@ -129,7 +129,7 @@ describe('capsule service', () => {
   });
 
   it('retains an architect decision on an unchanged rebuild and reviews materially changed input separately', async () => {
-    const db = new FakeFirestore();
+    const db = architectDb();
     const input = { capsuleId: 'architect-decisions', jobPrompt: 'Inspect synthetic commitments.', documents: [
       { documentId: 'Source_A', title: 'First source', text: 'Actor: Example Council\nThe proposal remains unconfirmed.' },
     ] };
@@ -2169,6 +2169,22 @@ function deps(db: FakeFirestore) {
     db: db as never,
     now: () => new Date('2026-05-14T00:00:00.000Z'),
   };
+}
+
+function architectDb() {
+  const db = new FakeFirestore();
+  db.data.set('users/u1', { uid: 'u1' });
+  return Object.assign(db, { runTransaction: async <T>(work: (transaction: {
+    get: (ref: FakeDoc) => ReturnType<FakeDoc['get']>;
+    set: (ref: FakeDoc, value: Record<string, unknown>, options?: { merge?: boolean }) => void;
+  }) => Promise<T>): Promise<T> => {
+    const writes: Array<() => void> = [];
+    const result = await work({ get: (ref) => ref.get(), set: (ref, value, options) => {
+      writes.push(() => ref.setSync(value, options));
+    } });
+    writes.forEach((write) => write());
+    return result;
+  } });
 }
 
 class FakeFirestore {

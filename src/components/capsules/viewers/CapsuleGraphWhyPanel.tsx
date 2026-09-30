@@ -65,7 +65,7 @@ export function CapsuleGraphWhyPanel({
   if (!selection) {
     return (
       <div className="border-t border-slate-100 bg-slate-50 p-3 lg:border-l lg:border-t-0" data-testid="capsule-graph-why-panel">
-        <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Graph detail</p>
+        <p className="text-xs font-semibold text-[var(--color-graphite)]">Graph detail</p>
         <p className="mt-2 text-sm text-slate-600">Select an item in the map or evidence list to inspect its source and rationale.</p>
       </div>
     );
@@ -77,7 +77,7 @@ export function CapsuleGraphWhyPanel({
     <div className="min-w-0 border-t border-slate-100 bg-slate-50 p-4 lg:border-l lg:border-t-0" data-testid="capsule-graph-why-panel" aria-live="polite">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Graph detail</p>
+          <p className="text-xs font-semibold text-[var(--color-graphite)]">Graph detail</p>
           <h4 className="mt-1 break-words font-serif text-base font-semibold leading-5 text-slate-950">{selection.label}</h4>
           {selection.kind === 'edge' && (selection.sourceLabel || selection.targetLabel) ? (
             <p className="mt-1 break-words font-mono text-[10px] text-slate-500">
@@ -205,7 +205,7 @@ export function CapsuleGraphWhyPanel({
 function PanelBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="mt-3 rounded-md border border-slate-200 bg-white p-2">
-      <p className="mb-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">{title}</p>
+      <p className="mb-1.5 text-xs font-semibold text-[var(--color-graphite)]">{title}</p>
       {children}
     </section>
   );

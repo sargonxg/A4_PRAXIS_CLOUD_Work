@@ -1,6 +1,7 @@
-import { FieldPath, type Firestore, type Query } from 'firebase-admin/firestore';
+import { FieldPath, type Firestore, type Query, type Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { withDocumentOwnerWrite } from '@/lib/documents/owner-write';
 import { capsulePageLimit, decodeCapsuleCursor, encodeCapsuleCursor } from '@/lib/context/capsule-pagination';
 import { buildCorePackage, type PraxisCorePackageV1 } from '@/lib/context/core-package';
 import {
@@ -632,6 +633,8 @@ export interface CreateCapsuleArchitectReviewCardsResult {
 export interface CapsuleServiceDeps {
   db?: Firestore;
   now?: () => Date;
+  /** Commit-time account guard for private document-preparation writes. */
+  requireWritableOwner?: boolean;
 }
 
 export class CapsuleReadOnlyError extends Error {
@@ -756,7 +759,13 @@ export async function createCapsule(
     ...(stringOrNull(input.dialecticaManifestOwnerUid) ? { dialecticaManifestOwnerUid: input.dialecticaManifestOwnerUid } : {}),
     ...(stringOrNull(input.dialecticaSpecVersion) ? { dialecticaSpecVersion: input.dialecticaSpecVersion } : {}),
   });
-  await ref.set(capsule, { merge: true });
+  if (deps?.requireWritableOwner) {
+    await withDocumentOwnerWrite(uid, (transaction) => {
+      transaction.set(ref, capsule, { merge: true });
+    }, dbOf(deps));
+  } else {
+    await ref.set(capsule, { merge: true });
+  }
   return capsule;
 }
 
@@ -1440,6 +1449,9 @@ export async function createCapsuleArchitectReviewCards(
   input: CapsuleArchitectBuildInput,
   deps?: CapsuleServiceDeps,
 ): Promise<CreateCapsuleArchitectReviewCardsResult> {
+  // Every persistence step in this deterministic workflow must conflict with
+  // concurrent erasure; a handler preflight alone cannot protect its commits.
+  deps = { ...deps, requireWritableOwner: true };
   const proposal = buildCapsuleArchitectProposal({
     ...input,
     normalizedAt: input.normalizedAt ?? nowIso(deps),
@@ -1923,8 +1935,11 @@ export async function createCapsuleReviewCard(
     updatedAt: timestamp,
   };
   const db = dbOf(deps);
-  if (typeof db.runTransaction === 'function') {
-    return db.runTransaction(async (transaction) => {
+  if (deps?.requireWritableOwner || typeof db.runTransaction === 'function') {
+    const runWrite = deps?.requireWritableOwner
+      ? <T>(write: (transaction: Transaction) => Promise<T>) => withDocumentOwnerWrite(uid, write, db)
+      : <T>(write: (transaction: Transaction) => Promise<T>) => db.runTransaction(write);
+    return runWrite(async (transaction) => {
       const [latestCapsuleSnap, latestCardSnap] = await Promise.all([transaction.get(ref), transaction.get(cardRef)]);
       if (!latestCapsuleSnap.exists) throw new Error('Capsule no longer exists.');
       const latestCapsule = sanitizeCapsule(latestCapsuleSnap.data());
@@ -2409,11 +2424,23 @@ export async function bumpCapsuleVersion(
     updatedAt: nowIso(deps),
   });
   const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId);
-  const batch = dbOf(deps).batch();
-  batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
-  batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
-  batch.set(ref, updated, { merge: true });
-  await batch.commit();
+  if (deps?.requireWritableOwner) {
+    await withDocumentOwnerWrite(uid, async (transaction) => {
+      const latest = await transaction.get(ref);
+      if (!latest.exists || latest.data()?.version !== capsule.version) {
+        throw new Error('This capsule changed while preparing proposals. Reopen it and try again.');
+      }
+      transaction.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
+      transaction.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+      transaction.set(ref, updated, { merge: true });
+    }, dbOf(deps));
+  } else {
+    const batch = dbOf(deps).batch();
+    batch.set(ref.collection('versions').doc(`v${capsule.version}`), capsule, { merge: true });
+    batch.set(ref.collection('versions').doc(`v${updated.version}`), updated, { merge: true });
+    batch.set(ref, updated, { merge: true });
+    await batch.commit();
+  }
   await mirrorActiveContextStack(uid, updated, deps);
   return updated;
 }
@@ -3852,7 +3879,8 @@ async function recordReviewPatchRejection(
   const timestamp = nowIso(deps);
   const message = err instanceof Error ? err.message : 'Patch validation failed.';
   const auditId = `patch-rejected-${stableId(`${uid}:${capsule.capsuleId}:${input.title}:${timestamp}`)}`;
-  await capsulesCollection(uid, deps).doc(capsule.capsuleId).collection('reviewAudits').doc(auditId).set({
+  const ref = capsulesCollection(uid, deps).doc(capsule.capsuleId).collection('reviewAudits').doc(auditId);
+  const audit = {
     auditId,
     event: 'review_card_patch_rejected',
     capsuleId: capsule.capsuleId,
@@ -3862,7 +3890,12 @@ async function recordReviewPatchRejection(
     target: input.target,
     message,
     createdAt: timestamp,
-  }, { merge: true });
+  };
+  if (deps?.requireWritableOwner) {
+    await withDocumentOwnerWrite(uid, (transaction) => { transaction.set(ref, audit, { merge: true }); }, dbOf(deps));
+  } else {
+    await ref.set(audit, { merge: true });
+  }
 }
 
 function buildAppliedReviewCardUpdate(
@@ -4530,6 +4563,21 @@ function patchForCoreSwap(
 
 async function mirrorActiveContextStack(uid: string, capsule: PraxisCapsule, deps?: CapsuleServiceDeps): Promise<void> {
   const ref = stackDoc(uid, DEFAULT_CONTEXT_STACK_ID, deps);
+  if (deps?.requireWritableOwner) {
+    await withDocumentOwnerWrite(uid, async (transaction) => {
+      const [stack, latest] = await Promise.all([
+        transaction.get(ref), transaction.get(capsulesCollection(uid, deps).doc(capsule.capsuleId)),
+      ]);
+      if (!latest.exists) throw new Error('Capsule no longer exists.');
+      const current = stack.exists ? sanitizeActiveContextStack(stack.data()) : defaultActiveContextStack();
+      const latestCapsule = sanitizeCapsule(latest.data());
+      const matches = current.stackId === capsule.capsuleId || current.capsuleId === capsule.capsuleId;
+      if (capsule.capsuleId !== DEFAULT_CONTEXT_STACK_ID && !matches) return;
+      transaction.set(ref, { ...current, ...capsuleToStack(latestCapsule), contextPackageId: current.contextPackageId,
+        evidenceGaps: current.evidenceGaps, canvasLayout: current.canvasLayout }, { merge: true });
+    }, dbOf(deps));
+    return;
+  }
   const snap = await ref.get().catch(() => null);
   const current = snap?.exists ? sanitizeActiveContextStack(snap.data()) : defaultActiveContextStack();
   const matchesActivePointer = current.stackId === capsule.capsuleId || current.capsuleId === capsule.capsuleId;

@@ -95,7 +95,7 @@ describe('Civic Atelier visual contract', () => {
     expect(workbench).toContain('WorkActionMenu');
     expect(login).not.toContain('previewRailCells');
     expect(login).not.toContain('<LivingContextRail');
-    expect(login).toContain('Your question will be carried forward');
+    expect(login).toContain('Your question is saved for sign-in');
     expect(settings).not.toContain('settingsRailCells');
     expect(settings).not.toContain('<LivingContextRail');
     expect(onboardingPreview).toContain('previewRailCells');

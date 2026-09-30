@@ -16,8 +16,8 @@ const softwareJsonLd = {
   image: `${siteUrl}/opengraph-image`,
   inLanguage: 'en',
   creator: {
-    '@type': 'Organization',
-    name: 'TACITUS',
+    '@type': 'Person',
+    name: 'Giulio Catanzariti',
     url: 'https://tacitus.me',
   },
   featureList: [
@@ -28,12 +28,11 @@ const softwareJsonLd = {
   ],
 };
 
-const organizationJsonLd = {
+const operatorJsonLd = {
   '@context': 'https://schema.org',
-  '@type': 'Organization',
-  name: 'TACITUS',
+  '@type': 'Person',
+  name: 'Giulio Catanzariti',
   url: 'https://tacitus.me',
-  logo: `${siteUrl}/favicon.svg`,
   sameAs: ['https://praxis.tacitus.me', 'https://tacitus.me'],
 };
 
@@ -52,7 +51,7 @@ export default async function Page() {
         type="application/ld+json"
         nonce={nonce}
         suppressHydrationWarning
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(operatorJsonLd) }}
       />
       <PraxisMarketingHome />
     </>

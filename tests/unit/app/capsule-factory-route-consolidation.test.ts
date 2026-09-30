@@ -54,11 +54,12 @@ describe('Capsules route consolidation', () => {
     });
   });
 
-  it('keeps repository links on the canonical capsules lane and current public version copy', () => {
+  it('keeps repository links canonical and public release history available', () => {
     expect(floatingPraxisSource).not.toContain('/app/repository');
     expect(appShellSource).not.toContain('/app/repository');
     expect(workbenchSource).toContain('/app/capsules?lane=repository');
-    expect(publicShellSource).toContain('by TACITUS · v{APP_VERSION}');
+    expect(publicShellSource).toContain('href="/release-notes"');
+    expect(publicShellSource).toContain('Experimental · Giulio Catanzariti');
     expect(publicShellSource).not.toContain('by TACITUS · v6.4');
   });
 

@@ -95,7 +95,7 @@ requireIncludes('src/components/capsules/workbench/CapsuleReviewQueueSection.tsx
 ]);
 
 requireIncludes('src/app/(landing)/learn/page.tsx', [
-  'A Wikipedia for Agentic Context',
+  'What saved context carries',
   'reusable context objects, not prompts',
   'AI can propose improvements and draft review cards',
   'Human review decides which proposals enter the saved capsule',

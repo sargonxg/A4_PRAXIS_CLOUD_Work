@@ -1,5 +1,6 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { omitUndefinedMetadata } from '@/lib/firebase/ask-thread-service';
 import { createMemoVersion } from '@/lib/memo/export';
 import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
 import { buildMemoOutputReview, memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
@@ -187,8 +188,9 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     ...(outputReview ? { outputReview } : {}),
   };
 
-  const savedVersion = { ...version, contextSnapshot,
-    ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) };
+  const savedMemo = omitUndefinedMetadata({ ...memo, ...memoMetadata });
+  const savedVersion = omitUndefinedMetadata({ ...version, contextSnapshot,
+    ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) });
   await db.runTransaction(async (transaction) => {
     const owner = await transaction.get(db.collection('users').doc(uid));
     if (!owner.exists || ['deleting', 'deleted'].includes(String(owner.data()?.accountDeletionStatus))) {
@@ -198,10 +200,10 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     if ((current.data()?.currentVersionId ?? null) !== (existing?.memo.currentVersionId ?? null)) {
       throw new MemoReviewConflictError('Another memo version was saved. Reopen it before applying your changes.');
     }
-    transaction.set(memoRef, { ...memo, ...memoMetadata, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
+    transaction.set(memoRef, { ...savedMemo, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
     transaction.set(memoRef.collection('versions').doc(version.id), savedVersion);
   });
-  return { memo: { ...memo, ...memoMetadata }, versions: [...(existing?.versions ?? []), savedVersion] };
+  return { memo: savedMemo, versions: [...(existing?.versions ?? []), savedVersion] };
 }
 
 function artifactMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> {

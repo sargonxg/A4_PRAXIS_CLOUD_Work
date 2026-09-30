@@ -1,11 +1,56 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  createCapsule,
   createCapsuleArchitectReviewCards,
 } from '@/lib/context/capsule-service';
 import { buildCapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
+import { DocumentOwnerUnavailableError } from '@/lib/documents/owner-write';
 
 describe('Capsule Architect review-card service', () => {
+  const guardedInput = { capsuleId: 'guarded-capsule', situationId: 'source-case',
+    jobPrompt: 'Inspect supplied commitments.', documents: [{ documentId: 'source-A', text: 'Actor: Example Council.' }] };
+
+  it.each(['deleting', 'deleted', 'missing'])('rejects %s owners before committing a capsule scaffold', async (state) => {
+    const db = new FakeFirestore();
+    if (state === 'missing') db.data.delete('users/u1');
+    else db.data.set('users/u1', { accountDeletionStatus: state });
+    await expect(createCapsuleArchitectReviewCards('u1', guardedInput, deps(db))).rejects.toBeInstanceOf(DocumentOwnerUnavailableError);
+    expect(Array.from(db.data.keys()).filter((path) => path.startsWith('users/u1/'))).toEqual([]);
+  });
+
+  it('rechecks the owner after a concurrent deletion invalidates the scaffold transaction', async () => {
+    const db = new FakeFirestore();
+    db.beforeCommit = () => { db.beforeCommit = undefined; db.eraseOwner(); };
+    await expect(createCapsuleArchitectReviewCards('u1', guardedInput, deps(db))).rejects.toBeInstanceOf(DocumentOwnerUnavailableError);
+    expect(db.transactionCount).toBe(2);
+    expect(Array.from(db.data.keys()).filter((path) => path.startsWith('users/u1/'))).toEqual([]);
+  });
+
+  it('does not recreate review cards when deletion starts after scaffold creation', async () => {
+    const db = new FakeFirestore();
+    db.beforeTransaction = (count) => { if (count === 2) db.eraseOwner(); };
+    await expect(createCapsuleArchitectReviewCards('u1', guardedInput, deps(db))).rejects.toBeInstanceOf(DocumentOwnerUnavailableError);
+    expect(Array.from(db.data.keys()).filter((path) => path.startsWith('users/u1/'))).toEqual([]);
+  });
+
+  it('does not recreate version snapshots when deletion starts before an existing-capsule update', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: guardedInput.capsuleId, coreRefs: { situationCoreId: 'source-case' } }, deps(db));
+    db.beforeTransaction = () => db.eraseOwner();
+    await expect(createCapsuleArchitectReviewCards('u1', guardedInput, deps(db))).rejects.toBeInstanceOf(DocumentOwnerUnavailableError);
+    expect(Array.from(db.data.keys()).filter((path) => path.startsWith('users/u1/'))).toEqual([]);
+  });
+
+  it('does not recreate an active-context mirror after a version update races with deletion', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: guardedInput.capsuleId, coreRefs: { situationCoreId: 'source-case' } }, deps(db));
+    db.data.set('users/u1/contextStacks/default', { capsuleId: guardedInput.capsuleId });
+    db.beforeTransaction = (count) => { if (count === 2) db.eraseOwner(); };
+    await expect(createCapsuleArchitectReviewCards('u1', guardedInput, deps(db))).rejects.toBeInstanceOf(DocumentOwnerUnavailableError);
+    expect(Array.from(db.data.keys()).filter((path) => path.startsWith('users/u1/'))).toEqual([]);
+  });
+
   it('keeps the upload workspace so a later Ask can retrieve the attached document', async () => {
     const result = await createCapsuleArchitectReviewCards('u1', {
       jobPrompt: 'Summarize the attached council fixture.',
@@ -113,8 +158,35 @@ function deps(db: FakeFirestore) {
 }
 
 class FakeFirestore {
-  data = new Map<string, Record<string, unknown>>();
+  data = new Map<string, Record<string, unknown>>([['users/u1', { uid: 'u1' }]]);
   ids = 0;
+  transactionCount = 0;
+  beforeTransaction?: (count: number) => void;
+  beforeCommit?: () => void;
+
+  eraseOwner() {
+    this.data.set('users/u1', { accountDeletionStatus: 'deleting' });
+    for (const path of this.data.keys()) if (path.startsWith('users/u1/')) this.data.delete(path);
+  }
+
+  async runTransaction<T>(work: (transaction: { get: (ref: FakeDoc) => Promise<FakeSnapshot>;
+    set: (ref: FakeDoc, value: unknown, options?: { merge?: boolean }) => void }) => Promise<T>): Promise<T> {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      this.transactionCount++;
+      this.beforeTransaction?.(this.transactionCount);
+      const reads = new Map<string, string | undefined>();
+      const writes: Array<() => Promise<void>> = [];
+      const result = await work({ get: async (ref) => {
+        reads.set(ref.path, JSON.stringify(this.data.get(ref.path)));
+        return ref.get();
+      }, set: (ref, value, options) => { writes.push(() => ref.set(value, options)); } });
+      this.beforeCommit?.();
+      if (Array.from(reads).some(([path, snapshot]) => snapshot !== JSON.stringify(this.data.get(path)))) continue;
+      for (const write of writes) await write();
+      return result;
+    }
+    throw new Error('Transaction could not commit.');
+  }
 
   collection(path: string) {
     return new FakeCollection(this, path);
@@ -151,7 +223,7 @@ class FakeCollection {
 }
 
 class FakeDoc {
-  constructor(private db: FakeFirestore, private path: string, public id: string) {}
+  constructor(private db: FakeFirestore, public path: string, public id: string) {}
 
   collection(name: string) {
     return new FakeCollection(this.db, `${this.path}/${name}`);

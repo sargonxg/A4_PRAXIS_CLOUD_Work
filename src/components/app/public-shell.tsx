@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { APP_VERSION } from '@/lib/constants/app-version';
 import { Menu, X } from 'lucide-react';
 import { PraxisMark } from '@/components/brand/praxis-mark';
 import { PraxisRouteTransition } from '@/components/ui/praxis-motion';
@@ -75,7 +74,7 @@ export function PublicShell({
               <span className="font-serif text-[20px] font-semibold tracking-normal text-[color:var(--color-diplomatic-blue)] sm:text-[22px]">
                 PRAXIS
               </span>
-              <span className="hidden rounded-[var(--radius-full)] bg-[color:var(--color-praxis-emerald-500)]/10 px-2 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.16em] text-[color:var(--color-app-text)] sm:inline-flex">
+              <span className="hidden text-xs text-[color:var(--color-app-text-secondary)] sm:inline-flex">
                 by TACITUS
               </span>
             </Link>
@@ -179,8 +178,8 @@ export function PublicShell({
               <span className="font-serif text-base font-semibold tracking-wide text-[color:var(--color-diplomatic-blue)]">
                 PRAXIS
               </span>
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-app-text-muted)]">
-                by TACITUS · v{APP_VERSION}
+              <span className="text-xs text-[color:var(--color-app-text-secondary)]">
+                by TACITUS
               </span>
             </Link>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] text-[color:var(--color-app-text-secondary)]">
@@ -195,8 +194,8 @@ export function PublicShell({
                   {link.label}
                 </Link>
               ))}
-              <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[color:var(--color-app-text-muted)]">
-                © 2026 · TACITUS
+              <span className="text-xs text-[color:var(--color-app-text-secondary)]">
+                Experimental · Giulio Catanzariti
               </span>
             </div>
           </div>

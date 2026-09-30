@@ -535,7 +535,7 @@ export function CapsuleBuilderWizard() {
       </nav>
 
       <div className="min-w-0 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-mineral)] bg-[var(--color-archive-paper-strong)] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-1">
           <div>
             <p className="text-sm font-semibold text-[var(--color-deep-ink)]">
               Step {activeIndex + 1} of {visibleSteps.length} · {visibleSteps[activeIndex]?.label}
@@ -615,11 +615,10 @@ export function CapsuleBuilderWizard() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-[var(--color-deep-ink)]">Your source material</p>
-                      <p className="mt-1 text-xs text-[var(--color-graphite)]">Documents, ideas and conversations</p>
-                      <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-graphite)]">Add material you are allowed to use. PRAXIS keeps it private and prepares proposals for your review.</p>
+                      <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-graphite)]">Upload documents or paste notes to propose facts for review. Use material you have permission to upload.</p>
                       <details className="mt-2 text-xs leading-5 text-[var(--color-graphite)]"><summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold underline">How source proposals work</summary><p>Adding documents creates a private evidence workspace when needed. Explicit “Actor:”, “Party:” or “Stakeholder:” fields become candidates. Missing identities, dates and causal links stay unknown. Check source coverage before relying on the graph.</p></details>
                     </div>
-                    <label className="inline-flex cursor-pointer items-center gap-2 border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium text-[var(--color-deep-ink)] hover:bg-[var(--color-deep-ink)] hover:text-white">
+                    <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium text-[var(--color-deep-ink)] hover:bg-[var(--color-deep-ink)] hover:text-white focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-[var(--color-praxis-emerald-700)]">
                       <UploadCloud className="h-4 w-4" />
                       Add documents
                           <input
@@ -657,10 +656,10 @@ export function CapsuleBuilderWizard() {
                       maxLength={CAPSULE_NOTES_MAX_CHARS}
                       disabled={architectBusy || intakeBusy}
                       onChange={(event) => setSourceNotes(event.target.value)}
-                      placeholder="Describe your idea, paste notes, or bring a conversation from Ask PRAXIS."
+                      placeholder="Paste notes, source excerpts or a conversation."
                       className="mt-2 min-h-36 w-full rounded-lg border border-[var(--color-mineral)] bg-white p-3 text-sm leading-6 focus:outline-[var(--color-praxis-emerald-700)]"
                     />
-                    <span id="capsule-source-notes-help" className="mt-2 block text-xs font-normal text-[var(--color-graphite)]">{sourceNotes.length.toLocaleString()} / 12,000 characters. Generated suggestions are not independent evidence. Nothing is automatically approved or published.</span>
+                    <span id="capsule-source-notes-help" className="mt-2 block text-xs font-normal text-[var(--color-graphite)]">{sourceNotes.length.toLocaleString()} / 12,000 characters. You review proposals before saving them.</span>
                   </div>
                   {architectDocuments.length ? (
                     <ul className="mt-3 grid gap-2 text-xs text-[var(--color-graphite)] sm:grid-cols-2">
@@ -679,7 +678,7 @@ export function CapsuleBuilderWizard() {
                   </div>
                   {intakeWarnings.length > 0 && <ul role="status" className="mt-3 space-y-1 text-xs text-amber-800">{intakeWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
                   {architectCapsuleId && <Link href={`/app/capsules?starter=${encodeURIComponent(architectCapsuleId)}&lane=inspect`} className="mt-3 inline-flex min-h-11 items-center rounded-md bg-[var(--color-praxis-emerald-700)] px-3 text-sm font-semibold text-white">Inspect and review your capsule</Link>}
-                  <p className="mt-2 text-xs leading-5 text-[var(--color-graphite)]">Actors, claims, events and graph links are evidence proposals. Review them before reuse; repeated extraction does not make a claim true.</p>
+                  <p className="mt-2 text-xs leading-5 text-[var(--color-graphite)]">Proposals need your review. Extraction does not verify a claim.</p>
                 </section>
                 <button type="button" onClick={() => setActiveStep('eval')} className="min-h-11 rounded-md bg-[var(--color-praxis-emerald-700)] px-4 text-sm font-semibold text-white">Continue to review and save</button>
               </div>

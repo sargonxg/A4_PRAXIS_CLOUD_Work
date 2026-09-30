@@ -82,6 +82,16 @@ describe('authenticated route execution', () => {
     expect(response.headers.get('set-cookie')).toBeNull();
     expect(handler).not.toHaveBeenCalled();
   });
+  it('retains minute throttling on authenticated capsule preparation', async () => {
+    mocks.runTransaction.mockResolvedValue(false);
+    const handler = vi.fn();
+    const response = await withAuth(handler)(new Request('https://praxis.example.test/api/capsules/assist/architect', { method: 'POST' }));
+    expect(response.status).toBe(429);
+    expect(await response.json()).toMatchObject({ code: 'minute_rate_limit' });
+    expect(handler).not.toHaveBeenCalled();
+    expect(mocks.verifyIdToken).toHaveBeenCalledOnce();
+    expect(mocks.getAccount).toHaveBeenCalledOnce();
+  });
   it('does not execute funded-provider or write handlers with a legacy signed sample', async () => {
     mocks.verifyCookie.mockReturnValue(JSON.stringify({ demo: true }));
     const handler = vi.fn();
