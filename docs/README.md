@@ -1,13 +1,14 @@
 # PRAXIS Documentation Map
 
-Updated: 2026-09-29
+Updated: 2026-09-30
 Status: canonical documentation entrypoint
 
 Start here when orienting the repo. Historical documents remain useful, but the
 files below define the current product, runtime, validation, and ship posture.
 
 Current checkpoint: [user readiness](reviews/2026-09-29-praxis-user-readiness.md)
-separates local repairs, dated production evidence and pending live acceptance.
+records repairs and remaining work. The [production acceptance record](reviews/2026-09-29-praxis-production-acceptance.md)
+records the exact served release and real-service journey results.
 
 ## Current Entrypoints
 
@@ -21,6 +22,8 @@ separates local repairs, dated production evidence and pending live acceptance.
 8. [`architecture/PRAXIS_ARCHITECTURE.md`](./architecture/PRAXIS_ARCHITECTURE.md) - architecture reference.
 9. [`GCP_OPERATIONS.md`](./GCP_OPERATIONS.md) - cloud operations and deploy notes.
 10. [`audits/README.md`](./audits/README.md) - audit index and latest red flags.
+11. [Agent runtime ownership](architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md) - context, execution, approvals and saved output.
+12. [Optional backend agent integrations](architecture/PRAXIS_BACKEND_AGENT_INTEGRATIONS.md) - Python integration boundaries and validation.
 
 ## Current Product Truth
 

@@ -23,6 +23,36 @@ receipts, source previews, approval gates, output handoff, and run panels. Do
 not add a new top-level agents app, new primary navigation, or a separate
 agent cockpit unless Giulio explicitly asks for one later.
 
+## Turn execution preferences
+
+`src/lib/ai/ask-execution-preference.ts` provides a shared interpretation of
+explicit execution restrictions for classification, routing, streaming tools
+and worker retrieval. A direct/no-agent instruction wins over selected agents and Deep
+research. A browsing prohibition can still permit a selected local capsule
+agent, while denying external search even when attached tool cores request it.
+Supplied-context-only requests exclude unrelated workspace/corpus retrieval.
+Quoted instructions and conceptual mentions do not act as execution commands.
+
+Home sends the selected context unchanged. An empty selection uses ephemeral
+instant context with a stable owner/thread history partition; it does not
+resolve or modify the canonical default capsule. Attached capsule identity,
+version and source references remain explicit. Review receipts describe the
+actual tools and evidence used, and generated products retain whole-draft review.
+
+Provider and model receipts come from the same constructed SDK model passed to
+generation, including fallback attempts. Client preferences are selection inputs.
+Supplied-only turns retain selected capsule/trust instructions and health
+diagnostics for telemetry, while omitting workspace health/readiness blocks from
+the model prompt so straightforward recall does not demand workspace setup.
+
+For supplied-context recall, the current question's answer contract follows
+work-intent instructions. Saved builder schemas apply to requested artifacts;
+they do not turn every question into a memo. Brief extraction preserves supplied
+facts and uncertainty without adding unrequested judgments or speculation.
+Explicit negative research invocations prevent research dispatch and external
+search. External-only restrictions can still permit requested analysis of
+attached documents.
+
 ## Platform Split
 
 | Layer | Owner | Role | Not Source Of Truth For |

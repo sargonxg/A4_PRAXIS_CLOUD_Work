@@ -3,8 +3,19 @@
 ## [Unreleased]
 
 Current validation and release state: [user-readiness receipt](docs/reviews/2026-09-29-praxis-user-readiness.md).
-This recovery wave is local and production acceptance remains pending.
+Served-release identity and real-service journey results are tracked in the
+[production acceptance record](docs/reviews/2026-09-29-praxis-production-acceptance.md).
 
+- Preserve a method capsule composed beside the default capsule when the saved context dock reloads, without changing canonical evidence or version.
+- Reset inherited label/version when switching capsules and reconcile saved governing metadata on reload; preserve explicit pins, composed context and canonical evidence.
+- Keep supplied-context recall brief and factual; apply saved builder output schemas only when the user requests that artifact.
+- Honor explicit instructions not to run research while retaining requested local document analysis under external-only restrictions.
+- Derive chat provider/model receipts from the model object used for generation; supplied-context recall omits internal workspace health and setup advice.
+- Terminate document chunking after the final fragment and enforce forward progress, preventing long working notes from exhausting the server heap.
+- Keep empty Home context empty through the real request; clearing context no longer synthesizes capsule signals that can revive or mutate the canonical default capsule.
+- Apply explicit direct/no-agent, no-tool and no-browse instructions to routing, streaming tools and queued-worker retrieval, including tools inherited from capsule cores. Preserve permitted grounded and local-capsule research.
+- Wait for settled auth/context and Save-to-Ask handoffs before context mutations; immediately mask library rows on account mismatch and preserve known starter categories in metadata inventories.
+- Retain one body-bound review receipt across generated memo artifacts, show unapplied feedback separately and invalidate earlier body review after edits. Whole-draft review remains required.
 - Scope Ask, guide chat and attachment state to each owner, including unsent drafts and late request callbacks.
 - Read capsule inventory metadata at the Firestore boundary, load full selected details on demand and remove implicit bulk starter creation.
 - Save builder drafts through canonical private capsule storage and preserve reviewed decisions across unchanged Architect rebuilds; changed source material produces separate proposals.

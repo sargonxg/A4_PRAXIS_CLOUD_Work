@@ -1,14 +1,15 @@
 # PRAXIS by TACITUS
 
-PRAXIS is a ContextCapsule-native policy workspace for teams that need AI
-agents to work from real context, not a blank chat box. It combines Ask PRAXIS,
-a managed capsule/core library, source-grounded research, memo drafting,
-review-gated graph work, and persistent agent runs so analysts can move from
-question to evidence to write-up to handover in one place.
+PRAXIS helps policymakers and analysts ask questions, examine narratives and
+write reviewable briefs using their sources and saved ContextCapsules.
+Start in Home to ask or draft; use Capsules to create, inspect and review
+reusable context. Research, source receipts, memo editing and agent approvals
+stay inside the existing workbench.
 
-Current user readiness: [September 29 receipt](docs/reviews/2026-09-29-praxis-user-readiness.md).
-Local recovery work is under validation; this repair wave still requires release
-and real login, Ask/writing, and separate capsule build/reuse proof.
+Current user readiness: [verified workflows and limits](docs/reviews/2026-09-29-praxis-user-readiness.md).
+The [production acceptance record](docs/reviews/2026-09-29-praxis-production-acceptance.md)
+tracks the served release, real login, Ask/writing and separate capsule build/reuse
+checks. Generated writing remains a review-required draft.
 
 Live app:
 

@@ -1,16 +1,18 @@
 # PRAXIS TODO
 
-Last updated: 2026-09-29.
+Last updated: 2026-09-30.
 
 ## Current continuation priorities
 
-- Use the [current user-readiness receipt](docs/reviews/2026-09-29-praxis-user-readiness.md) for evidence, release checks and next-session scope; earlier receipts remain dated evidence.
-- Finish final local validation and the direct Ask history/retry repair, then obtain scoped external release approval and repeat real login, Ask, attachment, separate TXT/PDF/DOCX and conversation/idea capsule creation, review and later reuse on the served revision.
-- Reopen/edit/export the real approved research memo with preserved citations and lineage; the observed pre-repair memo read failed. Prove duplicate/lost-response recovery separately.
-- Metadata inventory projection and on-demand details are implemented locally; finish inventory pagination and capacity/load proof. Add scanned-document/OCR and long-document coverage.
-- Complete fresh-account, verification/reset/expiry/deletion and server-enforced free/paid entitlement journeys. Billing requires operator-supplied Polar sandbox configuration before any purchase tests.
-- Keep optional JEV disabled until dependency compatibility, server credentials, consent and live evaluation are proven.
-- Retain a small policy/narrative output corpus to compare plain-source answers against reviewed-capsule answers; contract tests do not prove analytical quality gains. The dated historical queue below is not current production proof.
+- Core live acceptance is complete on `4480650999b5bd2808b55cba58f16e5a9a83d343`; use the [production record](docs/reviews/2026-09-29-praxis-production-acceptance.md) and [user-readiness record](docs/reviews/2026-09-29-praxis-user-readiness.md). Earlier failed canaries remain dated evidence.
+- Restore scoped Google sign-in and finish exact-revision Cloud Build/Cloud Run metadata and error-log inspection across the completed canaries/logout. Expired local credentials are not evidence of a production outage.
+- Verify full disposable-account signup, email verification/reset, expiry/deletion and switching two real accounts; existing-account login and logout are proven.
+- Complete inventory pagination/capacity, scanned-document/OCR and long-document limit coverage. Live multi-chunk working notes and TXT/PDF/DOCX ingestion are proven.
+- Prove duplicate dispatch/lost-response and interrupted artifact/version recovery in isolation. The ordinary queued research, approval and edited saved-memo path is proven.
+- Verify server-enforced free/paid entitlements and purchases with operator-supplied Polar sandbox configuration. Keep optional JEV disabled until its separate dependency/credential/consent/live-evaluation proof passes.
+- Retain real-provider policy/narrative outputs and compare plain-source answers with reviewed-capsule answers using the same sources and an analyst rubric. Contract tests and operational canaries do not measure quality gains.
+- Tighten institutional-source selection and original-passage verification. The final generated canary confused financial stages and source attribution; the corrected body stays review-required and its two-institution substantiation remains incomplete. Refine noisy diagnostic labels and generic graph/opaque-ID prose.
+- Resolve the remaining moderate/low dependency advisories with a separate compatibility-reviewed update. The historical queue below is not current production proof.
 
 ## 2026-06-12 session — shipped and follow-ups
 

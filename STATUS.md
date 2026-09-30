@@ -1,11 +1,13 @@
 # PRAXIS — STATUS
 
-## 2026-09-29 — User workflow recovery prepared for release
+## 2026-09-30 — Core capsule and writing journeys live
 
-- Current receipt: [user readiness](docs/reviews/2026-09-29-praxis-user-readiness.md), with evidence, remaining gaps and release steps.
-- Real production journeys found inventory/upload heap failures, rejected Ask writes and a memo read requiring a missing index. Local repairs cover metadata inventory, owner-scoped state, canonical builder drafts, durable review decisions and Ask/memo persistence.
-- Local production build, all audit lanes and the full 384-file / 1,712-test suite pass. Lint has zero errors and seven tracked warnings. Capsule Save/attachment and memo edit/save/reopen have isolated local browser proof; final dialog hit-tests are recorded in the receipt. Publish approval and real deployed journeys remain pending.
-- Fresh-account lifecycle and billing are not fully proven. JEV remains optional and disabled; dependency audit reports 44 moderate and three low advisories, zero high/critical.
+- Final source `4480650999b5bd2808b55cba58f16e5a9a83d343` is served as `praxis-frontend-01082-nkw`. Cloud Build and both exact-source GitHub workflows succeeded. [Production acceptance](docs/reviews/2026-09-29-praxis-production-acceptance.md) records the evidence and its limits.
+- All four serial production checks passed: existing-account login; direct Ask/history; TXT/PDF/DOCX capsule creation/review; separate private Save-to-Ask; conversation/idea + long notes/rebuild/reuse; queued research and owner approval; memo edit/save/reopen with citations; responsive Close; actual logout and protected-route isolation.
+- The source repairs keep supplied-context recall brief, honor no-research instructions, preserve context composition and actual model receipts, and terminate long-document chunks. No additional framework, canonical store or primary navigation was added.
+- Local build/typecheck/non-GCP audits and 390 files / 1830 tests pass. Lint has zero errors/seven warnings; dependency audit has no high/critical findings (44 moderate/three low remain).
+- Generated memos still require whole-draft review and remain export-blocked. Account lifecycle, paid billing, capacity/OCR, worker recovery and measured analytical improvement remain follow-up evidence. JEV stays disabled.
+- Local Google authentication expired. Remote build logs prove resource preflight and deployment-time traffic/image identity; final runtime error logs and a separate current service-state read await restored sign-in.
 
 ## 2026-09-28 — Capsule creation follow-through
 
