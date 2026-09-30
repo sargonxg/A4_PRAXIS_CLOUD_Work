@@ -2,9 +2,21 @@ import { describe, expect, it } from 'vitest';
 import { MockLanguageModelV3, simulateReadableStream } from 'ai/test';
 import { tool } from 'ai';
 import { z } from 'zod';
-import { requireAnswerText, streamAskAnswer } from '@/lib/ai/ask-answer-stream';
+import { createVertex } from '@ai-sdk/google-vertex';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { readAskModelIdentity, requireAnswerText, streamAskAnswer } from '@/lib/ai/ask-answer-stream';
 
 describe('Ask answer completion', () => {
+  it('reads the provider and model from the actual execution object without client settings or network calls', () => {
+    const vertex = createVertex({ project: 'synthetic-unit-project', location: 'global' })('gemini-3.5-flash');
+    const google = createGoogleGenerativeAI({ apiKey: 'synthetic-unit-key-never-used' })('gemini-3.5-flash');
+    expect(readAskModelIdentity(vertex)).toEqual({ provider: 'google.vertex.chat', model: 'gemini-3.5-flash' });
+    expect(readAskModelIdentity(google)).toEqual({ provider: 'google.generative-ai', model: 'gemini-3.5-flash' });
+  });
+
+  it('rejects unresolved model aliases rather than inventing an execution provider', () => {
+    expect(() => readAskModelIdentity('vertex:model-alias')).toThrow('constructed model');
+  });
   it('ends repeated tool calls with a synthesis turn that retains the retrieved evidence', async () => {
     const model: MockLanguageModelV3 = new MockLanguageModelV3({
       doStream: async (options) => ({

@@ -151,6 +151,13 @@ export function chunkText(
   const maxLength = opts.maxLength ?? 1500;
   const overlap = opts.overlap ?? 200;
 
+  if (!Number.isSafeInteger(maxLength) || maxLength <= 0) {
+    throw new RangeError('maxLength must be a positive safe integer.');
+  }
+  if (!Number.isSafeInteger(overlap) || overlap < 0 || overlap >= maxLength) {
+    throw new RangeError('overlap must be a nonnegative safe integer smaller than maxLength.');
+  }
+
   if (text.length <= maxLength) {
     return [{ text, charStart: 0, charEnd: text.length }];
   }
@@ -178,8 +185,10 @@ export function chunkText(
       charEnd: end,
     });
 
-    start = end - overlap;
-    if (start >= text.length) break;
+    if (end === text.length) break;
+
+    // Sentence shortening must not let a large overlap move backwards.
+    start = Math.max(start + 1, end - overlap);
   }
 
   return chunks;

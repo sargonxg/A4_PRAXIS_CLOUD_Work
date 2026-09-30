@@ -70,6 +70,8 @@ describe('buildCalibratedContext — preferences field', () => {
   it('includes preferences on the returned ContextBlock', async () => {
     const ctx = await buildCalibratedContext({ uid: 'user-test', toolId: 'advisory' });
     expect(ctx.preferences).toEqual(DEFAULT_USER_PREFERENCES);
+    expect(ctx.systemPromptBlock).toContain('Current PRAXIS Situation Context Health:');
+    expect(ctx.systemPromptBlock).toContain('<context-readiness');
   });
 
   it.each([undefined, 'an explicit workspace query'])('denies workspace facts and retrieval while preserving the selected capsule: %s', async (retrievalQuery) => {
@@ -95,6 +97,11 @@ describe('buildCalibratedContext — preferences field', () => {
     expect(ctx.toolContext.retrievedChunks).toEqual([]);
     expect(ctx.toolContext.situation).toBeNull();
     expect(ctx.systemPromptBlock).toContain('Selected evidence stays available.');
+    expect(ctx.systemPromptBlock).toContain('<agent-context-packet-use>');
+    expect(ctx.systemPromptBlock).not.toContain('Current PRAXIS Situation Context Health:');
+    expect(ctx.systemPromptBlock).not.toContain('<context-readiness');
+    expect(ctx.contextHealth.score).toEqual(expect.any(Number));
+    expect(ctx.readiness.score).toEqual(expect.any(Number));
   });
 
   it('sets interaction and advisor frames to null by default (Task 2.1 scope)', async () => {

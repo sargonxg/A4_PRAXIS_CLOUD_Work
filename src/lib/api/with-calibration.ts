@@ -303,12 +303,13 @@ export function withCalibration(
 
       // Build calibration context (analyst profile + situation + SKC retrieval)
       const retrievalQuery = opts.retrievalQuery?.(req, body);
+      const allowWorkspaceRetrieval = opts.allowWorkspaceRetrieval?.(req, body);
       const calibration = await buildCalibratedContext({
         uid: user.uid,
         situationId,
         toolId,
         retrievalQuery,
-        allowWorkspaceRetrieval: opts.allowWorkspaceRetrieval?.(req, body),
+        allowWorkspaceRetrieval,
         pathId,
         capsuleId,
         activeContextStack,
@@ -324,7 +325,9 @@ export function withCalibration(
       const enrichedCalibration = enrichCalibrationWithToolBackbone(calibration, toolId);
       const calibratedWithPromptHealth = {
         ...enrichedCalibration,
-        systemPromptBlock: appendContextQualityBlock(enrichedCalibration.systemPromptBlock, promptHealth),
+        systemPromptBlock: allowWorkspaceRetrieval === false
+          ? `${enrichedCalibration.systemPromptBlock}\n\nFor this supplied-context turn, answer recall and restatement requests directly using the user's messages and attached capsules. Treat supplied facts as supplied rather than independently verified. Mention gaps only when they are needed to answer the question. Do not report internal workspace health or readiness scores, or recommend workspace setup for these requests.`
+          : appendContextQualityBlock(enrichedCalibration.systemPromptBlock, promptHealth),
       };
       await emitTelemetrySafe({
         eventName: 'calibration.snapshot-built',

@@ -1,4 +1,12 @@
-import { streamText, stepCountIs, type ToolSet } from 'ai';
+import { streamText, stepCountIs, type LanguageModel, type ToolSet } from 'ai';
+
+/** Read provenance from the same constructed model object used for execution. */
+export function readAskModelIdentity(model: LanguageModel): { provider: string; model: string } {
+  if (typeof model === 'string' || !model.provider || !model.modelId) {
+    throw new Error('Ask execution identity requires a constructed model with provider and modelId.');
+  }
+  return { provider: model.provider, model: model.modelId };
+}
 
 // Leave the final round available for an answer, even when the model keeps
 // requesting tools. The SDK carries all prior tool results into that round.

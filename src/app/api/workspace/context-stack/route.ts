@@ -40,7 +40,8 @@ export const GET = withAuth(async (req, user) => {
   if (activePointer?.cleared && activeSnap?.stackId === DEFAULT_CONTEXT_STACK_ID) {
     return NextResponse.json({ stack: activeSnap, capsule: null, migrated: false, persisted: true });
   }
-  if (activeSnap && activeSnap.stackId !== DEFAULT_CONTEXT_STACK_ID) {
+  // The default capsule can govern a composed dock; restore its saved refs too.
+  if (activeSnap && (activeSnap.stackId !== DEFAULT_CONTEXT_STACK_ID || activePointer?.explicitSelection)) {
     const capsule = await getCapsule(user.uid, activeSnap.capsuleId ?? activeSnap.stackId);
     if (capsule && !capsule.archivedAt) {
       return NextResponse.json({
@@ -77,9 +78,10 @@ export const PUT = withAuth(async (req, user) => {
     await saveActiveStackPointer(user.uid, stack);
     return NextResponse.json({ stack, capsule: null, persisted: true });
   }
-  if (incoming.stackId && incoming.stackId !== DEFAULT_CONTEXT_STACK_ID) {
+  if (incoming.stackId && (incoming.stackId !== DEFAULT_CONTEXT_STACK_ID || hasExplicitSelection(incoming))) {
     const requested = sanitizeNamedStack(incoming);
-    const existing = await getCapsule(user.uid, requested.stackId);
+    const existing = await getCapsule(user.uid, requested.stackId)
+      ?? (requested.stackId === DEFAULT_CONTEXT_STACK_ID ? (await getOrMigrateDefaultCapsule(user.uid)).capsule : null);
     if (existing?.archivedAt) {
       return NextResponse.json({ error: 'Context capsule is archived' }, { status: 409 });
     }
@@ -142,11 +144,17 @@ function isExplicitClear(input: Partial<ActiveContextStackState>): boolean {
     && Object.values(stack.contextBlocks).every((items) => !items.length);
 }
 
-async function getActiveStackPointer(uid: string): Promise<{ stack: ActiveContextStackState; cleared: boolean } | null> {
+function hasExplicitSelection(input: Partial<ActiveContextStackState>): boolean {
+  // Check raw refs so legacy capsuleId-only records still use migration.
+  return Array.isArray(input.capsuleRefs)
+    && sanitizeActiveContextStack({ capsuleRefs: input.capsuleRefs }).capsuleRefs.length > 0;
+}
+
+async function getActiveStackPointer(uid: string): Promise<{ stack: ActiveContextStackState; cleared: boolean; explicitSelection: boolean } | null> {
   const snap = await getActiveStackRef(uid).get();
   if (!snap.exists) return null;
   const input = snap.data() as Partial<ActiveContextStackState>;
-  return { stack: sanitizeNamedStack(input), cleared: isExplicitClear(input) };
+  return { stack: sanitizeNamedStack(input), cleared: isExplicitClear(input), explicitSelection: hasExplicitSelection(input) };
 }
 
 async function saveActiveStackPointer(uid: string, stack: ActiveContextStackState): Promise<void> {

@@ -267,8 +267,10 @@ export async function buildCalibratedContext(opts: {
   const readiness = computeContextReadiness({ profile, situation, path, retrievedChunks, episodes });
   const systemPromptBlock = [
     baseSystemPromptBlock,
-    buildSituationContextHealthPrompt(contextHealth),
-    `<context-readiness score="${readiness.score}" freshness="${readiness.freshnessScore}" lensCoveragePct="${readiness.lensCoveragePct}">\n  gaps: ${readiness.sourceGapFlags.join(', ') || 'none'}\n</context-readiness>`,
+    ...(opts.allowWorkspaceRetrieval === false ? [] : [
+      buildSituationContextHealthPrompt(contextHealth),
+      `<context-readiness score="${readiness.score}" freshness="${readiness.freshnessScore}" lensCoveragePct="${readiness.lensCoveragePct}">\n  gaps: ${readiness.sourceGapFlags.join(', ') || 'none'}\n</context-readiness>`,
+    ]),
   ].join('\n\n');
   const outputConstraints = profile ? renderOutputConstraints(profile) : NEUTRAL_CONSTRAINTS;
 

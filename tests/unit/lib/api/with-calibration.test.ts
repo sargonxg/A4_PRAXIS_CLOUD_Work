@@ -348,10 +348,12 @@ describe('withCalibration', () => {
   });
 
   it('passes the chat turn workspace-retrieval veto into calibration before the handler runs', async () => {
+    vi.mocked(withContextAware).mockResolvedValueOnce(thinContextAwareSnapshot() as never);
     const handler = vi.fn().mockResolvedValue(Response.json({ ok: true }));
     const route = withCalibration('chat', 'ai_chat', {
       allowWorkspaceRetrieval: (_req, body) => resolveAskExecutionPreference(String(body.prompt)).allowWorkspaceRetrieval,
       variant: 'streaming',
+      blockOnThinContext: false,
     })(handler);
     const req = new Request('http://x', { method: 'POST', body: JSON.stringify({
       situationId: 's1', capsuleId: 'selected-capsule',
@@ -361,6 +363,11 @@ describe('withCalibration', () => {
     await (route as unknown as (r: Request, u: typeof user) => Promise<Response>)(req, user);
     expect(buildCalibratedContext).toHaveBeenCalledWith(expect.objectContaining({ allowWorkspaceRetrieval: false, capsuleId: 'selected-capsule' }));
     expect(handler).toHaveBeenCalledOnce();
+    const injected = handler.mock.calls[0][1];
+    expect(injected.calibration.systemPromptBlock).not.toContain('<context-quality');
+    expect(injected.calibration.systemPromptBlock).toContain('<analyst-profile>X</analyst-profile>');
+    expect(injected.calibration.systemPromptBlock).toContain('Current PRAXIS Tool Contract:');
+    expect(injected.contextSnapshot.composite.health).toEqual(expect.any(Number));
   });
 
   it('returns 403 when a new user has a partial analyst profile', async () => {

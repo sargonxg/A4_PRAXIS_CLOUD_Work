@@ -1,5 +1,5 @@
 import { type FinishReason, type LanguageModelUsage, type ModelMessage } from 'ai';
-import { requireAnswerText, streamAskAnswer } from '@/lib/ai/ask-answer-stream';
+import { readAskModelIdentity, requireAnswerText, streamAskAnswer } from '@/lib/ai/ask-answer-stream';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { getModel } from '@/lib/ai/providers';
@@ -821,17 +821,20 @@ fabricate sources, figures, dates, or identifiers.`;
         attempted.push(candidateModelId);
         let candidateText = '';
         try {
+          const executionModel = getModel(candidateModelId);
+          const executionIdentity = readAskModelIdentity(executionModel);
           const selectedReceipt: AskRuntimeReceipt = {
             ...runtimeReceipt,
-            model: candidateModelId,
+            provider: executionIdentity.provider,
+            model: executionIdentity.model,
             fallbackCandidates: candidateModelIds,
             fallbackFrom: candidateModelId === candidateModelIds[0] ? null : candidateModelIds[0],
             selectedModel: candidateModelIds[0],
-            actualModel: candidateModelId,
+            actualModel: executionIdentity.model,
             modelLifecycleTier: getAskRuntimeOption(candidateModelId).lifecycleTier,
           };
           const result = streamAskAnswer({
-            model: getModel(candidateModelId),
+            model: executionModel,
             system: systemPrompt,
             messages: effectiveMessages as unknown as ModelMessage[],
             tools,
@@ -849,7 +852,7 @@ fabricate sources, figures, dates, or identifiers.`;
             ...selectedReceipt,
             generationReceipt: buildAskGenerationReceipt({
               receipt: orchestrationReceipt,
-              selectedModel: candidateModelId,
+              selectedModel: executionIdentity.model,
               fallbackModel: selectedReceipt.fallbackFrom ?? null,
               finishReason,
               usage: totalUsage,
@@ -1093,7 +1096,6 @@ function selectAskRuntime(aiSettings: AiSettings, policy: ModelRuntimePolicy) {
   const selectedOption = getAskRuntimeOption(selectedModel);
   return {
     receipt: {
-      provider: aiSettings?.provider,
       model: selectedOption.id,
       selectedModel: selectedOption.id,
       actualModel: null,
