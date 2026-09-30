@@ -13,14 +13,14 @@ const TaskletPraxisWorkbench = dynamic(
 );
 
 type AppIndexPageProps = {
-  searchParams: Promise<{ memoId?: string | string[]; capsuleId?: string | string[] }>;
+  searchParams: Promise<{ memoId?: string | string[]; capsuleId?: string | string[]; panel?: string | string[] }>;
 };
 
 export default async function AppIndexPage({ searchParams }: AppIndexPageProps) {
   const query = await searchParams;
   // Repeated or oversized IDs are ambiguous; let the normal Home view handle them.
   const memoId = singleResourceId(query.memoId);
-  if (memoId) {
+  if (memoId || query.panel === 'memo') {
     return <TaskletPraxisWorkbench mode="app" capsuleId={singleResourceId(query.capsuleId) || 'default'} initialMemoId={memoId} initialPanel="ask" />;
   }
   return (

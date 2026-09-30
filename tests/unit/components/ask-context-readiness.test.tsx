@@ -57,11 +57,11 @@ function attachedStack() {
   return sanitizeActiveContextStack({
     capsuleId: 'case-a',
     capsuleRefs: [
-      { capsuleId: 'case-a', role: 'situation', label: 'Case A', primary: true },
+      { capsuleId: 'case-a', role: 'situation', label: 'Case A', primary: true, version: 7 },
       { capsuleId: 'user-a', role: 'user', label: 'User A' },
       { capsuleId: 'tool-a', role: 'tool', label: 'Tool A' },
       { capsuleId: 'output-a', role: 'output', label: 'Output A' },
-      { capsuleId: 'extra-a', role: 'reference', label: 'Extra A' },
+      { capsuleId: 'extra-a', role: 'reference', label: 'Extra A', version: 3 },
     ],
   });
 }
@@ -110,6 +110,20 @@ beforeEach(() => {
 });
 
 describe('Ask context mutation readiness', () => {
+  it('Home promotion saves every attached capsule and its pinned version', () => {
+    runtime.hydrated = true;
+    const contextDrawer = find(drawer(), (element) => typeof element.type === 'function' && element.type.name === 'ContextDrawer');
+    (contextDrawer.props.onMakePrimaryCapsule as (id: string) => void)('extra-a');
+    expect(runtime.saveStack).toHaveBeenCalledWith(expect.objectContaining({
+      capsuleId: 'extra-a',
+      capsuleRefs: expect.arrayContaining([
+        expect.objectContaining({ capsuleId: 'case-a', primary: false, role: 'reference', version: 7 }),
+        expect.objectContaining({ capsuleId: 'extra-a', primary: true, version: 3 }),
+        expect.objectContaining({ capsuleId: 'tool-a', role: 'tool' }),
+      ]),
+    }));
+    expect(runtime.saveStack.mock.calls[0][0].capsuleRefs).toHaveLength(5);
+  });
   it.each([
     { user: true, authLoading: false, hydrated: false, disabled: true },
     { user: true, authLoading: true, hydrated: true, disabled: true },

@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import { verifyIdToken, getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { verifyCookie } from '@/lib/auth/cookie-signer';
 import { FieldValue } from 'firebase-admin/firestore';
-import { PRAXIS_ASK_TOKEN_COST, PRAXIS_STARTER_TOKEN_ALLOWANCE } from '@/lib/billing/usage-policy';
+import { PRAXIS_ASK_TOKEN_COST, currentMonthlyUsageKey } from '@/lib/billing/usage-policy';
+import { decideFundedUsage, type FundedUsageDecision, type UsageReservationFailure } from '@/lib/billing/ai-usage-reservation';
 
 // Cost table for AI operations (in credits) — server-side authoritative copy
 export const AI_CREDIT_COSTS: Record<string, number> = {
@@ -129,260 +130,114 @@ async function getSessionUid(): Promise<{ uid: string; isDemo: boolean } | null>
   return null;
 }
 
-/**
- * Deducts credits using Firebase Admin SDK (bypasses Firestore security rules).
- * Uses a transaction to atomically check + deduct to prevent race conditions.
- */
-async function deductCreditsAdmin(
-  uid: string,
-  operationType: string,
-  description: string,
-  costMultiplier = 1,
-): Promise<{ success: boolean; remainingCredits: number; reason?: 'insufficient' | 'unmapped' }> {
-  const adminDb = getAdminDbOrThrow();
-  const baseCost = AI_CREDIT_COSTS[operationType];
-  if (baseCost === undefined) {
-    console.error(`[credits] Unmapped operation type: "${operationType}" — refusing to default`);
-    return { success: false, remainingCredits: 0, reason: 'unmapped' };
-  }
-  const cost = Math.max(1, Math.ceil(baseCost * Math.max(0.25, Math.min(costMultiplier, 3))));
-  const userRef = adminDb.collection('users').doc(uid);
+type UsageGate = { allowed: true } | { allowed: false; response: Response };
 
-  const result: { success: boolean; remainingCredits: number; reason?: 'insufficient' | 'unmapped' } =
-    await adminDb.runTransaction(async (tx) => {
+function operationCost(operationType: string, multiplier = 1): number | null {
+  if (!Object.hasOwn(AI_CREDIT_COSTS, operationType)) return null;
+  const base = AI_CREDIT_COSTS[operationType];
+  if (!Number.isFinite(base) || base <= 0 || !Number.isFinite(multiplier)) return null;
+  return Math.max(1, Math.ceil(base * Math.max(0.25, Math.min(multiplier, 3))));
+}
+
+/** Account balance, workspace cap and receipt commit together before provider work. */
+async function reserveCreditsAdmin(uid: string, operationType: string, description: string, cost: number, situationId?: string): Promise<FundedUsageDecision> {
+  const db = getAdminDbOrThrow();
+  const userRef = db.collection('users').doc(uid);
+  const situationRef = situationId ? userRef.collection('situations').doc(situationId) : null;
+  const receiptRef = db.collection('credit_transactions').doc();
+  const monthKey = currentMonthlyUsageKey();
+  return db.runTransaction(async (tx) => {
     const userSnap = await tx.get(userRef);
+    const account = userSnap.exists ? userSnap.data() as Record<string, unknown> : null;
+    // Refuse unavailable owners before any writes. AI metering is never a signup path.
+    const ownerDecision = decideFundedUsage({ account, cost, monthKey });
+    if (!ownerDecision.allowed) return ownerDecision;
+    const situationSnap = situationRef ? await tx.get(situationRef) : null;
+    const situation = situationSnap?.exists ? situationSnap.data() as Record<string, unknown> : null;
+    const decision = decideFundedUsage({ account, situation, cost, monthKey });
+    if (!decision.allowed) return decision;
 
-    if (!userSnap.exists) {
-      // No profile yet — create one with initial credits then deduct
-      const initial = PRAXIS_STARTER_TOKEN_ALLOWANCE;
-      if (initial < cost) return { success: false, remainingCredits: 0, reason: 'insufficient' as const };
-      tx.set(userRef, {
-        uid,
-        credits: initial - cost,
-        totalCreditsUsed: cost,
-        createdAt: FieldValue.serverTimestamp(),
-        lastLoginAt: FieldValue.serverTimestamp(),
-        role: 'analyst',
-        orgId: 'org-default',
-        orgName: 'TACITUS Platform',
-        isDemo: false,
-        subscription: 'free',
-        aiProvider: 'google',
-      });
-      return { success: true, remainingCredits: initial - cost };
+    tx.update(userRef, { credits: FieldValue.increment(-cost), totalCreditsUsed: FieldValue.increment(cost) });
+    if (situationRef && decision.situationCreditsUsed !== null) {
+      tx.set(situationRef, { monthlyCreditsUsed: decision.situationCreditsUsed, monthlyCreditMonthKey: monthKey, monthlyCreditUpdatedAt: FieldValue.serverTimestamp() }, { merge: true });
     }
-
-    const data = userSnap.data() as { credits: number };
-    const credits = typeof data.credits === 'number' ? data.credits : 0;
-
-    if (credits < cost) {
-      return { success: false, remainingCredits: credits, reason: 'insufficient' as const };
-    }
-
-    tx.update(userRef, {
-      credits: FieldValue.increment(-cost),
-      totalCreditsUsed: FieldValue.increment(cost),
-    });
-
-    return { success: true, remainingCredits: credits - cost };
+    tx.set(receiptRef, { userId: uid, amount: -cost, type: operationType, description: description.slice(0, 1000), createdAt: FieldValue.serverTimestamp() });
+    return decision;
   });
+}
 
-  // Record transaction log — fire-and-forget (does not block the response)
-  // Using void IIFE instead of next/server after() for Cloud Run standalone compatibility
-  if (result.success) {
-    void (async () => {
-      try {
-        const db = getAdminDbOrThrow();
-        const txRef = db.collection('credit_transactions').doc();
-        await txRef.set({
-          userId: uid,
-          amount: -cost,
-          type: operationType,
-          description,
-          createdAt: FieldValue.serverTimestamp(),
-        });
-      } catch (err) {
-        console.error('[credits] Failed to record transaction:', err);
-      }
-    })();
+function deniedUsage(reason: UsageReservationFailure | 'unmapped' | 'unavailable' | 'sample', remainingCredits = 0): UsageGate {
+  let status = 503;
+  let code = 'usage_service_unavailable';
+  let error = 'AI usage could not be checked.';
+  let message = 'Please retry in a moment. Your saved work is still available.';
+  let retryable = true;
+  if (reason === 'sample') {
+    status = 403; code = 'sample_mode_ai_unavailable'; error = 'AI analysis requires a signed-in account.';
+    message = 'Sign in to request analysis. You can continue reviewing sample material.';
+    retryable = false;
+  } else if (reason === 'insufficient') {
+    status = 429; code = 'ai_usage_limit'; error = 'AI usage allowance reached.';
+    message = 'Your available AI allowance is used. Your saved work is still available. Contact TACITUS to request more capacity.';
+    retryable = false;
+  } else if (reason === 'situation-cap') {
+    status = 429; code = 'workspace_usage_limit'; error = 'Workspace AI limit reached.';
+    message = 'This workspace has reached its monthly AI limit. Ask its owner to adjust the limit, or continue reviewing saved work.';
+    retryable = false;
+  } else if (reason === 'account-missing') {
+    status = 409; code = 'account_setup_required'; error = 'Account setup is incomplete.';
+    message = 'Finish account setup or sign in again before requesting AI analysis. If this persists, contact TACITUS.';
+    retryable = false;
+  } else if (reason === 'account-deleting') {
+    status = 409; code = 'account_deletion_in_progress'; error = 'AI analysis is unavailable during account deletion.';
+    message = 'Complete the account deletion process or contact TACITUS for help.';
+    retryable = false;
+  } else if (reason === 'unmapped' || reason === 'invalid-policy') {
+    code = 'usage_action_unavailable'; error = 'This analysis action is unavailable.';
+    message = 'Its usage settings could not be confirmed. Contact TACITUS if this persists.';
+    retryable = false;
   }
-
-  return result;
+  return { allowed: false, response: new Response(JSON.stringify({ error, message, code, retryable, remainingCredits, supportUrl: 'mailto:hello@tacitus.me' }), { status, headers: { 'Content-Type': 'application/json', ...(retryable ? { 'Retry-After': '15' } : {}) } }) };
 }
 
-async function checkAndRecordSituationCostCap(
-  uid: string,
-  situationId: string | undefined,
-  cost: number,
-): Promise<{ allowed: true } | { allowed: false; response: Response }> {
-  if (!situationId) return { allowed: true };
-
-  const adminDb = getAdminDbOrThrow();
-  const sitRef = adminDb.collection('users').doc(uid).collection('situations').doc(situationId);
-
-  const result = await adminDb.runTransaction(async (tx) => {
-    const snap = await tx.get(sitRef);
-    if (!snap.exists) return { allowed: true as const };
-
-    const data = snap.data() as { monthlyCreditCap?: unknown; monthlyCreditsUsed?: unknown };
-    const cap = typeof data.monthlyCreditCap === 'number' ? data.monthlyCreditCap : null;
-    const used = typeof data.monthlyCreditsUsed === 'number' ? data.monthlyCreditsUsed : 0;
-
-    if (cap !== null && cap >= 0 && used + cost > cap) {
-      return {
-        allowed: false as const,
-        used,
-        cap,
-        cost,
-      };
-    }
-
-    tx.set(sitRef, {
-      monthlyCreditsUsed: FieldValue.increment(cost),
-      monthlyCreditUpdatedAt: FieldValue.serverTimestamp(),
-    }, { merge: true });
-    return { allowed: true as const };
-  });
-
-  if (result.allowed) return { allowed: true };
-
-  return {
-    allowed: false,
-    response: new Response(
-      JSON.stringify({
-        error: 'Cost cap reached',
-        message: 'This situation has reached its monthly AI credit cap. Request a cap lift or reduce high-cost runs.',
-        monthlyCreditsUsed: result.used,
-        monthlyCreditCap: result.cap,
-        requestedCredits: result.cost,
-      }),
-      { status: 402, headers: { 'Content-Type': 'application/json' } },
-    ),
-  };
-}
-
-/**
- * Checks and deducts credits for an AI operation.
- * Demo users always pass. Live users are soft-metered: if credits are depleted,
- * the operation still runs and the unpaid usage is logged. PRAXIS monetization
- * should not block first-value AI, situation creation, or research workflows.
- *
- * Returns { allowed: true } if the user can proceed,
- * or { allowed: false, response: Response } only when auth or the meter itself
- * is unavailable. Depleted credits never block AI execution.
- */
-export async function checkAndDeductCredits(
-  operationType: string,
-  description: string,
-): Promise<{ allowed: true } | { allowed: false; response: Response }> {
+/** Legacy cookie entrypoint shares the same enforced funded-account reservation. */
+export async function checkAndDeductCredits(operationType: string, description: string): Promise<UsageGate> {
   const session = await getSessionUid();
+  if (!session) return { allowed: false, response: new Response(JSON.stringify({ error: 'Authentication required' }), { status: 401, headers: { 'Content-Type': 'application/json' } }) };
+  const cost = operationCost(operationType);
+  if (cost === null) return deniedUsage('unmapped');
+  if (session.isDemo) return deniedUsage('sample');
+  return checkAndDeductCreditsForUid(session.uid, operationType, description);
+}
 
-  if (!session) {
-    return {
-      allowed: false,
-      response: new Response(
-        JSON.stringify({ error: 'Authentication required' }),
-        { status: 401, headers: { 'Content-Type': 'application/json' } }
-      ),
-    };
-  }
-
-  // Demo users are unlimited
-  if (session.isDemo) return { allowed: true };
-
-  // Deduct credits via Admin SDK (server-side, bypasses Firestore rules)
-  const cost = AI_CREDIT_COSTS[operationType] ?? 1;
+/** Authenticated routes must reserve capacity before calling any provider. */
+export async function checkAndDeductCreditsForUid(uid: string, operationType: string, description: string, situationId?: string, opts: { costMultiplier?: number } = {}): Promise<UsageGate> {
+  const cost = operationCost(operationType, opts.costMultiplier ?? 1);
+  if (cost === null) return deniedUsage('unmapped');
   try {
-    const result = await deductCreditsAdmin(session.uid, operationType, description);
-
-    if (!result.success) {
-      console.warn(
-        `[credits] Soft-metering ${operationType}; uid=${session.uid} reason=${result.reason ?? 'unknown'} has ${result.remainingCredits}, needs ${cost}`
-      );
-      return { allowed: true };
-    }
-
-    return { allowed: true };
-  } catch (err) {
-    console.error('[credits] Failed to check credits:', err);
-    return {
-      allowed: false,
-      response: new Response(
-        JSON.stringify({
-          error: 'Credit system temporarily unavailable. Please try again.',
-        }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } }
-      ),
-    };
+    const result = await reserveCreditsAdmin(uid, operationType, description, cost, situationId);
+    return result.allowed ? { allowed: true } : deniedUsage(result.reason, result.remainingCredits);
+  } catch (error) {
+    console.error('[credits] Usage reservation failed before provider execution:', error);
+    return deniedUsage('unavailable');
   }
 }
 
-/**
- * Checks and deducts credits for a user whose UID has already been verified
- * by withAuth(). Skips the second verifyIdToken call to avoid redundant work.
- */
-export async function checkAndDeductCreditsForUid(
-  uid: string,
-  operationType: string,
-  description: string,
-  situationId?: string,
-  opts: { costMultiplier?: number } = {},
-): Promise<{ allowed: true } | { allowed: false; response: Response }> {
-  const cost = Math.max(1, Math.ceil((AI_CREDIT_COSTS[operationType] ?? 1) * Math.max(0.25, Math.min(opts.costMultiplier ?? 1, 3))));
-  try {
-    const capGate = await checkAndRecordSituationCostCap(uid, situationId, cost);
-    if (!capGate.allowed) return capGate;
-
-    const result = await deductCreditsAdmin(uid, operationType, description, opts.costMultiplier ?? 1);
-    if (!result.success) {
-      console.warn(
-        `[credits] Soft-metering ${operationType}; uid=${uid} reason=${result.reason ?? 'unknown'} has ${result.remainingCredits}, needs ${cost}`
-      );
-      return { allowed: true };
-    }
-    return { allowed: true };
-  } catch (err) {
-    console.error('[credits] Failed to check credits:', err);
-    return {
-      allowed: false,
-      response: new Response(
-        JSON.stringify({ error: 'Credit system temporarily unavailable. Please try again.' }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } }
-      ),
-    };
-  }
-}
-
-/**
- * Refunds credits to a user after a failed AI operation.
- * Uses Admin SDK — no auth context needed server-side.
- */
-export async function refundCredits(
-  operationType: string,
-  description: string,
-): Promise<void> {
+/** Refund existing accounts only; deletion markers and missing profiles are never recreated. */
+export async function refundCredits(operationType: string, description: string): Promise<void> {
   const session = await getSessionUid();
-  if (!session || session.isDemo) return;
-
-  const cost = AI_CREDIT_COSTS[operationType] || 1;
+  const cost = operationCost(operationType);
+  if (!session || session.isDemo || cost === null) return;
   try {
-    const adminDb = getAdminDbOrThrow();
-    const userRef = adminDb.collection('users').doc(session.uid);
-    await userRef.update({
-      credits: FieldValue.increment(cost),
-      totalCreditsUsed: FieldValue.increment(-cost),
+    const db = getAdminDbOrThrow();
+    const userRef = db.collection('users').doc(session.uid);
+    const receiptRef = db.collection('credit_transactions').doc();
+    await db.runTransaction(async (tx) => {
+      const snap = await tx.get(userRef);
+      const account = snap.data();
+      if (!snap.exists || account?.accountDeletionStatus === 'deleting' || account?.accountDeletionStatus === 'deleted') return;
+      tx.update(userRef, { credits: FieldValue.increment(cost), totalCreditsUsed: FieldValue.increment(-cost) });
+      tx.set(receiptRef, { userId: session.uid, amount: cost, type: 'refund', description: ('Refund: ' + description).slice(0, 1000), createdAt: FieldValue.serverTimestamp() });
     });
-
-    // Record refund transaction
-    const txRef = adminDb.collection('credit_transactions').doc();
-    await txRef.set({
-      userId: session.uid,
-      amount: cost,
-      type: 'refund',
-      description: `Refund: ${description}`,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-  } catch (err) {
-    console.error('[credits] Failed to refund credits:', err);
-  }
+  } catch (error) { console.error('[credits] Failed to refund usage:', error); }
 }

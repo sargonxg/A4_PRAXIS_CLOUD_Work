@@ -1,12 +1,27 @@
 # PRAXIS Canonical App Structure
 
-Date: 2026-05-21  
+Updated: 2026-09-30
 Canonical domain: `https://praxis.tacitus.me`  
 Status: source-of-truth product and infrastructure structure for the next build waves
 
-Current implementation and live acceptance: [user-readiness receipt](../reviews/2026-09-29-praxis-user-readiness.md).
-This architecture document includes target capabilities; check the receipt
-before treating any workflow as deployed and proven.
+Current use: [user guide](CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md).
+Current implementation: [September 30 ledger](../reviews/2026-09-30-praxis-implementation-ledger.md).
+Previously verified live release: [production acceptance](../reviews/2026-09-29-praxis-production-acceptance.md).
+This product map includes target capabilities. Check exact-source acceptance
+before treating schedules, sharing, connectors, premium models or other target
+workflows as deployed and proven. New changes are not yet live-verified merely
+because their implementation is authorized.
+
+## Current Working Path
+
+- Start in Home with a question; a quick question does not require a capsule.
+- Attach applicable saved context, or separately build it in Capsules from
+  purpose, source material and reviewed proposals.
+- Inspect the evidence and assumptions; save/revise writing within the existing
+  workbench/Drafts actions. No new primary navigation is required.
+- Treat generated work as review-required. The new implementation ledger tracks
+  exact-body approval, evidence fidelity, library scale, model routing and the
+  separate local/live/empirical gates.
 
 ## North Star
 
@@ -19,7 +34,7 @@ opinionated: every agent run inherits a ContextCapsule, every sourceable claim
 has provenance, risky changes require approval, and the final output lands in
 Memo Studio, Canvas, Library, or a handover packet.
 
-The canonical loop is:
+The target extended loop is:
 
 ```text
 Build ContextCapsule
@@ -27,10 +42,10 @@ Build ContextCapsule
   -> Run a capsule-aware agent
   -> Inspect tool calls, sources, gaps, and approvals
   -> Draft memo / brief / handover
-  -> Schedule monitoring or share the capsule
+  -> Schedule monitoring or share the capsule when its own capability gate passes
 ```
 
-The public homepage should make this loop visible before signup: a prompt bar,
+The public homepage should make the core working loop visible before signup: a prompt bar,
 an active capsule bar glimpse, a short set of policy path examples, examples of
 capsules being combined, and clear login/signup entry into the same app shell.
 

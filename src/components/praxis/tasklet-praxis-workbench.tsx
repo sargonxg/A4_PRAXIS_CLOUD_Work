@@ -159,6 +159,10 @@ import {
   type MemoSourceabilityResult,
 } from '@/lib/memo/sourceability-request';
 import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
+import { savedMemoReviewState } from '@/lib/memo/saved-artifact';
+import { memoOriginalSourceUrl, memoSourceStatus } from '@/lib/memo/source-preview';
+import type { MemoHumanApproval } from '@/lib/memo/human-review';
+import { HumanReviewPanel } from '@/components/memo/HumanReviewPanel';
 import type { MemoBlock } from '@/types/memo';
 import {
   answerEnvelopeFromDataStreamLine,
@@ -359,6 +363,10 @@ type MemoArtifactState = {
   memoId: string | null;
   title: string;
   body: string;
+  currentVersionId?: string | null;
+  savedBody?: string | null;
+  savedTitle?: string | null;
+  humanApproval?: MemoHumanApproval | null;
   status: string;
   caseId: string;
   capsuleId: string | null;
@@ -2081,16 +2089,20 @@ export function TaskletPraxisWorkbench({
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(typeof payload?.error === 'string' ? payload.error : `status ${response.status}`);
-      const memoId = memoIdFromAskPackResponse(payload) ?? memoArtifact.memoId;
-      setMemoArtifact((current) => current
+      const saved = memoArtifactFromMemoPayload(payload, draftToSave);
+      setMemoArtifact((current) => current && current.memoId === memoArtifact.memoId && current.runId === memoArtifact.runId && current.caseId === memoArtifact.caseId
         ? {
           ...current,
-          memoId,
-          title: stringFieldFromUnknown(payload?.memo && typeof payload.memo === 'object' ? (payload.memo as Record<string, unknown>).title : null) ?? current.title,
-          updatedAt: new Date().toISOString(),
+          memoId: saved.memoId,
+          title: current.title === draftToSave.title ? saved.title : current.title,
+          currentVersionId: saved.currentVersionId,
+          savedBody: saved.savedBody,
+          savedTitle: saved.savedTitle,
+          humanApproval: saved.humanApproval,
+          status: saved.status,
         }
         : current);
-      setStatus('Memo side artifact saved as a draft.');
+      setStatus(saved.savedBody !== null && saved.currentVersionId ? 'Memo draft saved. Review this version before sharing.' : 'This draft has not been saved to your workspace. Sign in to save and review it.');
       await refreshCreatedWork();
     } catch (err) {
       setStatus(err instanceof Error ? `Memo save failed: ${err.message}` : 'Memo save failed.');
@@ -2842,7 +2854,7 @@ export function TaskletPraxisWorkbench({
       setInspectorOpen(true);
       setStatus('Imported capsule opened in the review queue. Inspect proposed rows before applying anything.');
     }
-    if (panel === 'memo') setPrompt('Draft a memo from the active capsule.');
+    if (panel === 'memo') setPrompt((current) => current.trim() ? current : 'Draft a memo from the active capsule.');
     if (panel === 'canvas') setInspectorOpen(true);
     if (panel === 'advanced' || panel === 'ask') setStatus('Proof routing details appear in saved conversation receipts after a PRAXIS turn runs.');
     if (panel === 'account') setStatus('Account and runtime settings now live inside the PRAXIS cockpit.');
@@ -4248,7 +4260,7 @@ export function TaskletPraxisWorkbench({
                         return;
                       }
                       if (!canUseAgenticSearchPremium) {
-                        window.location.href = '/login?mode=signup&plan=analyst';
+                        router.push('/login?mode=signup&plan=analyst');
                         return;
                       }
                       setAgenticSearchPremiumEnabled((enabled) => !enabled);
@@ -5134,6 +5146,13 @@ export function TaskletPraxisWorkbench({
             onChange={setMemoArtifact}
             onClose={() => setMemoArtifact(null)}
             onSave={() => void saveMemoArtifactDraft()}
+            onReviewApproved={(payload) => {
+              const reviewed = memoArtifactFromMemoPayload(payload);
+              setMemoArtifact((current) => current && current.memoId === reviewed.memoId && current.currentVersionId === reviewed.currentVersionId
+                ? { ...current, savedBody: reviewed.savedBody, savedTitle: reviewed.savedTitle, humanApproval: reviewed.humanApproval, status: reviewed.status }
+                : current);
+            }}
+            onReloadSaved={() => { if (memoArtifact.memoId) void openMemoArtifactById(memoArtifact.memoId, memoArtifact, memoArtifactTab); }}
             onPraxisAction={(action) => void runMemoArtifactPraxisAction(action)}
             onSourceabilityCheck={(claimText) => void runMemoArtifactSourceabilityCheck(claimText)}
             onInsertSourceabilityRewrite={() => {
@@ -11464,6 +11483,8 @@ function MemoArtifactOverlay({
   onChange,
   onClose,
   onSave,
+  onReviewApproved,
+  onReloadSaved,
   onPraxisAction,
   onSourceabilityCheck,
   onInsertSourceabilityRewrite,
@@ -11477,6 +11498,8 @@ function MemoArtifactOverlay({
   onChange: (artifact: MemoArtifactState) => void;
   onClose: () => void;
   onSave: () => void;
+  onReviewApproved: (payload: unknown) => void;
+  onReloadSaved: () => void;
   onPraxisAction: (action: 'improve' | 'sourceability' | 'redteam' | 'evidence') => void;
   onSourceabilityCheck: (claimText: string) => void;
   onInsertSourceabilityRewrite: () => void;
@@ -11541,7 +11564,7 @@ function MemoArtifactOverlay({
                   'rounded-md border px-2 py-1',
                   exportReadiness.ready ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-900',
                 )}>
-                  Export gate: {exportReadiness.label}
+                  Automated check: {exportReadiness.label}
                 </span>
                 <span className="rounded-md border border-slate-200 px-2 py-1">Keep as side artifact</span>
               </div>
@@ -11600,18 +11623,19 @@ function MemoArtifactOverlay({
               <section className="space-y-4">
                 <MemoArtifactInfoGrid artifact={artifact} />
                 <section className="rounded-md border border-slate-200 p-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Receipts</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Source records</p>
                   <div className="mt-2 space-y-2">
-                    {artifact.sourceReceiptIds.length ? artifact.sourceReceiptIds.map((receiptId) => (
-                      <code key={receiptId} className="block rounded-md bg-slate-50 px-2 py-1 text-xs text-slate-700">{receiptId}</code>
-                    )) : <p className="text-sm text-slate-500">No source receipts were preserved. Check sourceability before exporting.</p>}
+                    <p className="text-sm text-slate-600">{sourceCount ? `${sourceCount} source records preserved. Inspect the original sources before review.` : 'No source records were preserved. Add sources before reviewing.'}</p>
+                    {artifact.sourceReceiptIds.length ? <details className="text-xs text-slate-600"><summary className="cursor-pointer font-semibold">Source record identifiers</summary>{artifact.sourceReceiptIds.map((receiptId) => (
+                      <code key={receiptId} className="mt-1 block break-all rounded-md bg-slate-50 px-2 py-1">{receiptId}</code>
+                    ))}</details> : null}
                   </div>
                 </section>
                 <section className="rounded-md border border-slate-200 p-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">Ask PRAXIS conversation</p>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {artifact.conversationId ? `Conversation ${artifact.conversationId}` : 'No conversation id was attached.'}
-                    {artifact.runId ? ` Run ${artifact.runId}.` : ''}
+                    {artifact.conversationId ? 'The originating Ask conversation is recorded with this draft.' : 'No originating conversation was recorded.'}
+                    {artifact.originHref ? <Link href={artifact.originHref} className="ml-1 underline">Open conversation</Link> : null}
                   </p>
                 </section>
               </section>
@@ -11697,9 +11721,13 @@ function MemoArtifactOverlay({
               {loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-500" /> : null}
             </div>
             <MemoArtifactInfoGrid artifact={artifact} compact />
+            <HumanReviewPanel memoId={artifact.memoId} currentVersionId={artifact.currentVersionId} body={artifact.body} savedBody={artifact.savedBody}
+              humanApproval={artifact.humanApproval} dirty={artifact.savedTitle !== artifact.title} disabled={loading || saving}
+              onApproved={onReviewApproved} onReload={onReloadSaved} />
             <section className="mt-4 rounded-md border border-slate-200 bg-white p-3">
-              <p className="text-xs font-semibold text-slate-800">Export gate</p>
+              <p className="text-xs font-semibold text-slate-800">Automated check</p>
               <p className="mt-2 text-xs leading-5 text-slate-500">{exportReadiness.detail}</p>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Human review of the saved version is required for a reviewed download.</p>
             </section>
             <section className="mt-4 rounded-md border border-slate-200 bg-white p-3">
               <p className="text-xs font-semibold text-slate-800">Preserved from the Ask PRAXIS conversation</p>
@@ -11714,6 +11742,8 @@ function MemoArtifactOverlay({
                   <div key={`${stringFieldFromUnknown(source.id) ?? index}`} className="rounded-md bg-slate-50 p-2">
                     <p className="truncate text-xs font-semibold text-slate-800">{stringFieldFromUnknown(source.title) ?? stringFieldFromUnknown(source.label) ?? `Source ${index + 1}`}</p>
                     <p className="mt-1 line-clamp-3 text-[11px] leading-4 text-slate-500">{stringFieldFromUnknown(source.quotePreview) ?? stringFieldFromUnknown(source.excerpt) ?? 'No preview text preserved.'}</p>
+                    <p className="mt-1 text-[11px] text-slate-600">{memoSourceStatus(source)}</p>
+                    {memoOriginalSourceUrl(source) ? <a href={memoOriginalSourceUrl(source)!} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-xs font-semibold text-slate-800 underline">Open original source</a> : null}
                   </div>
                 ))}
                 {!artifact.sourceReceipts.length ? <p className="text-xs leading-5 text-slate-500">No source preview cards were preserved.</p> : null}
@@ -11771,13 +11801,11 @@ function MemoPraxisActionButton({ icon: Icon, label, disabled, onClick }: { icon
 
 function MemoArtifactInfoGrid({ artifact, compact = false }: { artifact: MemoArtifactState; compact?: boolean }) {
   const rows = [
-    ['memoId', artifact.memoId ?? 'unsaved'],
-    ['capsule', artifact.capsuleId ?? 'default'],
-    ['outputCapsuleId', artifact.outputCapsuleId ?? 'none'],
-    ['source count', String(artifact.sourceReceiptIds.length || artifact.sourceReceipts.length)],
-    ['updated', formatCreatedWorkDate(artifact.updatedAt)],
+    ['Saved version', artifact.currentVersionId && artifact.savedBody !== null ? 'Saved' : 'Not saved'],
+    ['Context capsule', artifact.capsuleId ? 'Attached' : 'None attached'],
+    ['Sources', String(artifact.sourceReceiptIds.length || artifact.sourceReceipts.length)],
+    ['Updated', formatCreatedWorkDate(artifact.updatedAt)],
   ];
-  if (!compact) rows.splice(2, 0, ['runId', artifact.runId ?? 'not queued'], ['conversation', artifact.conversationId ?? 'not recorded']);
   return (
     <div className={cn('grid gap-2', compact ? 'mt-3' : 'grid-cols-1 sm:grid-cols-2')}>
       {rows.map(([label, value]) => (
@@ -11786,6 +11814,9 @@ function MemoArtifactInfoGrid({ artifact, compact = false }: { artifact: MemoArt
           <span className="min-w-0 truncate text-right font-mono text-slate-700">{value}</span>
         </p>
       ))}
+      {!compact ? <details className="rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-600 sm:col-span-2"><summary className="cursor-pointer font-semibold">Technical record identifiers</summary>
+        {Object.entries({ memo: artifact.memoId, version: artifact.currentVersionId, capsule: artifact.capsuleId, outputCapsule: artifact.outputCapsuleId, run: artifact.runId, conversation: artifact.conversationId }).filter(([, value]) => value).map(([label, value]) => <p key={label} className="mt-1 break-all"><span className="font-semibold">{label}: </span><code>{value}</code></p>)}
+      </details> : null}
     </div>
   );
 }
@@ -11968,11 +11999,12 @@ function memoArtifactFromAskPack(
 function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactState | null): MemoArtifactState {
   const root = asRecord(payload);
   const memo = asRecord(root?.memo);
+  const savedState = savedMemoReviewState(payload);
   const versions = Array.isArray(root?.versions) ? root.versions.map(asRecord).filter(Boolean) as Array<Record<string, unknown>> : [];
-  const latestVersion = versions[versions.length - 1] ?? null;
+  const latestVersion = versions.find((version) => version.id === savedState.currentVersionId) ?? null;
   const blocks = Array.isArray(latestVersion?.blocks) ? latestVersion.blocks as MemoBlock[] : [];
   const metadata = firstMemoArtifactMetadata(blocks);
-  const primaryDraft = blocks.find((block) => block.id === 'live-memo-draft' || block.id === 'artifact-body');
+  const primaryDraft = blocks.find((block) => ['live-memo-draft', 'memo-body', 'artifact-body'].includes(block.id));
   const reviewValue = latestVersion?.outputReview ?? metadata?.outputReview ?? primaryDraft?.metadata?.outputReview ?? memo?.outputReview ?? fallback?.outputReview;
   const generatedMemo = Boolean(stringFieldFromUnknown(memo?.runId) ?? stringFieldFromUnknown(metadata?.runId) ?? fallback?.runId);
   const outputReview = reviewValue === undefined && !generatedMemo ? undefined : normalizeMemoOutputReview(reviewValue);
@@ -12003,7 +12035,8 @@ function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactSt
   return {
     memoId: stringFieldFromUnknown(memo?.id) ?? stringFieldFromUnknown(memo?.memoId) ?? fallback?.memoId ?? null,
     title,
-    body: (primaryDraft ? primaryBody : memoBlocksToArtifactBody(blocks.filter((block) => !/critique/.test(block.id)))) || fallback?.body || `# ${title}\n\nStart drafting here.`,
+    body: (primaryDraft ? primaryBody : savedState.savedBody) ?? fallback?.body ?? `# ${title}\n\nStart drafting here.`,
+    ...savedState,
     status: stringFieldFromUnknown(memo?.status) ?? fallback?.status ?? 'draft',
     caseId,
     capsuleId: stringFieldFromUnknown(memo?.capsuleId) ?? stringFieldFromUnknown(metadata?.capsuleId) ?? fallback?.capsuleId ?? caseId,
@@ -12029,21 +12062,6 @@ function memoArtifactFromMemoPayload(payload: unknown, fallback?: MemoArtifactSt
     originHref: fallback?.originHref ?? null,
     updatedAt: stringFieldFromUnknown(memo?.updatedAt) ?? fallback?.updatedAt ?? new Date().toISOString(),
   };
-}
-
-function memoBlocksToArtifactBody(blocks: MemoBlock[]): string {
-  return blocks.map((block) => {
-    if (block.type === 'heading') return `# ${block.content || block.title || ''}`.trim();
-    if (block.type === 'bullets') {
-      const title = block.title ? `## ${block.title}\n` : '';
-      const items = (block.items ?? []).map((item) => `- ${item}`).join('\n');
-      return `${title}${items || block.content}`.trim();
-    }
-    if (block.type === 'quote') return `> ${block.content}`;
-    if (block.type === 'divider') return '---';
-    const title = block.title ? `## ${block.title}\n` : '';
-    return `${title}${block.content ?? ''}`.trim();
-  }).filter(Boolean).join('\n\n');
 }
 
 function memoArtifactBodyToBlocks(artifact: MemoArtifactState): MemoBlock[] {

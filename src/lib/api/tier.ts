@@ -13,12 +13,13 @@ import type { SubscriptionTier } from '@/lib/firebase/firestore';
 
 export type { SubscriptionTier };
 
-type UserTierDoc = {
+export type UserTierDoc = {
   subscription?: string;
   subscriptionProvider?: string;
   subscriptionStatus?: string;
   subscriptionExpiresAt?: unknown;
   fullAccessExpiresAt?: unknown;
+  accountDeletionStatus?: string;
 };
 
 const TIER_ORDER: Record<SubscriptionTier, number> = {
@@ -45,23 +46,27 @@ export async function resolveTier(uid: string, isDemo: boolean): Promise<Subscri
     const snap = await db.collection('users').doc(uid).get();
     if (!snap.exists) return 'free';
     const data = snap.data() as UserTierDoc | undefined;
-    const sub = data?.subscription;
-
-    if (data?.subscriptionProvider === 'promo') {
-      const expiresAt = parseDateLike(data.fullAccessExpiresAt ?? data.subscriptionExpiresAt);
-      if (!expiresAt || expiresAt.getTime() <= Date.now()) return 'free';
-    }
-
-    if ((data?.subscriptionStatus === 'canceled' || data?.subscriptionStatus === 'revoked') && data.subscriptionExpiresAt) {
-      const expiresAt = parseDateLike(data.subscriptionExpiresAt);
-      if (!expiresAt || expiresAt.getTime() <= Date.now()) return 'free';
-    }
-
-    if (sub === 'analyst' || sub === 'team' || sub === 'enterprise') return sub as SubscriptionTier;
-    return 'free';
+    return tierFromAccount(data);
   } catch {
     return 'free';
   }
+}
+
+/** Billing gates use current status and expiry; manual grants remain supported. */
+export function tierFromAccount(data: UserTierDoc | undefined, now = Date.now()): SubscriptionTier {
+  if (!data || data.accountDeletionStatus === 'deleting' || data.accountDeletionStatus === 'deleted') return 'free';
+  if (data.subscriptionProvider === 'promo') {
+    const expiresAt = parseDateLike(data.fullAccessExpiresAt ?? data.subscriptionExpiresAt);
+    if (!expiresAt || expiresAt.getTime() <= now) return 'free';
+  }
+  if (data.subscriptionStatus === 'revoked' || ['past_due', 'unpaid', 'paused', 'incomplete', 'incomplete_expired'].includes(data.subscriptionStatus ?? '')) return 'free';
+  if (data.subscriptionProvider === 'polar' || data.subscriptionStatus === 'canceled') {
+    if (!['active', 'trialing', 'canceled'].includes(data.subscriptionStatus ?? '')) return 'free';
+    const expiresAt = parseDateLike(data.subscriptionExpiresAt);
+    if (!expiresAt || expiresAt.getTime() <= now) return 'free';
+  }
+  const sub = data.subscription;
+  return sub === 'analyst' || sub === 'team' || sub === 'enterprise' ? sub : 'free';
 }
 
 /**

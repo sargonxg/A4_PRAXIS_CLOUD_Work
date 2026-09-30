@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { SituationIntelligence } from '@/lib/ai/schemas/situation-intelligence';
 
 const mocks = vi.hoisted(() => ({
@@ -127,11 +127,16 @@ function fixture(): SituationIntelligence {
 }
 
 describe('situationIntelligenceFlow', () => {
+  let situationIntelligenceFlow: typeof import('@/lib/genkit/flows/situation-intelligence').situationIntelligenceFlow;
+
+  beforeAll(async () => {
+    ({ situationIntelligenceFlow } = await import('@/lib/genkit/flows/situation-intelligence'));
+  }, 120_000);
+
   it('runs the dotprompt and returns schema-valid output', async () => {
     const promptRunner = vi.fn(async () => ({ output: fixture() }));
     mocks.prompt.mockReturnValue(promptRunner);
 
-    const { situationIntelligenceFlow } = await import('@/lib/genkit/flows/situation-intelligence');
     const output = await situationIntelligenceFlow({
       systemPromptBlock: '<path-frame>conflict-path</path-frame>',
       toolContext: 'Situation context',

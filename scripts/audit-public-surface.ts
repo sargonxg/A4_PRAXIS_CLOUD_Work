@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { auditAppHomeDispatch } from './lib/public-home-dispatch';
 
 const root = process.cwd();
 const failures: string[] = [];
@@ -101,22 +102,9 @@ requireAll('signed-in app index', appIndex, [
   'mode="authenticated"',
 ]);
 forbidAll('signed-in app index', appIndex, ['AskPraxisHome']);
-// Saved output links reuse the existing workbench. Ordinary Home must retain
-// the simple chat shell; app-page behavior tests cover missing/invalid IDs.
-if (appIndex.includes('TaskletPraxisWorkbench')) {
-  requireAll('saved memo dispatch', appIndex, [
-    'const memoId = singleResourceId(query.memoId);',
-  ]);
-  if (!/if\s*\(memoId\)\s*\{\s*return\s+<TaskletPraxisWorkbench\b[^>]*\binitialMemoId=\{memoId\}[^>]*\/>;\s*\}/.test(appIndex)) {
-    failures.push('workbench dispatch must return only inside the validated memoId branch');
-  }
-  const homeReturnIndex = appIndex.indexOf('return (');
-  if (homeReturnIndex < 0) failures.push('signed-in app index missing ordinary Home return');
-  else forbidAll('ordinary signed-in Home', appIndex.slice(homeReturnIndex), ['TaskletPraxisWorkbench']);
-  if ((appIndex.match(/<TaskletPraxisWorkbench\b/g) ?? []).length !== 1) {
-    failures.push('saved memo dispatch must be the only workbench render in the app index');
-  }
-}
+// Saved memo links and the explicit Drafts panel reuse the existing workbench.
+// Ordinary Home stays on direct Ask; app-page tests execute invalid/ambiguous inputs.
+failures.push(...auditAppHomeDispatch(appIndex));
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
   'Write trusted knowledge products.',

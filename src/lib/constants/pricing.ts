@@ -1,3 +1,7 @@
+import { PRAXIS_ASK_CREDIT_COST, PRAXIS_STARTER_TOKEN_ALLOWANCE } from '@/lib/billing/usage-policy';
+
+const starterAskAllowance = Math.floor(PRAXIS_STARTER_TOKEN_ALLOWANCE / PRAXIS_ASK_CREDIT_COST);
+
 export interface PricingTier {
   id: 'free' | 'analyst' | 'team' | 'enterprise';
   name: string;
@@ -8,6 +12,7 @@ export interface PricingTier {
   highlighted?: boolean;
   cta: string;
   audience: string;
+  availability: 'Current free beta' | 'Proposed paid plan' | 'By agreement';
 }
 
 export const PRICING_TIERS: PricingTier[] = [
@@ -15,16 +20,18 @@ export const PRICING_TIERS: PricingTier[] = [
     id: 'free',
     name: 'Free',
     price: 0,
-    usage: 'Starter policy workspace',
+    usage: `One-time starter allowance: up to ${starterAskAllowance} Ask turns`,
     maxSituations: 1,
     cta: 'Start Free',
     audience: 'Solo researchers and policy workers evaluating PRAXIS',
+    availability: 'Current free beta',
     features: [
-      '1 active saved-context workspace',
-      'Ask PRAXIS with grounding visible',
-      'Guide assistant for product and context-use questions',
-      'Starter sourceability and memo workflow',
-      'Simple context creation',
+      'Direct questions and saved conversations',
+      'Other metered work shares the allowance; see your account remaining',
+      'Attach saved context and inspect source information',
+      'Build private context from notes and documents',
+      'Review proposed claims and revise saved drafts',
+      'Guide help for product and context-use questions',
       'No credit card, no commitment',
     ],
   },
@@ -37,13 +44,13 @@ export const PRICING_TIERS: PricingTier[] = [
     highlighted: true,
     cta: 'Upgrade',
     audience: 'Individual analysts, policy officers, and researchers',
+    availability: 'Proposed paid plan',
     features: [
-      'Unlimited draft context packs, 10 active workspaces',
-      'User Core and Situation Core management',
-      'Ask PRAXIS, sourceability, grounded research, and memo drafting with saved context',
-      'Fork, lock, lineage, and handover for reusable context',
-      'Memo Studio exports with provenance',
-      'Email support',
+      'Proposed expanded individual workspace allowance',
+      'Reusable context, research and writing workflows',
+      'Source and review information retained with work',
+      'Export formats and limits subject to activation checks',
+      'Support terms confirmed before subscription',
     ],
   },
   {
@@ -54,14 +61,13 @@ export const PRICING_TIERS: PricingTier[] = [
     maxSituations: 25,
     cta: 'Start Team',
     audience: 'Mediation teams, policy units, and research desks',
+    availability: 'Proposed paid plan',
     features: [
-      'Everything in Practitioner',
-      'Shared saved-context library',
-      'Shared situation workspaces and roles',
-      'Review gates, sourceability status, and audit receipts',
-      'Scheduled brief and watchlist preparation when configured',
-      'Team-ready handover workflows',
-      'Priority support',
+      'Proposed shared context and team workspace workflows',
+      'Permissions and reviewer roles require separate acceptance',
+      'Shared evidence and review records',
+      'Schedules require configured and tested execution',
+      'Seat, usage and support terms confirmed before activation',
     ],
   },
   {
@@ -72,15 +78,13 @@ export const PRICING_TIERS: PricingTier[] = [
     maxSituations: -1,
     cta: 'Contact TACITUS',
     audience: 'Institutions requiring governance, scale, and custom controls',
+    availability: 'By agreement',
     features: [
-      'Custom situation, seat, and usage limits',
-      'Everything in Team',
-      'SSO / SAML and audit controls',
-      'Custom model and data residency options',
-      'Private GCP, graph, and database architecture when configured',
-      'Private GCP deployment support',
-      'Security review and procurement support',
-      'Dedicated account team',
+      'Scope, usage and governance agreed for the engagement',
+      'SSO / SAML subject to implementation and verification',
+      'Residency and private deployment require written agreement',
+      'Model access depends on provider and deployment availability',
+      'Security and procurement requirements assessed before onboarding',
     ],
   },
 ];
@@ -88,23 +92,23 @@ export const PRICING_TIERS: PricingTier[] = [
 export const PLAN_USAGE_BUCKETS = [
   {
     name: 'Saved Context',
-    description: 'Context creation, User and Situation cores, active stacks, Guide help, and handover.',
+    description: 'Build reusable sources, assumptions and preferences; attach them to a question.',
   },
   {
-    name: 'Sourceability',
-    description: 'Source discovery, attached receipts, weak-claim checks, citation repair, and document review.',
+    name: 'Evidence Review',
+    description: 'Inspect sources, supporting passages, conflicting claims and unresolved gaps.',
   },
   {
-    name: 'Analysis Tools',
-    description: 'Timeline, graph/power map, ACH, scenario review, red-team review, and context-aware research workflows.',
+    name: 'Policy Analysis',
+    description: 'Ask for options, tradeoffs, stakeholder views and comparisons; review their evidence.',
   },
   {
-    name: 'Memo Studio',
-    description: 'Briefs, policy memos, talking points, board notes, handover packets, and export workflows.',
+    name: 'Writing',
+    description: 'Draft, correct and save briefs and memos. Downloads do not constitute publication approval.',
   },
   {
     name: 'Institutional Controls',
-    description: 'Optional graph database, SSO, audit, data residency, and private deployment integrations when configured.',
+    description: 'Sharing, SSO, residency and private deployment are separately scoped capabilities, not current beta guarantees.',
   },
 ];
 
@@ -114,4 +118,4 @@ export const PLAN_USAGE_BUCKETS = [
  * Keep operation-level costs in `src/lib/api/with-credits.ts`.
  */
 export const INTERNAL_COST_DISCLOSURE_NOTICE =
-  'PRAXIS plans are sold as monthly workspaces. Internal metering is used for reliability, abuse prevention, and fair-use controls.';
+  'Workspace and research limits apply. Proposed plan prices and features are not active entitlements; confirmed terms are shown before any supported purchase.';

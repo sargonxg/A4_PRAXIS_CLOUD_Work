@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import {
   saveDocument,
+  getDocumentById,
+  updateDocumentIngestionMetadata,
+  DocumentWriteUnavailableError,
 } from '@/lib/firebase/documents-service';
+import { assertDocumentOwnerWritable, DocumentOwnerUnavailableError, withDocumentOwnerWrite } from '@/lib/documents/owner-write';
 import { saveSource } from '@/lib/firebase/sources-service';
 import {
   getAdminStorage,
@@ -14,6 +18,8 @@ import { emitTelemetrySafe } from '@/lib/telemetry/emit';
 import { localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
 import { attachCapsuleRefs, getCapsule, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
 import { mirrorDocumentIngestionSql } from '@/lib/agent-runtime/document-postgres';
+import { assertDocumentFileSize, assertDocumentTextSize, DocumentIngestionError, readBoundedUploadBody } from '@/lib/documents/ingestion-policy';
+import { documentUploadIdentity, documentTextIdentity } from '@/lib/documents/upload-identity';
 import {
   ensureDefaultKnowledgeRepository,
   getKnowledgeRepository,
@@ -61,17 +67,19 @@ export const POST = withAuth(async (request, user) => {
     }
     let body: JsonUploadBody;
     try {
-      body = (await request.json()) as JsonUploadBody;
-    } catch {
+      body = JSON.parse(new TextDecoder().decode(await readBoundedUploadBody(request))) as JsonUploadBody;
+    } catch (err) {
+      if (err instanceof DocumentIngestionError) return documentLimitResponse(err);
       return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
-    if (!body.title || !body.html || !body.situationId) {
+    if (typeof body.title !== 'string' || typeof body.html !== 'string' || typeof body.situationId !== 'string' || !body.title || !body.html || !body.situationId) {
       return NextResponse.json(
         { error: 'title, html, and situationId are required for JSON uploads' },
         { status: 400 },
       );
     }
     try {
+      assertDocumentTextSize(body.html);
       await emitTelemetrySafe({
         eventName: 'document.upload-start',
         uid: user.uid,
@@ -83,10 +91,11 @@ export const POST = withAuth(async (request, user) => {
       });
       const bucketName = getDefaultBucketName();
       const bucket = getAdminStorage().bucket(bucketName);
-      const docId = body.documentId || `doc-${Date.now().toString(36)}`;
+      const docId = body.documentId || documentUploadIdentity(user.uid, body.situationId, 'html', Buffer.from(body.html, 'utf8'));
       const objectPath = `users/${user.uid}/situations/${body.situationId}/artifacts/${docId}.html`;
       const file = bucket.file(objectPath);
 
+      await assertDocumentOwnerWritable(user.uid);
       await file.save(body.html, {
         contentType: body.contentType || 'text/html; charset=utf-8',
         resumable: false,
@@ -100,18 +109,20 @@ export const POST = withAuth(async (request, user) => {
           },
         },
       });
+      await confirmOwnerAfterStorageWrite(user.uid, file);
 
       // Mirror metadata into Firestore so the dashboard can query without a bucket scan.
       try {
         const db = getAdminDbOrThrow();
-        await db
+        const ref = db
           .collection('users')
           .doc(user.uid)
           .collection('situations')
           .doc(body.situationId)
           .collection('artifacts')
-          .doc(docId)
-          .set(
+          .doc(docId);
+        await withDocumentOwnerWrite(user.uid, (transaction) => {
+          transaction.set(ref,
             {
               id: docId,
               title: body.title,
@@ -125,9 +136,12 @@ export const POST = withAuth(async (request, user) => {
             },
             { merge: true },
           );
+        }, db);
       } catch (metaErr) {
+        if (metaErr instanceof DocumentOwnerUnavailableError) throw metaErr;
         console.warn('[documents/upload] Firestore mirror failed:', metaErr);
       }
+      await assertDocumentOwnerWritable(user.uid);
       await mirrorDocumentIngestionSql({
         id: docId,
         ownerUid: user.uid,
@@ -162,6 +176,8 @@ export const POST = withAuth(async (request, user) => {
         message: 'Artifact synced to bucket and indexed for the document dashboard.',
       });
     } catch (err) {
+      if (err instanceof DocumentIngestionError) return documentLimitResponse(err);
+      if (isDocumentWriteUnavailable(err)) return documentWriteUnavailableResponse(err);
       await emitTelemetrySafe({
         eventName: 'document.upload-fail',
         uid: user.uid,
@@ -186,7 +202,8 @@ export const POST = withAuth(async (request, user) => {
   }
 
   try {
-    const formData = await request.formData();
+    const boundedBody = await readBoundedUploadBody(request);
+    const formData = await new Request(request.url, { method: 'POST', headers: request.headers, body: boundedBody }).formData();
     const file = formData.get('file') as File | null;
     const situationId = formData.get('situationId') as string | null;
     const requestedCapsuleId = formData.get('capsuleId') as string | null;
@@ -223,8 +240,17 @@ export const POST = withAuth(async (request, user) => {
       );
     }
 
+    assertDocumentFileSize(file.size);
+    await assertDocumentOwnerWritable(user.uid);
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = Buffer.from(arrayBuffer);
+    const documentId = documentUploadIdentity(user.uid, situationId, fileType, fileBuffer);
+    const requestFingerprint = documentTextIdentity(JSON.stringify([requestedCapsuleIds, requestedRepositoryId,
+      requestedCategoryId, requestedPolicyDomain, requestedTags, requestedSourceNote]));
+    const previousDocument = await getDocumentById(user.uid, situationId, documentId);
+    if (previousDocument?.uploadCompletion?.fingerprint === requestFingerprint) {
+      return NextResponse.json({ ...previousDocument.uploadCompletion.result, replayed: true });
+    }
     let text = '';
     let parser: 'pdf-parse' | 'mammoth' | 'plain-text' = 'plain-text';
     let extractionMode: 'inline-text' | 'inline-structured' = 'inline-text';
@@ -250,6 +276,8 @@ export const POST = withAuth(async (request, user) => {
       parser = 'mammoth';
       extractionMode = 'inline-structured';
     }
+    assertDocumentTextSize(text);
+    if (!text.trim()) throw new DocumentIngestionError('No readable text was found. Use an OCR-processed PDF or paste the source text, then upload again.', 422, 'DOCUMENT_TEXT_EMPTY');
     const structured = autoStructureDocument({ filename: file.name, fileType, text, parser });
 
     // Best-effort: also push the raw bytes to the GCS bucket so the document
@@ -258,8 +286,10 @@ export const POST = withAuth(async (request, user) => {
     try {
       const bucketName = getDefaultBucketName();
       const bucket = getAdminStorage().bucket(bucketName);
-      const objectPath = `users/${user.uid}/situations/${situationId}/uploads/${Date.now()}-${file.name}`;
-      await bucket.file(objectPath).save(fileBuffer, {
+      const objectPath = `users/${user.uid}/situations/${situationId}/uploads/${documentId}.${fileType}`;
+      const storageFile = bucket.file(objectPath);
+      await assertDocumentOwnerWritable(user.uid);
+      await storageFile.save(fileBuffer, {
         contentType: file.type || 'application/octet-stream',
         resumable: false,
         metadata: {
@@ -271,8 +301,10 @@ export const POST = withAuth(async (request, user) => {
           },
         },
       });
+      await confirmOwnerAfterStorageWrite(user.uid, storageFile);
       bucketUri = `gs://${bucketName}/${objectPath}`;
     } catch (uploadErr) {
+      if (uploadErr instanceof DocumentOwnerUnavailableError) throw uploadErr;
       console.warn('[documents/upload] bucket write skipped:', uploadErr);
     }
 
@@ -287,27 +319,27 @@ export const POST = withAuth(async (request, user) => {
       bucketUri: bucketUri ?? undefined,
       structured,
       sourceCore: {
-        id: `source-core:${situationId}:${file.name}`.slice(0, 160),
+        id: `source-core:${documentId}`,
         situationId,
-        documentId: 'pending',
+        documentId,
         title: structured.title,
         sourceType: structured.sourceType,
         linkedAt: new Date().toISOString(),
       },
-    });
+    }, { documentId });
     if (stored.sourceCore) {
       stored.sourceCore.documentId = stored.id;
-      await getAdminDbOrThrow()
-        .collection('users')
-        .doc(user.uid)
-        .collection('situations')
-        .doc(situationId)
-        .collection('documents')
-        .doc(stored.id)
-        .set({ sourceCore: stored.sourceCore }, { merge: true });
+      await updateDocumentIngestionMetadata(user.uid, situationId, stored.id, { sourceCore: stored.sourceCore });
     }
 
-    const ingestionRun = await localKnowledgeAdapter.ingestDocument({
+    const priorUploadDocument = previousDocument?.uploadCompletion?.result.document as Record<string, unknown> | undefined;
+    const storedIngestion = previousDocument?.ingestionStatus === 'checked' && previousDocument.ingestionRunId
+      && typeof previousDocument.chunkCount === 'number'
+      ? { id: previousDocument.ingestionRunId, status: 'checked' as const, chunkCount: previousDocument.chunkCount } : null;
+    const ingestionRun = storedIngestion ?? (priorUploadDocument?.ingestionStatus === 'checked' && typeof priorUploadDocument.ingestionRunId === 'string'
+      && typeof priorUploadDocument.chunkCount === 'number'
+      ? { id: priorUploadDocument.ingestionRunId, status: 'checked' as const, chunkCount: priorUploadDocument.chunkCount }
+      : await localKnowledgeAdapter.ingestDocument({
       uid: user.uid,
       situationId,
       documentId: stored.id,
@@ -315,8 +347,13 @@ export const POST = withAuth(async (request, user) => {
       fileType,
       text,
       bucketUri,
-    });
+    }));
     const chunkCount = ingestionRun.chunkCount;
+    // Commit the completed ingestion receipt before attachment/library work.
+    // A retry after a later failure can resume those effects without re-running ingestion.
+    await updateDocumentIngestionMetadata(user.uid, situationId, stored.id, {
+      ingestionRunId: ingestionRun.id, ingestionStatus: ingestionRun.status,
+    });
     const sourceCoreId = stored.sourceCore?.id ?? `source-core:${situationId}:${stored.id}`;
     const receiptConfidence = computeReceiptConfidence({
       hasText: text.trim().length > 0,
@@ -354,36 +391,32 @@ export const POST = withAuth(async (request, user) => {
       ...(file.type ? { mimeType: file.type } : {}),
       ...(bucketUri ? { originalUrl: bucketUri } : {}),
     };
-    const sourceReceipt = await saveSource(user.uid, situationId, sourcePayload);
-    await getAdminDbOrThrow()
-      .collection('users')
-      .doc(user.uid)
-      .collection('situations')
-      .doc(situationId)
-      .collection('documents')
-      .doc(stored.id)
-      .set({
+    const sourceReceipt = await saveSource(user.uid, situationId, sourcePayload, { sourceId: `source-${documentId}` });
+    await updateDocumentIngestionMetadata(user.uid, situationId, stored.id, {
         ingestionRunId: ingestionRun.id,
         ingestionStatus: ingestionRun.status,
         sourceCore: {
-          ...(stored.sourceCore ?? {}),
+          ...(stored.sourceCore ?? { situationId, title: structured.title, sourceType: structured.sourceType }),
           id: sourceCoreId,
           documentId: stored.id,
           sourceReceiptId: sourceReceipt.id,
           ingestionRunId: ingestionRun.id,
           linkedAt: stored.sourceCore?.linkedAt ?? new Date().toISOString(),
         },
-      }, { merge: true });
+      });
+    await assertDocumentOwnerWritable(user.uid);
     const explicitCapsules = (await Promise.all(
       requestedCapsuleIds.map((capsuleId) => getCapsule(user.uid, capsuleId).catch(() => null)),
     )).filter((capsule): capsule is NonNullable<typeof capsule> => Boolean(capsule && !capsule.archivedAt));
     const explicitCapsule = explicitCapsules[0] ?? null;
     const { capsule: fallbackCapsule } = await getOrMigrateDefaultCapsule(user.uid);
+    await assertDocumentOwnerWritable(user.uid);
     const capsule = explicitCapsule && !explicitCapsule.archivedAt ? explicitCapsule : fallbackCapsule;
     const targetCapsuleIds = uniqueStrings(explicitCapsules.length
       ? explicitCapsules.map((item) => item.capsuleId)
       : [capsule.capsuleId]);
     for (const capsuleId of targetCapsuleIds) {
+      await assertDocumentOwnerWritable(user.uid);
       await attachCapsuleRefs(user.uid, capsuleId, {
         sourceIds: [sourceCoreId],
         documentIds: [stored.id],
@@ -393,6 +426,7 @@ export const POST = withAuth(async (request, user) => {
       ? await getKnowledgeRepository(user.uid, requestedRepositoryId).catch(() => null)
       : null;
     const repository = requestedRepository ?? await ensureDefaultKnowledgeRepository(user.uid);
+    await assertDocumentOwnerWritable(user.uid);
     const knowledgeDocument = await upsertKnowledgeDocument(user.uid, {
       documentId: stored.id,
       situationId,
@@ -411,6 +445,7 @@ export const POST = withAuth(async (request, user) => {
       chunkCount,
       entityCount: structured.actors.length,
     });
+    await assertDocumentOwnerWritable(user.uid);
     await mirrorDocumentIngestionSql({
       id: stored.id,
       ownerUid: user.uid,
@@ -458,20 +493,25 @@ export const POST = withAuth(async (request, user) => {
         ingestionStatus: ingestionRun.status,
       },
     });
-    return NextResponse.json({
+    const indexedDocument = await getDocumentById(user.uid, situationId, stored.id);
+    const indexingStatus = ingestionRun.status === 'failed' ? 'failed'
+      : indexedDocument?.indexing?.status === 'keyword_only' ? 'keyword_only' : 'indexed';
+    const result = {
       success: true,
+      retryable: indexingStatus === 'failed',
       documentId: stored.id,
       document: {
         id: stored.id,
         title: stored.title,
         fileType: stored.fileType,
         size: stored.size,
-        status: stored.status,
+        status: indexedDocument?.status ?? stored.status,
         uploadedAt: stored.uploadedAt,
         entityCount: structured.actors.length,
         chunkCount,
         ingestionRunId: ingestionRun.id,
         ingestionStatus: ingestionRun.status,
+        indexingStatus,
         sourceCoreId,
         sourceReceiptId: sourceReceipt.id,
         bucketUri,
@@ -491,11 +531,20 @@ export const POST = withAuth(async (request, user) => {
         summaryStatus: knowledgeDocument.summaryStatus,
         retrievalStatus: knowledgeDocument.retrievalStatus,
       },
-      message: chunkCount > 0
-        ? 'Document uploaded, chunked, and indexed for retrieval.'
-        : 'Document uploaded and saved to your situation. Text extraction did not produce retrievable chunks.',
+      message: indexingStatus === 'failed'
+        ? 'Document saved, but indexing failed. Retry this upload to resume.'
+        : indexingStatus === 'keyword_only'
+          ? 'Document saved and searchable by keywords. Semantic embeddings are unavailable.'
+          : 'Document uploaded, chunked, and indexed for retrieval.',
+    };
+    if (indexingStatus !== 'failed') await updateDocumentIngestionMetadata(user.uid, situationId, stored.id, {
+      uploadCompletion: { fingerprint: requestFingerprint, result: JSON.parse(JSON.stringify(result)) as Record<string, unknown> },
     });
+    await assertDocumentOwnerWritable(user.uid);
+    return NextResponse.json(result);
   } catch (err) {
+    if (err instanceof DocumentIngestionError) return documentLimitResponse(err);
+    if (isDocumentWriteUnavailable(err)) return documentWriteUnavailableResponse(err);
     await emitTelemetrySafe({
       eventName: 'document.upload-fail',
       uid: user.uid,
@@ -509,6 +558,29 @@ export const POST = withAuth(async (request, user) => {
     return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
   }
 });
+
+function isDocumentWriteUnavailable(error: unknown): error is DocumentOwnerUnavailableError | DocumentWriteUnavailableError {
+  return error instanceof DocumentOwnerUnavailableError || error instanceof DocumentWriteUnavailableError;
+}
+
+function documentWriteUnavailableResponse(error: DocumentOwnerUnavailableError | DocumentWriteUnavailableError) {
+  return NextResponse.json({ error: error.message, code: error.code, retryable: error.status === 503 }, { status: error.status });
+}
+
+/** A preflight cannot cancel GCS work already admitted when erasure starts. */
+async function confirmOwnerAfterStorageWrite(uid: string, file: { delete: (options: { ignoreNotFound: boolean }) => Promise<unknown> }) {
+  try { await assertDocumentOwnerWritable(uid); }
+  catch (error) {
+    if (error instanceof DocumentOwnerUnavailableError && error.status === 409) {
+      await file.delete({ ignoreNotFound: true }).catch((cleanupError) => console.warn('[documents/upload] late storage cleanup failed:', cleanupError));
+    }
+    throw error;
+  }
+}
+
+function documentLimitResponse(error: DocumentIngestionError) {
+  return NextResponse.json({ error: error.message, code: error.code, retryable: false }, { status: error.status });
+}
 
 function orgIdOf(user: unknown): string | null {
   return (user as { orgId?: string }).orgId ?? null;

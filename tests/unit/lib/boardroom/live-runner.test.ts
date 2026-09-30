@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 import type { ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
 import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
@@ -19,13 +19,20 @@ vi.mock('@/lib/ai/providers', () => ({
 }));
 
 describe('runLiveBoardroomDiscussion', () => {
+  let runLiveBoardroomDiscussion: typeof import('@/lib/boardroom/live-runner').runLiveBoardroomDiscussion;
+
+  // Cold module startup has a separate budget so a late import cannot consume
+  // the next test's mocked generation responses after a test-body timeout.
+  beforeAll(async () => {
+    ({ runLiveBoardroomDiscussion } = await import('@/lib/boardroom/live-runner'));
+  }, 120_000);
+
   beforeEach(() => {
     vi.clearAllMocks();
     generateTextMock.mockReset();
   });
 
   it('emits live turn callbacks and rejects hallucinated evidence refs without substitution', async () => {
-    const { runLiveBoardroomDiscussion } = await import('@/lib/boardroom/live-runner');
     const turnOutputs = [
       {
         claim: 'Legal needs the written authorization in the board pack.',
@@ -100,7 +107,6 @@ describe('runLiveBoardroomDiscussion', () => {
   });
 
   it('runs the six brainstorming personas against active capsule evidence by default', async () => {
-    const { runLiveBoardroomDiscussion } = await import('@/lib/boardroom/live-runner');
     const turnOutputs = BRAINSTORMING_PERSONA_IDS.map((id) => ({
       claim: `${id} grounds the decision in the active capsule receipt.`,
       evidenceRefs: ['receipt-1'],

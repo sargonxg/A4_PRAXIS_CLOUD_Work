@@ -79,6 +79,9 @@ describe('Session 5 public surface and billing contract', () => {
         type: 'subscription.active',
         data: {
           id: 'sub_team',
+          status: 'active',
+          modifiedAt: new Date('2026-09-30T12:00:00Z'),
+          currentPeriodEnd: new Date('2026-10-30T12:00:00Z'),
           productId: 'prod_team',
           customer: { id: 'cus_team', externalId: 'uid_team' },
           metadata: { plan: 'team' },

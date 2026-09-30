@@ -5,7 +5,7 @@ import { agentToolRequiresApproval, getAgentToolDefinition } from '@/lib/agent-r
 import { buildAgentWorkflowPlan, type AgentWorkflowKind, type AgentWorkflowPlan } from '@/lib/agent-runtime/workflow-plan';
 import { getPolicyAgent, policyAgentRunIntent, type PolicyAgentOutputDestination, type PolicyAgentRunIntent } from '@/lib/product/policy-agents';
 import { buildTacitusRoutingDecision, type TacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
-import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
+import { getModelMatrixEntry, type TaskKind } from '@/lib/ai/model-matrix';
 import { buildWorkIntentPlan, type WorkIntentCapsuleInput, type WorkIntentMode, type WorkIntentPlan } from '@/lib/ai/work-intent-router';
 import { buildAskTurnPlan, type AskTurnPlan } from '@/lib/ai/ask-turn-plan';
 import { isTemporalIntent } from '@/lib/context/temporal-timeline';
@@ -155,9 +155,11 @@ export interface AskOrchestrationStatusEvent {
 
 export interface AskGenerationBudgetReceipt {
   mode: 'standard' | 'long_context';
-  taskKind: 'balanced' | 'long_context';
+  taskKind: TaskKind;
   selectedModelId: string;
   maxOutputTokens: number;
+  maxAttempts: number;
+  maxRetries: 0;
   continuationRecommended: boolean;
   continuationTargets: Array<'memo' | 'evidence_annex' | 'output_capsule'>;
 }
@@ -237,6 +239,8 @@ export function buildAskConversationOrchestrationReceipt(request: {
     complexity,
     intent: input.intent,
     selectedModelId: routingDecision.selectedModelId,
+    modelTaskKind: routingDecision.modelTaskKind,
+    modelBudget: routingDecision.modelBudget,
   });
   const languagePolicyReview = buildAskLanguagePolicyReview({
     intent: input.intent,
@@ -553,19 +557,23 @@ export function buildAskGenerationBudgetReceipt(input: {
   complexity: AskOrchestrationComplexity;
   intent: AskIntent;
   selectedModelId: string;
+  modelTaskKind?: TaskKind;
+  modelBudget?: { maxOutputTokens: number; maxAttempts: number };
 }): AskGenerationBudgetReceipt {
   const longContext = input.complexity === 'deep'
     || input.intent === 'research_memo'
     || input.intent === 'sourceability_review'
     || input.intent === 'red_team_review'
     || input.intent === 'handover';
-  const taskKind = longContext ? 'long_context' : 'balanced';
+  const taskKind = input.modelTaskKind ?? (longContext ? 'long_context' : 'balanced');
   const entry = getModelMatrixEntry(taskKind);
   return {
     mode: longContext ? 'long_context' : 'standard',
     taskKind,
     selectedModelId: input.selectedModelId,
-    maxOutputTokens: entry.maxTokens ?? (longContext ? 8192 : 4096),
+    maxOutputTokens: input.modelBudget?.maxOutputTokens ?? entry.maxTokens ?? (longContext ? 8192 : 4096),
+    maxAttempts: Math.max(1, Math.min(input.modelBudget?.maxAttempts ?? 3, 3)),
+    maxRetries: 0,
     continuationRecommended: longContext,
     continuationTargets: longContext ? ['memo', 'evidence_annex', 'output_capsule'] : ['memo'],
   };

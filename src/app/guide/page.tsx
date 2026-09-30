@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PraxisGlyphChip } from '@/components/brand/praxis-mark';
 import { LivingContextRail, PublicPageShell } from '@/components/ui/instrument';
+import { WorkedPolicyExample } from '@/components/marketing/worked-policy-example';
 
 export const metadata: Metadata = {
   title: 'Guide',
@@ -30,19 +31,19 @@ const steps = [
   },
   {
     title: 'Add sources or saved context',
-    body: 'Open the Context Capsules library to choose a saved capsule or a starter method, then use its attach action to return to chat. Check the attached context beside the composer before asking your next question.',
+    body: 'Open Capsules to choose saved context or a starter method, then attach it to your question. Check the attached name, version and material beside the composer. Say whether to use only that material or collect outside sources.',
   },
   {
-    title: 'Check sourceability',
-    body: 'Open the answer’s sources and claim checks. Compare important claims with the cited material, and keep unsupported claims, stale assumptions and missing evidence visible.',
+    title: 'Check the evidence',
+    body: 'Open the answer’s sources and claim checks. Inspect the original supporting passage, publisher and date for important claims. A generated web summary is not an original quotation; missing evidence stays unknown rather than proving nothing happened.',
   },
   {
     title: 'Create context worth reusing',
-    body: 'Use Build context for a quick capsule, or open the document builder from the library. Upload TXT, text-based PDF or Word files, select Build evidence proposals, and inspect the proposals. Approve or reject each one before reusing it as reviewed context.',
+    body: 'Build context separately in Capsules. Describe its purpose and audience, add notes or TXT, text-based PDF and Word files, then inspect the proposed claims. Apply or reject them with a reason. Confirm the private save before attaching the saved context to Ask.',
   },
   {
     title: 'Save the output',
-    body: 'Use the answer’s editor action to refine a useful draft. Return to your saved conversation for follow-up questions. Check the final wording, citations and caveats before exporting or sharing.',
+    body: 'Open a useful answer in the editor, correct its primary text, save and reopen it. Feedback that has not been applied has not changed the draft. Whole-draft review belongs to the exact saved version; editing makes earlier approval outdated. A downloaded draft is not publication approval.',
   },
 ];
 
@@ -53,7 +54,7 @@ const guideCards = [
   },
   {
     label: 'Ask PRAXIS',
-    body: 'Use this for actual analysis, generation, saved conversations, source operations, memos, and durable runtime receipts.',
+    body: 'Use this for analysis and writing, saved conversations, attached sources, research and memos. Ask focused follow-ups or request a different audience and length while retaining the evidence.',
   },
   {
     label: 'Two ways to build a capsule',
@@ -61,7 +62,7 @@ const guideCards = [
   },
   {
     label: 'When something needs attention',
-    body: 'If a file has no readable text, try a text-based PDF or paste its text into a TXT file; scanned PDFs may need OCR first. If an answer fails, retry and check your attached context. Report recurring problems with the time and action, without sharing confidential source material.',
+    body: 'If a file has no readable text, use a text-based PDF or a TXT copy. Scanned PDF and long-document handling have separate limits. If an upload or save fails, check what persisted before retrying. Report the time and action without including confidential material implicitly.',
   },
 ];
 
@@ -71,7 +72,7 @@ export default function GuidePage() {
     { id: 'context', label: 'Context', value: 'Optional', detail: 'Attach when useful', state: 'active' as const },
     { id: 'source', label: 'Sources', value: 'Gaps visible', detail: 'Receipts first', state: 'ready' as const },
     { id: 'output', label: 'Output', value: 'Memo or handover', detail: 'Reviewable work', state: 'quiet' as const },
-    { id: 'readiness', label: 'Readiness', value: 'Proof rail', detail: 'No hidden claims', state: 'active' as const },
+    { id: 'readiness', label: 'Review', value: 'Your judgment', detail: 'Check before use', state: 'active' as const },
   ];
 
   return (
@@ -85,7 +86,7 @@ export default function GuidePage() {
           Ask the question. Check the evidence. Save the work.
         </h1>
         <p className="mt-5 max-w-3xl text-lg leading-8 text-[color:var(--color-ink)]/70">
-          PRAXIS is simplest when you treat it as one cockpit: ask the question, attach sources or capsules when needed, inspect the evidence, and save the work with receipts.
+          Ask the question, attach sources or saved context when useful, check the evidence, and revise the written product. You can build reusable context separately from asking a question.
         </p>
         <LivingContextRail cells={guideRailCells} compact className="mt-8" />
         <div className="mt-8 flex flex-wrap gap-3">
@@ -100,7 +101,7 @@ export default function GuidePage() {
 
       <section aria-labelledby="guide-capsules" className="mb-12 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6">
         <h2 id="guide-capsules" className="font-serif text-2xl text-slate-950">Ready to try it with your own material?</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">Sign in, choose a method or build a private capsule, review what it contains, then attach it to a question. The attached capsule supplies context; it does not make every answer verified.</p>
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-700">A Context Capsule saves the sources, assumptions and analytical approach you want PRAXIS to reuse. Sign in, choose or build one, review its contents, then attach it to a question. Saving context does not independently verify it.</p>
         <div className="mt-4 flex flex-wrap gap-3">
           <Link href="/app/capsules?lane=repository" className="inline-flex min-h-11 items-center rounded-full border border-emerald-300 bg-white px-5 text-sm font-semibold text-emerald-900">Browse capsules and methods</Link>
           <Link href="/app/capsules/builder" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white">Build from documents</Link>
@@ -114,7 +115,7 @@ export default function GuidePage() {
             From prompt to policy product
           </h2>
           <p className="mt-4 text-sm leading-6 text-[color:var(--color-ink)]/70">
-            Context Capsules do not replace judgment. They give the model the right working memory, source posture, constraints, and output contract so each generation starts from the team&apos;s reviewed context instead of a blank prompt.
+            State the audience, decision and as-of date. Saved context carries the working material you want to reuse; check its sources and assumptions again when the situation changes. Model choice does not remove the need for evidence or human review.
           </p>
         </div>
         <ol className="grid gap-3">
@@ -130,6 +131,28 @@ export default function GuidePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <div className="pb-14">
+        <WorkedPolicyExample />
+      </div>
+
+      <section aria-labelledby="guide-policy-jobs" className="pb-14">
+        <h2 id="guide-policy-jobs" className="font-serif text-3xl font-semibold text-[color:var(--color-diplomatic-blue)]">Make the request fit your job</h2>
+        <div className="mt-5 grid gap-4 md:grid-cols-3">
+          <article className="rounded-xl border border-slate-200 bg-white/75 p-5">
+            <h3 className="text-base font-semibold text-slate-950">For a decision brief</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">Ask for options, tradeoffs, legal authority, resources, political constraints and the decision required. Keep a commitment separate from evidence of implementation.</p>
+          </article>
+          <article className="rounded-xl border border-slate-200 bg-white/75 p-5">
+            <h3 className="text-base font-semibold text-slate-950">For an assessment</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">Compare supporting and conflicting passages. Separate facts, actor claims and analyst inference; state what evidence would change the assessment.</p>
+          </article>
+          <article className="rounded-xl border border-slate-200 bg-white/75 p-5">
+            <h3 className="text-base font-semibold text-slate-950">For narrative analysis</h3>
+            <p className="mt-3 text-sm leading-6 text-slate-700">Preserve exact wording, speaker, date and source. Distinguish observed framing from inferred intent, acknowledge translation and missing voices, and avoid treating a small document set as public opinion.</p>
+          </article>
+        </div>
       </section>
 
       <section className="grid gap-4 pb-16 md:grid-cols-2">

@@ -1,4 +1,4 @@
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type Transaction } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { normalizeAgentRunFailureSummary } from '@/lib/agent-runtime/failure-summary';
 import type { AgentApproval, AgentRun, AgentRunEvent, AgentRunFailureSummary, AgentToolCall } from '@/lib/agent-runtime/types';
@@ -145,21 +145,18 @@ export async function mirrorAgentRunToFirestore(
     preserveAudit?: boolean;
   } = {},
 ): Promise<boolean> {
-  return writeFirestoreMirror(async () => {
-    const db = getAdminDbOrThrow();
+  return writeOwnerFirestoreMirror(run.ownerUid, (db, tx) => {
     const snapshot: Partial<AgentRunFirestoreSnapshot> = buildAgentRunFirestoreSnapshot(run, options);
     if (options.preserveAudit) delete snapshot.audit;
-    await db.doc(agentRunFirestorePath(run.ownerUid, run.id)).set(snapshot, { merge: true });
+    tx.set(db.doc(agentRunFirestorePath(run.ownerUid, run.id)), snapshot, { merge: true });
   });
 }
 
 export async function mirrorAgentRunEventToFirestore(event: AgentRunEvent): Promise<boolean> {
-  return writeFirestoreMirror(async () => {
-    const db = getAdminDbOrThrow();
+  return writeOwnerFirestoreMirror(event.ownerUid, (db, tx) => {
     const runRef = db.doc(agentRunFirestorePath(event.ownerUid, event.runId));
-    const batch = db.batch();
-    batch.set(runRef.collection('events').doc(event.id), buildAgentRunEventMirror(event), { merge: true });
-    batch.set(runRef, compactUndefined({
+    tx.set(runRef.collection('events').doc(event.id), buildAgentRunEventMirror(event), { merge: true });
+    tx.set(runRef, compactUndefined({
       schemaVersion: 1,
       ownerUid: event.ownerUid,
       runId: event.runId,
@@ -175,29 +172,38 @@ export async function mirrorAgentRunEventToFirestore(event: AgentRunEvent): Prom
         latestMessage: event.message,
       },
     }), { merge: true });
-    await batch.commit();
   });
 }
 
 export async function mirrorAgentToolCallToFirestore(toolCall: AgentToolCall): Promise<boolean> {
-  return writeFirestoreMirror(async () => {
-    const db = getAdminDbOrThrow();
-    await db
+  return writeOwnerFirestoreMirror(toolCall.ownerUid, (db, tx) => {
+    const ref = db
       .doc(agentRunFirestorePath(toolCall.ownerUid, toolCall.runId))
       .collection('toolCalls')
-      .doc(toolCall.id)
-      .set({ schemaVersion: 1, ...toolCall }, { merge: true });
+      .doc(toolCall.id);
+    tx.set(ref, { schemaVersion: 1, ...toolCall }, { merge: true });
   });
 }
 
 export async function mirrorAgentApprovalToFirestore(approval: AgentApproval): Promise<boolean> {
-  return writeFirestoreMirror(async () => {
-    const db = getAdminDbOrThrow();
-    await db
+  return writeOwnerFirestoreMirror(approval.ownerUid, (db, tx) => {
+    const ref = db
       .doc(agentRunFirestorePath(approval.ownerUid, approval.runId))
       .collection('approvals')
-      .doc(approval.id)
-      .set({ schemaVersion: 1, ...approval }, { merge: true });
+      .doc(approval.id);
+    tx.set(ref, { schemaVersion: 1, ...approval }, { merge: true });
+  });
+}
+
+async function writeOwnerFirestoreMirror(ownerUid: string, write: (db: Firestore, tx: Transaction) => void): Promise<boolean> {
+  return writeFirestoreMirror(async () => {
+    const db = getAdminDbOrThrow();
+    await db.runTransaction(async (tx) => {
+      const owner = await tx.get(db.doc(`users/${ownerUid}`));
+      const state = owner.data()?.accountDeletionStatus;
+      if (!owner.exists || state === 'deleting' || state === 'deleted') throw new Error('Account is unavailable for agent persistence.');
+      write(db, tx);
+    });
   });
 }
 

@@ -96,6 +96,9 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
       : proposal;
     return NextResponse.json({ card }, { status: 201 });
   } catch (err) {
+    if (err instanceof Error && (err as Error & { status?: number }).status === 409) {
+      return NextResponse.json({ error: err.message, code: 'STALE_CAPSULE_PROPOSAL' }, { status: 409 });
+    }
     return handleRouteError(err, 'context/capsules/graph/edges');
   }
 });

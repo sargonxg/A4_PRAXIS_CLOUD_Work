@@ -5,6 +5,7 @@ import { completeAnalystProfile, getAnalystProfile } from '@/lib/firebase/analys
 import { publishProfileEvent, refreshProfileEmbedding } from '@/lib/firebase/profile-events';
 import { isProfileComplete } from '@/types/analyst-profile';
 import { signCookie, verifyCookie } from '@/lib/auth/cookie-signer';
+import { resolveOnboardingReturnTarget } from '@/lib/auth/post-login-redirect';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
@@ -51,9 +52,9 @@ export const POST = withAuth(async (req, user) => {
   void refreshProfileEmbedding(user.uid).catch(() => { /* logged inside */ });
   void publishProfileEvent({ uid: user.uid, kind: 'completed', versionId }).catch(() => { /* logged inside */ });
 
-  const redirectTo = createFirstSituation
-    ? '/app?panel=builder&fromOnboarding=1'
-    : '/app';
+  const returnParams = new URLSearchParams();
+  if (typeof body.redirect === 'string') returnParams.set('redirect', body.redirect);
+  const redirectTo = resolveOnboardingReturnTarget(returnParams, createFirstSituation);
 
   return NextResponse.json({ versionId, redirectTo });
 });

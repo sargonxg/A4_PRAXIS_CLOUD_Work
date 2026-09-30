@@ -1,6 +1,7 @@
-import { executeWebResearch, type WebResearchResult } from '@/lib/ai/web-research';
+import { executeWebResearch, type WebResearchResult, type GeneratedGroundingSegment } from '@/lib/ai/web-research';
+import { fetchOriginalSource, type OriginalSourceCapture } from '@/lib/ai/source-passage';
 
-export interface WebSearchResult {
+export interface WebSearchResult extends Partial<OriginalSourceCapture> {
   title: string;
   url: string;
   description?: string;
@@ -9,6 +10,7 @@ export interface WebSearchResult {
   provider?: string;
   success: boolean;
   error?: string;
+  generatedGroundingSegments?: GeneratedGroundingSegment[];
 }
 
 export function isGroundedSearchConfigured(): boolean {
@@ -29,20 +31,22 @@ export async function searchWeb(
 }
 
 export async function scrapeUrl(url: string): Promise<WebSearchResult> {
-  const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
-  const content = await res.text();
+  const capture = await fetchOriginalSource(url);
+  const content = capture.originalPassages.map((passage) => passage.text).join('\n');
   return {
     title: url,
     url,
     description: content.slice(0, 300),
-    content: content.slice(0, 25000),
+    content,
     provider: 'direct-fetch',
-    success: true,
+    success: capture.originalPassageStatus === 'retrieved',
+    error: capture.unavailableReason,
+    ...capture,
   };
 }
 
 export async function scrapeMultiple(urls: string[]): Promise<WebSearchResult[]> {
-  const settled = await Promise.allSettled(urls.map((url) => scrapeUrl(url)));
+  const settled = await Promise.allSettled(urls.slice(0, 5).map((url) => scrapeUrl(url)));
   return settled
     .filter((item): item is PromiseFulfilledResult<WebSearchResult> => item.status === 'fulfilled')
     .map((item) => item.value);
@@ -52,8 +56,11 @@ export function formatResultsAsContext(results: WebSearchResult[]): string {
   return results
     .map((result, index) => {
       const title = result.title || result.url;
-      const body = result.content || result.description || '';
-      return `[${index + 1}] ${title}\nURL: ${result.url}\n${body}`;
+      const body = result.content || '';
+      const status = result.originalPassageStatus ?? 'unavailable';
+      const generated = result.generatedGroundingSegments?.map((segment) => segment.text).join('\n') ?? '';
+      const locators = result.originalPassages?.map((passage) => passage.locator).join(', ') ?? 'none';
+      return `[${index + 1}] ${title}\nURL: ${result.finalUrl ?? result.url}\nOriginal passage: ${status}${result.unavailableReason ? ` (${result.unavailableReason})` : ''}\nPublisher: ${result.publisher ?? 'unknown'}; authority: ${result.authority ?? 'unknown'} (host classification, not claim verification)\nPublished: ${result.publishedDate ?? 'unknown'}; captured extracted-text locator: ${locators}\n${body}${generated ? `\nGenerated grounding segments (not original quotations; claim support unverified):\n${generated}` : ''}`;
     })
     .join('\n\n');
 }
@@ -63,9 +70,17 @@ function fromResearchResult(result: WebResearchResult): WebSearchResult {
     title: result.title,
     url: result.url,
     description: result.snippet,
-    content: result.content || result.snippet || '',
+    content: result.content || '',
     publishedDate: result.publishedDate,
     provider: result.provider,
     success: true,
+    originalPassageStatus: result.originalPassageStatus,
+    originalPassages: result.originalPassages,
+    unavailableReason: result.unavailableReason,
+    generatedGroundingSegments: result.generatedGroundingSegments,
+    publisher: result.publisher,
+    authority: result.authority,
+    finalUrl: result.finalUrl,
+    truncated: result.truncated,
   };
 }

@@ -27,6 +27,7 @@ export interface TacitusRoutingDecision {
   };
   modelTier: TacitusModelTier;
   modelTaskKind: TaskKind;
+  modelBudget: { maxOutputTokens: number; maxAttempts: number };
   modelFamily: 'Gemini';
   selectedModelId: string;
   fallbackChain: ModelFallbackCandidate[];
@@ -73,8 +74,8 @@ export function buildTacitusRoutingDecision(input: {
     capsuleHealth: input.capsuleHealth,
     activeGapCount: input.activeGapCount,
   });
-  const modelTaskKind = policyAgent?.modelTaskKind ?? (modelTier === 'deep' || modelTier === 'sourceability' ? policy.frontierPrimary.deepTaskKind : policy.frontierPrimary.chatTaskKind);
-  const depth = modelTier === 'deep' || modelTier === 'sourceability' ? 'deep' : modelTier === 'fast' ? 'chat' : 'chat';
+  const modelTaskKind = modelTier === 'fast' ? 'cheap_classify' : modelTier === 'deep' || modelTier === 'sourceability' ? policy.frontierPrimary.deepTaskKind : policyAgent?.modelTaskKind ?? policy.frontierPrimary.chatTaskKind;
+  const depth = modelTier === 'deep' || modelTier === 'sourceability' ? 'deep' : modelTier === 'fast' ? 'cheap' : 'chat';
   const selectedModelId = getModelMatrixEntry(modelTaskKind).model;
   const fallbackChain = buildModelFallbackCandidates({
     selectedModelId,
@@ -109,6 +110,7 @@ export function buildTacitusRoutingDecision(input: {
     modelTier,
     modelTaskKind,
     modelFamily: 'Gemini',
+    modelBudget: { maxOutputTokens: Math.min(getModelMatrixEntry(modelTaskKind).maxTokens ?? 4096, modelTier === 'fast' ? 1024 : modelTier === 'standard' ? 8192 : 16384), maxAttempts: fallbackChain.length },
     selectedModelId,
     fallbackChain,
     workerMode,
@@ -118,7 +120,7 @@ export function buildTacitusRoutingDecision(input: {
     userSelectedModelIgnored: Boolean(input.userSelectedModelId),
     userSafeLabels: {
       policyAgent: policyAgent?.label ?? 'Direct Ask PRAXIS answer',
-      modelTier: `TACITUS selected ${modelTier === 'sourceability' ? 'sourceability' : modelTier} reasoning`,
+      modelTier: modelTier === 'fast' ? 'Economical recall and extraction' : modelTier === 'standard' ? 'Balanced analysis' : 'Complex synthesis and review',
       fallbackPosture: fallbackChain.length > 1 ? 'Stable fallback ready' : 'Primary route only',
       workerMode: labelForWorker(workerMode),
     },
@@ -133,6 +135,7 @@ function selectPolicyAgent(input: {
   requestedOutputType?: string | null;
 }): string | null {
   if (input.selectedPolicyAgentId && getPolicyAgent(input.selectedPolicyAgentId)) return input.selectedPolicyAgentId;
+  if (input.intent === 'normal_answer' && isEconomicalTask(input.text)) return null;
   if (input.intent === 'handover') return 'handover-builder';
   if (input.intent === 'red_team_review') return 'red-team-analyst';
   if (input.intent === 'sourceability_review') return 'sourceability-reviewer';
@@ -173,6 +176,9 @@ function selectModelTier(input: {
   capsuleHealth: 'ready' | 'thin' | 'missing';
   activeGapCount: number;
 }): TacitusModelTier {
+  // Model complexity is independent of permission to run agents or retrieve sources.
+  if (/\b(contradict(?:ory|ion|ions)?|conflicting evidence|reconcile|trade[- ]?offs?|alternative policy options|causal|scenario analysis|high[- ]stakes|critical decision)\b/.test(input.text)) return 'deep';
+  if (isEconomicalTask(input.text)) return 'fast';
   if (input.workerMode === 'sourceability-reviewer') return 'sourceability';
   if (
     input.workerMode === 'research-memo' ||
@@ -185,7 +191,12 @@ function selectModelTier(input: {
   ) return 'deep';
   if (/\b(deep|latest|current|multi[- ]?source|investigate|comprehensive)\b/.test(input.text)) return 'deep';
   if (input.workerMode === 'output-formatter' || input.capsuleHealth !== 'ready' || input.activeGapCount > 0 || input.intent !== 'normal_answer') return 'standard';
-  return 'fast';
+  return 'standard';
+}
+
+function isEconomicalTask(text: string): boolean {
+  return /\b(extract|classify|classification|tag|recall|restate|list (?:the )?(?:names|dates|actors|values)|summari[sz]e (?:this |the )?(?:document|file|transcript))\b/.test(text)
+    && !/\b(analy[sz]e|synthesi[sz]e|evaluate|assess|recommend|compare|research|verify|critique|contradict\w*|reconcile|source[- ]cited claims?|multi[- ]source)\b/.test(text);
 }
 
 function selectTools(

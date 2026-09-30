@@ -7,6 +7,7 @@
 
 import { generateText } from 'ai';
 import { getGroundedModel, getGoogleSearchTool } from '@/lib/ai/providers';
+import { fetchOriginalSource, type OriginalSourceCapture } from '@/lib/ai/source-passage';
 import {
   craftQueriesFromTemplate,
   getToolSourceHints,
@@ -15,7 +16,17 @@ import {
   type QueryContext,
 } from '@/lib/ai/query-intelligence';
 
-export interface WebResearchResult {
+export interface GeneratedGroundingSegment {
+  kind: 'generated-grounding-segment';
+  text: string;
+  sourceUrl: string;
+  responseStart?: number;
+  responseEnd?: number;
+  /** Provider attribution is not an original-passage or factual-support check. */
+  claimSupport: 'provider-attributed-unverified';
+}
+
+export interface WebResearchResult extends Partial<OriginalSourceCapture> {
   title: string;
   url: string;
   content: string;
@@ -27,6 +38,7 @@ export interface WebResearchResult {
   query?: string;
   retrievedAt?: string;
   isGroundedSummary?: boolean;
+  generatedGroundingSegments?: GeneratedGroundingSegment[];
 }
 
 export type SearchProvider = 'google-search';
@@ -89,6 +101,8 @@ function resultCacheKey(
     favoriteSources: [...(options.favoriteSources ?? [])].sort(),
     excludedSources: [...(options.excludedSources ?? [])].sort(),
     actors: [...(options.actors ?? [])].sort(),
+    includeContent: options.includeContent ?? true,
+    researchDepth: options.researchDepth ?? 'light',
   });
 }
 
@@ -161,6 +175,7 @@ async function searchGoogle(
   query: string,
   situationName: string,
   options: WebResearchOptions,
+  budget: { remainingQueries: number; deadline: number },
 ): Promise<WebResearchResult[]> {
   const baseQuery = [
     `${query} ${situationName}`,
@@ -175,16 +190,22 @@ async function searchGoogle(
   const results: WebResearchResult[] = [];
   const retrievedAt = new Date().toISOString();
   for (const q of queries) {
+    if (budget.remainingQueries <= 0 || Date.now() >= budget.deadline) break;
+    budget.remainingQueries -= 1;
     try {
       const { text, sources, providerMetadata } = await generateText({
         model: getGroundedModel(),
         tools: { google_search: getGoogleSearchTool() },
+        maxOutputTokens: 4096,
+        maxRetries: 0,
+        abortSignal: AbortSignal.timeout(Math.max(1, Math.min(45000, budget.deadline - Date.now()))),
         prompt: `Use Google Search grounding to research: ${q}
 
 ${timeRangeInstruction(options.timeRange)}
 Prioritize checkable, authoritative sources: wire services, official institutions, court or legislative records, reputable local outlets, and established think tanks.
 
-Return a concise research brief and a source receipts section. Do not invent URLs. If sources disagree, identify the disagreement.`,
+Return a concise research brief and a source receipts section. Do not invent URLs. If sources disagree, identify the disagreement.
+Keep supplied or synthetic case facts separate from externally supported propositions. Institutional methods documents do not verify case allocations, expenditure, funding, deadlines or outcomes. Missing confirmation means unknown, not absent. Grounding attribution is generated prose, not a quotation from an original page.`,
       });
 
       if (text) {
@@ -199,6 +220,8 @@ Return a concise research brief and a source receipts section. Do not invent URL
           query: q,
           retrievedAt,
           isGroundedSummary: true,
+          originalPassageStatus: 'not_requested',
+          originalPassages: [],
         });
       }
 
@@ -207,12 +230,14 @@ Return a concise research brief and a source receipts section. Do not invent URL
         for (const src of sources as Array<{ url?: string; title?: string }>) {
           if (!src.url || !/^https?:\/\//i.test(src.url)) continue;
           const host = hostnameFromUrl(src.url, 'Google grounded source');
-          const content = supportedText.get(src.url)?.join('\n') ?? '';
           results.push({
             title: src.title ?? host,
             url: src.url,
-            content,
-            snippet: content.slice(0, 900),
+            content: '',
+            snippet: '',
+            generatedGroundingSegments: supportedText.get(src.url) ?? [],
+            originalPassageStatus: 'not_requested',
+            originalPassages: [],
             source: host,
             provider: 'google-search',
             reliabilityScore: scoreUrl(src.url),
@@ -231,8 +256,8 @@ Return a concise research brief and a source receipts section. Do not invent URL
 // SDK metadata uses `vertex` for Vertex AI and `google` for AI Studio.
 // A supported segment belongs only to the grounding chunks named by the provider;
 // neither the query nor the whole generated overview is evidence for each source.
-function groundedTextBySource(metadata: unknown): Map<string, string[]> {
-  const result = new Map<string, string[]>();
+function groundedTextBySource(metadata: unknown): Map<string, GeneratedGroundingSegment[]> {
+  const result = new Map<string, GeneratedGroundingSegment[]>();
   const record = (value: unknown): Record<string, unknown> => (
     value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
   );
@@ -251,7 +276,12 @@ function groundedTextBySource(metadata: unknown): Map<string, string[]> {
         const uri = record(record(chunks[index]).web).uri;
         if (typeof uri !== 'string' || !/^https?:\/\//i.test(uri)) continue;
         const segments = result.get(uri) ?? [];
-        if (!segments.includes(text)) segments.push(text);
+        if (!segments.some((value) => value.text === text)) segments.push({
+          kind: 'generated-grounding-segment', text, sourceUrl: uri,
+          responseStart: typeof segment.startIndex === 'number' ? segment.startIndex : undefined,
+          responseEnd: typeof segment.endIndex === 'number' ? segment.endIndex : undefined,
+          claimSupport: 'provider-attributed-unverified',
+        });
         result.set(uri, segments);
       }
     }
@@ -285,22 +315,37 @@ export async function executeWebResearch(
   if (cached) return cached;
 
   const primary = craftedQueries?.primary ?? query;
-  const allResults = await searchGoogle(primary, situationName, options);
+  const budget = { remainingQueries: 5, deadline: Date.now() + 60000 };
+  const allResults = await searchGoogle(primary, situationName, options, budget);
   if (craftedQueries && options.researchDepth === 'deep') {
     for (const focused of craftedQueries.focused.slice(0, 2)) {
-      allResults.push(...await searchGoogle(focused, situationName, options));
+      allResults.push(...await searchGoogle(focused, situationName, options, budget));
     }
   }
 
   const seen = new Set<string>();
   const deduped = allResults.filter((result) => {
-    const key = result.url.toLowerCase();
+    const key = result.url.split('#')[0];
     if (seen.has(key)) return false;
     seen.add(key);
     return true;
   });
   deduped.sort((a, b) => b.reliabilityScore - a.reliabilityScore);
-  const limited = deduped.slice(0, options.maxResults ?? 10);
+  const limited = deduped.slice(0, Math.max(1, Math.min(options.maxResults ?? 10, 20)));
+  // At most five originals per research call; capture only after dedupe/ranking.
+  const originals = limited.filter((result) => !result.isGroundedSummary).slice(0, 5);
+  if (options.includeContent !== false) {
+    await Promise.all(originals.map(async (result) => {
+      const capture = await fetchOriginalSource(result.url);
+      Object.assign(result, capture);
+      result.content = capture.originalPassages.map((passage) => passage.text).join('\n');
+      result.snippet = result.content.slice(0, 900);
+    }));
+    for (const result of limited.filter((result) => !result.isGroundedSummary && !originals.includes(result))) {
+      result.originalPassageStatus = 'unavailable';
+      result.unavailableReason = 'capture-budget-exhausted';
+    }
+  }
   setCache(cacheKey, limited);
   return limited;
 }

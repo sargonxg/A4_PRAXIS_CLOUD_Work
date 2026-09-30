@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   prompt: vi.fn(),
@@ -15,16 +15,23 @@ vi.mock('@/lib/genkit', () => ({
 }));
 
 describe('capsule factory Genkit flows', () => {
+  let flows: typeof import('@/lib/genkit/flows/capsule-factory');
+
+  // Genkit/schema startup can be slow on Windows; keep it outside the
+  // short behavior-test deadline without relaxing schema validation.
+  beforeAll(async () => {
+    flows = await import('@/lib/genkit/flows/capsule-factory');
+  }, 120_000);
+
   beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
+    mocks.prompt.mockReset();
     mocks.prompt.mockReturnValue(vi.fn(async () => {
       throw new Error('provider unavailable');
     }));
   });
 
   it('builds draft cores from a prompt-only capsule intake', async () => {
-    const { capsuleIntakeFlow } = await import('@/lib/genkit/flows/capsule-factory');
+    const { capsuleIntakeFlow } = flows;
     const result = await capsuleIntakeFlow({
       objective: 'Build a policy capsule for humanitarian access negotiations in Sudan.',
       prompt: 'Focus on border crossings, armed actors, UN agencies, and source gaps.',
@@ -39,7 +46,7 @@ describe('capsule factory Genkit flows', () => {
   }, 10_000);
 
   it('proposes freshness-aware source gaps for thin context', async () => {
-    const { capsuleResearchPlanFlow } = await import('@/lib/genkit/flows/capsule-factory');
+    const { capsuleResearchPlanFlow } = flows;
     const result = await capsuleResearchPlanFlow({
       objective: 'Assess the latest border crossing posture.',
       currentCores: [{ kind: 'situation', label: 'Border access', summary: 'Recent crossing status is unclear.' }],
@@ -53,7 +60,7 @@ describe('capsule factory Genkit flows', () => {
   });
 
   it('synthesizes a review-gated ContextCapsule with provenance and open questions', async () => {
-    const { capsuleSynthesisFlow } = await import('@/lib/genkit/flows/capsule-factory');
+    const { capsuleSynthesisFlow } = flows;
     const result = await capsuleSynthesisFlow({
       objective: 'Prepare an options memo for humanitarian access negotiations.',
       draftCores: [
@@ -79,7 +86,7 @@ describe('capsule factory Genkit flows', () => {
   });
 
   it('accepts Cognee memory hints as reviewable source snippets without making them canonical', async () => {
-    const { capsuleIntakeFlow, capsuleSynthesisFlow } = await import('@/lib/genkit/flows/capsule-factory');
+    const { capsuleIntakeFlow, capsuleSynthesisFlow } = flows;
     const intake = await capsuleIntakeFlow({
       objective: 'Build a capsule for ceasefire monitoring assumptions.',
       prompt: 'Use prior reviewed memory as hints only.',
@@ -227,7 +234,7 @@ describe('capsule factory Genkit flows', () => {
   });
 
   it('derives writing defaults without generic document-automation framing', async () => {
-    const { capsuleWritingProfileFlow } = await import('@/lib/genkit/flows/capsule-factory');
+    const { capsuleWritingProfileFlow } = flows;
     const result = await capsuleWritingProfileFlow({
       objective: 'Write talking points for a deputy minister.',
       audience: 'Deputy minister',

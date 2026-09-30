@@ -1,59 +1,214 @@
 # ContextCapsule Policy Research Guide
 
-Date: 2026-05-22
-Status: canonical product research and build guide
+Updated: 2026-09-30
+Status: current user guide followed by a clearly separated product research appendix
 
 ## Purpose
 
-PRAXIS should be usable before it is complex. A user lands on the homepage, sees
-the active ContextCapsule bar, describes the policy work in front of them, signs
-up or logs in, then enters the app with a sidebar and an active capsule already
-visible.
+PRAXIS helps policymakers, analysts and narrative researchers turn a question
+and relevant sources into writing they can inspect and revise. Start with the
+work you need to produce. Add saved context when the work needs the same sources,
+assumptions or analytical approach again.
 
-The deeper system can expose many tools, connectors, agents, personas, and
-outputs, but the user should first experience one understandable loop:
+A **Context Capsule** saves the sources, assumptions and analytical approach
+you want PRAXIS to reuse. Saving one does not independently verify its contents.
+The working loop is:
 
 ```text
-prompt -> capsule -> sources/tools -> memo/brief/handover
+Ask -> attach or build context -> inspect evidence -> revise and save the work
 ```
 
-The ContextCapsule is the working policy object that makes this possible.
+The primary signed-in surfaces are **Home** and **Capsules**. Library, writing,
+recent drafts and source review open within the existing workspace. They are not
+additional primary applications.
+
+The [production acceptance record](../reviews/2026-09-29-praxis-production-acceptance.md)
+identifies the tested live release. The
+[implementation ledger](../reviews/2026-09-30-praxis-implementation-ledger.md)
+tracks this improvement wave; a planned or locally tested capability is not
+automatically deployed. The May research appendix below is design context, not
+a list of currently available features.
 
 ## Working loop for analysts and policymakers
 
-Workflow instructions updated 2026-09-29. Deployment and live acceptance remain
-tracked in the [current user-readiness receipt](../reviews/2026-09-29-praxis-user-readiness.md).
+1. In **Home**, ask a direct question or describe the written product you need.
+   State the audience, decision and as-of date when relevant. A quick question
+   can start without a capsule.
+2. Attach saved context when its evidence applies. Check the visible capsule
+   name and version before sending. Say whether to use only attached material
+   or to collect outside sources; these are different research scopes.
+3. Inspect the answer's sources, assumptions and gaps. A citation or a generated
+   confidence label does not establish that the original source supports the
+   claim. Follow up on a specific uncertainty or ask for a shorter/different
+   audience version while retaining the evidence.
+4. Save useful writing as a draft, reopen it and continue revising. Treat
+   generated analysis as reviewable work rather than an approved conclusion.
 
-Start in **Home** to ask a question or draft a brief. State the audience,
-decision and desired product, for example: “Draft a one-page options brief for
-the council. Distinguish agreed commitments from completed implementation,
-cite the attached documents and keep unconfirmed funding explicit.” Attach a
-saved capsule when its evidence applies; check the visible capsule label before
-sending. Inspect the answer's sources, assumptions and gaps, then ask a focused
-follow-up. Treat generated writing as a draft for review.
+Example: “Draft a one-page options brief for the council as of 30 September.
+Use only the attached documents. Separate agreed commitments from completed
+implementation, cite supporting passages and keep unconfirmed funding explicit.”
 
-Build reusable context separately in **Capsules**:
+Deep research collects additional material and may require an approval before
+the queued work proceeds. Check the proposed scope and later inspect what was
+actually used. Model/provider receipts describe actual execution; configured
+model choices and unavailable/fallback states must remain explicit. The new
+server routing distinguishes **Economical recall and extraction**, **Balanced
+analysis** and **Complex synthesis and review**. Complexity does not override
+your restriction to supplied context or grant agent/web permission. Preview
+models may need an explicit bounded fallback; inspect what actually ran. Local
+implementation and real-provider/live access remain separately tracked in the ledger.
 
-1. Describe the capsule's purpose and intended output. Add documents, notes or
-   source links; keep author instructions distinct from factual evidence.
-2. Inspect source extracts and any proposed content. Accept or reject proposals
-   with a reason. Saving a capsule alone does not approve its proposed claims.
-3. Choose **Save draft** to retain a private working capsule. Confirm the save,
-   then choose **Use in Ask**. Wait for the saved capsule to appear in Home's
-   context dock before sending the question.
-4. Ask for a product that uses specific facts from that context. Check citations
-   and uncertainty; reopen the capsule and conversation to continue later.
+## Build and reuse context separately
 
-For a saved research memo, open its output link, review the primary body and
-the separate feedback, apply corrections, then save and reopen the draft.
-Feedback labeled “not applied” has not changed the body. A supported selected
-claim does not approve the whole memo; an edited body makes its earlier review
-receipt outdated. This repair wave keeps generated memos under whole-draft
-review and does not provide a human approval action that clears export readiness.
+Start in **Capsules** when you want a reusable working file independently of a
+question. The builder's default path is **Purpose → Material → Review and save**;
+advanced and package configuration remain separate:
 
-Policy briefs should separate options, tradeoffs and unresolved evidence.
-Analytical products should preserve claim-to-source links. Narrative analysis
-should distinguish what an actor said from the analyst's inferred frame.
+1. Give it a readable name, purpose and intended product. Record the audience,
+   policy scope and decision date when relevant.
+2. Add documents, notes or source links. Keep instructions such as “use a
+   diplomatic tone” separate from factual evidence and actor quotations.
+   Uploaded TXT, text-based PDF and DOCX passed the recorded live journeys;
+   scanned PDF/OCR and long-document capacity require separate proof.
+3. Inspect original extracts and proposed claims. Apply or reject proposals
+   with a reason. Keep rejected claims and unresolved questions visible rather
+   than converting them into verified facts.
+4. Choose **Save draft** to retain private working context. **Save and use in Ask**
+   saves the current supported snapshot before attaching it. Check that Home
+   shows the intended saved capsule before sending. After editing a saved
+   snapshot, save the changes rather than attaching the older version. A package
+   export/publish control has a different scope from a private save: timeline,
+   causal, ontology and graph package proposals require their explicit review
+   and publication path. Tool preferences do not grant execution permission;
+   source-domain preferences guide prompts rather than guarantee a web filter.
+5. Ask for a fact or product that depends on the saved context. Check the
+   supporting passages, then reopen the capsule and conversation to reuse it.
+
+A capsule built from a conversation can preserve working notes and supplied
+material, but extracted claims still need review. Adding the same source as TXT,
+PDF and DOCX preserves formats; it does not create three independent witnesses.
+
+For another policy situation, preserve the original evidence and deliberately
+create or revise context with a new scope/as-of date. Do not carry an old
+assessment into a new case without reviewing what still applies.
+
+Library search and facets describe the loaded inventory. Use **Load more** for
+further saved-capsule pages and **Show more** for additional visible cards; a
+loaded count is not necessarily the total library size. Starter templates,
+private saved context and archived records have separate filters. A copied
+capsule is private working context; archived attachments need to be detached
+before archiving. Structure completeness is not factual quality, and an
+unperformed support assessment should remain **Not assessed**.
+
+The new ingestion path enforces a 20 MiB file limit, a 600 KiB extracted UTF-8
+text limit and a 512-chunk limit. A file within its byte limit can still exceed
+the extracted-text/chunk limit. Empty text/OCR-needed and indexing failure are
+different outcomes; keyword-only retrieval is not a completed embedding claim.
+Check deployment and real-service proof for these new controls in the ledger.
+
+## Inspect evidence and uncertainty
+
+For each material assertion, identify the source, the exact supporting passage,
+its date and whether the assertion is supplied fact, actor claim or your own
+interpretation. An attributed web grounding summary is generated text; it is
+not a verified quotation from the original page. If the original source cannot
+be inspected, leave that limitation explicit.
+
+Use the right kind of source for the claim. An institution's general guidance
+can support a definition; it cannot establish facts about a private case. An
+independent news article is not automatically an institutional audit standard.
+When you request two institutional sources, two links or two generated summaries
+do not by themselves fulfil that requirement.
+
+Keep these distinctions in the written product:
+
+- A commitment or an authorization does not establish implementation.
+- A budget allocation or funding approval does not establish actual spending.
+- Unconfirmed funding does not prove no spending occurred.
+- A future deadline does not establish whether a review has started or finished.
+- Missing evidence remains unknown; it is not proof that an event did not happen.
+- Operational implementation does not by itself establish the intended outcome.
+
+## Review and revise a written product
+
+Open the saved memo, review the primary body and inspect source material for
+important claims. Apply corrections to the body, save, then reopen to confirm
+the intended text persisted. Feedback labeled “not applied” has not changed the
+body. A supported selected claim does not approve the whole memo; editing makes
+the earlier body review outdated.
+
+Whole-draft approval identifies the exact saved version/body, reviewer, intended
+use and remaining limitations. The new local implementation binds approval to
+that saved body, clears it on edits and checks it again before reviewed Markdown
+or Word export. Internal analysis, external sharing and publication are distinct
+uses. Export retains the use and limitations, and records an owner review rather
+than independent verification. Word currently preserves body text in paragraphs;
+native Markdown heading/table/link formatting remains separate acceptance work.
+Check the ledger for deployment and live proof before relying on this new path.
+
+Before using a brief, check its audience, decision question, options/tradeoffs,
+evidence, assumptions, uncertainty and next action. Before using a narrative
+analysis, check the exact actor wording and source/corpus limitations.
+
+## Allowance and account control
+
+New accounts receive a finite one-time starter allowance, equivalent to up to
+100 Ask turns if used only for Ask. Other metered work shares it; the account
+remaining is the relevant figure. The beta does not promise an automatic monthly
+refill, and proposed paid plans do not establish active entitlements. Exhausted
+allowance needs a funded plan/support resolution; repeatedly retrying does not
+restore it. A transient datastore failure is a different, retryable outcome.
+
+Self-service erasure is gated until storage access controls are verified. When
+enabled, a renewing subscription must be cancelled first; partial cleanup stays
+pending for retry. Workspace cleanup does not imply deletion of every provider,
+backup, billing or shared record. Review the [retention posture](https://praxis.tacitus.me/legal/data-retention)
+and request a scoped status through support.
+
+## Assess analytical quality
+
+The [quality-evaluation runner](../reviews/2026-09-30-praxis-quality-evaluation.md)
+retains matched baseline/context-framed prompts, model outputs and an unscored
+analyst rubric. Its eight synthetic cases test important distinctions, including
+allocation versus expenditure, narrative perspective versus authority and
+contradictory measures. Local provider access was unavailable, so no generated
+benefit or independent analyst judgment is claimed. This limited prompt
+comparison is separate from a full deployed capsule journey or user study.
+
+## Useful policy and narrative requests
+
+| Job | Example request | What to review |
+| --- | --- | --- |
+| Policymaker | “Compare three options for this decision. Identify legal authority, implementing institution, resources, political constraints, affected groups and unresolved evidence. End with the decision required.” | Feasibility, tradeoffs, mandate versus implementation, and whether evidence supports the recommendation. |
+| Analyst | “Build a claims/evidence table from these documents. Separate supporting and conflicting passages, assessment and confidence limitations. State what evidence would change the assessment.” | Source independence, counterevidence, timing and analyst inference. |
+| Narrative researcher | “Compare how these actors frame the issue. Preserve exact quotations, speaker/date/location, intended audience when evidenced, and distinguish observed language from inferred intent. Explain missing voices and alternative readings.” | Quotation accuracy, attribution, translation/sampling limits, and whether a small corpus is being mistaken for public opinion. |
+
+These requests are working patterns, not a claim that every template or
+visualization is already deployed. Representative-user usability and measured
+analytical improvement remain unproven. Structural capsule scores do not measure
+whether an analyst's conclusions became more accurate.
+
+## Availability and help
+
+The previously tested existing-account paths work; fresh signup/recovery,
+two-account switching, billing, capacity, erasure and institutional services need
+their own acceptance evidence. Paid upgrades remain unavailable until configured
+billing and entitlement gates pass. Use the published privacy/security/retention
+pages for current declarations and the ledger for verified versus pending work.
+
+If a save, upload or retrieval fails, inspect the reported state and retry only
+after checking what was saved. Keep unresolved source/indexing gaps explicit.
+Report the action, time and a redacted run reference where available; do not
+include private documents implicitly in a support report.
+
+## Product research appendix — May 2026
+
+The remaining sections preserve research and target contracts from May 2026.
+They do not override the current Home/Capsules structure or establish deployed
+connectors, outputs, expert review, schedules, model access or measured benefits.
+Consult the implementation ledger and exact-source acceptance before making a
+capability claim. Code-backed registries describe available definitions; a
+definition alone is not end-to-end acceptance.
 
 ## PRAXIS Augmented Generation Contract
 
@@ -335,7 +490,12 @@ Each output should declare:
 - linked capsule id;
 - linked run id when generated by an agent.
 
-## Usable App Shape
+## Historical App Shape Proposal
+
+The navigation proposal below is retained for history. Its six-item sidebar was
+superseded by **Home** and **Capsules** as primary surfaces. Ask, Library,
+writing, Canvas and advanced inspection are actions/panels in that shared
+workspace; they are not a request to add primary navigation.
 
 Homepage:
 
@@ -426,8 +586,9 @@ exist:
 
 ## Documentation Rule
 
-This guide is product research and build direction. The code-backed source of
-truth for concrete capsule paths, outputs, connectors, and combinations is:
+The appendix is product research and build direction. The current user-guide
+sections above describe the working path and link to acceptance. The code-backed
+source for concrete capsule paths, outputs, connectors, and combinations is:
 
 ```text
 src/lib/product/context-capsules.ts

@@ -56,14 +56,16 @@ describe('POST /api/onboarding/complete', () => {
     expect(data.redirectTo).toBe('/app');
   });
 
-  it('returns the cockpit builder intent when createFirstSituation true', async () => {
+  it('opens the canonical private capsule builder when the analyst chooses a first capsule', async () => {
     const req = new Request('http://x/api/onboarding/complete', {
       method: 'POST',
       body: JSON.stringify({ createFirstSituation: true }),
     });
     const res = await POST(req);
+    expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.redirectTo).toBe('/app?panel=builder&fromOnboarding=1');
+    expect(data.versionId).toBe('v1');
+    expect(data.redirectTo).toBe('/app/capsules/builder?fromOnboarding=1');
   });
 
   it('refreshes the session cookie as completed onboarding', async () => {

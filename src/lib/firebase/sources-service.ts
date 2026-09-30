@@ -1,4 +1,5 @@
 import { getAdminDbOrThrow } from './admin';
+import { withDocumentOwnerWrite } from '@/lib/documents/owner-write';
 
 export type SourceType = 'pdf' | 'docx' | 'url' | 'feed' | 'text';
 
@@ -42,10 +43,10 @@ function sourcesCollection(uid: string, situationId: string) {
     .collection('sources');
 }
 
-export async function saveSource(uid: string, situationId: string, source: Omit<WorkspaceSource, 'id'>): Promise<WorkspaceSource> {
-  const ref = sourcesCollection(uid, situationId).doc();
+export async function saveSource(uid: string, situationId: string, source: Omit<WorkspaceSource, 'id'>, options: { sourceId?: string } = {}): Promise<WorkspaceSource> {
+  const ref = options.sourceId ? sourcesCollection(uid, situationId).doc(options.sourceId) : sourcesCollection(uid, situationId).doc();
   const stored = { ...source, id: ref.id };
-  await ref.set(stored);
+  await withDocumentOwnerWrite(uid, (transaction) => { transaction.set(ref, stored); });
   return stored;
 }
 

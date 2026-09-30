@@ -145,6 +145,21 @@ describe('POST /api/context/capsules selected starter', () => {
     expect(service.seedStarterCapsules).not.toHaveBeenCalled();
     expect(service.createCapsule).not.toHaveBeenCalled();
   });
+
+  it('passes a bounded cursor page request and exposes honest page summary scope', async () => {
+    service.listCapsuleInventory.mockResolvedValueOnce({ capsules: [], summary: {}, nextCursor: 'next', hasMore: true, summaryScope: 'page' });
+    const { GET } = await import('@/app/api/context/capsules/route');
+    const response = await (GET as unknown as MockedAuthRouteHandler)(new Request('http://localhost/api/context/capsules?limit=50&cursor=opaque'), { uid: 'u1', isDemo: false });
+    expect(service.listCapsuleInventory).toHaveBeenCalledWith('u1', expect.objectContaining({ limit: 50, cursor: 'opaque' }));
+    expect(await response.json()).toMatchObject({ nextCursor: 'next', hasMore: true, summaryScope: 'page' });
+  });
+
+  it.each(['0', '101', 'invalid', '1.5'])('rejects invalid page limits before querying storage: %s', async (limit) => {
+    const { GET } = await import('@/app/api/context/capsules/route');
+    const response = await (GET as unknown as MockedAuthRouteHandler)(new Request(`http://localhost/api/context/capsules?limit=${limit}`), { uid: 'u1', isDemo: false });
+    expect(response.status).toBe(400);
+    expect(service.listCapsuleInventory).not.toHaveBeenCalled();
+  });
 });
 
 describe('POST /api/context/capsules canonical builder draft', () => {

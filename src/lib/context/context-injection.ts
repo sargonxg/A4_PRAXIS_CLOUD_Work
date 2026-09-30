@@ -487,6 +487,21 @@ function buildBuilderDraftPromptBlock(capsule: PraxisCapsule): string {
   if (isRecord(draft.responseJsonSchema)) {
     lines.push(`requested_output_schema: ${promptSafeLine(JSON.stringify(draft.responseJsonSchema), 4000)}`);
   }
+  if (isRecord(draft.sourcing)) {
+    const sourcing = draft.sourcing;
+    lines.push('Source preferences guide selection; they are not proof of source authority or a guarantee of enforced retrieval filtering. Missing support must stay unknown.');
+    lines.push(`preferred_sourcing_mode: ${promptSafeLine(typeof sourcing.mode === 'string' ? sourcing.mode : '', 40)}`);
+    lines.push(`preferred_source_domains: ${promptSafeLine(stringArray(sourcing.allowedDomains).slice(0, 30).join(', '), 1800)}`);
+    lines.push(`avoided_source_domains: ${promptSafeLine(stringArray(sourcing.blockedDomains).slice(0, 30).join(', '), 1800)}`);
+    lines.push(`preferred_source_types: ${promptSafeLine(stringArray(sourcing.requiredSourceTypes).slice(0, 12).join(', '), 400)}`);
+    if (typeof sourcing.minSourcesPerClaim === 'number') lines.push(`requested_sources_per_claim: ${sourcing.minSourcesPerClaim}`);
+    if (typeof sourcing.recencyWindowDays === 'number') lines.push(`preferred_recency_days: ${sourcing.recencyWindowDays}`);
+  }
+  if (isRecord(draft.tools)) {
+    lines.push('Saved tool preferences do not authorize tools, external actions or automatic research. The current user request and runtime approvals take precedence, including instructions to use supplied sources only or not to run agents.');
+    lines.push(`preferred_tools: ${promptSafeLine(stringArray(draft.tools.recommended).slice(0, 20).join(', '), 1000)}`);
+    lines.push(`tool_policy: ${promptSafeLine(typeof draft.tools.policy === 'string' ? draft.tools.policy : '', 40)}`);
+  }
   lines.push('');
   return lines.join('\n').slice(0, 14000);
 }

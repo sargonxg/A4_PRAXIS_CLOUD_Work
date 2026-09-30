@@ -46,6 +46,33 @@ steps:
     id: 'get-backend-url'
     waitFor: ['check-model-strings']
 
+  # Publish the checked Firestore source through Rules REST with existing build
+  # ADC. Permission/config failures are explicit pending evidence; account
+  # deletion remains disabled until Storage and live rule checks also pass.
+  - name: 'node:22-slim'
+    entrypoint: bash
+    args:
+      - '-ceu'
+      - |
+        mkdir -p /workspace/output/firebase-rules
+        if [ '${_DEPLOY_FIRESTORE_RULES}' = 'true' ]; then
+          if timeout 180s npm install --prefix /tmp/praxis-rules-runtime --ignore-scripts --no-audit --no-fund --package-lock=false google-auth-library@10.6.2 > /tmp/praxis-rules-dependencies.log 2>&1; then
+            if NODE_PATH=/tmp/praxis-rules-runtime/node_modules timeout 120s node scripts/deploy-firebase-rules.mjs --project=$PROJECT_ID --bucket=praxisbytacitus.firebasestorage.app --only=firestore --expected-firestore-sha256=${_FIRESTORE_RULES_SHA256} --apply --receipt=/workspace/output/firebase-rules/firestore-release.json; then
+              echo 'RULES_STATUS: Firestore source publication/readback verified; Storage and live propagation proof remain separate.'
+            else
+              echo 'RULES_STATUS: pending - existing build credentials/permissions or source checks did not complete Firestore publication. Account deletion remains disabled.'
+            fi
+          else
+            echo 'RULES_STATUS: pending - bounded isolated Rules dependency install failed. Account deletion remains disabled.'
+          fi
+        else
+          echo 'RULES_STATUS: pending - Firestore publication was disabled for this build. Account deletion remains disabled.'
+        fi
+        node -e 'const fs = require("node:fs"); const p = "/workspace/output/firebase-rules/firestore-release.json"; if (!fs.existsSync(p)) fs.writeFileSync(p, JSON.stringify({schemaVersion: 1, status: "pending", reason: "rules_step_unavailable_or_disabled", accountErasureEnabled: false}, null, 2)); console.log("FIREBASE_RULES_RECEIPT " + fs.readFileSync(p, "utf8"));'
+    id: 'verify-publish-firestore-rules'
+    waitFor: ['preflight-audit-routes', 'preflight-audit-gcp', 'get-backend-url']
+    timeout: '360s'
+
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - build
@@ -121,11 +148,11 @@ steps:
       - '1'
       - '--max-instances'
       - '10'
-      - '--set-env-vars'
-      - '^|^AI_PROVIDER=vertex|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_LOCATION=us-central1|AGENT_RUN_TASKS_QUEUE=agent-runs|AGENT_RUN_WORKER_BASE_URL=https://praxis.tacitus.me|AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL=praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com|AGENT_RUN_WORKER_OIDC_AUDIENCE=https://praxis.tacitus.me|VERTEX_GROUNDING_GOOGLE_SEARCH_ENABLED=true|RESEARCH_GRAPH_ENABLED=true|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com|PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|PRAXIS_BUILD_ID=$BUILD_ID|NEXT_PUBLIC_PRAXIS_BACKEND_URL=https://praxis-backend-pgoyqovcza-uc.a.run.app|NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me|NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA|NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com|NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus|NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app|NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674|NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb|NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY|NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw|NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID'
+      - '--update-env-vars'
+      - '^|^AI_PROVIDER=vertex|PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED=false|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_LOCATION=us-central1|AGENT_RUN_TASKS_QUEUE=agent-runs|AGENT_RUN_WORKER_BASE_URL=https://praxis.tacitus.me|AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL=praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com|AGENT_RUN_WORKER_OIDC_AUDIENCE=https://praxis.tacitus.me|VERTEX_GROUNDING_GOOGLE_SEARCH_ENABLED=true|RESEARCH_GRAPH_ENABLED=true|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com|PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|PRAXIS_BUILD_ID=$BUILD_ID|NEXT_PUBLIC_PRAXIS_BACKEND_URL=https://praxis-backend-pgoyqovcza-uc.a.run.app|NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me|NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA|NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com|NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus|NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app|NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674|NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb|NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY|NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw|NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID'
       - '--labels'
       - 'source=${_BUILD_SOURCE},repo=a4-praxis-cloud-work,branch=${_SOURCE_BRANCH},commit=${_SOURCE_COMMIT}'
-      - '--set-secrets'
+      - '--update-secrets'
       - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest,PUBSUB_PUSH_SHARED_SECRET=praxis-pubsub-push-secret:latest,AGENT_RUNTIME_DATABASE_URL=praxis-agent-runtime-database-url:latest,EXA_API_KEY=praxis-exa-api-key:latest'
       - '--add-cloudsql-instances'
       - 'praxisbytacitus:us-east4:praxisbytacitus-instance'
@@ -148,6 +175,8 @@ substitutions:
   _SOURCE_BRANCH: '${BRANCH_NAME:-local}'
   _SOURCE_COMMIT: '${COMMIT_SHA:-manual}'
   _GOOGLE_MAPS_KEY: ''
+  _DEPLOY_FIRESTORE_RULES: 'true'
+  _FIRESTORE_RULES_SHA256: 'f742d194d5ea2868c8efc496cf630386d67b5cdb59dfec84ae20e7c00deed4ba'
 
 options:
   dynamicSubstitutions: true

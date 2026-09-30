@@ -97,6 +97,10 @@ export interface CapsuleLibraryEntry {
   valueProp: string;
   category: CapsuleLibraryCategory;
   origin: 'starter' | 'user';
+  reviewState?: 'draft' | 'needs-review' | 'decisions-saved' | 'archived' | 'starter';
+  updatedAt?: string | null;
+  structuralScore?: number | null;
+  unsupportedAssessed?: boolean;
   version: number | null;
   capsuleType: CapsuleStarterDefinition['category'];
   starterDomain: CapsuleStarterDefinition['domain'];
@@ -224,6 +228,10 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
     valueProp: cleanOneLine(capsule.summary || capsule.trust?.summary || 'Saved user capsule.'),
     category: libraryCategoryForCapsule(capsule),
     origin: 'user',
+    reviewState: capsule.archivedAt ? 'archived' : capsule.latestGateState === 'applied' ? 'decisions-saved' : capsule.latestGateState === 'draft' ? 'draft' : 'needs-review',
+    updatedAt: capsule.updatedAt,
+    structuralScore: capsule.health?.score ?? null,
+    unsupportedAssessed: [...(Array.isArray(capsule.claimLedger) ? capsule.claimLedger : []), ...(capsule.v3?.claimLedger?.allClaims ?? [])].some((claim) => isRecord(claim) && (typeof claim.support === 'string' || typeof claim.status === 'string')),
     version: capsule.version ?? null,
     capsuleType,
     starterDomain,
@@ -320,6 +328,9 @@ function libraryEntryFromStarter(
     valueProp: cleanOneLine(starter.summary),
     category,
     origin: 'starter',
+    reviewState: 'starter',
+    structuralScore: ranking.score,
+    unsupportedAssessed: true,
     version: null,
     capsuleType: starter.category,
     starterDomain: starter.domain,
@@ -518,9 +529,12 @@ function ontologyIdsForCapsule(capsule: PraxisCapsule): string[] {
 }
 
 function domainForCapsule(capsule: PraxisCapsule): CapsuleStarterDefinition['domain'] {
-  const domain = stringFromUnknown(capsule.v3?.grounding?.ontologyBinding?.domainId)
+  const posture = isRecord(capsule.memoryPosture) ? capsule.memoryPosture : null;
+  const builderDraft = isRecord(posture?.builderDraft) ? posture.builderDraft : null;
+  const domain = stringFromUnknown(builderDraft?.domain)
+    ?? stringFromUnknown(capsule.v3?.grounding?.ontologyBinding?.domainId)
     ?? stringFromUnknown(capsule.starterSnapshot && isRecord(capsule.starterSnapshot) ? capsule.starterSnapshot.domain : null)
-    ?? capsule.scope;
+    ?? 'generic';
   return domain as CapsuleStarterDefinition['domain'];
 }
 

@@ -1,16 +1,30 @@
 # PRAXIS Product Documentation Index
 
-Updated: 2026-09-29
+Updated: 2026-09-30
 Status: canonical index for the current app structure
 
-Start with the [current user-readiness receipt](../reviews/2026-09-29-praxis-user-readiness.md)
-for what is verified, what is pending and the next release proof. Architecture
-direction and historical receipts do not establish a working live journey.
+For using the product, start with the
+[current user guide](CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md). For implementation,
+use the [September 30 implementation ledger](../reviews/2026-09-30-praxis-implementation-ledger.md),
+which maps all 80 improvement recommendations and the model-routing requirement
+to owners and acceptance criteria. The
+[production acceptance record](../reviews/2026-09-29-praxis-production-acceptance.md)
+identifies the previously verified live release. New local work does not become
+live evidence until a release and real-service journey prove it.
+
+The [retained quality-evaluation runner and analyst rubric](../reviews/2026-09-30-praxis-quality-evaluation.md)
+compare matched synthetic supplied evidence. Local provider access was unavailable;
+analytical quality and measured user benefit remain unscored.
+
+Current workflow: **Home** for questions and writing; **Capsules** for separately
+building and reusing context. Library, Drafts, source review and run inspection
+remain within the existing workspace. Architecture direction, a catalog entry
+and historical receipts do not establish a working live journey.
 
 ## Read These First
 
 1. [`PRAXIS_CANONICAL_APP_STRUCTURE.md`](./PRAXIS_CANONICAL_APP_STRUCTURE.md)
-   - Main source of truth for what `praxis.tacitus.me` is becoming.
+   - Product/ownership map for the current surfaces and target capabilities.
    - Defines the ContextCapsule-native app spine, Google Cloud runtime,
      Firestore/Cloud SQL state boundary, first agents, governance, and build
      waves.
@@ -35,10 +49,10 @@ direction and historical receipts do not establish a working live journey.
      display, content, usage, analysis, learning, embedded graphs, dynamic
      ontologies, semantic layer — organized by Users/Tools/Output/Situation.
 7. [`CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md`](./CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md)
-   - Canonical guide for building policy/statecraft ContextCapsules.
-   - Defines core anatomy, PRAXIS augmented generation, generic versus
-     path-bound users, personas, combination rules, tools, connectors,
-     outputs, and usable app shape.
+   - Current instructions for asking, separately building/reusing context,
+     checking evidence and revising policy/narrative writing.
+   - The clearly marked May research appendix preserves core anatomy,
+     personas, combinations and target contracts; it is not live acceptance.
    - `CONTEXT_CAPSULE_V3_HUMAN_GATED_CONTEXT_INFRASTRUCTURE.md` remains a
      background design reference. The live capsule contract is
      `src/lib/context/capsule-v3.ts` plus the canonical app structure doc.
@@ -62,8 +76,14 @@ direction and historical receipts do not establish a working live journey.
 
 ## Build Queue
 
-Use [`../build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md`](../build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md)
-as the current implementation ledger. Read older `/app/contexts` items as
+Use the [September 30 implementation ledger](../reviews/2026-09-30-praxis-implementation-ledger.md)
+for the current authorized improvement wave, delivery evidence and remaining
+gates. The [improvement analysis](../reviews/2026-09-30-praxis-improvement-analysis.md)
+is its dated findings/backlog source, not a completion report.
+
+The [`May runtime build ledger`](../build/PRAXIS_CONTEXT_CAPSULE_APP_BUILD_LEDGER_2026-05-15.md)
+remains historical direction and foundational implementation evidence. Read
+older `/app/contexts` items as
 capsule-manager work inside `/app`: public-to-app usability, capsule
 onboarding, document/source intake, Cloud SQL run ledger, Cloud Tasks dispatch,
 Research Memo Agent, daily brief, approvals, MCP/connectors, and the deferred
@@ -140,8 +160,9 @@ Use Google Cloud as the main runtime:
 - Pub/Sub for events.
 - Cloud Scheduler for daily briefs and watchlists.
 - Vertex AI/Gemini as default model runtime.
-- ADK for long-running/multi-step/multi-agent workers, with every material
-  event mirrored into the PRAXIS run ledger.
+- The existing PRAXIS worker executes durable runs through Cloud Tasks/SQL.
+  ADK is an optional integration/evaluation lane; its presence in a plan does
+  not prove a deployed long-running worker or replace the PRAXIS ledger.
 - Genkit for typed flows, tools, structured outputs, and evals; Genkit traces
   are not canonical product state.
 - Claude-on-Vertex only through the provider abstraction if evaluated.

@@ -23,7 +23,7 @@ vi.mock('@/lib/intelligence/corpus-search', () => ({
   searchSituationCorpus: vi.fn(),
 }));
 
-import { listDocuments } from '@/lib/firebase/documents-service';
+import { chunkAndSaveDocument, listDocuments } from '@/lib/firebase/documents-service';
 import { getConflictGraphAdmin, getSituationById } from '@/lib/firebase/situations';
 import { searchSituationCorpus } from '@/lib/intelligence/corpus-search';
 import { createContextPackage, localKnowledgeAdapter } from '@/lib/knowledge/context-engine';
@@ -125,14 +125,15 @@ describe('Context Engine local adapter', () => {
 
   it('keeps graph deltas review-only with capped confidence', async () => {
     const writes: unknown[] = [];
-    const batch = {
+    const transaction = {
+      get: vi.fn(async () => ({ exists: true, data: () => ({}) })),
       set: vi.fn((...args: unknown[]) => writes.push(args)),
-      commit: vi.fn(),
     };
+    const runTransaction = vi.fn(async (write: (tx: typeof transaction) => unknown) => write(transaction));
     const doc = vi.fn(() => ({ collection, id: 'doc' }));
     const collection = vi.fn(() => ({ doc }));
     const { getAdminDbOrThrow } = await import('@/lib/firebase/admin');
-    vi.mocked(getAdminDbOrThrow).mockReturnValue({ collection, batch: () => batch } as never);
+    vi.mocked(getAdminDbOrThrow).mockReturnValue({ collection, runTransaction } as never);
 
     const deltas = await localKnowledgeAdapter.proposeGraphDelta({
       uid: 'u1',
@@ -155,6 +156,29 @@ describe('Context Engine local adapter', () => {
     expect(deltas[0].status).toBe('review');
     expect(deltas[0].confidence).toBeLessThanOrEqual(0.72);
     expect(writes.length).toBe(1);
-    expect(batch.commit).toHaveBeenCalled();
+    expect(runTransaction).toHaveBeenCalledOnce();
+    expect(transaction.get).toHaveBeenCalledOnce();
+  });
+
+  it('does not recreate failed ingestion receipts when account deletion starts during indexing', async () => {
+    let deleting = false;
+    const writes: unknown[] = [];
+    const transaction = {
+      get: vi.fn(async () => ({ exists: true, data: () => ({ accountDeletionStatus: deleting ? 'deleting' : undefined }) })),
+      set: vi.fn((...args: unknown[]) => writes.push(args)),
+    };
+    const doc = vi.fn(() => ({ collection, id: 'doc' }));
+    const collection = vi.fn(() => ({ doc }));
+    const { getAdminDbOrThrow } = await import('@/lib/firebase/admin');
+    vi.mocked(getAdminDbOrThrow).mockReturnValue({ collection, runTransaction: async (write: (tx: unknown) => unknown) => write(transaction) } as never);
+    vi.mocked(chunkAndSaveDocument).mockImplementationOnce(async () => {
+      deleting = true;
+      writes.length = 0; // Erasure removed the receipts already persisted.
+      throw new Error('Indexing interrupted');
+    });
+    await expect(localKnowledgeAdapter.ingestDocument({ uid: 'u1', situationId: 'sit-1', documentId: 'doc-1',
+      title: 'Source', fileType: 'txt', text: 'Evidence', bucketUri: null,
+    })).rejects.toMatchObject({ code: 'ACCOUNT_UNAVAILABLE' });
+    expect(writes).toEqual([]);
   });
 });

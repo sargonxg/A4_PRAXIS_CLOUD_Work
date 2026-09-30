@@ -1,6 +1,7 @@
 import type { GenkitSourceabilityInput, GenkitSourceabilityOutput } from '@/lib/genkit/schemas/sourceability';
 import { outputTargetRequiresSourceability } from '@/lib/policy-work-file/output-targets';
 import { normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
+import { isCurrentMemoHumanApproval, normalizeMemoHumanApproval, type MemoHumanApproval } from '@/lib/memo/human-review';
 
 export type MemoSourceabilityRequest = GenkitSourceabilityInput & {
   memoId?: string;
@@ -112,8 +113,16 @@ export function memoExportReadiness(input: {
   sourceabilityResult?: MemoSourceabilityResult | null;
   outputReview?: MemoOutputReviewReceipt | null;
   bodyHash?: string | null;
+  humanApproval?: MemoHumanApproval | null;
+  memoId?: string | null;
+  versionId?: string | null;
 }): MemoExportReadiness {
   const required = outputTargetRequiresSourceability(input.outputTarget);
+  if (isCurrentMemoHumanApproval(input.humanApproval, input)) {
+    const approval = normalizeMemoHumanApproval(input.humanApproval)!;
+    return { ready: true, required: true, label: `Reviewed for ${approval.intendedUse.replace(/-/g, ' ')}`,
+      detail: `Human review recorded for this saved version. ${approval.limitations || 'The reviewer recorded no additional limitations.'} This is not an independent accuracy certification.` };
+  }
   // A selected-claim sourceability result never approves the generated body.
   if (Object.prototype.hasOwnProperty.call(input, 'outputReview')) {
     const review = normalizeMemoOutputReview(input.outputReview);

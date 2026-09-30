@@ -9,6 +9,19 @@ vi.mock('@/components/ui/skeleton', () => ({ Skeleton: 'skeleton' }));
 import AppIndexPage from '@/app/app/page';
 
 describe('authenticated Home saved memo dispatch', () => {
+  it('opens the existing drafting workbench from the Drafts navigation destination', async () => {
+    const page = await AppIndexPage({ searchParams: Promise.resolve({ panel: 'memo', capsuleId: 'capsule-123' }) }) as ReactElement<Record<string, unknown>>;
+    expect(page.type).toBe('memo-workbench');
+    expect(page.props).toMatchObject({ mode: 'app', capsuleId: 'capsule-123', initialPanel: 'ask' });
+    expect(page.props.initialMemoId).toBeNull();
+  });
+
+  it('keeps ambiguous or unrelated panel parameters on direct Ask', async () => {
+    for (const panel of [['memo', 'ask'], 'other']) {
+      const page = await AppIndexPage({ searchParams: Promise.resolve({ panel }) }) as ReactElement<{ children: ReactElement }>;
+      expect(page.props.children.type).toBe('home-shell');
+    }
+  });
   it('opens a saved memo link in the existing workbench with bounded resource IDs', async () => {
     const page = await AppIndexPage({ searchParams: Promise.resolve({ memoId: ' case__policy-memo ', capsuleId: ' capsule-123 ' }) }) as ReactElement<Record<string, unknown>>;
     expect(page.type).toBe('memo-workbench');

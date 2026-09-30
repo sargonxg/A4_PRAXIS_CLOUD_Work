@@ -1,44 +1,88 @@
 'use client';
 
-import { memo, useCallback, useEffect, useState } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { buildCapsuleWorkbenchViewModel, type CapsuleWorkbenchViewModel, type CapsuleWorkbenchCapsuleInput, type CapsuleWorkbenchReviewCardInput } from '@/lib/context/capsule-workbench-view-model';
 import { StatePill, WorkbenchSection } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+
+type ReviewSnapshot = {
+  capsule: CapsuleWorkbenchCapsuleInput;
+  reviewCards: CapsuleWorkbenchReviewCardInput[];
+  reviewCardsNextCursor: string | null;
+  reviewCardsHasMore: boolean;
+};
 
 export const CapsuleReviewQueueSection = memo(function CapsuleReviewQueueSection({ reviewQueue, capsuleId, onReviewed }: {
   reviewQueue: CapsuleWorkbenchViewModel['reviewQueue'];
   capsuleId?: string;
   onReviewed?: (capsule: CapsuleWorkbenchCapsuleInput) => void;
 }) {
-  const [snapshot, setSnapshot] = useState<{ capsule: CapsuleWorkbenchCapsuleInput; reviewCards: CapsuleWorkbenchReviewCardInput[] } | null>(null);
+  const [snapshot, setSnapshot] = useState<ReviewSnapshot | null>(null);
   const [loading, setLoading] = useState(Boolean(capsuleId));
   const [pending, setPending] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [moreError, setMoreError] = useState('');
+  const activeCapsuleId = useRef(capsuleId);
+  activeCapsuleId.current = capsuleId;
+  const requestController = useRef<AbortController | null>(null);
   const load = useCallback(async (signal?: AbortSignal) => {
     if (!capsuleId) return;
+    requestController.current?.abort();
+    const controller = new AbortController();
+    requestController.current = controller;
+    const abort = () => controller.abort();
+    signal?.addEventListener('abort', abort, { once: true });
     setLoading(true);
     setError('');
+    setMoreError('');
+    setLoadingMore(false);
     try {
-      const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}?includeReviewCards=true`, { signal });
+      const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}?includeReviewCards=true&reviewLimit=50`, { signal: controller.signal });
       if (!response.ok) throw new Error('Could not load saved proposals. Sign in to your workspace and retry.');
       const data = await response.json();
-      if (!data.capsule || !Array.isArray(data.reviewCards)) throw new Error('Saved proposals are unavailable. Retry loading.');
-      setSnapshot(data);
+      if (!data.capsule || data.capsule.capsuleId !== capsuleId || !Array.isArray(data.reviewCards)) throw new Error('Saved proposals are unavailable. Retry loading.');
+      if (!controller.signal.aborted && activeCapsuleId.current === capsuleId) setSnapshot(reviewSnapshot(data));
     } catch (err) {
-      if (!signal?.aborted) setError(err instanceof Error ? err.message : 'Could not load proposals.');
+      if (!controller.signal.aborted && activeCapsuleId.current === capsuleId) setError(err instanceof Error ? err.message : 'Could not load proposals.');
     } finally {
-      if (!signal?.aborted) setLoading(false);
+      signal?.removeEventListener('abort', abort);
+      if (!controller.signal.aborted && activeCapsuleId.current === capsuleId) setLoading(false);
     }
   }, [capsuleId]);
   useEffect(() => {
     const controller = new AbortController();
+    setPending(null); setReason(''); setNotice('');
     void load(controller.signal);
-    return () => controller.abort();
+    return () => { controller.abort(); requestController.current?.abort(); };
   }, [load]);
   const current = snapshot?.capsule.capsuleId === capsuleId ? snapshot : null;
   const queue = current ? buildCapsuleWorkbenchViewModel(current).reviewQueue : reviewQueue;
+  async function loadMore() {
+    if (!capsuleId || !current?.reviewCardsNextCursor || !current.reviewCardsHasMore || loadingMore || loading || pending) return;
+    const controller = requestController.current;
+    if (!controller || controller.signal.aborted) return;
+    setLoadingMore(true); setMoreError('');
+    try {
+      const query = new URLSearchParams({ includeReviewCards: 'true', reviewLimit: '50', reviewCursor: current.reviewCardsNextCursor });
+      const response = await fetch(`/api/context/capsules/${encodeURIComponent(capsuleId)}?${query}`, { signal: controller.signal });
+      if (!response.ok) throw new Error('Could not load more proposals. Your loaded proposals remain available; retry below.');
+      const data = await response.json();
+      if (!data.capsule || data.capsule.capsuleId !== capsuleId || !Array.isArray(data.reviewCards)) throw new Error('Could not load more proposals. Please retry.');
+      if (!controller.signal.aborted && activeCapsuleId.current === capsuleId) setSnapshot((previous) => {
+        if (previous?.capsule.capsuleId !== capsuleId) return previous;
+        const next = reviewSnapshot(data);
+        const seen = new Set(previous.reviewCards.map((card) => card.reviewCardId ?? card.id));
+        return { ...next, reviewCards: [...previous.reviewCards, ...next.reviewCards.filter((card) => { const id = card.reviewCardId ?? card.id; if (!id || seen.has(id)) return false; seen.add(id); return true; })] };
+      });
+    } catch (err) {
+      if (!controller.signal.aborted && activeCapsuleId.current === capsuleId) setMoreError(err instanceof Error ? err.message : 'Could not load more proposals.');
+    } finally {
+      if (!controller.signal.aborted && activeCapsuleId.current === capsuleId) setLoadingMore(false);
+    }
+  }
   async function decide(reviewCardId: string, operation: 'approve' | 'reject') {
     if (!capsuleId || pending || !reason.trim() || !current) return;
     setPending(reviewCardId);
@@ -51,14 +95,15 @@ export const CapsuleReviewQueueSection = memo(function CapsuleReviewQueueSection
       });
       const data = await response.json();
       if (!response.ok) throw new Error(response.status === 409 ? 'This proposal changed. Reload and inspect it before deciding.' : 'Decision could not be saved. Reload before retrying.');
+      if (activeCapsuleId.current !== capsuleId) return;
       onReviewed?.(data.capsule);
-      setSnapshot({ capsule: data.capsule, reviewCards: current.reviewCards.map((card) => (card.reviewCardId ?? card.id) === reviewCardId ? data.card : card) });
+      setSnapshot((previous) => previous?.capsule.capsuleId === capsuleId ? { ...previous, capsule: data.capsule, reviewCards: previous.reviewCards.map((card) => (card.reviewCardId ?? card.id) === reviewCardId ? data.card : card) } : previous);
       setNotice(operation === 'approve' ? 'Proposal applied. A new capsule version was saved.' : 'Proposal rejected. No proposed facts were applied.');
       setReason('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Decision could not be saved.');
+      if (activeCapsuleId.current === capsuleId) setError(err instanceof Error ? err.message : 'Decision could not be saved.');
     } finally {
-      setPending(null);
+      if (activeCapsuleId.current === capsuleId) setPending(null);
     }
   }
   return (
@@ -109,7 +154,7 @@ export const CapsuleReviewQueueSection = memo(function CapsuleReviewQueueSection
                     <button
                       key={action}
                       type="button"
-                      disabled={!current || loading || Boolean(pending) || !reason.trim() || Boolean(error)}
+                      disabled={!current || loading || loadingMore || Boolean(pending) || !reason.trim() || Boolean(error)}
                       onClick={() => void decide(item.id, action)}
                       title="Inspect the proposal and enter a reason first."
                       className="rounded-md border border-slate-300 bg-white px-3 py-2 text-xs font-semibold capitalize text-slate-800 disabled:opacity-50"
@@ -126,7 +171,14 @@ export const CapsuleReviewQueueSection = memo(function CapsuleReviewQueueSection
             No review cards are open.
           </p>
         )}
+        {moreError ? <p role="alert" className="mt-3 text-sm text-red-700">{moreError}</p> : null}
+        {current?.reviewCardsHasMore && current.reviewCardsNextCursor ? <button type="button" onClick={loadMore} disabled={loadingMore || loading || Boolean(pending)} className="mt-3 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 disabled:opacity-50">{loadingMore ? 'Loading more proposals…' : 'Load more proposals'}</button> : null}
       </WorkbenchSection>
     </div>
   );
 });
+
+function reviewSnapshot(data: ReviewSnapshot): ReviewSnapshot {
+  const cursor = typeof data.reviewCardsNextCursor === 'string' && data.reviewCardsNextCursor ? data.reviewCardsNextCursor : null;
+  return { capsule: data.capsule, reviewCards: data.reviewCards, reviewCardsNextCursor: cursor, reviewCardsHasMore: Boolean(cursor && data.reviewCardsHasMore === true) };
+}

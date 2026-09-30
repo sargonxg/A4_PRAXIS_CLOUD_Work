@@ -3,7 +3,7 @@ import type { SubscriptionTier } from '@/lib/api/tier';
 import { PRAXIS_FREE_MONTHLY_CREDIT_ALLOWANCE } from '@/lib/billing/usage-policy';
 
 export type PolarBillablePlan = Extract<SubscriptionTier, 'analyst' | 'team'>;
-export type PolarSubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'past_due' | 'revoked';
+export type PolarSubscriptionStatus = 'active' | 'trialing' | 'canceled' | 'past_due' | 'revoked' | 'paused' | 'incomplete' | 'incomplete_expired' | 'unpaid';
 
 export type PolarProductIds = {
   analyst?: string | null;
@@ -32,6 +32,7 @@ export type PolarSubscriptionPatch = {
 
 type PolarEventLike = {
   type?: string;
+  timestamp?: unknown;
   data?: Record<string, unknown>;
 };
 
@@ -59,14 +60,18 @@ export function polarSubscriptionPatchFromEvent(event: PolarEventLike, products:
   const data = event.data ?? {};
   const productId = stringValue(data.productId ?? data.product_id);
   const plan = polarPlanForProductId(productId, products);
+  if (!plan) return null; // Customer metadata is never a trusted product map.
   const metadata = objectValue(data.metadata);
   const customer = objectValue(data.customer);
   const uid = stringValue(customer.externalId ?? customer.external_id ?? metadata.uid ?? data.externalCustomerId ?? data.external_customer_id);
   if (!uid) return null;
 
-  const eventStatus = statusForEvent(type, stringValue(data.status));
+  const cancelAtPeriodEnd = booleanValue(data.cancelAtPeriodEnd ?? data.cancel_at_period_end);
+  const eventStatus = statusForEvent(type, stringValue(data.status), cancelAtPeriodEnd);
+  const sourceTime = isoDateValue(data.modifiedAt ?? data.modified_at ?? event.timestamp ?? data.createdAt ?? data.created_at);
+  if (!eventStatus || !sourceTime || !stringValue(data.id)) return null;
   const revoked = eventStatus === 'revoked';
-  const subscription = revoked ? 'free' : plan ?? planFromMetadata(metadata.plan) ?? 'free';
+  const subscription = revoked ? 'free' : plan;
   const subscriptionPlanId = subscription === 'analyst' || subscription === 'team' ? subscription : 'free';
   const currentPeriodEnd = isoDateValue(data.currentPeriodEnd ?? data.current_period_end);
   const customerId = stringValue(data.customerId ?? data.customer_id ?? customer.id);
@@ -81,18 +86,18 @@ export function polarSubscriptionPatchFromEvent(event: PolarEventLike, products:
     polarExternalCustomerId: uid,
     polarSubscriptionId: stringValue(data.id) || null,
     polarProductId: productId || null,
-    subscriptionExpiresAt: revoked ? new Date().toISOString() : currentPeriodEnd,
-    subscriptionUpdatedAt: new Date().toISOString(),
+    subscriptionExpiresAt: revoked ? sourceTime : currentPeriodEnd,
+    subscriptionUpdatedAt: sourceTime,
     creditAllowance: creditAllowanceForPlan(subscriptionPlanId),
     subscriptionMetadata: {
       provider: 'polar',
       eventType: type,
-      cancelAtPeriodEnd: booleanValue(data.cancelAtPeriodEnd ?? data.cancel_at_period_end),
+      cancelAtPeriodEnd,
     },
   };
 }
 
-export async function applyPolarSubscriptionPatch(db: Firestore, patch: PolarSubscriptionPatch, webhookId: string): Promise<'applied' | 'duplicate'> {
+export async function applyPolarSubscriptionPatch(db: Firestore, patch: PolarSubscriptionPatch, webhookId: string): Promise<'applied' | 'duplicate' | 'stale' | 'owner_unavailable'> {
   const eventRef = db.collection('polar_webhook_events').doc(webhookId);
   const userRef = db.collection('users').doc(patch.uid);
 
@@ -100,19 +105,41 @@ export async function applyPolarSubscriptionPatch(db: Firestore, patch: PolarSub
     const eventSnap = await tx.get(eventRef);
     if (eventSnap.exists) return 'duplicate';
     const userSnap = await tx.get(userRef);
-    const currentCredits = typeof userSnap.data()?.credits === 'number'
-      ? userSnap.data()!.credits as number
-      : 0;
-    const nextCredits = Math.max(currentCredits, patch.creditAllowance);
-
-    tx.set(eventRef, {
+    const account = userSnap.data();
+    const recordEvent = (result: string) => tx.set(eventRef, {
       uid: patch.uid,
       provider: 'polar',
       eventType: patch.subscriptionMetadata.eventType,
       receivedAt: FieldValue.serverTimestamp(),
       subscriptionId: patch.polarSubscriptionId,
       status: patch.subscriptionStatus,
+      sourceUpdatedAt: patch.subscriptionUpdatedAt,
+      result,
     });
+    if (!userSnap.exists || account?.accountDeletionStatus === 'deleting' || account?.accountDeletionStatus === 'deleted') {
+      recordEvent('owner_unavailable');
+      return 'owner_unavailable';
+    }
+    const previousTime = Date.parse(isoDateValue(account?.subscriptionUpdatedAt) ?? '');
+    const sourceTime = Date.parse(patch.subscriptionUpdatedAt);
+    const terminalReplay = account?.polarSubscriptionId === patch.polarSubscriptionId
+      && account?.subscriptionStatus === 'revoked' && patch.subscriptionStatus !== 'revoked';
+    const statusRank = (status: unknown) => status === 'revoked' ? 3 : status === 'canceled' ? 2 : status === 'active' || status === 'trialing' ? 0 : 1;
+    if (!Number.isFinite(sourceTime) || sourceTime < previousTime || terminalReplay
+      || (sourceTime === previousTime && statusRank(patch.subscriptionStatus) < statusRank(account?.subscriptionStatus))) {
+      recordEvent('stale');
+      return 'stale';
+    }
+    const currentCredits = typeof account?.credits === 'number' ? account.credits : 0;
+    const periodEnd = Date.parse(patch.subscriptionExpiresAt ?? '');
+    // Existing Polar accounts without the marker already received their current
+    // period allowance. Adopt their stored period rather than refilling it.
+    const previousPeriod = isoDateValue(account?.billingAllowancePeriodEnd)
+      ?? (account?.subscriptionProvider === 'polar' ? isoDateValue(account?.subscriptionExpiresAt) : null);
+    const newPeriod = !previousPeriod || periodEnd > Date.parse(previousPeriod);
+    const grant = (patch.subscriptionStatus === 'active' || patch.subscriptionStatus === 'trialing')
+      && Number.isFinite(periodEnd) && periodEnd > Date.now() && newPeriod;
+    recordEvent('applied');
     tx.set(userRef, {
       subscription: patch.subscription,
       subscriptionProvider: patch.subscriptionProvider,
@@ -125,26 +152,25 @@ export async function applyPolarSubscriptionPatch(db: Firestore, patch: PolarSub
       polarSubscriptionId: patch.polarSubscriptionId,
       polarProductId: patch.polarProductId,
       creditAllowance: patch.creditAllowance,
-      credits: nextCredits,
-      billingCreditsUpdatedAt: patch.subscriptionUpdatedAt,
+      credits: grant ? Math.max(currentCredits, patch.creditAllowance) : currentCredits,
+      ...(grant ? {
+        billingAllowancePeriodEnd: patch.subscriptionExpiresAt,
+        billingCreditsUpdatedAt: patch.subscriptionUpdatedAt,
+      } : {}),
       subscriptionMetadata: patch.subscriptionMetadata,
     }, { merge: true });
     return 'applied';
   });
 }
 
-function statusForEvent(type: string, rawStatus: string): PolarSubscriptionStatus {
+function statusForEvent(type: string, rawStatus: string, cancelAtPeriodEnd?: boolean): PolarSubscriptionStatus | null {
   if (type === 'subscription.revoked') return 'revoked';
-  if (type === 'subscription.canceled') return 'canceled';
+  if (rawStatus === 'canceled') return cancelAtPeriodEnd === true ? 'canceled' : 'revoked';
+  if (type === 'subscription.canceled' || cancelAtPeriodEnd === true) return 'canceled';
   if (type === 'subscription.past_due') return 'past_due';
   if (rawStatus === 'trialing') return 'trialing';
-  if (rawStatus === 'past_due' || rawStatus === 'unpaid') return 'past_due';
-  if (rawStatus === 'canceled') return 'canceled';
-  return 'active';
-}
-
-function planFromMetadata(value: unknown): PolarBillablePlan | null {
-  return value === 'analyst' || value === 'team' ? value : null;
+  if (['active', 'past_due', 'unpaid', 'paused', 'incomplete', 'incomplete_expired'].includes(rawStatus)) return rawStatus as PolarSubscriptionStatus;
+  return null;
 }
 
 function creditAllowanceForPlan(plan: PolarBillablePlan | 'free'): number {

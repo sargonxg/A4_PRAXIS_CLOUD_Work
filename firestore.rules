@@ -2,6 +2,13 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isActiveOwner(uid) {
+      return request.auth != null && request.auth.uid == uid
+             && (!exists(/databases/$(database)/documents/users/$(uid))
+                 || !(get(/databases/$(database)/documents/users/$(uid)).data.keys()
+                      .hasAny(['accountDeletionStatus'])));
+    }
+
     function protectedUserFields() {
       return [
         'credits',
@@ -16,7 +23,18 @@ service cloud.firestore {
         'polarTrialEndsAt',
         'fullAccessCode',
         'fullAccessCodeRedeemedAt',
-        'fullAccessExpiresAt'
+        'fullAccessExpiresAt',
+        'accountDeletionStatus',
+        'accountDeletionReport',
+        'accountDeletionRequestedAt',
+        'accountDeletionCompletedAt',
+        'subscriptionUpdatedAt',
+        'subscriptionPlanId',
+        'subscriptionMetadata',
+        'creditAllowance',
+        'billingAllowancePeriodEnd',
+        'billingCreditsUpdatedAt',
+        'polarExternalCustomerId'
       ];
     }
 
@@ -31,7 +49,18 @@ service cloud.firestore {
         'polarTrialEndsAt',
         'fullAccessCode',
         'fullAccessCodeRedeemedAt',
-        'fullAccessExpiresAt'
+        'fullAccessExpiresAt',
+        'accountDeletionStatus',
+        'accountDeletionReport',
+        'accountDeletionRequestedAt',
+        'accountDeletionCompletedAt',
+        'subscriptionUpdatedAt',
+        'subscriptionPlanId',
+        'subscriptionMetadata',
+        'creditAllowance',
+        'billingAllowancePeriodEnd',
+        'billingCreditsUpdatedAt',
+        'polarExternalCustomerId'
       ];
     }
 
@@ -68,6 +97,7 @@ service cloud.firestore {
 
     function isRootCapsuleOwner() {
       return request.auth != null
+             && isActiveOwner(request.auth.uid)
              && resource.data.ownerUid == request.auth.uid;
     }
 
@@ -82,23 +112,21 @@ service cloud.firestore {
 
     // User profiles: owner-only access with field-level protection
     match /users/{uid} {
-      // Read: owner only
+      // Owners may read their deletion receipt while cleanup is pending.
       allow read: if request.auth != null && request.auth.uid == uid;
 
       // Update: owner only, but NEVER allow direct modification of credit fields.
       // Credits must only be changed via Admin SDK (server-side).
-      allow update: if request.auth != null
-                    && request.auth.uid == uid
+      allow update: if isActiveOwner(uid)
                     && (!request.resource.data.diff(resource.data).affectedKeys()
                         .hasAny(protectedUserFields()));
 
       // Allow owner create for client-safe profile fields only. Credits,
       // subscriptions, and promo/full-access fields are server-managed.
-      allow create: if request.auth != null
-                    && request.auth.uid == uid
+      allow create: if isActiveOwner(uid)
                     && request.resource.data.keys().hasOnly(clientUserCreateFields())
                     && request.resource.data.uid == uid
-                    && request.resource.data.credits == 5000
+                    && request.resource.data.credits == 1000
                     && request.resource.data.totalCreditsUsed == 0
                     && request.resource.data.subscription == 'free'
                     && request.resource.data.isDemo == false
@@ -109,24 +137,24 @@ service cloud.firestore {
       // DIALECTICA provenance graph: owner-only. Rule-chain records sit beside
       // the canonical graph and are never shared across users.
       match /situations/{situationId}/provenance/{stepId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       match /situations/{situationId}/sources/{sourceId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       match /situations/{situationId}/work_products/{workProductId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       match /situations/{situationId}/saved_queries/{queryId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       // All situation subcollections: owner-only
       match /situations/{situationId}/{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       // User settings (model preferences, graph backend): owner-only.
@@ -134,8 +162,7 @@ service cloud.firestore {
       // `api_keys_encrypted/providers/{providerId}` subcollection below and
       // are only reachable via the server-side API routes.
       match /settings/{settingDoc} {
-        allow read, write: if request.auth != null
-                           && request.auth.uid == uid
+        allow read, write: if isActiveOwner(uid)
                            && settingDoc != 'api_keys'
                            && settingDoc != 'api_keys_encrypted';
       }
@@ -160,171 +187,143 @@ service cloud.firestore {
 
       // Analyst profile: owner-only access
       match /profile/{document=**} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       // Profile versions: owner read only, write denied (Admin SDK only)
       match /profile_versions/{versionId} {
-        allow read: if request.auth != null && request.auth.uid == uid;
+        allow read: if isActiveOwner(uid);
         allow write: if false;
       }
 
       // Active PRAXIS workspace context stacks: owner-only. Server API routes
       // also write these through Admin SDK for auth/session consistency.
       match /contextStacks/{stackId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       // Canonical PRAXIS context capsules: owner-only. The server-side
       // capsule API keeps legacy contextStacks/default compatible while
       // new Ask, memo, tool, and agent flows converge on this collection.
       match /capsules/{capsuleId} {
-        allow read: if request.auth != null
-                    && request.auth.uid == uid
+        allow read: if isActiveOwner(uid)
                     && resource.data.ownerUid == uid;
-        allow write: if request.auth != null
-                     && request.auth.uid == uid
+        allow write: if isActiveOwner(uid)
                      && request.resource.data.ownerUid == uid;
 
         match /notes/{noteId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /evaluations/{evaluationId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /sources/{sourceId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /researchDossiers/{dossierId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /claimLedgers/{ledgerId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /humanWorkflowExamples/{workflowId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /sourceRefreshDockets/{docketId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /graphProjections/{projectionId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /advisoryMemoryHits/{memoryHitId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /memories/{memoryId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /ontologyGraphs/{graphId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /spans/{spanId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.createdBy == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.createdBy == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
 
         match /outputs/{outputId} {
-          allow read: if request.auth != null
-                      && request.auth.uid == uid
+          allow read: if isActiveOwner(uid)
                       && resource.data.ownerUid == uid
                       && resource.data.capsuleId == capsuleId;
-          allow write: if request.auth != null
-                       && request.auth.uid == uid
+          allow write: if isActiveOwner(uid)
                        && request.resource.data.ownerUid == uid
                        && request.resource.data.capsuleId == capsuleId;
         }
@@ -333,11 +332,9 @@ service cloud.firestore {
       // Durable generated work products. Full OutputCapsule records live here;
       // capsule-scoped output references are mirrored under /capsules/*/outputs.
       match /outputCapsules/{outputCapsuleId} {
-        allow read: if request.auth != null
-                    && request.auth.uid == uid
+        allow read: if isActiveOwner(uid)
                     && resource.data.ownerUid == uid;
-        allow write: if request.auth != null
-                     && request.auth.uid == uid
+        allow write: if isActiveOwner(uid)
                      && request.resource.data.ownerUid == uid;
       }
 
@@ -346,21 +343,17 @@ service cloud.firestore {
       // digest writes through Admin SDK, while direct client access remains
       // owner-scoped.
       match /knowledgeRepositories/{repositoryId} {
-        allow read: if request.auth != null
-                    && request.auth.uid == uid
+        allow read: if isActiveOwner(uid)
                     && resource.data.ownerUid == uid;
-        allow write: if request.auth != null
-                     && request.auth.uid == uid
+        allow write: if isActiveOwner(uid)
                      && request.resource.data.ownerUid == uid
                      && request.resource.data.scope == 'user';
       }
 
       match /knowledgeDocuments/{documentId} {
-        allow read: if request.auth != null
-                    && request.auth.uid == uid
+        allow read: if isActiveOwner(uid)
                     && resource.data.ownerUid == uid;
-        allow write: if request.auth != null
-                     && request.auth.uid == uid
+        allow write: if isActiveOwner(uid)
                      && request.resource.data.ownerUid == uid;
       }
 
@@ -369,12 +362,12 @@ service cloud.firestore {
       // inside a user workspace. Canonical demo seeds are code-backed; user
       // forks live here and remain owner-scoped.
       match /cores/{coreId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       // Recommended next moves are workspace state derived from active cores.
       match /workspace-next-moves/{moveSetId} {
-        allow read, write: if request.auth != null && request.auth.uid == uid;
+        allow read, write: if isActiveOwner(uid);
       }
 
       // Durable AgentRun read model. Server runtime mirrors Cloud SQL ledger
@@ -382,21 +375,21 @@ service cloud.firestore {
       // timelines with Firestore onSnapshot. Direct client writes stay denied
       // to preserve run/audit integrity.
       match /runs/{runId} {
-        allow read: if request.auth != null && request.auth.uid == uid;
+        allow read: if isActiveOwner(uid);
         allow write: if false;
 
         match /events/{eventId} {
-          allow read: if request.auth != null && request.auth.uid == uid;
+          allow read: if isActiveOwner(uid);
           allow write: if false;
         }
 
         match /toolCalls/{toolCallId} {
-          allow read: if request.auth != null && request.auth.uid == uid;
+          allow read: if isActiveOwner(uid);
           allow write: if false;
         }
 
         match /approvals/{approvalId} {
-          allow read: if request.auth != null && request.auth.uid == uid;
+          allow read: if isActiveOwner(uid);
           allow write: if false;
         }
       }
@@ -437,6 +430,7 @@ service cloud.firestore {
     match /capsules/{capsuleId} {
       allow read: if canReadRootCapsule(resource.data);
       allow create: if request.auth != null
+                    && isActiveOwner(request.auth.uid)
                     && request.resource.data.ownerUid == request.auth.uid
                     && request.resource.data.schemaVersion == 'capsule/v2'
                     && request.resource.data.status == 'draft'
@@ -509,9 +503,8 @@ service cloud.firestore {
     // Owners can read and mark-as-read their own notifications, but
     // cannot create or delete them. Server (Admin SDK) creates them.
     match /users/{uid}/notifications/{notificationId} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow update: if request.auth != null
-                    && request.auth.uid == uid
+      allow read: if isActiveOwner(uid);
+      allow update: if isActiveOwner(uid)
                     && request.resource.data.diff(resource.data).affectedKeys()
                        .hasOnly(['read', 'archived', 'readAt']);
       allow create, delete: if false;

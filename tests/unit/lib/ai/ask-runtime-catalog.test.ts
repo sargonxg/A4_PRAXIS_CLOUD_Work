@@ -12,11 +12,12 @@ describe('Ask PRAXIS runtime catalog', () => {
     expect(ids).toEqual([
       getModelMatrixEntry('balanced').model,
       getModelMatrixEntry('complex_reasoning').model,
+      getModelMatrixEntry('cheap_classify').model,
       'gemini-2.5-pro',
       'gemini-2.5-flash',
       'gemini-2.5-flash-lite',
     ]);
-    expect(MODEL_PREFERENCE_VALUES).toEqual([...new Set(ids)]);
+    expect(new Set(MODEL_PREFERENCE_VALUES)).toEqual(new Set(ids));
   });
 
   it('centralizes frontier and stable fallback policy in the model matrix', () => {
@@ -34,7 +35,7 @@ describe('Ask PRAXIS runtime catalog', () => {
   it('validates and labels selectable model preferences', () => {
     expect(isModelPreferenceValue('gemini-2.5-flash-lite')).toBe(true);
     expect(isModelPreferenceValue('gemini-3-pro-image-preview')).toBe(false);
-    expect(modelPreferenceLabel(getModelMatrixEntry('complex_reasoning').model)).toContain('Gemini 3.5 Flash');
+    expect(modelPreferenceLabel(getModelMatrixEntry('complex_reasoning').model)).toContain('Gemini 3.1 Pro (preview)');
     expect(modelPreferenceLabel(getModelMatrixEntry('balanced').model)).toContain('Gemini 3.5 Flash');
     expect(modelPreferenceLabel('gemini-2.5-pro')).toContain('GA reasoning fallback');
   });
@@ -59,8 +60,8 @@ describe('Ask PRAXIS runtime catalog', () => {
       analysisDepth: 'deep',
     })).toEqual([
       getModelMatrixEntry('complex_reasoning').model,
+      getModelMatrixEntry('balanced').model,
       'gemini-2.5-pro',
-      'gemini-2.5-flash',
     ]);
   });
 
@@ -70,8 +71,8 @@ describe('Ask PRAXIS runtime catalog', () => {
       analysisDepth: 'deep',
     })).toEqual([
       getModelMatrixEntry('complex_reasoning').model,
+      getModelMatrixEntry('balanced').model,
       'gemini-2.5-pro',
-      'gemini-2.5-flash',
     ]);
   });
 

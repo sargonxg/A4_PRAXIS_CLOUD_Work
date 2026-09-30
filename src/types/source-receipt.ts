@@ -20,7 +20,7 @@ export interface SourceReceiptSpan {
   citationRef?: import('@/types/spatial-source').SpatialCitationRef;
 }
 
-export interface CanonicalSourceReceipt {
+export interface CanonicalSourceReceipt extends Partial<import('@/lib/ai/source-passage').OriginalSourceCapture> {
   receiptId: string;
   sourceId: string;
   name: string;
@@ -43,4 +43,5 @@ export interface CanonicalSourceReceipt {
   graphPath?: string[];
   advisorId?: string;
   toolRunId?: string;
+  generatedGroundingSegments?: import('@/lib/ai/web-research').GeneratedGroundingSegment[];
 }

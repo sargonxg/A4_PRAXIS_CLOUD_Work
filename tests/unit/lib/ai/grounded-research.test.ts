@@ -1,17 +1,21 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({ generateText: vi.fn(), googleSearch: vi.fn(() => ({ type: 'provider', id: 'google.google_search' })) }));
+const mocks = vi.hoisted(() => ({ generateText: vi.fn(), fetchOriginalSource: vi.fn(), googleSearch: vi.fn(() => ({ type: 'provider', id: 'google.google_search' })) }));
 vi.mock('ai', () => ({ generateText: mocks.generateText }));
 vi.mock('@/lib/ai/providers', () => ({
   getGroundedModel: () => 'test-model',
   getGoogleSearchTool: mocks.googleSearch,
 }));
+vi.mock('@/lib/ai/source-passage', () => ({ fetchOriginalSource: mocks.fetchOriginalSource }));
 
 import { searchWeb } from '@/lib/ai/grounded-research';
 import { executeWebResearch } from '@/lib/ai/web-research';
 
 describe('grounded research receipts', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.fetchOriginalSource.mockResolvedValue({ originalPassageStatus: 'unavailable', unavailableReason: 'http-error', originalPassages: [] });
+  });
 
   it('activates the provider search tool and keeps a generated overview out of source receipts', async () => {
     mocks.generateText.mockResolvedValue({ text: 'Generated explanation without grounding citations.', sources: [] });
@@ -63,13 +67,35 @@ describe('grounded research receipts', () => {
       },
     });
     const results = await searchWeb(`source associated text ${provider}`);
-    expect(results.find((result) => result.url.endsWith('/commitments'))?.content)
-      .toBe('A commitment states an intended action.');
-    expect(results.find((result) => result.url.endsWith('/implementation'))?.content)
-      .toBe('Implementation is assessed through observed actions.');
+    expect(results.find((result) => result.url.endsWith('/commitments'))?.content).toBe('');
+    expect(results.find((result) => result.url.endsWith('/commitments'))?.generatedGroundingSegments)
+      .toEqual([expect.objectContaining({ text: 'A commitment states an intended action.', kind: 'generated-grounding-segment' })]);
+    expect(results.find((result) => result.url.endsWith('/implementation'))?.content).toBe('');
+    expect(results.find((result) => result.url.endsWith('/implementation'))?.originalPassageStatus).toBe('unavailable');
     expect(results.find((result) => result.url.endsWith('/context'))?.content).toBe('');
     expect(JSON.stringify(results)).not.toContain('uncited prose');
     expect(JSON.stringify(results)).not.toContain('Grounded citation returned for query');
+  });
+
+  it('keeps fetched originals distinct from generated claims and exposes their publication and locator', async () => {
+    mocks.generateText.mockResolvedValue({
+      text: 'Synthetic case funding was spent.',
+      sources: [{ url: 'https://www.gao.gov/methods', title: 'GAO methods' }],
+      providerMetadata: { vertex: { groundingMetadata: {
+        groundingChunks: [{ web: { uri: 'https://www.gao.gov/methods' } }],
+        groundingSupports: [{ segment: { text: 'Synthetic case funding was spent.', startIndex: 0, endIndex: 32 }, groundingChunkIndices: [0] }],
+      } } },
+    });
+    mocks.fetchOriginalSource.mockResolvedValue({
+      originalPassageStatus: 'retrieved', publisher: 'gao.gov', authority: 'institutional', publishedDate: '2026-09-01', finalUrl: 'https://www.gao.gov/methods',
+      originalPassages: [{ text: 'Authorization does not establish expenditure.', locator: 'extracted-text:chars:0-44', retrievedAt: '2026-09-30T00:00:00Z', claimSupport: 'unverified' }],
+    });
+    const [result] = await searchWeb('source fidelity synthetic allocation fixture');
+    expect(result.content).toBe('Authorization does not establish expenditure.');
+    expect(result.originalPassages?.[0].claimSupport).toBe('unverified');
+    expect(result.generatedGroundingSegments?.[0]).toMatchObject({ kind: 'generated-grounding-segment', text: 'Synthetic case funding was spent.', responseStart: 0, responseEnd: 32 });
+    expect(result.publisher).toBe('gao.gov');
+    expect(result.publishedDate).toBe('2026-09-01');
   });
 
 });

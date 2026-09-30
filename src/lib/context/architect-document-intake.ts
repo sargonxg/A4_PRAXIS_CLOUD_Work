@@ -45,6 +45,8 @@ export async function ingestArchitectDocuments(files: File[], options: {
       if (!response.ok) throw new Error(response.status === 401 ? 'Sign in again, then retry.' : `Upload failed (${response.status}). Retry this file.`);
       const payload = await response.json();
       if (typeof payload.documentId !== 'string' || !payload.documentId) throw new Error('Upload returned no document receipt.');
+      if (payload.document?.indexingStatus === 'failed') warnings.push(`${file.name}: saved, but source indexing is incomplete. Check its processing status before relying on retrieval.`);
+      if (payload.document?.indexingStatus === 'keyword_only') warnings.push(`${file.name}: saved with keyword search available; semantic indexing is not yet available.`);
       const preview = await fetcher(`/api/documents/${encodeURIComponent(payload.documentId)}?situationId=${encodeURIComponent(situationId!)}&maxChars=16000`);
       if (!preview.ok) throw new Error('The saved document could not be read. Retry this file.');
       const body = await preview.json();

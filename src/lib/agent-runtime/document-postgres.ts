@@ -33,6 +33,16 @@ export function isDocumentSqlMirrorConfigured(): boolean {
   return Boolean(getDatabaseUrl());
 }
 
+/** Delete only this owner's mirror through its own configured database pool. */
+export async function eraseOwnerDocumentMirror(ownerUid: string): Promise<void> {
+  if (!ownerUid.trim()) throw new Error('An owner is required for document mirror erasure.');
+  if (!isDocumentSqlMirrorConfigured()) return;
+  const existing = await getPool().query<{ relation: string | null }>("SELECT to_regclass('public.document_ingestion_records') AS relation");
+  if (existing.rows[0]?.relation) {
+    await getPool().query('DELETE FROM document_ingestion_records WHERE owner_uid = $1', [ownerUid]);
+  }
+}
+
 async function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = getPool().query(`

@@ -136,7 +136,9 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).not.toContain('PRAXIS sample artifacts');
     expect(source).not.toContain('AskPraxisHome');
     expect(source.slice(source.indexOf('return ('))).not.toContain('TaskletPraxisWorkbench');
-    expect(source).toMatch(/if\s*\(memoId\)\s*\{\s*return\s+<TaskletPraxisWorkbench\b[^>]*\binitialMemoId=\{memoId\}[^>]*\/>;\s*\}/);
+    // Saved memo links and the canonical Drafts destination share the existing workbench;
+    // normal Home still returns the direct Ask shell. app-page.test.ts executes these routes.
+    expect(source).toMatch(/if\s*\(memoId\s*\|\|\s*query\.panel\s*===\s*'memo'\)\s*\{\s*return\s+<TaskletPraxisWorkbench\b[^>]*\binitialMemoId=\{memoId\}[^>]*\binitialPanel="ask"[^>]*\/>;\s*\}/);
     expect(source).not.toContain('listExampleCases');
   });
 });

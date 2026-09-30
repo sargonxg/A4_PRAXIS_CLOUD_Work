@@ -228,6 +228,22 @@ export function detachCapsuleRef(stack: ActiveContextStackState, capsuleId: stri
   });
 }
 
+/** Change the governing capsule while retaining the full attachment set and version pins. */
+export function promoteCapsuleRef(stack: ActiveContextStackState, capsuleId: string): ActiveContextStackState {
+  const current = sanitizeActiveContextStack(stack);
+  const target = current.capsuleRefs.find((ref) => ref.capsuleId === capsuleId);
+  if (!target || target.primary) return current;
+  return sanitizeActiveContextStack({
+    ...current,
+    capsuleId: target.capsuleId,
+    capsuleRefs: current.capsuleRefs.map((ref) => ({
+      ...ref,
+      primary: ref.capsuleId === target.capsuleId,
+      role: ref.capsuleId === target.capsuleId ? 'primary' : ref.primary ? 'reference' : ref.role,
+    })),
+  });
+}
+
 export function swapCapsuleRef(
   stack: ActiveContextStackState,
   currentCapsuleId: string,

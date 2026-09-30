@@ -37,6 +37,16 @@ export function isAskThreadSqlConfigured(): boolean {
   return Boolean(getDatabaseUrl());
 }
 
+/** The FK cascades turns; use the Ask database even if runtime has another URL. */
+export async function eraseOwnerAskThreadMemory(ownerUid: string): Promise<void> {
+  if (!ownerUid.trim()) throw new Error('An owner is required for Ask memory erasure.');
+  if (!isAskThreadSqlConfigured()) return;
+  const existing = await getPool().query<{ relation: string | null }>("SELECT to_regclass('public.ask_threads') AS relation");
+  if (existing.rows[0]?.relation) {
+    await getPool().query('DELETE FROM ask_threads WHERE owner_uid = $1', [ownerUid]);
+  }
+}
+
 async function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = getPool().query(`

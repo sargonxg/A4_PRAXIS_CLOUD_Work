@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { resolvePostLoginRedirect, safeWorkspaceReturnTarget } from '@/lib/auth/post-login-redirect';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 const LEGACY_APP_ROUTE_TARGETS: Record<string, string> = {
@@ -253,7 +254,12 @@ export function proxy(request: NextRequest) {
   // --- /onboarding routes ---
   if (pathname.startsWith('/onboarding')) {
     if (isDemo) return addSecurityHeaders(NextResponse.redirect(new URL('/app', request.url)), nonce);
-    if (!hasFirebaseToken) return addSecurityHeaders(NextResponse.redirect(new URL('/login', request.url)), nonce);
+    if (!hasFirebaseToken) {
+      const loginUrl = new URL('/login', request.url);
+      const target = safeWorkspaceReturnTarget(request.nextUrl.searchParams.get('redirect'));
+      if (target) loginUrl.searchParams.set('redirect', target);
+      return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
+    }
     return nextWithNonce(request, nonce);
   }
 
@@ -266,7 +272,9 @@ export function proxy(request: NextRequest) {
     sessionData?.onboardingSkipped !== true &&
     pathname !== '/onboarding'
   ) {
-    return addSecurityHeaders(NextResponse.redirect(new URL('/onboarding', request.url)), nonce);
+    const returnTarget = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    const onboarding = resolvePostLoginRedirect(new URLSearchParams({ redirect: returnTarget }), false, false);
+    return addSecurityHeaders(NextResponse.redirect(new URL(onboarding, request.url)), nonce);
   }
 
   // --- /app/* and private agent workspace routes ---

@@ -4,6 +4,8 @@ import { verifyIdToken } from '@/lib/firebase/admin';
 import { hasUserSkippedOnboarding, isUserOnboarded } from '@/lib/firebase/analyst-profile-admin';
 import { signCookie, verifyCookie } from '@/lib/auth/cookie-signer';
 import { getAdminPrincipalAccess } from '@/lib/auth/admin-gate';
+import { authenticationFailure } from '@/lib/auth/session-failure';
+import { initializeServerUserProfile } from '@/lib/firebase/user-profile-server';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 
@@ -25,15 +27,15 @@ function cookieOptionsForRequest(request: Request) {
   };
 }
 
-async function readExistingOnboardingSkippedCookie(): Promise<boolean> {
+async function readExistingOnboardingSkippedCookie(uid: string): Promise<boolean> {
   try {
     const cookieStore = await cookies();
     const sessionCookie = cookieStore.get(SESSION_COOKIE);
     if (!sessionCookie?.value) return false;
     const verified = verifyCookie(sessionCookie.value);
     if (!verified) return false;
-    const parsed = JSON.parse(verified) as { onboardingSkipped?: unknown };
-    return parsed.onboardingSkipped === true;
+    const parsed = JSON.parse(verified) as { onboardingSkipped?: unknown; user?: { uid?: string } };
+    return parsed.user?.uid === uid && parsed.onboardingSkipped === true;
   } catch {
     return false;
   }
@@ -71,14 +73,7 @@ export async function POST(request: Request) {
     const cookieOptions = cookieOptionsForRequest(request);
 
     if (body.demo === true) {
-      // Sample mode session
-      const response = NextResponse.json({ success: true });
-      response.cookies.set(
-        SESSION_COOKIE,
-        signCookie(JSON.stringify({ demo: true, onboarded: true, onboardingComplete: true })),
-        cookieOptions,
-      );
-      return response;
+      return NextResponse.json({ error: 'Sample sessions are retired. Sign in to use PRAXIS.', code: 'sample_session_retired' }, { status: 403 });
     }
 
     if (body.token && typeof body.token === 'string') {
@@ -93,24 +88,37 @@ export async function POST(request: Request) {
         verifiedUser = verified;
         console.log('[auth/session] Token verified for uid:', verifiedUser.uid);
       } catch (err) {
-        console.error('[auth/session] Token verification failed:', err instanceof Error ? err.message : String(err));
-        return NextResponse.json({ error: 'Token verification failed' }, { status: 401 });
+        return authenticationFailure(err);
+      }
+
+      let profileStatus: Awaited<ReturnType<typeof initializeServerUserProfile>>;
+      try {
+        profileStatus = await initializeServerUserProfile(verifiedUser);
+      } catch (err) {
+        console.error('[auth/session] Profile initialization unavailable:', err instanceof Error ? err.message : String(err));
+        return NextResponse.json({
+          error: 'Your account is temporarily unavailable. Please try again.',
+          code: 'account_storage_unavailable',
+        }, { status: 503 });
       }
 
       // Embed onboarded flag edge-safely in the cookie. Middleware cannot call
       // Firestore (Edge runtime), so we resolve it at login time. Source of truth:
       // users/{uid}/profile/analyst.meta.completedAt (with one-time legacy
       // mirroring from users/{uid}.onboardingCompletedAt for pre-merge users).
-      let onboarded = false;
-      try {
-        onboarded = await isUserOnboarded(verifiedUser.uid);
-      } catch (err) {
-        console.warn('[auth/session] Could not resolve onboarded flag for uid:', verifiedUser.uid, err instanceof Error ? err.message : String(err));
+      // Pending cleanup must remain reachable in Settings after token refresh.
+      let onboarded = profileStatus.status === 'deleting';
+      if (!onboarded) {
+        try {
+          onboarded = await isUserOnboarded(verifiedUser.uid);
+        } catch (err) {
+          console.warn('[auth/session] Could not resolve onboarded flag for uid:', verifiedUser.uid, err instanceof Error ? err.message : String(err));
+        }
       }
 
       let onboardingSkipped = false;
       if (!onboarded) {
-        onboardingSkipped = await readExistingOnboardingSkippedCookie();
+        onboardingSkipped = await readExistingOnboardingSkippedCookie(verifiedUser.uid);
         if (!onboardingSkipped) {
           try {
             onboardingSkipped = await hasUserSkippedOnboarding(verifiedUser.uid);
@@ -167,7 +175,7 @@ export async function GET() {
   try {
     const verified = verifyCookie(session.value);
     if (!verified) {
-      return NextResponse.json({ user: null });
+      return authenticationFailure({ code: 'auth/invalid-id-token' });
     }
     const data = JSON.parse(verified);
     if (data.demo) {
@@ -184,24 +192,31 @@ export async function GET() {
         },
       });
     }
-    if (data.user) {
+    if (typeof data.token === 'string' && data.token) {
+      let currentUser: Awaited<ReturnType<typeof verifyIdToken>>;
+      try {
+        currentUser = await verifyIdToken(data.token);
+      } catch (error) {
+        return authenticationFailure(error);
+      }
+      const adminAccess = getAdminPrincipalAccess(currentUser);
       return NextResponse.json({
         authenticated: true,
         user: {
-          id: data.user.uid,
-          email: data.user.email,
-          name: data.user.name,
-          emailVerified: data.user.emailVerified === true,
+          id: currentUser.uid,
+          email: currentUser.email,
+          name: currentUser.name,
+          emailVerified: currentUser.emailVerified === true,
           isDemo: false,
-          admin: data.admin === true,
+          admin: adminAccess.admin,
           onboardingComplete: data.onboardingComplete === true || data.onboarded === true,
           onboardingSkipped: data.onboardingSkipped === true,
         },
       });
     }
-    return NextResponse.json({ authenticated: true });
+    return authenticationFailure({ code: 'auth/invalid-id-token' });
   } catch {
-    return NextResponse.json({ user: null });
+    return authenticationFailure({ code: 'auth/invalid-id-token' });
   }
 }
 

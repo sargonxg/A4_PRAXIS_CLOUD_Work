@@ -477,12 +477,14 @@ export function AccountSettingsPage() {
   async function deleteAccount() {
     if (deleteConfirm !== 'delete account') return;
     setBusyAction('account-delete');
-    const result = await fetchJson<{ success?: boolean; message?: string }>('/api/account', { method: 'DELETE' });
+    const result = await fetchJson<{ success?: boolean; pending?: boolean; message?: string }>('/api/account', { method: 'DELETE' });
     setBusyAction(null);
-    if (result.ok) {
+    if (result.ok && result.data.success === true) {
       setStatus(result.data.message ?? 'Account deleted.');
       await logout();
       router.push('/');
+    } else if (result.ok) {
+      setStatus(result.data.message ?? 'Cleanup is pending. Retry deletion to finish.');
     } else {
       setStatus(result.error);
     }
@@ -931,7 +933,7 @@ function SecurityTab({
       <section className="space-y-3 rounded-xl border border-red-300 bg-red-50/50 p-5">
         <h3 className="text-sm font-semibold text-red-900">Delete full account</h3>
         <p className="text-xs leading-5 text-red-700">
-          This removes the Firebase account, the root user record, situations, and credit transaction history. Type delete account to continue.
+          Delete your account, capsules, conversations, work products, and uploads. Cancel any renewing subscription in Billing first. Cleanup can require a retry; a minimal deletion receipt and provider accounting records remain. Type delete account to continue.
         </p>
         <input
           value={deleteConfirm}

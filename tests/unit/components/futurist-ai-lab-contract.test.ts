@@ -72,8 +72,9 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
   it('keeps the public homepage as a simple chat surface without feature-preview clutter', () => {
     expect(chatShell).toContain('HOME_SIDEBAR_DESTINATIONS');
     expect(primaryNav).toContain('HOME_SIDEBAR_DESTINATIONS');
-    expect(primaryNav).toContain("label: 'Ask'");
-    expect(primaryNav).toContain("label: 'Context Capsules library'");
+    expect(primaryNav).toContain("label: 'Home'");
+    expect(primaryNav).toContain("label: 'Capsules'");
+    expect(primaryNav).toContain("label: 'Recent work'");
     expect(primaryNav).toContain("label: 'Boardroom'");
     expect(primaryNav).toContain("label: 'Drafts'");
     expect(praxisChat).toContain('data-testid="simple-home-chat"');

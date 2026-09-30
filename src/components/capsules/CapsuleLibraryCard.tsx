@@ -157,18 +157,19 @@ export function CapsuleLibraryCard({
   const graphNodes = safeCount(graph?.nodeCount ?? counts?.graphNodes);
   const graphEdges = safeCount(graph?.edgeCount ?? counts?.graphEdges);
   const unsupportedClaims = safeCount(researchSignals?.unsupportedClaimCount ?? counts?.unsupportedClaims);
+  const unsupportedAssessed = typeof (researchSignals?.unsupportedClaimCount ?? counts?.unsupportedClaims) === 'number';
   const researchSourceSpineCount = safeCount(researchSignals?.sourceSpineCount);
   const researchEvidenceGapCount = safeCount(researchSignals?.evidenceGapCount);
   const researchGraphNodes = safeCount(researchSignals?.graphNodeCount ?? graphNodes);
   const researchGraphEdges = safeCount(researchSignals?.graphEdgeCount ?? graphEdges);
   const qualityLabel = typeof qualityScore === 'number' && Number.isFinite(qualityScore)
-    ? `quality ${Math.round(qualityScore)}/100`
+    ? `structure ${Math.round(qualityScore)}/100`
     : null;
   const visibleMetadata = [
     policyTeamLabel,
     qualityLabel,
     sourceCount ? `${sourceCount} source ref${sourceCount === 1 ? '' : 's'}` : null,
-    unsupportedClaims ? `${unsupportedClaims} unsupported` : '0 unsupported',
+    unsupportedAssessed ? `${unsupportedClaims} unsupported` : 'Not assessed',
     ...metadata,
   ].filter(Boolean) as string[];
   const visibleScoreboard = scoreboardItems?.length
@@ -177,7 +178,7 @@ export function CapsuleLibraryCard({
         { label: 'Sources', value: sourceCount },
         { label: 'Claims', value: claimCount },
         { label: 'Graph', value: `${graphNodes}/${graphEdges}` },
-        { label: 'Quality', value: typeof qualityScore === 'number' ? Math.round(qualityScore) : null },
+        { label: 'Structure', value: typeof qualityScore === 'number' ? Math.round(qualityScore) : 'Not assessed' },
       ];
   const addRoleOptions = addAction?.roleOptions ?? [];
 
@@ -272,7 +273,7 @@ export function CapsuleLibraryCard({
             <span>{researchEvidenceGapCount} evidence gap{researchEvidenceGapCount === 1 ? '' : 's'}</span>
             <span>refresh {researchSignals.refreshStatus || 'unknown'}</span>
             <span>graph {researchGraphNodes}/{researchGraphEdges}</span>
-            <span className={unsupportedClaims ? 'text-amber-800' : 'text-emerald-800'}>{unsupportedClaims} unsupported</span>
+            <span className={unsupportedClaims ? 'text-amber-800' : 'text-slate-600'}>{unsupportedAssessed ? `${unsupportedClaims} unsupported` : 'Not assessed'}</span>
             {researchSignals.inspectHref ? (
               <span className="sr-only">Inspect {researchSignals.inspectHref}</span>
             ) : null}

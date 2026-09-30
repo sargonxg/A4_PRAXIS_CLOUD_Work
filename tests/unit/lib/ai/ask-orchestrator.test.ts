@@ -6,6 +6,13 @@ import {
 import type { AskContextReceipt } from '@/lib/ai/ask-conversation';
 
 describe('Ask PRAXIS conversation orchestrator', () => {
+  it('records the task budget and bounded model attempts for explicit recall despite stale deep preferences', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Recall the actor names using only the supplied notes. Do not use web sources or run agents.',
+      intent: 'normal_answer', contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 4 }), sourcePreviewCount: 2, activeGapCount: 0,
+    });
+    expect(receipt.generationBudget).toMatchObject({ taskKind: 'cheap_classify', selectedModelId: 'gemini-3.1-flash-lite', maxOutputTokens: 1024, maxAttempts: 3, maxRetries: 0, continuationRecommended: false });
+  });
   it('keeps simple turns agentic without forcing a durable run', () => {
     const receipt = buildAskConversationOrchestrationReceipt({
       prompt: 'What should I look at next?',
@@ -131,10 +138,11 @@ describe('Ask PRAXIS conversation orchestrator', () => {
         lane: 'sourceability',
       }),
     ]));
-    expect(receipt.routingDecision.userSafeLabels.modelTier).toBe('TACITUS selected deep reasoning');
+    expect(receipt.routingDecision.userSafeLabels.modelTier).toBe('Complex synthesis and review');
     expect(receipt.generationBudget).toMatchObject({
       mode: 'long_context',
-      maxOutputTokens: 32768,
+      taskKind: 'complex_reasoning',
+      maxOutputTokens: 16384,
       continuationRecommended: true,
     });
     expect(receipt.languagePolicyReview).toMatchObject({

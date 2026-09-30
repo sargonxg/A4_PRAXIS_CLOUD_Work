@@ -27,12 +27,20 @@ expectIncludes('src/lib/billing/usage-policy.ts', [
 
 expectIncludes('src/lib/api/with-credits.ts', [
   "'ai_chat': PRAXIS_ASK_TOKEN_COST",
-  'const initial = PRAXIS_STARTER_TOKEN_ALLOWANCE',
+  'reserveCreditsAdmin',
+  'decideFundedUsage',
 ]);
 
 expectIncludes('src/lib/firebase/firestore.ts', [
-  'const INITIAL_CREDITS = PRAXIS_STARTER_TOKEN_ALLOWANCE',
   "'ai_chat': PRAXIS_ASK_TOKEN_COST",
+  'Your account profile is not ready. Please retry signing in.',
+]);
+
+expectIncludes('src/lib/firebase/user-profile-server.ts', [
+  'initializeServerUserProfile',
+  'PRAXIS_STARTER_TOKEN_ALLOWANCE',
+  'database.runTransaction',
+  'signup-${identity.uid}',
   'Welcome bonus — 1,000 PRAXIS tokens',
 ]);
 

@@ -25,7 +25,7 @@ import { sanitizeActiveContextStack, type ActiveContextStackState } from '@/lib/
 import { stackToCoreRefs, type PraxisCapsule } from '@/lib/context/capsule-service';
 import { writeReadAuditEvents } from '@/lib/audit/read-ledger';
 import { buildAskPraxisExtensions } from '@/lib/ai/ask-praxis-tools';
-import { buildAskRuntimeFallbackCandidates, getAskRuntimeOption, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
+import { getAskRuntimeOption, isAskRuntimeModelAccessError } from '@/lib/ai/ask-runtime-catalog';
 import { getAskPraxisModelRuntimePolicy, type ModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
 import { modelPolicyLabelFor } from '@/lib/proof/proof-summary';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
@@ -812,14 +812,18 @@ fabricate sources, figures, dates, or identifiers.`;
       }).catch((err) => console.warn('[chat] persist failed conversation turn failed:', err));
     };
 
-    const candidateModelIds = buildAskRuntimeFallbackCandidates({
-      selectedModelId: runtimeReceipt.model,
-      analysisDepth: runtimeReceipt.analysisDepth,
-    });
+    const candidateModelIds = orchestrationReceipt.routingDecision.fallbackChain
+      .slice(0, orchestrationReceipt.generationBudget.maxAttempts)
+      .map((candidate) => candidate.modelId);
     async function* textStreamWithFallback(): AsyncGenerator<string> {
       let lastError: unknown = null;
       const attempted: string[] = [];
+      const generationDeadline = Date.now() + maxDuration * 1000;
       for (const candidateModelId of candidateModelIds) {
+        if (Date.now() >= generationDeadline) {
+          lastError = new Error('Ask generation reached its bounded runtime budget.');
+          break;
+        }
         attempted.push(candidateModelId);
         let candidateText = '';
         try {
@@ -833,6 +837,11 @@ fabricate sources, figures, dates, or identifiers.`;
             fallbackFrom: candidateModelId === candidateModelIds[0] ? null : candidateModelIds[0],
             selectedModel: candidateModelIds[0],
             actualModel: executionIdentity.model,
+            requestedTaskKind: orchestrationReceipt.generationBudget.taskKind,
+            maxAttempts: orchestrationReceipt.generationBudget.maxAttempts,
+            maxRetries: orchestrationReceipt.generationBudget.maxRetries,
+            attemptedModels: [...attempted],
+            fallbackReason: candidateModelId === candidateModelIds[0] ? null : 'model-access-or-quota',
             modelLifecycleTier: getAskRuntimeOption(candidateModelId).lifecycleTier,
           };
           const result = streamAskAnswer({
@@ -841,6 +850,8 @@ fabricate sources, figures, dates, or identifiers.`;
             messages: effectiveMessages as unknown as ModelMessage[],
             tools,
             maxOutputTokens: orchestrationReceipt.generationBudget.maxOutputTokens,
+            maxRetries: orchestrationReceipt.generationBudget.maxRetries,
+            abortSignal: AbortSignal.timeout(Math.max(1, generationDeadline - Date.now())),
           });
           for await (const text of requireAnswerText(result.textStream)) {
             candidateText += text;
@@ -855,6 +866,9 @@ fabricate sources, figures, dates, or identifiers.`;
             generationReceipt: buildAskGenerationReceipt({
               receipt: orchestrationReceipt,
               selectedModel: executionIdentity.model,
+              requestedModel: candidateModelIds[0],
+              provider: executionIdentity.provider,
+              attemptedModels: [...attempted],
               fallbackModel: selectedReceipt.fallbackFrom ?? null,
               finishReason,
               usage: totalUsage,
@@ -1130,16 +1144,30 @@ function formatAskRuntimeFailureMessage(error: unknown, _attemptedModels: string
 function buildAskGenerationReceipt(input: {
   receipt: AskConversationOrchestrationReceipt;
   selectedModel: string;
+  requestedModel: string;
+  provider: string;
+  attemptedModels: string[];
   fallbackModel: string | null;
   finishReason: FinishReason | null;
   usage: LanguageModelUsage | null;
   sourceCount: number;
   capsuleCount: number;
   warningCount: number;
-}): AskGenerationReceipt {
+}): AskGenerationReceipt & {
+  requestedModel: string; provider: string; servedModel: string; requestedTaskKind: AskConversationOrchestrationReceipt['generationBudget']['taskKind'];
+  attemptedModels: string[]; fallbackReason: string | null; maxAttempts: number; maxRetries: 0;
+} {
   return {
     selectedModel: input.selectedModel,
     fallbackModel: input.fallbackModel,
+    requestedModel: input.requestedModel,
+    provider: input.provider,
+    servedModel: input.selectedModel,
+    requestedTaskKind: input.receipt.generationBudget.taskKind,
+    attemptedModels: input.attemptedModels,
+    fallbackReason: input.fallbackModel ? 'model-access-or-quota' : null,
+    maxAttempts: input.receipt.generationBudget.maxAttempts,
+    maxRetries: input.receipt.generationBudget.maxRetries,
     budgetMode: input.receipt.generationBudget.mode,
     maxOutputTokens: input.receipt.generationBudget.maxOutputTokens,
     finishReason: input.finishReason,

@@ -4,6 +4,7 @@ import { verifyIdToken, adminDb } from '@/lib/firebase/admin';
 import { verifyCookie } from '@/lib/auth/cookie-signer';
 import { shouldBypassMinuteRateLimit } from '@/lib/billing/usage-policy';
 import { logApiCall } from '@/lib/observability/logger';
+import { authenticationFailure } from '@/lib/auth/session-failure';
 
 export interface AuthenticatedUser {
   uid: string;
@@ -13,36 +14,12 @@ export interface AuthenticatedUser {
   isDemo: boolean;
 }
 
-interface SessionUserSnapshot {
-  uid?: unknown;
-  email?: unknown;
-  name?: unknown;
-  emailVerified?: unknown;
-}
-
 interface AuthSessionPayload {
   demo?: boolean;
   token?: string;
-  user?: SessionUserSnapshot;
 }
 
 export const RATE_LIMIT = 300;
-
-function userFromSessionSnapshot(snapshot: SessionUserSnapshot | undefined): AuthenticatedUser | null {
-  if (!snapshot || typeof snapshot.uid !== 'string' || typeof snapshot.email !== 'string') {
-    return null;
-  }
-
-  return {
-    uid: snapshot.uid,
-    email: snapshot.email,
-    name: typeof snapshot.name === 'string' && snapshot.name.length > 0
-      ? snapshot.name
-      : snapshot.email.split('@')[0] || 'User',
-    emailVerified: snapshot.emailVerified === true,
-    isDemo: false,
-  };
-}
 
 /**
  * Firestore-backed rate limiter using 1-minute window buckets.
@@ -110,6 +87,10 @@ export function withAuth<TContext>(
 
       // Sample mode — still rate-limited to prevent abuse
       if (sessionData.demo === true) {
+        if (req.method !== 'GET') {
+          status = 403;
+          return NextResponse.json({ error: 'This sample is read-only. Sign in to ask questions or save work.', code: 'sample_read_only' }, { status: 403 });
+        }
         const demoUser: AuthenticatedUser = {
           uid: 'demo-user-001',
           email: 'analyst@tacitus.demo',
@@ -128,48 +109,47 @@ export function withAuth<TContext>(
 
       // Firebase authenticated user
       if (sessionData.token) {
+        let user: AuthenticatedUser;
         try {
           const verified = await verifyIdToken(sessionData.token);
-          const user: AuthenticatedUser = { ...verified, isDemo: false };
-          userUid = user.uid;
-
-          if (!shouldBypassMinuteRateLimit(user) && !(await checkRateLimit(user.uid))) {
-            status = 429;
-            return minuteRateLimitResponse();
-          }
-
-          const response = await handler(req, user, ctx);
+          user = { ...verified, isDemo: false };
+        } catch (error) {
+          const response = authenticationFailure(error);
           status = response.status;
           return response;
-        } catch {
-          // The Firebase ID token can expire before the signed app session does.
-          // Fall back to the server-issued user snapshot created only after
-          // POST /api/auth/session verified the token.
-          const snapshotUser = userFromSessionSnapshot(sessionData.user);
-          if (snapshotUser) {
-            userUid = snapshotUser.uid;
-
-            if (!shouldBypassMinuteRateLimit(snapshotUser) && !(await checkRateLimit(snapshotUser.uid))) {
-              status = 429;
-              return minuteRateLimitResponse();
-            }
-
-            const response = await handler(req, snapshotUser, ctx);
-            status = response.status;
-            return response;
-          }
-
-          status = 401;
-          return NextResponse.json({ error: 'Invalid authentication token' }, { status: 401 });
         }
+        userUid = user.uid;
+        try {
+          // Admin SDK bypasses client rules, so enforce the same deletion state
+          // before any analysis/write handler. Only cleanup reads/retries remain.
+          const account = await adminDb.collection('users').doc(user.uid).get();
+          const deletionState = account.data()?.accountDeletionStatus;
+          const cleanupRequest = route === '/api/account' && ['GET', 'DELETE'].includes(req.method);
+          if ((deletionState === 'deleting' || deletionState === 'deleted') && !cleanupRequest) {
+            status = 409;
+            return NextResponse.json({ error: 'Account cleanup is in progress. Open account settings to finish deletion.', code: 'account_deleting' }, { status: 409 });
+          }
+        } catch {
+          status = 503;
+          return NextResponse.json({ error: 'Account verification is temporarily unavailable. Please try again.', code: 'account_verification_unavailable' }, { status: 503 });
+        }
+        if (!shouldBypassMinuteRateLimit(user) && !(await checkRateLimit(user.uid))) {
+          status = 429;
+          return minuteRateLimitResponse();
+        }
+        // Operation failures are handled once by the outer catch, never retried
+        // as an authentication fallback after partial writes.
+        const response = await handler(req, user, ctx);
+        status = response.status;
+        return response;
       }
 
       status = 401;
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     } catch (err) {
-      errorMsg = err instanceof Error ? err.message : String(err);
+      errorMsg = err instanceof Error ? err.name : 'RouteError';
       status = 500;
-      return NextResponse.json({ error: 'Authentication error' }, { status: 500 });
+      return NextResponse.json({ error: 'Request failed. Please try again.', code: 'request_failed' }, { status: 500 });
     } finally {
       logApiCall({
         route,

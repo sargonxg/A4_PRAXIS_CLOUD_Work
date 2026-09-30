@@ -7,11 +7,29 @@ import {
   clearCapsuleDockSlot,
   defaultActiveContextStack,
   detachCapsuleRef,
+  promoteCapsuleRef,
   sanitizeActiveContextStack,
   swapCapsuleRef,
 } from '@/lib/context/active-context-stack';
 
 describe('active context stack block arrays', () => {
+  it('promotes attached context without dropping the prior primary or pinned versions', () => {
+    const stack = sanitizeActiveContextStack({ capsuleId: 'a', capsuleRefs: [
+      { capsuleId: 'a', label: 'Case A', role: 'primary', version: 7 },
+      { capsuleId: 'b', label: 'Case B', role: 'reference', version: 3 },
+      { capsuleId: 'c', label: 'Method C', role: 'tool', version: 2 },
+    ] });
+    const next = promoteCapsuleRef(stack, 'b');
+    expect(next.capsuleId).toBe('b');
+    expect(next.capsuleRefs.map(({ capsuleId, label, role, primary, version }) => ({ capsuleId, label, role, primary, version }))).toEqual([
+      { capsuleId: 'b', label: 'Case B', role: 'primary', primary: true, version: 3 },
+      { capsuleId: 'a', label: 'Case A', role: 'reference', primary: false, version: 7 },
+      { capsuleId: 'c', label: 'Method C', role: 'tool', primary: false, version: 2 },
+    ]);
+    expect(promoteCapsuleRef(next, 'missing').capsuleRefs).toEqual(next.capsuleRefs);
+    expect(promoteCapsuleRef(next, 'b').capsuleRefs).toEqual(next.capsuleRefs);
+    expect(stack.capsuleRefs[0].primary).toBe(true);
+  });
   it('derives multi-capsule blocks from legacy primary fields', () => {
     const stack = sanitizeActiveContextStack({
       stackId: 'default',

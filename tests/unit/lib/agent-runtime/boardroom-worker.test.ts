@@ -1,4 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+vi.mock('@/lib/agent-runtime/owner-state', () => ({ assertAgentOwnerWritable: async () => undefined }));
+
+vi.mock('@/lib/agent-runtime/execution-lease', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/agent-runtime/execution-lease')>();
+  return { ...actual, withAgentRunExecutionLease: async (_input: unknown, work: (assertOwned: () => Promise<void>, token: string) => Promise<unknown>) => work(async () => undefined, 'test-lease') };
+});
 import { AgentWorkerError, executeAgentRun, type ExecuteAgentRunPayload } from '@/lib/agent-runtime/worker';
 import type { AgentRun } from '@/lib/agent-runtime/types';
 import type { BoardroomOutput } from '@/lib/boardroom/schema';

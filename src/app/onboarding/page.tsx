@@ -13,6 +13,7 @@ import { StepWorkingStyle } from './step-working-style';
 import { CompletionSuccess } from './completion-success';
 import { LivePreview } from './live-preview';
 import { cn } from '@/lib/utils/cn';
+import { resolveOnboardingReturnTarget, safeWorkspaceReturnTarget } from '@/lib/auth/post-login-redirect';
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -30,6 +31,8 @@ function OnboardingWizard() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resumeMode = searchParams.get('resume') === '1' || searchParams.get('edit') === '1';
+  const returnTarget = resolveOnboardingReturnTarget(searchParams);
+  const explicitReturnTarget = safeWorkspaceReturnTarget(searchParams.get('redirect'));
   const { user } = useAuth();
   const [step, setStep] = useState<Step>(1);
   const [profile, setProfile] = useState<AnalystProfile>(DEFAULT_ANALYST_PROFILE);
@@ -96,11 +99,11 @@ function OnboardingWizard() {
         setSaveError('Could not save this reminder - please try again.');
         return;
       }
-      window.location.assign('/app');
+      window.location.assign(returnTarget);
     } catch {
       setSaveError('Network error saving the reminder - please try again.');
     }
-  }, []);
+  }, [returnTarget]);
 
   const complete = useCallback(async (createFirstSituation: boolean) => {
     setSaveError(null);
@@ -108,7 +111,7 @@ function OnboardingWizard() {
       const res = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ createFirstSituation }),
+        body: JSON.stringify({ createFirstSituation, redirect: explicitReturnTarget }),
       });
       if (!res.ok) {
         if (res.status === 400) {
@@ -123,11 +126,11 @@ function OnboardingWizard() {
       }
       void fetch('/api/onboarding/draft', { method: 'DELETE' }).catch(() => { /* non-critical */ });
       const { redirectTo } = await res.json();
-      router.push(redirectTo);
+      router.push(safeWorkspaceReturnTarget(redirectTo) ?? returnTarget);
     } catch {
       setSaveError('Network error finishing onboarding — please retry.');
     }
-  }, [router]);
+  }, [router, explicitReturnTarget, returnTarget]);
 
   return (
     <div className="app-light praxis-app-surface min-h-screen px-4 py-6 text-[color:var(--color-app-text)] sm:px-6 lg:px-8">
@@ -183,10 +186,9 @@ function OnboardingWizard() {
                   onComplete={complete}
                 />
                 <p className="mt-4 text-xs leading-5 text-slate-600">
-                  PRAXIS organizes every case around 14 conflict-grammar entities
-                  (Actor, Claim, Interest, Constraint, Leverage, Commitment, Event,
-                  Narrative, plus six extended types). You&apos;ll see the full primer
-                  the first time you open a case.
+                  Your analyst profile helps PRAXIS adapt to your mandate and audience.
+                  Add a Context Capsule when you want to reuse reviewed background,
+                  sources and methods across questions or written products.
                 </p>
               </>
             )}

@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomBytes } from 'node:crypto';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { CapsulePaginationError, capsulePageLimit } from '@/lib/context/capsule-pagination';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import {
   activateCapsule,
@@ -14,6 +15,7 @@ import {
   forkCapsule,
   getCapsule,
   listCapsuleReviewCards,
+  listCapsuleReviewCardsPage,
   promoteCapsuleSourceGaps,
   proposeCogneeSeedReviewCards,
   rateCapsule,
@@ -196,10 +198,19 @@ export const GET = withAuth<RouteContext>(async (_request, user, context) => {
     }
     const capsule = await getCapsule(user.uid, capsuleId);
     if (!capsule) return NextResponse.json({ error: 'Capsule not found' }, { status: 404 });
-    const reviewCards = url.searchParams.get('includeReviewCards') === 'true'
-      ? await listCapsuleReviewCards(user.uid, capsuleId) : undefined;
+    const includeReviewCards = url.searchParams.get('includeReviewCards') === 'true';
+    const reviewLimit = url.searchParams.get('reviewLimit');
+    const reviewCursor = url.searchParams.get('reviewCursor') ?? undefined;
+    if (includeReviewCards && (reviewLimit !== null || reviewCursor)) {
+      const page = await listCapsuleReviewCardsPage(user.uid, capsuleId, {
+        limit: capsulePageLimit(reviewLimit === null ? 50 : Number(reviewLimit)), cursor: reviewCursor,
+      });
+      return NextResponse.json({ capsule, reviewCards: page.cards, reviewCardsNextCursor: page.nextCursor, reviewCardsHasMore: page.hasMore });
+    }
+    const reviewCards = includeReviewCards ? await listCapsuleReviewCards(user.uid, capsuleId) : undefined;
     return NextResponse.json({ capsule, ...(reviewCards ? { reviewCards } : {}) });
   } catch (err) {
+    if (err instanceof CapsulePaginationError) return NextResponse.json({ error: err.message }, { status: 400 });
     return handleRouteError(err, 'context/capsules/get');
   }
 });

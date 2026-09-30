@@ -82,10 +82,16 @@ export interface HomeSidebarDestination extends Pick<PrimaryNavItem, 'id' | 'lab
   publicHref: string;
 }
 
+function homeDestination(navId: string, id = navId): HomeSidebarDestination {
+  const item = PRIMARY_NAV.find((candidate) => candidate.id === navId)!;
+  return { ...item, id, publicHref: `/login?${new URLSearchParams({ mode: 'signup', redirect: item.href })}` };
+}
+
 export const HOME_SIDEBAR_DESTINATIONS = [
-  { id: 'ask', label: 'Ask', href: '/app', publicHref: '/login?mode=signup&redirect=%2Fapp', icon: 'MessageSquareText' },
-  { id: 'context', label: 'Context Capsules library', href: '/app/capsules', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fcapsules', icon: 'FolderKanban' },
-  { id: 'boardroom', label: 'Boardroom', href: '/app/boardroom', publicHref: '/login?mode=signup&redirect=%2Fapp%2Fboardroom', icon: 'ShieldCheck' },
+  homeDestination('home', 'ask'),
+  homeDestination('capsules', 'context'),
+  homeDestination('boardroom'),
+  homeDestination('recent-work'),
   { id: 'drafts', label: 'Drafts', href: '/app?panel=memo', publicHref: '/login?mode=signup&redirect=%2Fapp%3Fpanel%3Dmemo', icon: 'FileText' },
 ] as const satisfies readonly HomeSidebarDestination[];
 
@@ -132,21 +138,22 @@ export function normalizeRouteHref(href: string): string {
 }
 
 export function itemMatchesPath(item: Pick<PrimaryNavItem, 'href' | 'matchPaths'>, pathname: string): boolean {
-  const href = normalizeRouteHref(item.href);
-  if (pathname === href || pathname.startsWith(`${href}/`)) return true;
-  return Boolean(item.matchPaths?.some((match) => {
-    const normalized = normalizeRouteHref(match);
-    return pathname === normalized || pathname.startsWith(`${normalized}/`);
-  }));
+  const current = new URL(pathname, 'https://praxis.invalid');
+  return [item.href, ...(item.matchPaths ?? [])].some((match) => {
+    const target = new URL(match, current.origin);
+    const pathMatches = current.pathname === target.pathname
+      || (target.pathname !== '/app' && current.pathname.startsWith(`${target.pathname}/`));
+    return pathMatches && Array.from(target.searchParams).every(([key, value]) => current.searchParams.get(key) === value);
+  });
 }
 
-export function primaryNavForPath(pathname: string): PrimaryNavItem | null {
+export function primaryNavForPath(pathname: string, items: readonly PrimaryNavItem[] = PRIMARY_NAV): PrimaryNavItem | null {
   // Prefer the longest matching href so that nested routes like
   // /app/admin/users resolve to "Users" rather than "Console".
   let best: PrimaryNavItem | null = null;
   let bestLen = -1;
-  for (const item of PRIMARY_NAV) {
-    const href = normalizeRouteHref(item.href);
+  for (const item of items) {
+    const href = item.href;
     if (itemMatchesPath(item, pathname)) {
       if (href.length > bestLen) {
         best = item;

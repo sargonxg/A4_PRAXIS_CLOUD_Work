@@ -5,14 +5,18 @@ import { describe, expect, it } from 'vitest';
 describe('Capsule Builder UX contract', () => {
   const root = process.cwd();
 
-  it('keeps the builder under the signed-in capsules surface with the grounding-aware nontechnical wizard', () => {
+  it('keeps a three-stage private builder with package settings behind the advanced controls', () => {
     const page = readFileSync(path.join(root, 'src/app/app/capsules/builder/page.tsx'), 'utf8');
     const wizard = readFileSync(path.join(root, 'src/components/capsules/CapsuleBuilderWizard.tsx'), 'utf8');
 
     expect(page).toContain('CapsuleBuilderWizard');
-    for (const label of ['Job', 'Sources', 'Grounding', 'Output', 'Tools', 'Test & evaluate', 'Publish']) {
-      expect(wizard).toContain(label);
-    }
+    const stepConfiguration = wizard.slice(wizard.indexOf('const STEPS:'), wizard.indexOf('const DOMAIN_OPTIONS'));
+    const stepLabels = [...stepConfiguration.matchAll(/label: '([^']+)'/g)].map((match) => match[1]);
+    expect(stepLabels.slice(0, 3)).toEqual(['Purpose', 'Material', 'Review and save']);
+    expect(stepLabels.slice(3)).toEqual(['Source preferences', 'Package proposals', 'Output', 'Tools', 'Package publication']);
+    expect(wizard).toContain('const [showSettings, setShowSettings] = useState(false)');
+    expect(wizard).toContain('const visibleSteps = showSettings ? STEPS : STEPS.slice(0, 3)');
+    expect(wizard).toContain('Advanced settings');
     for (const expected of [
       'Timeline anchors',
       'Causal link',
@@ -25,8 +29,12 @@ describe('Capsule Builder UX contract', () => {
     ]) {
       expect(wizard).toContain(expected);
     }
-    expect(wizard).toContain('/api/capsules');
-    expect(wizard).toContain('/publish');
+    const privateSave = wizard.slice(wizard.indexOf('async function saveDraft()'), wizard.indexOf('async function saveAndUse()'));
+    expect(privateSave).toContain("fetch('/api/context/capsules'");
+    expect(privateSave).not.toContain('/publish');
+    expect(wizard).toContain('Save and use in Ask');
+    expect(wizard).toContain('Sources and generated proposals still need review.');
+    expect(wizard).toContain('Package publication is a separate advanced workflow.');
     expect(wizard).toContain('Check draft structure');
     expect(wizard).not.toContain('builder-source');
     expect(wizard).not.toContain('Publish gate is ready');

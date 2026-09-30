@@ -21,6 +21,9 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { embed, embedMany } from 'ai';
 import { getEmbeddingModel, hasServerAiProvider } from '@/lib/ai/providers';
 import type { AutoStructuredDocument } from '@/lib/documents/auto-structure';
+import { assertDocumentTextSize, DocumentIngestionError, DOCUMENT_LIMITS } from '@/lib/documents/ingestion-policy';
+import { documentTextIdentity } from '@/lib/documents/upload-identity';
+import { assertDocumentOwnerWritable, withDocumentOwnerWrite } from '@/lib/documents/owner-write';
 
 export interface StoredDocument {
   id: string;
@@ -34,8 +37,20 @@ export interface StoredDocument {
   entities?: Record<string, unknown>;
   entityCount: number;
   chunkCount?: number;
+  ingestionRunId?: string;
+  ingestionStatus?: string;
   bucketUri?: string;
   structured?: AutoStructuredDocument;
+  indexing?: {
+    status: 'pending' | 'indexing' | 'indexed' | 'keyword_only' | 'failed';
+    textHash: string;
+    nextChunk: number;
+    chunkCount: number;
+    updatedAt: string;
+    error?: string;
+    retrievalMode?: 'hybrid' | 'keyword_only';
+  };
+  uploadCompletion?: { fingerprint: string; result: Record<string, unknown> };
   sourceCore?: {
     id: string;
     situationId: string;
@@ -57,6 +72,7 @@ export interface DocumentChunk {
   charStart: number;
   charEnd: number;
   embedding?: number[]; // Canonical embedding vector (768 dimensions)
+  textHash?: string;
 }
 
 function cosineSimilarity(a: number[], b: number[]): number {
@@ -85,18 +101,26 @@ function chunksCollection(uid: string, situationId: string, docId: string) {
 export async function saveDocument(
   uid: string,
   situationId: string,
-  doc: Omit<StoredDocument, 'id'>
+  doc: Omit<StoredDocument, 'id'>,
+  options: { documentId?: string } = {},
 ): Promise<StoredDocument> {
-  const ref = docsCollection(uid, situationId).doc();
+  const ref = options.documentId ? docsCollection(uid, situationId).doc(options.documentId) : docsCollection(uid, situationId).doc();
   const stored: StoredDocument = { ...doc, id: ref.id, ownerUid: uid };
-  await ref.set(stored);
-
-  // Update situation document count
   const db = getAdminDbOrThrow();
   const sitRef = db.collection('users').doc(uid).collection('situations').doc(situationId);
-  await sitRef.update({ documentCount: FieldValue.increment(1) });
-
-  return stored;
+  return withDocumentOwnerWrite(uid, async (transaction) => {
+    if (options.documentId) {
+      const existing = await transaction.get(ref);
+      if (existing.exists) {
+        const previous = existing.data() as StoredDocument;
+        if (!documentOwnedBy(previous, uid)) throw new Error('Document owner does not match the upload owner');
+        return withPathOwner({ ...previous, id: ref.id }, uid);
+      }
+    }
+    transaction.set(ref, stored);
+    transaction.update(sitRef, { documentCount: FieldValue.increment(1) });
+    return stored;
+  }, db);
 }
 
 export async function getDocumentById(
@@ -131,9 +155,26 @@ export async function updateDocumentStatus(
   status: StoredDocument['status'],
   updates?: Partial<StoredDocument>
 ): Promise<void> {
-  const current = await getDocumentById(uid, situationId, docId);
-  if (!current) throw new Error('Document not found or owner mismatch.');
-  await docsCollection(uid, situationId).doc(docId).update({ status, ...updates });
+  await updateDocumentIngestionMetadata(uid, situationId, docId, { status, ...updates });
+}
+
+export class DocumentWriteUnavailableError extends Error {
+  readonly status = 409;
+  readonly code = 'DOCUMENT_UNAVAILABLE';
+}
+
+/** Final writes must neither recreate an erased document nor bypass owner deletion. */
+export async function updateDocumentIngestionMetadata(uid: string, situationId: string, docId: string,
+  updates: Partial<StoredDocument>,
+): Promise<void> {
+  const ref = docsCollection(uid, situationId).doc(docId);
+  await withDocumentOwnerWrite(uid, async (transaction) => {
+    const current = await transaction.get(ref);
+    if (!current.exists || !documentOwnedBy(current.data() as StoredDocument, uid)) {
+      throw new DocumentWriteUnavailableError('The document is unavailable for ingestion writes.');
+    }
+    transaction.set(ref, { ...updates, id: ref.id, ownerUid: uid }, { merge: true });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -206,44 +247,61 @@ export async function chunkAndSaveDocument(
   docTitle: string,
   fullText: string
 ): Promise<number> {
+  await assertDocumentOwnerWritable(uid);
+  assertDocumentTextSize(fullText);
   const chunks = chunkText(fullText);
+  if (chunks.length > DOCUMENT_LIMITS.chunks) {
+    throw new DocumentIngestionError(`The source exceeds ${DOCUMENT_LIMITS.chunks} text chunks. Split it into smaller documents.`);
+  }
   const col = chunksCollection(uid, situationId, docId);
-
-  // Generate embeddings for all chunks in batch (if API key available)
-  let embeddings: number[][] | null = null;
+  const docRef = docsCollection(uid, situationId).doc(docId);
+  const previous = (await docRef.get()).data() as StoredDocument | undefined;
+  if (previous && !documentOwnedBy(previous, uid)) throw new Error('Document owner does not match indexing owner');
+  const textHash = documentTextIdentity(fullText);
+  const checkpoint = previous?.indexing?.textHash === textHash ? previous.indexing : undefined;
+  if (checkpoint && ['indexed', 'keyword_only'].includes(checkpoint.status) && checkpoint.nextChunk === chunks.length) return chunks.length;
+  const start = checkpoint ? Math.max(0, Math.min(chunks.length, checkpoint.nextChunk)) : 0;
+  let keywordOnly = checkpoint?.status === 'keyword_only' || checkpoint?.retrievalMode === 'keyword_only';
+  const progress = (status: NonNullable<StoredDocument['indexing']>['status'], nextChunk: number, error?: string) => ({
+    status, textHash, nextChunk, chunkCount: chunks.length, retrievalMode: keywordOnly ? 'keyword_only' as const : 'hybrid' as const,
+    updatedAt: new Date().toISOString(), ...(error ? { error } : {}),
+  });
+  await updateDocumentIngestionMetadata(uid, situationId, docId, { indexing: progress('indexing', start) });
+  let nextChunk = start;
   try {
-    const embeddingModel = hasServerAiProvider() ? getEmbeddingModel() : null;
-    if (embeddingModel) {
-      const result = await embedMany({
-        model: embeddingModel,
-        values: chunks.map((c) => c.text),
+    for (let offset = start; offset < chunks.length; offset += DOCUMENT_LIMITS.embeddingBatch) {
+      const slice = chunks.slice(offset, offset + DOCUMENT_LIMITS.embeddingBatch);
+      let embeddings: number[][] | null = null;
+      try {
+        const embeddingModel = hasServerAiProvider() ? getEmbeddingModel() : null;
+        if (embeddingModel) embeddings = (await embedMany({ model: embeddingModel, values: slice.map((chunk) => chunk.text) })).embeddings;
+        else keywordOnly = true;
+      } catch (err) {
+        keywordOnly = true;
+        console.warn('[documents] Embedding batch failed; keyword retrieval remains available:', err);
+      }
+      const committedThrough = offset + slice.length;
+      await withDocumentOwnerWrite(uid, async (transaction) => {
+        const current = await transaction.get(docRef);
+        if (!current.exists || !documentOwnedBy(current.data() as StoredDocument, uid)) {
+          throw new DocumentWriteUnavailableError('The document is unavailable for ingestion writes.');
+        }
+        for (let i = 0; i < slice.length; i++) {
+        // Repeating a committed batch after response loss replaces the same chunks.
+        const ref = col.doc(`chunk-${textHash.slice(0, 16)}-${String(offset + i).padStart(4, '0')}`);
+        transaction.set(ref, { id: ref.id, documentId: docId, documentTitle: docTitle, textHash,
+          text: slice[i].text, index: offset + i, charStart: slice[i].charStart, charEnd: slice[i].charEnd,
+          ...(embeddings?.[i] ? { embedding: embeddings[i] } : {}) } satisfies DocumentChunk);
+        }
+        transaction.set(docRef, { indexing: progress('indexing', committedThrough) }, { merge: true });
       });
-      embeddings = result.embeddings;
-      console.log(`[documents] Generated ${embeddings.length} embeddings for ${docTitle}`);
+      nextChunk = committedThrough;
     }
+    await updateDocumentIngestionMetadata(uid, situationId, docId, { chunkCount: chunks.length, indexing: progress(keywordOnly ? 'keyword_only' : 'indexed', chunks.length) });
   } catch (err) {
-    console.warn('[documents] Embedding generation failed (using keyword fallback):', err);
+    await updateDocumentIngestionMetadata(uid, situationId, docId, { indexing: progress('failed', nextChunk, 'Indexing was interrupted. Retry this upload to resume.') }).catch(() => undefined);
+    throw err;
   }
-
-  const batch = getAdminDbOrThrow().batch();
-  for (let i = 0; i < chunks.length; i++) {
-    const ref = col.doc();
-    const chunk: DocumentChunk = {
-      id: ref.id,
-      documentId: docId,
-      documentTitle: docTitle,
-      text: chunks[i].text,
-      index: i,
-      charStart: chunks[i].charStart,
-      charEnd: chunks[i].charEnd,
-      ...(embeddings?.[i] ? { embedding: embeddings[i] } : {}),
-    };
-    batch.set(ref, chunk);
-  }
-  await batch.commit();
-
-  // Update chunk count on the document
-  await docsCollection(uid, situationId).doc(docId).update({ chunkCount: chunks.length });
 
   return chunks.length;
 }
@@ -261,12 +319,18 @@ export async function retrieveRelevantChunks(
   uid: string,
   situationId: string,
   query: string,
-  opts: { maxChunks?: number } = {}
+  opts: { maxChunks?: number; documentIds?: string[] } = {}
 ): Promise<DocumentChunk[]> {
-  const maxChunks = opts.maxChunks ?? 5;
+  const maxChunks = Math.max(1, Math.min(50, Math.floor(opts.maxChunks ?? 5)));
 
-  // Get all documents for this situation
-  const docs = await listDocuments(uid, situationId);
+  // Explicit capsule selections are authoritative, including older documents
+  // outside the recent-document catalogue. Scope before scoring or top-K.
+  const docs = opts.documentIds === undefined
+    ? await listDocuments(uid, situationId)
+    : (await Promise.all(Array.from(new Set(opts.documentIds))
+      .filter((id) => id.length > 0 && !id.includes('/'))
+      .map((id) => getDocumentById(uid, situationId, id))))
+      .filter((doc): doc is StoredDocument => Boolean(doc));
   if (docs.length === 0) return [];
 
   // Generate query embedding if API key is available
@@ -290,6 +354,8 @@ export async function retrieveRelevantChunks(
 
     for (const chunkSnap of snap.docs) {
       const chunk = chunkSnap.data() as DocumentChunk;
+      if (chunk.documentId !== doc.id || typeof chunk.text !== 'string') continue;
+      if (doc.indexing?.textHash && chunk.textHash !== doc.indexing.textHash) continue;
       const lowerText = chunk.text.toLowerCase();
 
       // Keyword score (always computed)

@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import { DEFAULT_MODEL_PREFERENCE, type ModelPreferenceValue } from '@/lib/ai/model-preferences';
-import { PRAXIS_ASK_TOKEN_COST, PRAXIS_STARTER_TOKEN_ALLOWANCE } from '@/lib/billing/usage-policy';
+import { PRAXIS_ASK_TOKEN_COST } from '@/lib/billing/usage-policy';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -85,7 +85,6 @@ export interface CreditTransaction {
 // Constants
 // ---------------------------------------------------------------------------
 
-const INITIAL_CREDITS = PRAXIS_STARTER_TOKEN_ALLOWANCE;
 const USERS_COLLECTION = 'users';
 const CREDIT_TRANSACTIONS_COLLECTION = 'credit_transactions';
 const CONFLICTS_COLLECTION = 'conflicts';
@@ -96,8 +95,8 @@ const REPORTS_COLLECTION = 'reports';
 // ---------------------------------------------------------------------------
 
 /**
- * Creates or updates a user profile after sign-in.
- * Awards 100 TACITUS CREDITS on first sign-up.
+ * Hydrates the server-created profile after session synchronization.
+ * Starter credits and their ledger receipt are owned by the session API.
  */
 export async function ensureUserProfile(user: {
   uid: string;
@@ -109,6 +108,11 @@ export async function ensureUserProfile(user: {
   const userSnap = await getDoc(userRef);
 
   if (userSnap.exists()) {
+    const profile = userSnap.data();
+    // Cleanup receipts remain readable; never write into a deleting account.
+    if (profile.accountDeletionStatus === 'deleting' || profile.accountDeletionStatus === 'deleted') {
+      return profile as UserProfile;
+    }
     // Existing user — update last login
     await updateDoc(userRef, {
       lastLoginAt: serverTimestamp(),
@@ -119,36 +123,7 @@ export async function ensureUserProfile(user: {
     return userSnap.data() as UserProfile;
   }
 
-  // New user — create profile with initial credits
-  const profile: UserProfile = {
-    uid: user.uid,
-    email: user.email || '',
-    displayName: user.displayName || user.email?.split('@')[0] || 'Analyst',
-    photoURL: user.photoURL || '',
-    role: 'analyst',
-    orgId: 'org-default',
-    orgName: 'TACITUS Platform',
-    credits: INITIAL_CREDITS,
-    totalCreditsUsed: 0,
-    isDemo: false,
-    subscription: 'free',
-    createdAt: serverTimestamp(),
-    lastLoginAt: serverTimestamp(),
-    aiProvider: 'google',
-    researchProviders: ['google-search'],
-    calendarSources: ['manual'],
-  };
-
-  await setDoc(userRef, profile);
-
-  // Record the signup bonus transaction
-  await recordCreditTransaction(user.uid, {
-    amount: INITIAL_CREDITS,
-    type: 'signup',
-    description: 'Welcome bonus — 1,000 PRAXIS tokens',
-  });
-
-  return profile;
+  throw new Error('Your account profile is not ready. Please retry signing in.');
 }
 
 /**

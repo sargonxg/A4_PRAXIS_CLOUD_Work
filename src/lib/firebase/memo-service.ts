@@ -2,6 +2,8 @@ import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { createMemoVersion } from '@/lib/memo/export';
 import { buildMemoOutputReview, memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
+import { isCurrentMemoHumanApproval, type MemoReviewUse } from '@/lib/memo/human-review';
+import { signMemoHumanApproval, verifyMemoHumanApproval } from '@/lib/memo/human-review-server';
 import { MemoBlockSchema, MemoTemplateIdSchema, type Memo, type MemoBlock, type MemoStatus, type MemoTemplateId, type MemoVersion } from '@/types/memo';
 
 export interface SaveMemoDraftInput {
@@ -23,6 +25,7 @@ export interface SaveMemoDraftInput {
   claimChecks?: unknown[];
   outputCapsuleId?: string | null;
   outputReview?: MemoOutputReviewReceipt | null;
+  operationId?: string;
 }
 
 export interface MemoDraftRecord {
@@ -120,6 +123,10 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
   const memoId = memoDocumentId(input.caseId, input.templateId);
   const memoRef = memoRefFor(db, uid, input.caseId, input.templateId);
   const existing = await loadMemoDraft(uid, input.caseId, input.templateId, db);
+  if (input.operationId && existing?.versions.some((version) => (version as MemoVersion & { operationId?: string }).operationId === input.operationId)) {
+    // A recovered delivery must not replace later human edits or add a second version.
+    return existing;
+  }
   const primaryBlock = input.blocks.find((block) => block.id === 'live-memo-draft')
     ?? input.blocks.find((block) => Object.prototype.hasOwnProperty.call(block.metadata, 'outputReview')
       || Object.prototype.hasOwnProperty.call(artifactMetadata(block.metadata), 'outputReview'))
@@ -166,6 +173,7 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     updatedAt: now,
   };
   const memoMetadata = {
+    humanApproval: null,
     ...(input.capsuleId ? { capsuleId: input.capsuleId } : {}),
     ...(typeof input.capsuleVersion === 'number' ? { capsuleVersion: input.capsuleVersion } : {}),
     ...(input.conversationId ? { conversationId: input.conversationId } : {}),
@@ -179,9 +187,19 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     ...(outputReview ? { outputReview } : {}),
   };
 
-  await memoRef.set({ ...memo, ...memoMetadata, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
-  const savedVersion = { ...version, ...(outputReview ? { outputReview } : {}) };
-  await memoRef.collection('versions').doc(version.id).set(savedVersion);
+  const savedVersion = { ...version, ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) };
+  await db.runTransaction(async (transaction) => {
+    const owner = await transaction.get(db.collection('users').doc(uid));
+    if (!owner.exists || ['deleting', 'deleted'].includes(String(owner.data()?.accountDeletionStatus))) {
+      throw new MemoReviewConflictError('Account cleanup has started; this memo cannot be saved.');
+    }
+    const current = await transaction.get(memoRef);
+    if ((current.data()?.currentVersionId ?? null) !== (existing?.memo.currentVersionId ?? null)) {
+      throw new MemoReviewConflictError('Another memo version was saved. Reopen it before applying your changes.');
+    }
+    transaction.set(memoRef, { ...memo, ...memoMetadata, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
+    transaction.set(memoRef.collection('versions').doc(version.id), savedVersion);
+  });
   return { memo: { ...memo, ...memoMetadata }, versions: [...(existing?.versions ?? []), savedVersion] };
 }
 
@@ -202,7 +220,49 @@ function memoRefFor(db: Firestore, uid: string, caseId: string, templateId: Memo
     .collection('memos').doc(memoDocumentId(caseId, templateId));
 }
 
-function normalizeLoadedMemo(memoId: string, data: Record<string, unknown>, versions: Array<Record<string, unknown>>): LoadedMemoByIdRecord {
+export class MemoReviewConflictError extends Error {}
+
+export function primaryMemoBody(blocks: MemoBlock[]): string {
+  const primary = blocks.find((block) => ['live-memo-draft', 'memo-body', 'artifact-body'].includes(block.id));
+  return primary?.content ?? blocks.filter((block) => !/critique|audit|receipt|ledger-summary/.test(block.id))
+    .map((block) => block.content || block.items?.join('\n') || '').join('\n\n');
+}
+
+export async function approveMemoBody(uid: string, memoId: string, input: {
+  versionId: string; bodyHash: string; intendedUse: MemoReviewUse; limitations: string;
+}, db: Firestore = getAdminDbOrThrow()): Promise<LoadedMemoByIdRecord | null> {
+  const existing = await loadMemoById(uid, memoId, db);
+  if (!existing) return null;
+  const rootRef = db.collection('users').doc(uid).collection('memos').doc(sanitizeDocId(memoId));
+  const root = await rootRef.get();
+  const location = canonicalMemoLocation(memoId);
+  const ref = root.exists ? rootRef : location ? memoRefFor(db, uid, location.caseId, location.templateId) : null;
+  if (!ref) throw new MemoReviewConflictError('This legacy memo must be saved to the current editor before review.');
+  await db.runTransaction(async (transaction) => {
+    const owner = await transaction.get(db.collection('users').doc(uid));
+    if (!owner.exists || ['deleting', 'deleted'].includes(String(owner.data()?.accountDeletionStatus))) {
+      throw new MemoReviewConflictError('Account cleanup has started; this memo cannot be reviewed.');
+    }
+    const snapshot = await transaction.get(ref);
+    const data = snapshot.data();
+    if (!snapshot.exists || !data || !matchesMemoIdentity(data, uid, memoId)) throw new MemoReviewConflictError('Memo identity changed. Reopen it before review.');
+    if (data.currentVersionId !== input.versionId) throw new MemoReviewConflictError('A newer memo version was saved. Reopen and review that version.');
+    const versionRef = ref.collection('versions').doc(input.versionId);
+    const version = await transaction.get(versionRef);
+    const blocks = version.data()?.blocks;
+    if (!version.exists || !Array.isArray(blocks)) throw new MemoReviewConflictError('The saved memo body is unavailable. Save and retry.');
+    const body = primaryMemoBody(blocks as MemoBlock[]);
+    if (!body.trim() || await memoOutputBodyHash(body) !== input.bodyHash) throw new MemoReviewConflictError('The body differs from the saved version. Save your changes before review.');
+    const humanApproval = signMemoHumanApproval({ memoId, versionId: input.versionId, reviewerUid: uid,
+      bodyHash: input.bodyHash, approvedAt: new Date().toISOString(), intendedUse: input.intendedUse,
+      limitations: input.limitations.trim() });
+    transaction.set(ref, { ownerUid: uid, status: 'final', humanApproval, updatedAt: humanApproval.approvedAt }, { merge: true });
+    transaction.set(versionRef, { humanApproval }, { merge: true });
+  });
+  return loadMemoById(uid, memoId, db);
+}
+
+async function normalizeLoadedMemo(memoId: string, data: Record<string, unknown>, versions: Array<Record<string, unknown>>): Promise<LoadedMemoByIdRecord> {
   const now = new Date(0).toISOString();
   const caseId = stringField(data.caseId) ?? stringField(data.situationId) ?? stringField(data.capsuleId) ?? 'default';
   const templateId = MemoTemplateIdSchema.safeParse(data.templateId).success
@@ -223,6 +283,11 @@ function normalizeLoadedMemo(memoId: string, data: Record<string, unknown>, vers
     ...version,
   }));
 
+  const versionId = stringField(data.currentVersionId) ?? normalizedVersions.at(-1)?.id ?? 'version-1';
+  const current = normalizedVersions.find((version) => version.id === versionId);
+  const approval = verifyMemoHumanApproval(data.humanApproval);
+  const humanApproval = approval && approval.reviewerUid === data.ownerUid && current
+    && isCurrentMemoHumanApproval(approval, { memoId, versionId, bodyHash: await memoOutputBodyHash(primaryMemoBody(current.blocks)) }) ? approval : null;
   return {
     memo: {
       id: stringField(data.id) ?? stringField(data.memoId) ?? memoId,
@@ -235,6 +300,7 @@ function normalizeLoadedMemo(memoId: string, data: Record<string, unknown>, vers
       createdAt: stringField(data.createdAt) ?? stringField(data.ts) ?? now,
       updatedAt: stringField(data.updatedAt) ?? stringField(data.ts) ?? now,
       ...data,
+      humanApproval,
     },
     versions: normalizedVersions,
   };

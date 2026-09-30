@@ -3,6 +3,7 @@ import { getAuth, type Auth } from 'firebase-admin/auth';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 import { readFileSync } from 'node:fs';
+import { verifyCurrentIdentity } from '@/lib/auth/current-token';
 
 let _app: App | null = null;
 let _auth: Auth | null = null;
@@ -141,7 +142,10 @@ export async function verifyIdToken(token: string): Promise<{
   }
 
   // Always verify token cryptographically — never decode without verification
-  const decoded = await _auth.verifyIdToken(token);
+  const decoded = await verifyCurrentIdentity(token, {
+    verify: (value, checkRevoked) => _auth!.verifyIdToken(value, checkRevoked),
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  });
   return {
     uid: decoded.uid,
     email: decoded.email || '',

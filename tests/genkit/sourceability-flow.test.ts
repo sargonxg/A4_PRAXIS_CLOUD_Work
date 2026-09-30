@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   prompt: vi.fn(),
@@ -14,9 +14,15 @@ vi.mock('@/lib/genkit', () => ({
 }));
 
 describe('sourceabilityFlow', () => {
+  let sourceabilityFlow: typeof import('@/lib/genkit/flows/sourceability').sourceabilityFlow;
+
+  // Import the real schemas once, outside the bounded flow behavior tests.
+  beforeAll(async () => {
+    ({ sourceabilityFlow } = await import('@/lib/genkit/flows/sourceability'));
+  }, 120_000);
+
   beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
+    mocks.prompt.mockReset();
     mocks.prompt.mockReturnValue(vi.fn(async () => {
       throw new Error('provider unavailable');
     }));
@@ -35,7 +41,6 @@ describe('sourceabilityFlow', () => {
     }));
     mocks.prompt.mockReturnValue(promptRunner);
 
-    const { sourceabilityFlow } = await import('@/lib/genkit/flows/sourceability');
     const result = await sourceabilityFlow({
       claimText: 'The ceasefire monitoring mission reported 12 incidents in March 2026.',
       sourceSnippets: [{
@@ -63,7 +68,6 @@ describe('sourceabilityFlow', () => {
   }, 10_000);
 
   it('marks direct provided evidence as supported deterministically', async () => {
-    const { sourceabilityFlow } = await import('@/lib/genkit/flows/sourceability');
     const result = await sourceabilityFlow({
       claimText: 'The committee approved the remote work policy on 4 May 2026.',
       sourceSnippets: [
@@ -88,7 +92,6 @@ describe('sourceabilityFlow', () => {
   });
 
   it('marks partial evidence as weak deterministically', async () => {
-    const { sourceabilityFlow } = await import('@/lib/genkit/flows/sourceability');
     const result = await sourceabilityFlow({
       claimText: 'The policy will significantly reduce attrition across the whole organization.',
       sourceSnippets: [{
@@ -104,7 +107,6 @@ describe('sourceabilityFlow', () => {
   });
 
   it('marks missing evidence as unsupported deterministically', async () => {
-    const { sourceabilityFlow } = await import('@/lib/genkit/flows/sourceability');
     const result = await sourceabilityFlow({
       claimText: 'The sanctions package has full regional support.',
       sourceSnippets: [{
@@ -120,7 +122,6 @@ describe('sourceabilityFlow', () => {
   });
 
   it('marks temporal claims without dated snippets as needing date checks', async () => {
-    const { sourceabilityFlow } = await import('@/lib/genkit/flows/sourceability');
     const result = await sourceabilityFlow({
       claimText: 'The latest relief convoy currently reaches three border towns.',
       sourceSnippets: [{

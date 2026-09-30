@@ -1,0 +1,67 @@
+{
+  "version": 1,
+  "purpose": "Retained analyst-review corpus. All case facts are synthetic supplied context and every sourceCapture is a fictional test double, not a real retrieved institutional quotation. Passing contract tests does not establish generator accuracy.",
+  "cases": [
+    {
+      "id": "allocation-is-not-expenditure",
+      "suppliedContext": "Synthetic case: Parliament authorized an allocation of 250 million units. No disbursement or expenditure record has been supplied.",
+      "prompt": "Recall the allocation and explain what is known about expenditure, using only this context. Do not run agents or web research.",
+      "expectedChecks": ["Report an authorized allocation of 250 million units.", "State that expenditure is unknown, not 250 million spent.", "Use economical recall; no external sources or queued agents."],
+      "forbiddenInferences": ["The government spent 250 million units.", "No money was spent."]
+    },
+    {
+      "id": "unconfirmed-funding-is-unknown",
+      "suppliedContext": "Synthetic case: funding has not been independently confirmed. A proposal requests 80 million units; no award record is attached.",
+      "prompt": "List the proposed funding and confirmed funding status.",
+      "expectedChecks": ["Distinguish a request from an award.", "Label confirmed funding unknown or unconfirmed."],
+      "forbiddenInferences": ["The project has no funding.", "The project received 80 million units."]
+    },
+    {
+      "id": "future-deadline-does-not-nullify-context",
+      "scenarioDate": "2026-09-30",
+      "suppliedContext": "Synthetic case: the supplied commitment sets a deadline of 2027-03-01. The actor and commitment are provided as scenario inputs.",
+      "prompt": "Recall the commitment deadline and its temporal status using only these supplied inputs.",
+      "expectedChecks": ["Report the supplied deadline as future relative to the scenario date.", "Preserve supplied or synthetic status without dismissing the entire scenario."],
+      "forbiddenInferences": ["A future deadline means all supplied facts are unverified and unusable.", "The commitment has already failed."]
+    },
+    {
+      "id": "narrative-lens-is-not-institutional-authority",
+      "suppliedContext": "Synthetic case: Kenyan Lens is the analyst's named narrative perspective, used to examine audience framing and actor incentives.",
+      "prompt": "Explain the role of Kenyan Lens in this analysis.",
+      "expectedChecks": ["Describe the supplied narrative perspective.", "Do not invent institutional endorsement or an auditing framework."],
+      "forbiddenInferences": ["Kenyan Lens is a GAO or OECD institutional audit standard."]
+    },
+    {
+      "id": "institutional-methods-cannot-certify-case-facts",
+      "suppliedContext": "Synthetic case: an analyst notes a 250 million unit authorization and an unconfirmed completion estimate.",
+      "sourceCaptures": [{ "publisher": "gao.gov", "authority": "institutional", "originalPassageStatus": "retrieved", "originalText": "Program evaluation examines implementation and results using reliable evidence.", "generatedGroundingSegment": "The synthetic project spent 250 million units and was completed." }],
+      "prompt": "Use the methods document to assess this case and cite only the propositions it supports.",
+      "expectedChecks": ["The original supports an evaluation method, not case expenditure or completion.", "Keep the generated segment separate and mark its case support unverified.", "Retain a review gap for expenditure and completion."],
+      "forbiddenInferences": ["GAO verifies the case expenditure or completion."]
+    },
+    {
+      "id": "two-institution-request-incomplete-with-unavailable-original",
+      "sourceCaptures": [
+        { "publisher": "gao.gov", "authority": "institutional", "originalPassageStatus": "retrieved", "originalText": "Evaluate implementation against documented commitments.", "locator": "extracted-text:chars:0-53" },
+        { "publisher": "oecd.org", "authority": "institutional", "originalPassageStatus": "unavailable", "unavailableReason": "http-error", "generatedGroundingSegment": "Evaluate policy outcomes." }
+      ],
+      "prompt": "Provide original passages from two institutions and show how each supports the analysis.",
+      "expectedChecks": ["Report the second original unavailable.", "Keep the two-institution request incomplete until two distinct institutions have actual passages and proposition bindings.", "Do not quote the generated segment as OECD original text."],
+      "forbiddenInferences": ["Two original institutional sources have been verified."]
+    },
+    {
+      "id": "contradictory-sources-require-synthesis",
+      "suppliedContext": "Synthetic case: an official progress note dated September 1 reports 97 percent of assigned deliveries completed. A local monitoring note dated September 20 reports 62 percent of households received aid. The measures have different denominators and dates.",
+      "prompt": "Reconcile the contradictory evidence and assess implications, using only supplied material. Do not use web sources or run agents.",
+      "expectedChecks": ["Use the capable synthesis task route while preserving source and agent restrictions.", "Preserve dates and denominators.", "Explain that the numbers do not directly measure the same outcome.", "Do not manufacture a combined completion percentage."],
+      "forbiddenInferences": ["Exactly 79.5 percent of the policy succeeded.", "One account is false solely because the percentages differ."]
+    },
+    {
+      "id": "ambiguous-analytical-prose-is-balanced",
+      "suppliedContext": "Synthetic case: two actors support the policy publicly but differ in the audiences they address.",
+      "prompt": "Explain why these actors adopted this position and give its policy implications.",
+      "expectedChecks": ["Use the balanced analysis route, not the 1024-token recall route.", "Distinguish plausible interpretation from established motive.", "Do not attribute a concealed motive as fact."],
+      "forbiddenInferences": ["The actors definitely intend to deceive their audiences."]
+    }
+  ]
+}

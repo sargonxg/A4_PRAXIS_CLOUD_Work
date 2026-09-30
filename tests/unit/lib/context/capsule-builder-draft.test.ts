@@ -130,6 +130,30 @@ describe('canonical capsule builder author instructions', () => {
     expect(prompt).toContain('not independently verified evidence');
     expect(prompt.length).toBeLessThan(20000);
   });
+
+  it('roundtrips bounded sourcing and tool preferences without approving claims or granting tools', async () => {
+    const db = new FakeFirestore();
+    const input = authorInput({
+      sourcing: { mode: 'corpus', minSourcesPerClaim: 2, allowedDomains: ['un.org'], blockedDomains: ['example.com'], recencyWindowDays: 30, requiredSourceTypes: ['official'], citationStyle: 'footnote' },
+      tools: { recommended: ['deep_research'], policy: 'manual' },
+    });
+    const saved = await saveCapsuleBuilderDraft('owner', input, { service: { db: db as never } });
+    expect(saved.capsule.memoryPosture).toMatchObject({ builderDraft: { sourcing: input.sourcing, tools: input.tools } });
+    expect(saved.capsule.claimLedger).toBeUndefined();
+    const prompt = buildCapsulePromptBlock(saved.capsule);
+    expect(prompt).toContain('preferred_source_domains: un.org');
+    expect(prompt).toContain('avoided_source_domains: example.com');
+    expect(prompt).toContain('tool_policy: manual');
+    expect(prompt).toContain('do not authorize tools');
+    expect(prompt).toContain('corpus');
+    await expect(saveCapsuleBuilderDraft('owner', input, { service: { db: db as never } })).resolves.toMatchObject({ capsule: { version: saved.capsule.version } });
+  });
+
+  it('rejects oversized or malformed source domains and package factual fields', () => {
+    expect(() => authorInput({ sourcing: { mode: 'hybrid', minSourcesPerClaim: 1, allowedDomains: ['https://un.org/private'], blockedDomains: [], requiredSourceTypes: [] } })).toThrow();
+    expect(() => authorInput({ temporality: { timelineAnchors: [] } })).toThrow();
+    expect(() => authorInput({ tools: { recommended: Array(21).fill('deep_research'), policy: 'auto' } })).toThrow();
+  });
 });
 
 class FakeFirestore {

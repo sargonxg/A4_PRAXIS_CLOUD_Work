@@ -5,6 +5,25 @@ import {
 } from '@/lib/context/capsule-service';
 import { getDocumentById } from '@/lib/firebase/documents-service';
 
+const SourceDomainSchema = z.string().trim().toLowerCase().max(253)
+  .regex(/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/, 'Use a domain such as un.org, without a URL path.');
+
+// These are bounded author preferences, not enforcement grants or factual assertions.
+export const BuilderSourcingPreferencesSchema = z.object({
+  mode: z.enum(['live-search', 'corpus', 'skc', 'hybrid']),
+  minSourcesPerClaim: z.number().int().min(1).max(10),
+  allowedDomains: z.array(SourceDomainSchema).max(30),
+  blockedDomains: z.array(SourceDomainSchema).max(30),
+  recencyWindowDays: z.number().int().min(1).max(3650).optional(),
+  requiredSourceTypes: z.array(z.string().trim().min(1).max(80)).max(12),
+  citationStyle: z.enum(['inline', 'footnote', 'source-card']).optional(),
+}).strict();
+
+export const BuilderToolPreferencesSchema = z.object({
+  recommended: z.array(z.string().trim().min(1).max(120)).max(20),
+  policy: z.enum(['suggest', 'manual', 'auto']),
+}).strict();
+
 export const CapsuleBuilderDraftSchema = z.object({
   action: z.literal('save-builder-draft'),
   capsuleId: z.string().min(1).max(120).regex(/^[a-z0-9][a-z0-9_.:-]*$/),
@@ -16,6 +35,8 @@ export const CapsuleBuilderDraftSchema = z.object({
   responseJsonSchema: z.record(z.string(), z.unknown())
     .refine((schema) => JSON.stringify(schema).length <= 16000, 'Output schema is too large.').optional(),
   propertyOrdering: z.array(z.string().max(120)).max(40).default([]),
+  sourcing: BuilderSourcingPreferencesSchema.optional(),
+  tools: BuilderToolPreferencesSchema.optional(),
   situationId: z.string().min(1).max(160).regex(/^[^/\\]+$/).optional(),
   documentIds: z.array(z.string().min(1).max(180).regex(/^[^/\\]+$/)).max(20).default([]),
 }).strict();
@@ -51,6 +72,8 @@ export async function saveCapsuleBuilderDraft(uid: string, input: CapsuleBuilder
     frameworks: input.frameworks, outputFormat: input.outputFormat,
     propertyOrdering: input.propertyOrdering,
     ...(input.responseJsonSchema ? { responseJsonSchema: input.responseJsonSchema } : {}),
+    ...(input.sourcing ? { sourcing: input.sourcing } : {}),
+    ...(input.tools ? { tools: input.tools } : {}),
   };
   const outputContracts = [
     ...(existing?.outputContracts ?? []).filter((contract) => (

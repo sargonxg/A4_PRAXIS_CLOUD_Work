@@ -11,6 +11,7 @@ import {
   getRedirectResult,
   signOut as firebaseSignOut,
   sendPasswordResetEmail,
+  sendEmailVerification,
   GoogleAuthProvider,
   browserLocalPersistence,
   setPersistence,
@@ -23,6 +24,7 @@ import { AnalystProfileSchema, type AnalystProfile } from '@/types/analyst-profi
 import type { SubscriptionTier } from '@/lib/firebase/firestore';
 import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 import { loadProfileAfterAuthReady } from '@/lib/auth/profile-readiness';
+import { syncFirebaseSession } from '@/lib/auth/session-sync';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -233,29 +235,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const syncTokenCookie = useCallback(async (fbUser: FirebaseUser | null): Promise<boolean> => {
     try {
       if (fbUser) {
-        let token = await fbUser.getIdToken();
-        let res = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token }),
-        });
-
-        // If token verification failed (e.g. slightly stale token), retry once with a force-refreshed token
-        if (!res.ok && res.status === 401) {
-          console.warn('[auth] Cookie sync: token rejected (401), retrying with fresh token...');
-          token = await fbUser.getIdToken(true);
-          res = await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token }),
-          });
+        const result = await syncFirebaseSession(fbUser);
+        if (result === 'invalid') {
+          setUser(null);
+          setFirebaseUser(null);
+          setCredits(0);
+          setAnalystProfile(null);
+          setAuthError('Your session is no longer valid. Please sign in again.');
+          await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+          await firebaseSignOut(auth).catch(() => {});
+        } else if (result === 'unavailable') {
+          setAuthError('PRAXIS could not verify your session right now. Please try again.');
         }
-
-        if (!res.ok) {
-          console.error('[auth] Cookie sync failed with status:', res.status);
-          return false;
-        }
-        return true;
+        return result === 'ready';
       } else if (!isDemoMode) {
         await fetch('/api/auth/session', { method: 'DELETE' });
       }
@@ -283,15 +275,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // to /app while middleware immediately bounces back to /login.
         const synced = await syncTokenCookie(fbUser);
         if (!synced) {
-          setAuthError('We signed you in with Google, but PRAXIS could not initialize your secure session. Please try again, or contact TACITUS with the time of the attempt.');
+          setAuthError((previous) => previous ?? 'Sign-in succeeded, but PRAXIS could not verify your secure session. Please try again, or contact TACITUS with the time of the attempt.');
           setUser(null);
           setFirebaseUser(null);
           setCredits(0);
-          try {
-            await firebaseSignOut(auth);
-          } catch {
-            // Non-fatal: local state and server cookie are already cleared/broken.
-          }
+          // Invalid identities are cleared by syncTokenCookie. Preserve the
+          // Firebase login during a transient backend outage for a later retry.
           firebaseAuthDoneRef.current = true;
           setLoading(false);
           return;
@@ -303,7 +292,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(authUser);
         setCredits(0);
 
-        // Then try to load/create Firestore profile (non-blocking).
+        // Hydrate the profile already initialized by the verified session API.
         try {
           const { ensureUserProfile } = await import('@/lib/firebase/firestore');
           const profile = await loadProfileAfterAuthReady(fbUser, () =>
@@ -325,10 +314,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           });
           setCredits(profile.credits);
 
-          // Send welcome email for brand-new users (0 credits used = never used the app)
-          if (profile.totalCreditsUsed === 0) {
-            fetch('/api/email/welcome', { method: 'POST' }).catch(() => {});
-          }
         } catch (err) {
           // Firestore failed — that's OK, user is still logged in with defaults
           console.warn('[auth] Firestore profile load failed (using defaults):', err);
@@ -554,6 +539,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(cred.user, { displayName: name });
+      // Account creation succeeds even if email delivery is temporarily down.
+      // Email verification is required separately for privileged operations.
+      await sendEmailVerification(cred.user).catch(() => {
+        setAuthError('Your account was created, but the verification email could not be sent. You can still sign in.');
+      });
       const synced = await syncTokenCookie(cred.user);
       if (!synced) {
         setLoading(false);

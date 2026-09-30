@@ -3,6 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { CapsuleLibraryCard } from '@/components/capsules/CapsuleLibraryCard';
 
 describe('CapsuleLibraryCard', () => {
+  it('does not turn missing review assessments into zero unsupported claims or verified quality', () => {
+    const html = renderToStaticMarkup(<CapsuleLibraryCard variant="full" capsuleId="unassessed" title="New private draft" counts={{ sources: 1 }} />);
+    expect(html).toContain('Not assessed');
+    expect(html).not.toContain('0 unsupported');
+    expect(html).not.toContain('quality 0/100');
+    expect(html).toContain('No recorded graph yet');
+    expect(html).not.toContain('<circle');
+  });
   it('renders the compact homepage card contract without full-only graph chrome', () => {
     const html = renderToStaticMarkup(
       <CapsuleLibraryCard
@@ -29,7 +37,7 @@ describe('CapsuleLibraryCard', () => {
     expect(html).toContain('data-testid="capsule-card-add-split"');
     expect(html).toContain('Compact policy capsule');
     expect(html).toContain('Categories');
-    expect(html).toContain('quality 91/100');
+    expect(html).toContain('structure 91/100');
     expect(html).not.toContain('data-testid="capsule-mini-graph"');
   });
 

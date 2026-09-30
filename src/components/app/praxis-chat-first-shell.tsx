@@ -27,10 +27,12 @@ import {
   DEFAULT_CONTEXT_STACK_ID,
   attachCapsuleRef,
   detachCapsuleRef,
+  promoteCapsuleRef,
   swapCapsuleRef,
 } from '@/lib/context/active-context-stack';
 import { getCapsuleCategoryPalette, type CapsuleCategoryId } from '@/lib/constants/aco-colors';
-import { HOME_SIDEBAR_DESTINATIONS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
+import { HOME_SIDEBAR_DESTINATIONS, primaryNavForPath, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
+import { WorkedPolicyExample } from '@/components/marketing/worked-policy-example';
 
 const CapsuleListPicker = dynamic(
   () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
@@ -193,14 +195,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
     if (mutationDisabled) return;
     const currentPrimary = selectedCapsuleRefs[0]?.capsuleId;
     if (!currentPrimary || currentPrimary === capsuleId) return;
-    const target = selectedCapsuleRefs.find((ref) => ref.capsuleId === capsuleId);
-    const next = swapCapsuleRef(stack, currentPrimary, {
-      capsuleId,
-      label: target?.label,
-      version: target?.version,
-      role: 'primary',
-      primary: true,
-    });
+    const next = promoteCapsuleRef(stack, capsuleId);
     setSavingContext(true);
     setContextError('');
     try {
@@ -224,7 +219,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
       <div data-testid={isPublic ? 'marketing-home' : 'app-launchpad'} className="mx-auto flex w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
         {!isPublic ? <HomeTopBar isPublic={isPublic} /> : null}
         <div className="mt-5 grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
-          <HomeSidebar isPublic={isPublic} pathname={pathname ?? '/'} />
+          <HomeSidebar isPublic={isPublic} pathname={`${pathname ?? '/'}${query ? `?${query}` : ''}`} />
           <section className="min-w-0">
             {contextError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{contextError}</p> : null}
             {handoffKey && !handoffReady ? (
@@ -300,7 +295,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
             ) : null}
           </section>
         </div>
-        {isPublic ? <PublicIntroduction /> : null}
+        {isPublic ? <><PublicIntroduction /><WorkedPolicyExample compact /></> : null}
       </div>
     </div>
   );
@@ -394,7 +389,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
         {destinations.map((item) => {
           const Icon = HOME_DESTINATION_ICONS[item.icon] ?? MessageSquareText;
           const href = isPublic ? item.publicHref : item.href;
-          const active = !isPublic && (pathname === item.href || (item.id === 'ask' && pathname === '/app'));
+          const active = !isPublic && primaryNavForPath(pathname, destinations)?.id === item.id;
           return (
             <Link
               key={item.id}

@@ -7,10 +7,11 @@ import {
   getModelMatrixEntry,
   getTaskKinds,
   MODEL_MATRIX,
-  type TaskKind,
 } from '@/lib/ai/model-matrix';
 
 const GEMINI35_FRONTIER = /^gemini-3\.5-[a-z0-9-]+$/;
+// Exact IDs reviewed against official model docs on 2026-09-30; no wildcard approval for new models.
+const SANCTIONED_TASK_MODELS = new Set(['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-3.1-pro-preview']);
 const GEMINI25_STABLE = /^gemini-2\.5-[a-z0-9-]+$/;
 const TEXT_EMBEDDING = /^text-embedding-\d+$/;
 const FORBIDDEN_MODEL_PATTERNS = [
@@ -21,42 +22,39 @@ const FORBIDDEN_MODEL_PATTERNS = [
 export interface AuditModelMatrixCoverageResult {
   ok: boolean;
   sanctionedGemini35Ids: string[];
+  sanctionedGeminiIds: string[];
   failures: string[];
 }
 
 export function auditModelMatrixCoverage(repoRoot = process.cwd()): AuditModelMatrixCoverageResult {
   const failures: string[] = [];
   const policy = getAskPraxisRuntimePolicyMatrix();
-  const frontierTaskKinds = new Set<TaskKind>([
-    policy.frontierPrimary.chat,
-    policy.frontierPrimary.deep,
-  ]);
-
   const gemini35Ids = new Set<string>();
+  const geminiIds = new Set<string>();
   for (const taskKind of getTaskKinds()) {
     const modelId = getModelMatrixEntry(taskKind).model;
     checkForbiddenModelId(modelId, `taskKinds.${taskKind}`, failures);
 
     if (TEXT_EMBEDDING.test(modelId)) continue;
-    if (!GEMINI35_FRONTIER.test(modelId)) {
-      failures.push(`taskKinds.${taskKind} must use sanctioned Gemini 3.5 frontier IDs; found ${modelId}`);
+    if (!SANCTIONED_TASK_MODELS.has(modelId)) {
+      failures.push(`taskKinds.${taskKind} must use a documented sanctioned Gemini task model; found ${modelId}`);
       continue;
     }
 
-    gemini35Ids.add(modelId);
-    if (frontierTaskKinds.has(taskKind) && modelId !== getModelMatrixEntry(policy.frontierPrimary.chat).model) {
-      failures.push(`Ask frontier task kind ${taskKind} diverges from the sanctioned primary Ask model family: ${modelId}`);
-    }
+    geminiIds.add(modelId);
+    if (GEMINI35_FRONTIER.test(modelId)) gemini35Ids.add(modelId);
   }
+  if (getModelMatrixEntry('cheap_classify').model === getModelMatrixEntry('complex_reasoning').model) failures.push('Economical classification and complex reasoning must select distinct task models.');
 
   const fallbackProviderEntries = Object.entries(MODEL_MATRIX.fallbackProvider['google-ai-studio'] ?? {});
   for (const [taskKind, modelId] of fallbackProviderEntries) {
     checkForbiddenModelId(modelId, `fallbackProvider.google-ai-studio.${taskKind}`, failures);
     if (TEXT_EMBEDDING.test(modelId)) continue;
-    if (!GEMINI35_FRONTIER.test(modelId)) {
-      failures.push(`fallbackProvider.google-ai-studio.${taskKind} must use sanctioned Gemini 3.5 frontier IDs; found ${modelId}`);
+    if (!SANCTIONED_TASK_MODELS.has(modelId)) {
+      failures.push(`fallbackProvider.google-ai-studio.${taskKind} must use a documented sanctioned Gemini task model; found ${modelId}`);
     } else {
-      gemini35Ids.add(modelId);
+      geminiIds.add(modelId);
+      if (GEMINI35_FRONTIER.test(modelId)) gemini35Ids.add(modelId);
     }
   }
 
@@ -77,6 +75,7 @@ export function auditModelMatrixCoverage(repoRoot = process.cwd()): AuditModelMa
   return {
     ok: failures.length === 0,
     sanctionedGemini35Ids: Array.from(gemini35Ids).sort(),
+    sanctionedGeminiIds: Array.from(geminiIds).sort(),
     failures,
   };
 }
@@ -127,7 +126,7 @@ if (fileURLToPath(import.meta.url) === path.resolve(process.argv[1] ?? '')) {
   const result = auditModelMatrixCoverage();
   if (result.ok) {
     console.log('[audit:model-matrix-coverage] ok');
-    console.log(`sanctioned Gemini 3.5 IDs: ${result.sanctionedGemini35Ids.join(', ')}`);
+    console.log(`sanctioned Gemini task IDs: ${result.sanctionedGeminiIds.join(', ')}`);
   } else {
     console.error('[audit:model-matrix-coverage] failed');
     for (const failure of result.failures) console.error(`- ${failure}`);

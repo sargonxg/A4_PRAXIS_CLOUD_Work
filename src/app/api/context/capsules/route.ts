@@ -15,6 +15,7 @@ import {
 import { parseCorePackage } from '@/lib/context/core-package';
 import { CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 import { CapsuleBuilderDraftError, CapsuleBuilderDraftSchema, saveCapsuleBuilderDraft } from '@/lib/context/capsule-builder-draft';
+import { CapsulePaginationError, capsulePageLimit } from '@/lib/context/capsule-pagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,13 +103,18 @@ export const GET = withAuth(async (request, user) => {
       });
     }
     const url = new URL(request.url);
+    const limitValue = url.searchParams.get('limit');
+    const cursor = url.searchParams.get('cursor') ?? undefined;
+    const page = limitValue !== null || cursor ? { limit: capsulePageLimit(limitValue === null ? 50 : Number(limitValue)), cursor } : {};
     const inventory = await listCapsuleInventory(user.uid, {
       situationId: url.searchParams.get('situationId') ?? undefined,
       includeArchived: url.searchParams.get('includeArchived') === 'true',
       metadataOnly: true,
+      ...page,
     });
     return NextResponse.json({ ...inventory, persisted: true });
   } catch (err) {
+    if (err instanceof CapsulePaginationError) return NextResponse.json({ error: err.message }, { status: 400 });
     return handleRouteError(err, 'context/capsules/list');
   }
 });

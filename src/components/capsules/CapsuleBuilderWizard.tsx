@@ -1,7 +1,7 @@
 'use client';
 
 import { CalendarClock, Check, Code2, FileJson, GitBranch, Network, Rocket, Sparkles, UploadCloud } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { CapsuleJsonMonacoEditor } from '@/components/capsules/CapsuleJsonMonacoEditor';
@@ -18,17 +18,19 @@ import { ONTOLOGY_IDS } from '@/lib/ontology/types';
 import { PENDING_CONTEXT_CAPSULE_PROMPT_KEY } from '@/lib/product/context-capsule-pending';
 import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import type { ContextCapsule } from '@/types/context-capsule';
+import { builderDraftFingerprint, clearBuilderWorkingDraft, readBuilderWorkingDraft, saveBuilderWorkingDraft, saveCurrentBuilderForUse, type BuilderWorkingDraft } from '@/lib/context/capsule-builder-session';
 
-type BuilderStepId = 'job' | 'sources' | 'grounding' | 'output' | 'tools' | 'eval' | 'publish';
+type BuilderStepId = 'job' | 'material' | 'sources' | 'grounding' | 'output' | 'tools' | 'eval' | 'publish';
 
 const STEPS: Array<{ id: BuilderStepId; label: string; helper: string }> = [
-  { id: 'job', label: 'Job', helper: 'Plain-language purpose, domain, and frameworks.' },
-  { id: 'sources', label: 'Sources', helper: 'Grounding posture, domains, recency, and minimum evidence.' },
-  { id: 'grounding', label: 'Grounding', helper: 'Timeline anchors, causal links, and ontology binding.' },
+  { id: 'job', label: 'Purpose', helper: 'What decision or analysis should this context support?' },
+  { id: 'material', label: 'Material', helper: 'Bring documents, notes or a conversation. Review generated proposals.' },
+  { id: 'eval', label: 'Review and save', helper: 'Check the scope, choose an output and save privately.' },
+  { id: 'sources', label: 'Source preferences', helper: 'Preferred sources and recency; not verified evidence.' },
+  { id: 'grounding', label: 'Package proposals', helper: 'Timeline, causal and ontology settings for a separate package.' },
   { id: 'output', label: 'Output', helper: 'Deliverable format and schema ordering.' },
   { id: 'tools', label: 'Tools', helper: 'How PRAXIS should use sourceability and research tools.' },
-  { id: 'eval', label: 'Test & evaluate', helper: 'Check structure, then test actual analysis in Ask PRAXIS.' },
-  { id: 'publish', label: 'Publish', helper: 'Visibility, pricing, and immutable publish.' },
+  { id: 'publish', label: 'Package publication', helper: 'Separate advanced package evaluation and publication.' },
 ];
 
 const DOMAIN_OPTIONS = Object.keys(DOMAIN_SEEDS);
@@ -46,23 +48,31 @@ type DeepPartial<T> = {
 };
 
 export function CapsuleBuilderWizard() {
+  const router = useRouter();
   const guard = useSituationGuard();
   const { user } = useAuth();
+  const currentOwnerId = useRef(user?.id ?? null);
+  currentOwnerId.current = user?.id ?? null;
   const [sourceNotes, setSourceNotes] = useState('');
   const handoffLoaded = useRef<string | null>(null);
   const notesReceipt = useRef<ArchitectNotesReceipt | null>(null);
   const architectInFlight = useRef(false);
   const saveInFlight = useRef(false);
+  const saveOwnerId = useRef<string | null>(null);
+  const architectOwnerId = useRef<string | null>(null);
   const searchParams = useSearchParams();
   const [activeStep, setActiveStep] = useState<BuilderStepId>('job');
   const [advanced, setAdvanced] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [draftOwnerId, setDraftOwnerId] = useState<string | null>(null);
+  const [savedFingerprint, setSavedFingerprint] = useState<string | null>(null);
   const [savedCapsuleId, setSavedCapsuleId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<SaveState>('idle');
   const [message, setMessage] = useState('');
   const [evalSummary, setEvalSummary] = useState<string | null>(null);
   const [job, setJob] = useState('Help analysts produce a sourced policy briefing with explicit uncertainty and next evidence gaps.');
   const [frameworks, setFrameworks] = useState('ach, stakeholder-salience');
-  const [allowedDomains, setAllowedDomains] = useState('un.org, reliefweb.int');
+  const [allowedDomains, setAllowedDomains] = useState('');
   const [blockedDomains, setBlockedDomains] = useState('');
   const [selectedTools, setSelectedTools] = useState<string[]>(['sourceability', 'deep_research']);
   const [sampleQuestions, setSampleQuestions] = useState('What changed this week?\nWhich claims need corroboration?');
@@ -82,14 +92,75 @@ export function CapsuleBuilderWizard() {
     selectedTools,
   }));
 
-  const activeIndex = STEPS.findIndex((step) => step.id === activeStep);
+  const visibleSteps = showSettings ? STEPS : STEPS.slice(0, 3);
+  const activeIndex = visibleSteps.findIndex((step) => step.id === activeStep);
   const capsuleJson = useMemo(() => JSON.stringify(capsule, null, 2), [capsule]);
+  const fingerprint = builderDraftFingerprint({ capsule, purpose: job, notes: sourceNotes, documents: architectDocuments });
+  const currentFingerprint = useRef(fingerprint);
+  currentFingerprint.current = fingerprint;
+  const hasUnsavedChanges = savedCapsuleId !== null && savedFingerprint !== fingerprint;
+  const recoverySnapshot = useRef<{ ownerId: string; draft: BuilderWorkingDraft } | null>(null);
+  if (user?.id && draftOwnerId === user.id) recoverySnapshot.current = { ownerId: user.id, draft: { capsule, purpose: job, notes: sourceNotes, documents: architectDocuments, situationId: intakeSituationId, savedCapsuleId, savedFingerprint } };
+  if (!user?.id) recoverySnapshot.current = null;
+
+  useEffect(() => () => {
+    const snapshot = recoverySnapshot.current;
+    if (snapshot) { try { saveBuilderWorkingDraft(window.sessionStorage, snapshot.ownerId, snapshot.draft); } catch { /* Canonical save remains available. */ } }
+  }, []);
+
+  useEffect(() => {
+    if (!user?.id && draftOwnerId) { try { clearBuilderWorkingDraft(window.sessionStorage); } catch { /* No private draft is rendered after logout. */ } }
+    const explicitStart = searchParams.has('capsulePrompt') || searchParams.has('prompt') || searchParams.get('from') === 'conversation';
+    let recovered: ReturnType<typeof readBuilderWorkingDraft> = null;
+    try { recovered = explicitStart || !user?.id ? null : readBuilderWorkingDraft(window.sessionStorage, user.id); } catch { /* Saving remains available if tab storage is blocked. */ }
+    const restored = recovered?.capsule ?? makeDraftCapsule({ job: 'Help analysts produce a sourced policy briefing with explicit uncertainty and next evidence gaps.', frameworks: 'ach, stakeholder-salience', allowedDomains: '', blockedDomains: '', selectedTools: ['sourceability', 'deep_research'] });
+    setCapsule(restored);
+    setJob(recovered?.purpose ?? restored.persona.systemFrame);
+    setSourceNotes(recovered?.notes ?? '');
+    setArchitectDocuments(recovered?.documents ?? []);
+    setIntakeSituationId(recovered?.situationId);
+    setSavedCapsuleId(recovered?.savedCapsuleId ?? null);
+    setArchitectCapsuleId(recovered?.savedCapsuleId ?? null);
+    setSavedFingerprint(recovered?.savedFingerprint ?? null);
+    setFrameworks(restored.persona.frameworks.join(', '));
+    setAllowedDomains(restored.sourcing.allowedDomains.join(', '));
+    setBlockedDomains(restored.sourcing.blockedDomains.join(', '));
+    setSelectedTools(restored.tools.recommended);
+    setSaveState(recovered?.savedCapsuleId ? 'saved' : 'idle');
+    setIntakeBusy(false);
+    setArchitectBusy(false);
+    setAssistBusy(false);
+    notesReceipt.current = null;
+    setArchitectReviewCount(0);
+    setIntakeWarnings([]);
+    setEvalSummary(null);
+    setDraftOwnerId(user?.id ?? null);
+    setMessage(recovered ? 'Working draft restored in this tab. Save changes to keep them in your private library.' : '');
+  // Account changes must clear the previous account before any private work is shown.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user?.id || draftOwnerId !== user.id) return;
+    const timer = window.setTimeout(() => {
+      let saved = false;
+      try { saved = saveBuilderWorkingDraft(window.sessionStorage, user.id, { capsule, purpose: job, notes: sourceNotes, documents: architectDocuments, situationId: intakeSituationId, savedCapsuleId, savedFingerprint }); } catch { /* Optional tab recovery. */ }
+      if (!saved) setIntakeWarnings((warnings) => warnings.includes('Tab recovery is unavailable. Save your draft before leaving.') ? warnings : [...warnings, 'Tab recovery is unavailable. Save your draft before leaving.']);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [capsule, job, sourceNotes, architectDocuments, intakeSituationId, savedCapsuleId, savedFingerprint, draftOwnerId, user?.id]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsavedChanges]);
 
   useEffect(() => {
     const prompt = searchParams.get('capsulePrompt') ?? searchParams.get('prompt');
-    const storedPrompt = typeof window !== 'undefined'
-      ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY)
-      : null;
+    let storedPrompt: string | null = null;
+    try { storedPrompt = window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY); } catch { /* URL and pasted material still work. */ }
     const plainLanguagePrompt = (prompt ?? storedPrompt ?? '').trim().slice(0, 4000);
     if (!plainLanguagePrompt) return;
     const inferredDomain = inferDomainFromPrompt(plainLanguagePrompt);
@@ -117,12 +188,14 @@ export function CapsuleBuilderWizard() {
         tags: ['builder-draft', ...inferTagsFromPrompt(plainLanguagePrompt)],
       },
     }) as ContextCapsule);
-  }, [searchParams]);
+    if (user?.id) { try { window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY); } catch { /* optional handoff */ } }
+  }, [searchParams, user?.id]);
 
   useEffect(() => {
     if (!user?.id || searchParams.get('from') !== 'conversation' || handoffLoaded.current === user.id) return;
     handoffLoaded.current = user.id;
-    const handoff = readConversationCapsuleHandoff(window.sessionStorage, user.id);
+    let handoff: ReturnType<typeof readConversationCapsuleHandoff> = null;
+    try { handoff = readConversationCapsuleHandoff(window.sessionStorage, user.id); } catch { /* User can paste notes. */ }
     if (!handoff) {
       setMessage('The conversation handoff has expired or is unavailable for this account. Paste your notes below.');
       return;
@@ -195,6 +268,7 @@ export function CapsuleBuilderWizard() {
 
   async function runAssist(action: 'persona' | 'output-schema' | 'sources' | 'few-shot') {
     if (assistBusy) return;
+    const operationOwnerId = user?.id ?? null;
     setAssistBusy(true);
     setMessage(`Drafting ${action} suggestions...`);
     try {
@@ -211,6 +285,7 @@ export function CapsuleBuilderWizard() {
       }),
     });
     const payload = await response.json();
+    if (currentOwnerId.current !== operationOwnerId) return;
     if (!response.ok) {
       setMessage(payload.error ?? 'Assist failed.');
       return;
@@ -218,14 +293,16 @@ export function CapsuleBuilderWizard() {
     if (payload.patch) patchCapsule(payload.patch);
     setMessage(payload.summary ?? 'Suggestions applied.');
     } catch {
-      setMessage('Suggestions could not be loaded. Your draft is unchanged; retry when connected.');
+      if (currentOwnerId.current === operationOwnerId) setMessage('Suggestions could not be loaded. Your draft is unchanged; retry when connected.');
     } finally {
-      setAssistBusy(false);
+      if (currentOwnerId.current === operationOwnerId) setAssistBusy(false);
     }
   }
 
   async function runArchitect() {
-    if (architectInFlight.current || architectBusy || intakeBusy) return;
+    if ((architectInFlight.current && architectOwnerId.current === user?.id) || architectBusy || intakeBusy) return;
+    const operationOwnerId = user?.id ?? null;
+    architectOwnerId.current = operationOwnerId;
     if (!architectDocuments.length && !sourceNotes.trim()) {
       setMessage('Add a readable document, ideas, notes or a conversation before building proposals.');
       return;
@@ -241,11 +318,12 @@ export function CapsuleBuilderWizard() {
       if (documents.length >= 20) throw new Error('A build supports 20 sources. Start a new draft or use fewer documents to include notes.');
       setMessage('Saving your working notes...');
       const receipt = await prepareArchitectNotes(sourceNotes, { situationId, workspaceName: job, previous: notesReceipt.current });
+      if (currentOwnerId.current !== operationOwnerId) return;
       notesReceipt.current = receipt;
       situationId = receipt.situationId;
       setIntakeSituationId(situationId);
       documents = [...documents, receipt.document];
-      if (user?.id) clearConversationCapsuleHandoff(window.sessionStorage, user.id);
+      if (user?.id) { try { clearConversationCapsuleHandoff(window.sessionStorage, user.id); } catch { /* Stored source receipt is authoritative. */ } }
     }
     setMessage('Drafting Capsule Architect review cards...');
     const response = await fetch('/api/capsules/assist/architect', {
@@ -268,6 +346,7 @@ export function CapsuleBuilderWizard() {
       }),
     });
     const payload = await response.json();
+    if (currentOwnerId.current !== operationOwnerId) return;
     if (!response.ok) {
       setMessage(payload.error ?? 'Capsule Architect failed.');
       return;
@@ -278,20 +357,23 @@ export function CapsuleBuilderWizard() {
     setArchitectCapsuleId(payload.capsule?.capsuleId ?? null);
     setMessage(payload.summary ?? `Capsule Architect prepared ${cardCount} review cards.`);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Capsule building was interrupted. Your uploaded sources are saved; retry the build.');
+      if (currentOwnerId.current === operationOwnerId) setMessage(error instanceof Error ? error.message : 'Capsule building was interrupted. Your uploaded sources are saved; retry the build.');
     } finally {
-      architectInFlight.current = false;
-      setArchitectBusy(false);
+      if (architectOwnerId.current === operationOwnerId) architectInFlight.current = false;
+      if (currentOwnerId.current === operationOwnerId) setArchitectBusy(false);
     }
   }
 
   async function saveDraft(): Promise<string | null> {
-    if (saveInFlight.current || intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing') return null;
+    if ((saveInFlight.current && saveOwnerId.current === user?.id) || intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing') return null;
+    const operationOwnerId = user?.id ?? null;
+    saveOwnerId.current = operationOwnerId;
     saveInFlight.current = true;
     setSaveState('saving');
     setMessage('Saving your private capsule...');
     const id = architectCapsuleId ?? savedCapsuleId ?? (capsule.id === 'new-policy-capsule' ? `capsule-${crypto.randomUUID()}` : capsule.id);
     const draft = { ...capsule, id };
+    const savingFingerprint = fingerprint;
     setCapsule(draft);
     try {
     let documents = architectDocuments;
@@ -299,6 +381,7 @@ export function CapsuleBuilderWizard() {
     if (sourceNotes.trim()) {
       if (documents.length >= 20) throw new Error('A draft supports 20 sources. Use fewer documents to include working notes.');
       const receipt = await prepareArchitectNotes(sourceNotes, { situationId, workspaceName: job, previous: notesReceipt.current });
+      if (currentOwnerId.current !== operationOwnerId) return null;
       notesReceipt.current = receipt;
       situationId = receipt.situationId;
       setIntakeSituationId(situationId);
@@ -312,34 +395,55 @@ export function CapsuleBuilderWizard() {
         systemFrame: draft.persona.systemFrame, domain: draft.persona.domain,
         frameworks: draft.persona.frameworks, outputFormat: draft.output.format,
         responseJsonSchema: draft.output.responseJsonSchema, propertyOrdering: draft.output.propertyOrdering,
+        sourcing: { mode: draft.sourcing.mode, minSourcesPerClaim: draft.sourcing.minSourcesPerClaim, allowedDomains: draft.sourcing.allowedDomains, blockedDomains: draft.sourcing.blockedDomains, recencyWindowDays: draft.sourcing.recencyWindowDays, requiredSourceTypes: draft.sourcing.requiredSourceTypes, citationStyle: draft.sourcing.citationStyle },
+        tools: { recommended: draft.tools.recommended, policy: draft.tools.policy },
         situationId, documentIds: documents.map((document) => document.documentId),
       }),
     });
     const payload = await response.json();
+    if (currentOwnerId.current !== operationOwnerId) return null;
     if (!response.ok) {
       setSaveState('error');
-      setMessage(payload.detail ?? payload.error ?? 'Save failed.');
+      const validation = Object.values(payload.details?.fieldErrors ?? {}).flat().filter((value): value is string => typeof value === 'string').slice(0, 2).join(' ');
+      setMessage(validation || payload.detail || payload.error || 'Save failed.');
       return null;
     }
     const savedId = payload.capsule?.capsuleId as string;
     if (!savedId) throw new Error('Missing saved capsule id');
     setSavedCapsuleId(savedId);
+    setSavedFingerprint(savingFingerprint);
+    const savedSnapshot: BuilderWorkingDraft = { capsule: draft, purpose: job, notes: sourceNotes, documents: architectDocuments, situationId, savedCapsuleId: savedId, savedFingerprint: savingFingerprint };
+    if (operationOwnerId) {
+      recoverySnapshot.current = { ownerId: operationOwnerId, draft: savedSnapshot };
+      try { saveBuilderWorkingDraft(window.sessionStorage, operationOwnerId, savedSnapshot); } catch { /* Private canonical save has already succeeded. */ }
+    }
     setArchitectCapsuleId(savedId);
     setSaveState('saved');
-    if (user?.id) clearConversationCapsuleHandoff(window.sessionStorage, user.id);
+    if (user?.id) { try { clearConversationCapsuleHandoff(window.sessionStorage, user.id); } catch { /* Canonical save succeeded. */ } }
     setMessage('Private capsule saved to your library. Use it in Ask PRAXIS; source and graph proposals still need review.');
     return savedId;
     } catch (error) {
-      setSaveState('error');
-      setMessage(error instanceof Error ? error.message : 'Draft could not be saved. Your current edits are still here; retry saving.');
+      if (currentOwnerId.current === operationOwnerId) {
+        setSaveState('error');
+        setMessage(error instanceof Error ? error.message : 'Draft could not be saved. Your current edits are still here; retry saving.');
+      }
       return null;
     } finally {
-      saveInFlight.current = false;
+      if (saveOwnerId.current === operationOwnerId) saveInFlight.current = false;
     }
+  }
+
+  async function saveAndUse() {
+    const operationOwnerId = user?.id ?? null;
+    const id = savedCapsuleId && !hasUnsavedChanges ? savedCapsuleId : await saveCurrentBuilderForUse({ fingerprint, currentFingerprint: () => currentFingerprint.current, save: saveDraft });
+    if (currentOwnerId.current !== operationOwnerId) return;
+    if (id) router.push(`/app?capsuleId=${encodeURIComponent(id)}`);
+    else if (currentFingerprint.current !== fingerprint) setMessage('Your draft changed while saving. Save the current changes before using this capsule.');
   }
 
   async function publish() {
     if (saveInFlight.current || saveState === 'saving' || saveState === 'publishing') return;
+    const operationOwnerId = user?.id ?? null;
     setSaveState('publishing');
     setMessage('Evaluating the capsule package for publication...');
     try {
@@ -350,11 +454,13 @@ export function CapsuleBuilderWizard() {
       body: JSON.stringify({ id: draft.id, capsule: draft }),
     });
     const packagePayload = await packageResponse.json();
+    if (currentOwnerId.current !== operationOwnerId) return;
     if (!packageResponse.ok) throw new Error(packagePayload.error ?? 'The capsule package could not be saved.');
     const packageId = packagePayload.capsule?.id;
     if (!packageId) throw new Error('Missing capsule package receipt.');
     const response = await fetch(`/api/capsules/${encodeURIComponent(packageId)}/publish`, { method: 'POST' });
     const payload = await response.json();
+    if (currentOwnerId.current !== operationOwnerId) return;
     if (!response.ok) {
       setSaveState('error');
       setMessage(payload.detail ?? payload.error ?? 'Publish failed.');
@@ -363,8 +469,10 @@ export function CapsuleBuilderWizard() {
     setSaveState('published');
     setMessage('Capsule published and frozen as an immutable version.');
     } catch (error) {
-      setSaveState('error');
-      setMessage(error instanceof Error ? error.message : 'Publication could not be confirmed. Check the package status before retrying.');
+      if (currentOwnerId.current === operationOwnerId) {
+        setSaveState('error');
+        setMessage(error instanceof Error ? error.message : 'Publication could not be confirmed. Check the package status before retrying.');
+      }
     }
   }
 
@@ -378,8 +486,13 @@ export function CapsuleBuilderWizard() {
 
   function applyJson(value: string) {
     try {
-      const parsed = JSON.parse(value) as ContextCapsule;
+      const parsed = ContextCapsuleSchema.parse(JSON.parse(value)) as ContextCapsule;
       setCapsule(parsed);
+      setJob(parsed.persona.systemFrame.slice(0, 4000));
+      setFrameworks(parsed.persona.frameworks.join(', '));
+      setAllowedDomains(parsed.sourcing.allowedDomains.join(', '));
+      setBlockedDomains(parsed.sourcing.blockedDomains.join(', '));
+      setSelectedTools(parsed.tools.recommended);
       setEvalSummary(null);
       setMessage('');
     } catch {
@@ -387,10 +500,13 @@ export function CapsuleBuilderWizard() {
     }
   }
 
+  if (!user?.id) return <p className="p-4 text-sm text-slate-600">Sign in to create a private capsule. <Link href="/login?redirect=%2Fapp%2Fcapsules%2Fbuilder" className="font-semibold underline">Sign in</Link></p>;
+  if (draftOwnerId !== user.id) return <p role="status" className="p-4 text-sm text-slate-600">Loading your working draft…</p>;
+
   return (
     <section className="grid min-w-0 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
       <nav aria-label="Capsule builder steps" className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:block lg:self-start lg:space-y-2">
-        {STEPS.map((step, index) => (
+        {visibleSteps.map((step, index) => (
           <button
             key={step.id}
             type="button"
@@ -415,16 +531,17 @@ export function CapsuleBuilderWizard() {
             </span>
           </button>
         ))}
+        <button type="button" aria-expanded={showSettings} onClick={() => { setShowSettings((value) => !value); setActiveStep('job'); }} className="min-h-10 shrink-0 px-3 text-sm font-semibold text-[#4f483f] underline lg:w-full lg:text-left">{showSettings ? 'Hide advanced settings' : 'Advanced settings'}</button>
       </nav>
 
       <div className="min-w-0 space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8d1c5] bg-[#fffdf8] p-4">
           <div>
             <p className="text-sm font-semibold text-[#24211b]">
-              Step {activeIndex + 1} of {STEPS.length} · {STEPS[activeIndex]?.label}
+              Step {activeIndex + 1} of {visibleSteps.length} · {visibleSteps[activeIndex]?.label}
             </p>
             <p className="text-sm text-[#6f675c]">
-              {STEPS[activeIndex]?.helper}
+              {visibleSteps[activeIndex]?.helper}
             </p>
           </div>
           <button
@@ -437,6 +554,7 @@ export function CapsuleBuilderWizard() {
           </button>
         </div>
 
+        <fieldset disabled={saveState === 'saving' || saveState === 'publishing'} className="min-w-0 border-0 p-0">
         {advanced ? (
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
             <CapsuleJsonMonacoEditor value={capsuleJson} onChange={applyJson} />
@@ -482,12 +600,17 @@ export function CapsuleBuilderWizard() {
                   </label>
                 </div>
                 <button type="button" onClick={() => runAssist('persona')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
-                  <Sparkles className="h-4 w-4" /> Improve persona
+                  <Sparkles className="h-4 w-4" /> Refine purpose
                 </button>
+                <button type="button" onClick={() => setActiveStep('material')} className="ml-3 min-h-10 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white">Continue to material</button>
+              </div>
+            )}
+            {activeStep === 'material' && (
+              <div className="space-y-4">
                 <section className="rounded-md border border-[#d8d1c5] bg-white p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-[#24211b]">Capsule Architect</p>
+                      <p className="text-sm font-semibold text-[#24211b]">Your source material</p>
                       <p className="mt-1 text-xs text-[#6f675c]">Documents, ideas and conversations</p>
                       <p className="mt-1 text-xs text-[#6f675c]">Without a selected case, adding documents creates a private evidence workspace for this capsule.</p>
                       <p className="mt-2 max-w-xl text-xs leading-5 text-[#6f675c]">Build reviewable source assertions, dated events and ontology proposals. Explicit “Actor:”, “Party:” or “Stakeholder:” fields become actor candidates. Missing identities, dates and causal links stay unknown; check coverage before relying on the graph.</p>
@@ -503,16 +626,18 @@ export function CapsuleBuilderWizard() {
                             className="sr-only"
                         onChange={(event) => {
                           const files = Array.from(event.target.files ?? []);
+                          const uploadOwnerId = user?.id ?? null;
                           event.target.value = '';
                           setIntakeBusy(true);
                           setIntakeWarnings([]);
                           void ingestArchitectDocuments(files, { situationId: intakeSituationId ?? guard.situation?.id, workspaceName: job })
                             .then(({ documents, warnings, situationId }) => {
+                              if (currentOwnerId.current !== uploadOwnerId) return;
                               setIntakeSituationId(situationId);
                               setArchitectDocuments((current) => [...current, ...documents].slice(0, 20));
                               setIntakeWarnings(warnings);
-                            }).catch(() => setIntakeWarnings(['Documents could not be read. Your existing sources are still here; please retry.']))
-                            .finally(() => setIntakeBusy(false));
+                            }).catch(() => { if (currentOwnerId.current === uploadOwnerId) setIntakeWarnings(['Documents could not be read. Your existing sources are still here; please retry.']); })
+                            .finally(() => { if (currentOwnerId.current === uploadOwnerId) setIntakeBusy(false); });
                         }}
                       />
                     </label>
@@ -552,11 +677,13 @@ export function CapsuleBuilderWizard() {
                   {architectCapsuleId && <Link href={`/app/capsules?starter=${encodeURIComponent(architectCapsuleId)}&lane=inspect`} className="mt-3 inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white">Inspect and review your capsule</Link>}
                   <p className="mt-2 text-xs leading-5 text-[#6f675c]">Actors, claims, events and graph links are evidence proposals. Review them before reuse; repeated extraction does not make a claim true.</p>
                 </section>
+                <button type="button" onClick={() => setActiveStep('eval')} className="min-h-10 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white">Continue to review and save</button>
               </div>
             )}
 
             {activeStep === 'sources' && (
               <div className="space-y-4">
+                <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">These preferences are saved in your private capsule and guide analysis. They do not verify sources or guarantee enforced domain filtering; the current question and approved tools take precedence.</p>
                 <div className="grid gap-4 md:grid-cols-3">
                   <label className="block text-sm font-medium">
                     Sourcing mode
@@ -575,8 +702,8 @@ export function CapsuleBuilderWizard() {
                     Min sources per claim
                     <input
                       type="number"
-                      min={0}
-                      max={12}
+                      min={1}
+                      max={10}
                       value={capsule.sourcing.minSourcesPerClaim}
                       onChange={(event) => patchCapsule({ sourcing: { minSourcesPerClaim: Number(event.target.value) } })}
                       className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
@@ -595,7 +722,7 @@ export function CapsuleBuilderWizard() {
                   </label>
                 </div>
                 <label className="block text-sm font-medium">
-                  Allowed domains
+                  Preferred source domains (comma separated)
                   <input
                     value={allowedDomains}
                     onChange={(event) => {
@@ -606,7 +733,7 @@ export function CapsuleBuilderWizard() {
                   />
                 </label>
                 <label className="block text-sm font-medium">
-                  Blocked domains
+                  Avoided source domains (comma separated)
                   <input
                     value={blockedDomains}
                     onChange={(event) => {
@@ -624,6 +751,7 @@ export function CapsuleBuilderWizard() {
 
             {activeStep === 'grounding' && (
               <div className="space-y-5">
+                <p role="note" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Package-only advisory settings. Timeline, causal, ontology and graph fields below are not saved as private capsule facts by Save draft. To add factual context, use Material and review its evidence proposals. Package publication is a separate advanced workflow.</p>
                 <div className="grid gap-4 lg:grid-cols-3">
                   <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
                     <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#24211b]">
@@ -783,6 +911,7 @@ export function CapsuleBuilderWizard() {
 
             {activeStep === 'tools' && (
               <div className="space-y-4">
+                <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">Saved tool preferences are suggestions. Automatic policy does not grant permission to run research or publish; actual run approvals and the current question control execution.</p>
                 <div className="grid gap-3 md:grid-cols-2">
                   {TOOL_OPTIONS.map((tool) => (
                     <label key={tool} className="flex items-center gap-3 border border-[#d8d1c5] p-3 text-sm">
@@ -816,6 +945,16 @@ export function CapsuleBuilderWizard() {
 
             {activeStep === 'eval' && (
               <div className="space-y-4">
+                <div className="rounded-md border border-[#d8d1c5] bg-white p-4 text-sm text-[#4f483f]">
+                  <p className="font-semibold text-[#24211b]">{job || 'Add a purpose before saving.'}</p>
+                  <p className="mt-2">{architectDocuments.length} uploaded source{architectDocuments.length === 1 ? '' : 's'}{sourceNotes.trim() ? ' and working notes' : ''}. {architectReviewCount} proposal{architectReviewCount === 1 ? '' : 's'} prepared.</p>
+                  <p className="mt-2">Save keeps your purpose, output, source and tool preferences, and supplied document references privately. Sources and generated proposals still need review.</p>
+                </div>
+                <label className="block text-sm font-medium">Preferred written product
+                  <select value={capsule.output.format} onChange={(event) => patchCapsule({ output: outputFor(event.target.value as ContextCapsule['output']['format']) })} className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm">
+                    <option value="brief">Decision brief</option><option value="report">Analytical report</option><option value="markdown">Working document</option><option value="json">Structured data</option>
+                  </select>
+                </label>
                 <label className="block text-sm font-medium">
                   Sample questions
                   <textarea
@@ -875,15 +1014,17 @@ export function CapsuleBuilderWizard() {
             )}
           </div>
         )}
+        </fieldset>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-[#d8d1c5] pt-4">
-          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing'} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 border border-[#24211b] px-4 py-2 text-sm font-semibold disabled:opacity-50">
+          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing' || !job.trim()} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 border border-[#24211b] px-4 py-2 text-sm font-semibold disabled:opacity-50">
             <FileJson className="h-4 w-4" /> {saveState === 'saving' ? 'Saving...' : 'Save draft'}
           </button>
+          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing' || !job.trim()} onClick={() => void saveAndUse()} className="inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50">{savedCapsuleId && !hasUnsavedChanges ? 'Use in Ask' : 'Save and use in Ask'}</button>
           {savedCapsuleId ? <>
-            <Link href={`/app?capsuleId=${encodeURIComponent(savedCapsuleId)}`} className="inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white">Use in Ask</Link>
             <Link href={`/app/capsules?starter=${encodeURIComponent(savedCapsuleId)}&lane=inspect`} className="text-sm underline">View saved capsule</Link>
           </> : <p className="text-xs text-[#6f675c]">Save privately to keep your purpose, output preferences and supplied sources together.</p>}
+          {hasUnsavedChanges ? <p role="status" className="text-sm font-semibold text-amber-800">Unsaved changes. Use in Ask will save the current draft first.</p> : savedCapsuleId ? <p role="status" className="text-xs text-emerald-800">Private snapshot saved.</p> : null}
         </div>
 
         {message && (

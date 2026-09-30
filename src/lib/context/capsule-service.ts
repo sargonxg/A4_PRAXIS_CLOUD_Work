@@ -1,6 +1,7 @@
-import type { Firestore } from 'firebase-admin/firestore';
+import { FieldPath, type Firestore, type Query } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { capsulePageLimit, decodeCapsuleCursor, encodeCapsuleCursor } from '@/lib/context/capsule-pagination';
 import { buildCorePackage, type PraxisCorePackageV1 } from '@/lib/context/core-package';
 import {
   migrateContextCapsuleV3ClaimLedger,
@@ -234,6 +235,7 @@ export interface CapsuleReviewCard {
   proposedEnvelopePatch: CapsuleEnvelopePatch;
   applyMetadata: CapsuleReviewApplyMetadata | null;
   rejectionMetadata?: CapsuleReviewRejectionMetadata;
+  proposalBase?: { version: number; fieldHashes: Record<string, string> };
   createdAt: string;
   updatedAt: string;
 }
@@ -549,6 +551,9 @@ export interface CapsuleInventorySummary {
 export interface CapsuleInventoryResult {
   capsules: PraxisCapsule[];
   summary: CapsuleInventorySummary;
+  nextCursor?: string | null;
+  hasMore?: boolean;
+  summaryScope?: 'page';
 }
 
 export interface CapsuleInventorySummaryOptions {
@@ -921,14 +926,30 @@ const CAPSULE_INVENTORY_FIELDS = [
   'retrievalPolicy', 'health', 'access', 'community', 'trust', 'provenance',
   'activeOntologyStackId', 'activeReadContractId', 'readinessSummary',
   'latestGateState', 'graphStats',
+  'memoryPosture.builderDraft.domain',
 ];
 
 export async function listCapsuleInventory(
   uid: string,
-  input: { situationId?: string; includeArchived?: boolean; metadataOnly?: boolean } = {},
+  input: { situationId?: string; includeArchived?: boolean; metadataOnly?: boolean; limit?: number; cursor?: string } = {},
   deps?: CapsuleServiceDeps,
 ): Promise<CapsuleInventoryResult> {
   const db = dbOf(deps);
+  if (input.limit !== undefined || input.cursor) {
+    const scope = ['capsules', uid, input.situationId ?? null, Boolean(input.includeArchived)];
+    const collection = capsulesCollection(uid, deps);
+    const page = await readCapsuleCursorPage(input.metadataOnly ? collection.select(...CAPSULE_INVENTORY_FIELDS) : collection, {
+      limit: input.limit ?? 50, cursor: input.cursor, scope,
+      accept: (body) => recordOwnedBy(body, uid) && (input.includeArchived || !body.archivedAt)
+        && (!input.situationId || (isRecord(body.coreRefs) && body.coreRefs.situationCoreId === input.situationId)
+          || cleanStringArray(body.activeForSituationIds).includes(input.situationId)),
+    });
+    const rows = page.rows.map(({ id, value }) => ({ raw: { ...value, capsuleId: id, ownerUid: ownerUidOrPath(value, uid) } }));
+    const capsules = rows.map(({ raw }) => sanitizeCapsule(raw, { metadataOnly: Boolean(input.metadataOnly) }));
+    return { capsules: sortCapsulesForLibrary(capsules), summary: buildCapsuleInventorySummary(capsules, {
+      rawCapsules: rows.map(({ raw }) => raw), metadataOnly: Boolean(input.metadataOnly),
+    }), nextCursor: page.nextCursor, hasMore: page.hasMore, summaryScope: 'page' };
+  }
   let pendingByScope = pendingCapsuleInventories.get(db);
   if (!pendingByScope) {
     pendingByScope = new Map();
@@ -960,8 +981,7 @@ async function readCapsuleInventory(
     .map((doc) => ({ raw: { ...doc.data(), capsuleId: doc.id } }))
     .filter(({ raw }) => recordOwnedBy(raw, uid))
     .map(({ raw }) => {
-      const capsule = sanitizeCapsule({ ...raw, ownerUid: ownerUidOrPath(raw, uid) });
-      if (metadataOnly) delete capsule.v3;
+      const capsule = sanitizeCapsule({ ...raw, ownerUid: ownerUidOrPath(raw, uid) }, { metadataOnly });
       return { raw: { ...raw, ownerUid: capsule.ownerUid }, capsule };
     })
     .filter(({ capsule }) => {
@@ -976,6 +996,35 @@ async function readCapsuleInventory(
   });
   const capsules = sortCapsulesForLibrary(storedCapsules);
   return { capsules, summary };
+}
+
+async function readCapsuleCursorPage(query: Query, input: {
+  limit: number; cursor?: string; scope: unknown[]; accept: (value: Record<string, unknown>) => boolean;
+}) {
+  const limit = capsulePageLimit(input.limit);
+  let after = decodeCapsuleCursor(input.scope, input.cursor);
+  const rows: Array<{ id: string; value: Record<string, unknown> }> = [];
+  let scanned = 0;
+  let hasMore = false;
+  // Existing projected metadata can be filtered without a new composite index.
+  // Sparse filters remain paged: at most 500 reads, with an honest continuation.
+  while (scanned < 500 && rows.length < limit) {
+    const ordered = query.orderBy(FieldPath.documentId());
+    const batchSize = Math.min(100, Math.max(50, limit - rows.length + 1), 500 - scanned);
+    const snapshot = await (after ? ordered.startAfter(after) : ordered).limit(batchSize).get();
+    if (!snapshot.docs.length) { hasMore = false; break; }
+    for (let i = 0; i < snapshot.docs.length; i++) {
+      const doc = snapshot.docs[i];
+      after = doc.id;
+      scanned++;
+      const value = doc.data() as Record<string, unknown>;
+      if (input.accept(value)) rows.push({ id: doc.id, value });
+      hasMore = i < snapshot.docs.length - 1 || snapshot.docs.length === batchSize;
+      if (rows.length === limit || scanned === 500) break;
+    }
+    if (!hasMore) break;
+  }
+  return { rows, hasMore, nextCursor: hasMore && after ? encodeCapsuleCursor(input.scope, after) : null };
 }
 
 function recordOwnedBy(value: Record<string, unknown>, uid: string): boolean {
@@ -1796,6 +1845,19 @@ export async function listCapsuleReviewCards(
   return snapshot.docs.map((doc) => normalizeReviewCard(doc.data(), capsule, doc.id));
 }
 
+export async function listCapsuleReviewCardsPage(uid: string, capsuleId: string,
+  input: { limit?: number; cursor?: string } = {}, deps?: CapsuleServiceDeps,
+): Promise<{ cards: CapsuleReviewCard[]; nextCursor: string | null; hasMore: boolean }> {
+  const capsule = await getCapsule(uid, capsuleId, deps);
+  if (!capsule) return { cards: [], nextCursor: null, hasMore: false };
+  const query = capsulesCollection(uid, deps).doc(capsule.capsuleId).collection('reviewCards');
+  const page = await readCapsuleCursorPage(query, { limit: input.limit ?? 50, cursor: input.cursor,
+    scope: ['reviewCards', uid, capsule.capsuleId], accept: (value) => recordOwnedBy(value, uid),
+  });
+  return { cards: page.rows.map(({ id, value }) => normalizeReviewCard(value, capsule, id)),
+    nextCursor: page.nextCursor, hasMore: page.hasMore };
+}
+
 export class CapsuleReviewConflictError extends Error {
   constructor() {
     super('This review card is already decided or not ready for owner review. Refresh before continuing.');
@@ -1855,6 +1917,7 @@ export async function createCapsuleReviewCard(
     state,
     evidence: normalizeReviewEvidence(input.evidence ?? []),
     proposedEnvelopePatch,
+    proposalBase: buildProposalBase(capsule, proposedEnvelopePatch),
     applyMetadata: null,
     createdAt: existingCreatedAt ?? timestamp,
     updatedAt: timestamp,
@@ -2626,7 +2689,7 @@ export function stackToCoreRefs(stack: ActiveContextStackState): CapsuleCoreRefs
   });
 }
 
-export function sanitizeCapsule(input: unknown): PraxisCapsule {
+export function sanitizeCapsule(input: unknown, options: { metadataOnly?: boolean } = {}): PraxisCapsule {
   const body = isRecord(input) ? input : {};
   const coreRefs = normalizeCoreRefs(isRecord(body.coreRefs) ? body.coreRefs : {});
   const ownerUid = stringOrNull(body.ownerUid) ?? 'unknown-owner';
@@ -2652,8 +2715,8 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     version,
   };
   const baseHealth = isContextHealth(body.health) ? enrichContextHealth(body.health) : computeCapsuleHealth(coreRefs);
-  const readiness = applyCoreHealthToReadiness(deriveReadinessBlock(qualityInput, updatedAt), baseHealth);
-  const health = applyReadinessToHealth(baseHealth, readiness);
+  const readiness = options.metadataOnly ? undefined : applyCoreHealthToReadiness(deriveReadinessBlock(qualityInput, updatedAt), baseHealth);
+  const health = readiness ? applyReadinessToHealth(baseHealth, readiness) : baseHealth;
   const graphStats = deriveCapsuleGraphStats(body, updatedAt);
   const provenance: CapsuleProvenance = {
     source: provenanceBody.source === 'context-stack-migration' || provenanceBody.source === 'fork' || provenanceBody.source === 'combine' || provenanceBody.source === 'api' || provenanceBody.source === 'created'
@@ -2691,8 +2754,8 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     schemaVersion: 3,
     version,
     label,
-    readiness,
-    usage: normalizeUsageRollup(body.usage, updatedAt),
+    ...(readiness ? { readiness } : {}),
+    ...(!options.metadataOnly ? { usage: normalizeUsageRollup(body.usage, updatedAt) } : {}),
     ...(Array.isArray(body.sourceRefs) ? { sourceRefs: cloneSerializable(body.sourceRefs) } : {}),
     ...(Array.isArray(body.claimLedger) ? { claimLedger: cloneSerializable(body.claimLedger) } : {}),
     ...(Array.isArray(body.outputContracts) ? { outputContracts: cloneSerializable(body.outputContracts) } : {}),
@@ -2720,6 +2783,7 @@ export function sanitizeCapsule(input: unknown): PraxisCapsule {
     ...capsule,
     trust: normalizeTrustSemaphore(isRecord(body.trust) ? body.trust : null, capsule.health, capsule.updatedAt),
   };
+  if (options.metadataOnly) return result;
   return {
     ...result,
     v3: normalizeToLatest(result, { now: updatedAt }),
@@ -3494,6 +3558,9 @@ function normalizeReviewCard(input: unknown, capsule: PraxisCapsule, fallbackId:
     proposedEnvelopePatch: normalizeReviewEnvelopePatch(isRecord(body.proposedEnvelopePatch) ? body.proposedEnvelopePatch : {}),
     applyMetadata: normalizeExistingApplyMetadata(body.applyMetadata),
     ...(rejectionMetadata ? { rejectionMetadata } : {}),
+    ...(isRecord(body.proposalBase) && typeof body.proposalBase.version === 'number' && isRecord(body.proposalBase.fieldHashes)
+      ? { proposalBase: { version: body.proposalBase.version,
+        fieldHashes: Object.fromEntries(Object.entries(body.proposalBase.fieldHashes).filter((entry): entry is [string, string] => typeof entry[1] === 'string')) } } : {}),
     createdAt: stringOrNull(body.createdAt) ?? capsule.updatedAt,
     updatedAt: stringOrNull(body.updatedAt) ?? capsule.updatedAt,
   };
@@ -3804,6 +3871,13 @@ function buildAppliedReviewCardUpdate(
   applyMetadata: CapsuleReviewApplyMetadata,
 ): { previousSnapshot: PraxisCapsule; capsule: PraxisCapsule; card: CapsuleReviewCard } {
   assertReviewCardDecidable(card);
+  if (card.proposalBase) {
+    for (const [path, hash] of Object.entries(card.proposalBase.fieldHashes)) {
+      if (proposalFieldHash(readProposalField(capsule, path)) !== hash) {
+        throw new StaleCapsuleProposalError(`This capsule changed after the proposal was created (${path}). Rebuild the proposal and review the current sources before applying it.`);
+      }
+    }
+  }
   const patch = card.proposedEnvelopePatch;
   const graphPatch = buildAppliedGraphProjectionPatch(capsule, card, applyMetadata);
   const graphCoreRefs = isRecord(graphPatch.coreRefs) ? graphPatch.coreRefs : {};
@@ -3988,6 +4062,30 @@ function applyGraphNodeProposal(
     ...graphElementApplyMetadata(payload, applyMetadata),
     sourceReceiptIds: cleanStringArray(payload.sourceReceiptIds),
   });
+}
+
+export class StaleCapsuleProposalError extends Error {
+  readonly status = 409;
+}
+
+function readProposalField(capsule: PraxisCapsule, path: string): unknown {
+  return path.split('.').reduce<unknown>((value, key) => isRecord(value) ? value[key] : undefined, capsule);
+}
+
+function proposalFieldHash(value: unknown): string {
+  const ordered = (item: unknown): unknown => Array.isArray(item) ? item.map(ordered)
+    : isRecord(item) ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, ordered(item[key])])) : item ?? null;
+  return createHash('sha256').update(JSON.stringify(ordered(value))).digest('hex');
+}
+
+function buildProposalBase(capsule: PraxisCapsule, patch: CapsuleEnvelopePatch): NonNullable<CapsuleReviewCard['proposalBase']> {
+  const paths = Object.entries(patch).flatMap(([key, value]) => {
+    if (['latestGateState', 'readinessSummary', 'graphStats'].includes(key)) return [];
+    return key === 'coreRefs' && isRecord(value) ? Object.keys(value).map((field) => `coreRefs.${field}`) : [key];
+  });
+  const sourcePaths = ['coreRefs.documentCoreIds', 'coreRefs.sourceCoreIds', 'sourceRefs', 'sourcePosture'];
+  return { version: capsule.version, fieldHashes: Object.fromEntries(Array.from(new Set([...paths, ...sourcePaths]))
+    .map((path) => [path, proposalFieldHash(readProposalField(capsule, path))])) };
 }
 
 function applyGraphEdgeProposal(

@@ -4,6 +4,7 @@ import {
   getAskPraxisModelRuntimePolicy,
 } from '@/lib/ai/model-runtime-policy';
 import type { ModelPreferenceValue } from '@/lib/ai/model-preferences';
+import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 
 export type AskRuntimeMode = 'chat' | 'research_memo' | 'sourceability_review' | 'handover';
 export type AskRuntimeStatus = 'live' | 'planned';
@@ -38,6 +39,15 @@ export const ASK_RUNTIME_OPTIONS = [
     mode: 'research_memo',
     status: 'live',
     summary: 'Deeper reasoning for memos, long context synthesis, and high-stakes review.',
+  },
+  {
+    id: getModelMatrixEntry('cheap_classify').model,
+    label: getAskPraxisModelLabel(getModelMatrixEntry('cheap_classify').model),
+    provider: 'vertex',
+    lifecycleTier: 'stable_fallback',
+    mode: 'chat',
+    status: 'live',
+    summary: 'Economical recall, extraction, tagging, and classification; provider access is required.',
   },
   {
     id: ASK_MODEL_POLICY.stableFallback.deep[0],
@@ -109,5 +119,6 @@ export function buildAskRuntimeFallbackCandidates(input: {
 
 export function isAskRuntimeModelAccessError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return /model|quota|permission|not found|unavailable|access|tier|API|forbidden|unauthorized|denied|404|403|429/i.test(message);
+  if (/invalid (?:argument|json|schema)|schema|unsupported (?:parameter|option)|validation/i.test(message)) return false;
+  return /quota|resource.?exhausted|permission|not found|unavailable|forbidden|unauthorized|denied|\b(?:401|403|404|429|503)\b/i.test(message);
 }

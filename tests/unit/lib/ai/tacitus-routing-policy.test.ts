@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildTacitusRoutingDecision } from '@/lib/ai/tacitus-routing-policy';
+import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 
 describe('TACITUS routing policy', () => {
   it('routes simple capsule questions to fast direct answers and ignores saved user model choices', () => {
     const decision = buildTacitusRoutingDecision({
-      prompt: 'What should I look at next?',
+      prompt: 'Recall the actor names from the supplied capsule.',
       intent: 'normal_answer',
       userSelectedModelId: 'gemini-2.5-pro',
       capsuleHealth: 'ready',
@@ -16,8 +17,42 @@ describe('TACITUS routing policy', () => {
     expect(decision.modelTier).toBe('fast');
     expect(decision.workerMode).toBe('direct-answer');
     expect(decision.userSelectedModelIgnored).toBe(true);
-    expect(decision.userSafeLabels.modelTier).toBe('TACITUS selected fast reasoning');
+    expect(decision.userSafeLabels.modelTier).toBe('Economical recall and extraction');
     expect(decision.reasons).toEqual(expect.arrayContaining(['user model preference ignored for Ask PRAXIS']));
+  });
+  it('defaults substantive analytical prose to balanced rather than economical recall', () => {
+    const decision = buildTacitusRoutingDecision({ prompt: 'Explain why these actors adopted this position and give its policy implications.', intent: 'normal_answer', capsuleHealth: 'ready', sourcePreviewCount: 2, activeGapCount: 0 });
+    expect(decision.modelTier).toBe('standard');
+    expect(decision.modelTaskKind).toBe('balanced');
+    expect(decision.selectedModelId).toBe('gemini-3.5-flash');
+    expect(decision.modelBudget.maxOutputTokens).toBe(8192);
+  });
+
+  it.each([
+    'Using only the supplied notes, recall the authorized allocation and deadline. Do not run agents or web research.',
+    'Extract the actor names and dates from the attached document.',
+    'Classify these supplied claims by actor.',
+    'Summarize this document in three bullets.',
+  ])('uses a genuinely economical, bounded model for %s', (prompt) => {
+    const decision = buildTacitusRoutingDecision({ prompt, intent: 'normal_answer', capsuleHealth: 'ready', sourcePreviewCount: 2, activeGapCount: 0 });
+    expect(decision.modelTaskKind).toBe('cheap_classify');
+    expect(decision.selectedModelId).toBe('gemini-3.1-flash-lite');
+    expect(decision.modelBudget.maxOutputTokens).toBe(1024);
+    expect(decision.fallbackChain.length).toBeLessThanOrEqual(3);
+  });
+
+  it('reserves capable synthesis for contradictory evidence without enabling prohibited tools', () => {
+    const decision = buildTacitusRoutingDecision({
+      prompt: 'Reconcile contradictory supplied evidence and assess alternative policy options. Do not use web sources or run agents.',
+      intent: 'normal_answer', capsuleHealth: 'ready', sourcePreviewCount: 2, activeGapCount: 0,
+    });
+    expect(decision.modelTaskKind).toBe('complex_reasoning');
+    expect(decision.selectedModelId).toBe('gemini-3.1-pro-preview');
+    expect(decision.selectedModelId).not.toBe(getModelMatrixEntry('cheap_classify').model);
+    expect(decision.workerMode).toBe('direct-answer');
+    expect(decision.toolRoute.selectedToolIds).not.toContain('grounded-search');
+    expect(decision.toolRoute.selectedToolIds).not.toContain('deep-search-agent');
+    expect(decision.modelBudget.maxOutputTokens).toBeLessThanOrEqual(16384);
   });
 
   it.each([

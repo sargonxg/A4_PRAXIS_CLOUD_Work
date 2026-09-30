@@ -65,6 +65,7 @@ vi.mock('react', async (importOriginal) => {
     useState: <T,>(initial: T | (() => T)) => runtime.lifecycle ? runtime.useState(initial) : original.useState(initial),
     useEffect: (effect: () => void | (() => void), deps: readonly unknown[]) => runtime.lifecycle ? runtime.useEffect(effect, deps) : original.useEffect(effect, deps),
     useMemo: <T,>(factory: () => T, deps: readonly unknown[]) => runtime.lifecycle ? factory() : original.useMemo(factory, deps),
+    useRef: <T,>(initial: T) => runtime.lifecycle ? runtime.useState({ current: initial })[0] : original.useRef(initial),
   };
 });
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: runtime.push }) }));
@@ -132,6 +133,23 @@ describe('CapsuleLibrary', () => {
     await settleInventory();
     expect(renderInventory().entries[0].id).toBe('b-private');
     expect(renderInventory().entries.some((entry) => entry.id === 'a-private')).toBe(false);
+  });
+
+  it('loads the next owner page without losing previously loaded capsules or duplicating receipts', async () => {
+    const first = ownedCapsule({ capsuleId: 'first-private' });
+    const second = ownedCapsule({ capsuleId: 'second-private' });
+    const fetcher = vi.fn().mockResolvedValueOnce(Response.json({ capsules: [first], nextCursor: 'cursor-page-2', hasMore: true }))
+      .mockResolvedValueOnce(Response.json({ capsules: [first, second], nextCursor: null, hasMore: false }));
+    vi.stubGlobal('fetch', fetcher);
+    renderInventory(); await settleInventory();
+    const page = renderInventory();
+    expect(page.loadMore).toBeDefined();
+    page.loadMore!(); renderInventory(); await settleInventory();
+    expect(fetcher.mock.calls[0][0]).toContain('limit=50');
+    expect(fetcher.mock.calls[1][0]).toContain('cursor=cursor-page-2');
+    const rows = renderInventory().entries.filter((entry) => entry.origin === 'user');
+    expect(rows.map((entry) => entry.id)).toEqual(['first-private', 'second-private']);
+    expect(renderInventory().loadMore).toBeUndefined();
   });
 
   it('keeps the public catalog visible and skips private inventory requests until auth settles', async () => {
@@ -203,6 +221,12 @@ describe('CapsuleLibrary', () => {
     expect(entry.capsuleType).toBe('situation');
     expect(entry.starterDomain).toBe('generic');
     expect(proposeDockSlotForCapsule(entry)).toBe('situation');
+  });
+
+  it('uses private builder domain metadata and treats missing domain as generic rather than user scope', () => {
+    const custom = ownedCapsule({ capsuleId: 'private-domain', v3: undefined, starterSnapshot: undefined, memoryPosture: { builderDraft: { domain: 'economic-sanctions' } } });
+    expect(capsuleRepositoryEntryFromCapsule(custom).starterDomain).toBe('economic-sanctions');
+    expect(capsuleRepositoryEntryFromCapsule({ ...custom, memoryPosture: undefined }).starterDomain).toBe('generic');
   });
 
   it('builds featured entries from real ranked starter capsules for every category', () => {
@@ -340,7 +364,8 @@ function renderInventory() {
   const library = children.find((child) => isValidElement(child) && child.type === CapsuleLibrary) as ReactElement<Parameters<typeof CapsuleLibrary>[0]>;
   const alert = children.find((child) => isValidElement(child) && (child.props as { role?: string }).role === 'alert') as ReactElement<{ children: ReactNode }> | undefined;
   const retryButton = alert && Children.toArray(alert.props.children).find((child) => isValidElement(child) && child.type === 'button') as ReactElement<{ onClick: () => void }> | undefined;
-  return { entries: library.props.entries!, retry: retryButton?.props.onClick };
+  const loadMore = children.find((child) => isValidElement(child) && child.type === 'button' && (child.props as { 'data-testid'?: string })['data-testid'] === 'load-more-saved-capsules') as ReactElement<{ onClick: () => void }> | undefined;
+  return { entries: library.props.entries!, retry: retryButton?.props.onClick, loadMore: loadMore?.props.onClick };
 }
 
 async function settleInventory() {

@@ -94,6 +94,7 @@ export async function buildCapsuleEvidencePack(
     situationId
       ? (deps.retrieveRelevantChunks ?? retrieveRelevantChunks)(input.ownerUid, situationId, input.objective, {
           maxChunks: input.maxParagraphs ?? 8,
+          ...(capsule.coreRefs.documentCoreIds.length ? { documentIds: capsule.coreRefs.documentCoreIds } : {}),
         }).catch(() => [])
       : Promise.resolve([]),
     (deps.listOutputCapsules ?? listOutputCapsules)(input.ownerUid, {

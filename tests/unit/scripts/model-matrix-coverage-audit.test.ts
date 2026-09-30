@@ -14,13 +14,14 @@ describe('audit:model-matrix-coverage', () => {
     tempRoots = [];
   });
 
-  it('sanctions the matrix Gemini 3.5 family and Gemini 2.5 stable fallbacks', () => {
+  it('sanctions the documented economical, balanced and capable Gemini task models', () => {
     const repoRoot = createRepoScanRoot();
 
     const result = auditModelMatrixCoverage(repoRoot);
 
     expect(result.ok).toBe(true);
     expect(result.sanctionedGemini35Ids).toEqual(['gemini-3.5-flash']);
+    expect(result.sanctionedGeminiIds).toEqual(['gemini-3.1-flash-lite', 'gemini-3.1-pro-preview', 'gemini-3.5-flash']);
   });
 
   it('keeps deprecated and withdrawn Gemini IDs forbidden in source scans', () => {

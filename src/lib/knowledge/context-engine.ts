@@ -1,5 +1,6 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { withDocumentOwnerWrite } from '@/lib/documents/owner-write';
 import {
   chunkAndSaveDocument,
   getDocumentById,
@@ -206,17 +207,15 @@ export const localKnowledgeAdapter: KnowledgeAdapter = {
 
     if (deltas.length === 0) return [];
     const db = getAdminDbOrThrow();
-    const batch = db.batch();
     const col = db
       .collection('users')
       .doc(input.uid)
       .collection('situations')
       .doc(input.situationId)
       .collection('graph-delta-review');
-    for (const delta of deltas) {
-      batch.set(col.doc(delta.id), delta);
-    }
-    await batch.commit();
+    await withDocumentOwnerWrite(input.uid, (transaction) => {
+      for (const delta of deltas) transaction.set(col.doc(delta.id), delta);
+    }, db);
     return deltas;
   },
 
@@ -408,14 +407,15 @@ async function deactivateContextPackages(uid: string, situationId: string): Prom
 }
 
 async function writeIngestionRun(run: IngestionRun): Promise<void> {
-  await getAdminDbOrThrow()
+  const db = getAdminDbOrThrow();
+  const ref = db
     .collection('users')
     .doc(run.ownerUid)
     .collection('situations')
     .doc(run.situationId)
     .collection('ingestion-runs')
-    .doc(run.id)
-    .set(run, { merge: true });
+    .doc(run.id);
+  await withDocumentOwnerWrite(run.ownerUid, (transaction) => { transaction.set(ref, run, { merge: true }); }, db);
 }
 
 async function advanceIngestionRun(
@@ -450,17 +450,18 @@ export async function getIngestionRun(uid: string, situationId: string | undefin
 }
 
 export async function markIngestionRetry(uid: string, situationId: string, runId: string): Promise<void> {
-  await getAdminDbOrThrow()
+  const db = getAdminDbOrThrow();
+  const ref = db
     .collection('users')
     .doc(uid)
     .collection('situations')
     .doc(situationId)
     .collection('ingestion-runs')
-    .doc(runId)
-    .set({
+    .doc(runId);
+  await withDocumentOwnerWrite(uid, (transaction) => { transaction.set(ref, {
       retryRequestedAt: new Date().toISOString(),
       retryCount: FieldValue.increment(1),
-    }, { merge: true });
+    }, { merge: true }); }, db);
 }
 
 function inferDeltaKind(item: CorpusItem): CandidateGraphDelta['kind'] {

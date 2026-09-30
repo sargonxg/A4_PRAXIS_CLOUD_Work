@@ -94,6 +94,9 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [interactive, setInteractive] = useState(false);
+  const controlsDisabled = !interactive || loading || isLoading;
+  useEffect(() => { setInteractive(true); }, []);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
   const previewRailCells = [
     { id: 'profile', label: 'Profile', value: mode === 'signup' ? 'New analyst' : 'Returning analyst', detail: 'Private posture', state: 'ready' as const },
@@ -132,6 +135,7 @@ function LoginForm() {
 
   async function handleEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (controlsDisabled) return;
     if (!email.trim()) {
       setError('Please enter an email address.');
       clearAuthError();
@@ -178,6 +182,7 @@ function LoginForm() {
   }
 
   async function handleGoogleSignIn() {
+    if (controlsDisabled) return;
     setError('');
     clearAuthError();
     setIsLoading(true);
@@ -197,6 +202,7 @@ function LoginForm() {
 
   async function handleResetPassword(e: React.FormEvent) {
     e.preventDefault();
+    if (controlsDisabled) return;
     if (!email.trim()) {
       setError('Please enter your email address.');
       clearAuthError();
@@ -308,7 +314,7 @@ function LoginForm() {
             <button
               type="button"
               onClick={handleGoogleSignIn}
-              disabled={isLoading}
+              disabled={controlsDisabled}
               className={cn(
                 'group flex w-full items-center justify-center gap-3 rounded-lg px-4 py-3',
                 'border border-slate-200 bg-white text-sm font-medium text-slate-800 shadow-sm',
@@ -352,6 +358,8 @@ function LoginForm() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.35, duration: 0.5 }}
             onSubmit={mode === 'reset' ? handleResetPassword : handleEmailSubmit}
+            data-interactive={interactive && !loading ? 'true' : 'false'}
+            aria-busy={!interactive || loading || isLoading}
             className="space-y-3.5"
           >
             {mode === 'reset' && (
@@ -374,7 +382,7 @@ function LoginForm() {
                   value={name}
                   onChange={(e) => { setName(e.target.value); setError(''); }}
                   placeholder="Dr. Jane Smith"
-                  disabled={isLoading}
+                  disabled={controlsDisabled}
                   className={cn(
                     'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
                     'placeholder:text-slate-400',
@@ -400,7 +408,7 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => { setEmail(e.target.value); setError(''); setSuccessMsg(''); }}
                 placeholder="your.name@organization.gov"
-                disabled={isLoading}
+                disabled={controlsDisabled}
                 className={cn(
                   'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
                   'placeholder:text-slate-400',
@@ -437,7 +445,7 @@ function LoginForm() {
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(''); }}
                   placeholder={mode === 'signup' ? 'Create a password (min 6 chars)' : 'Enter your password'}
-                  disabled={isLoading}
+                  disabled={controlsDisabled}
                   className={cn(
                     'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
                     'placeholder:text-slate-400',
@@ -487,7 +495,7 @@ function LoginForm() {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={controlsDisabled}
               className={cn(
                 'group flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3',
                 'bg-slate-950 text-white font-semibold text-sm',

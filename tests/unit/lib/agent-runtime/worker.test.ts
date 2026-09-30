@@ -9,6 +9,13 @@ import {
 } from '@/lib/agent-runtime/worker';
 import type { AgentApproval, AgentRun, AgentRunEvent, AgentToolCall } from '@/lib/agent-runtime/types';
 
+// Mode tests inject persistence; execution ownership is exercised separately.
+vi.mock('@/lib/agent-runtime/owner-state', () => ({ assertAgentOwnerWritable: async () => undefined }));
+vi.mock('@/lib/agent-runtime/execution-lease', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/agent-runtime/execution-lease')>();
+  return { ...actual, withAgentRunExecutionLease: async (_input: unknown, work: (assertOwned: () => Promise<void>, token: string) => Promise<unknown>) => work(async () => undefined, 'test-lease') };
+});
+
 const payload: ExecuteAgentRunPayload = {
   runId: 'run-1',
   ownerUid: 'user-1',

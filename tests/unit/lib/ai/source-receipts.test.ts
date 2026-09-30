@@ -7,6 +7,19 @@ import {
 import type { WebResearchResult } from '@/lib/ai/web-research';
 
 describe('source receipts', () => {
+  it('excludes generated search overviews from canonical source evidence', () => {
+    const receipts = buildSourceReceipts({ results: [{ title: 'Generated overview', url: 'https://google.com/search?q=case', content: 'Synthetic case expenditure was confirmed.', source: 'Gemini', provider: 'google-search', reliabilityScore: 0.99, isGroundedSummary: true }] });
+    expect(receipts).toEqual([]);
+  });
+  it('retains unavailable originals and generated attribution without claiming original quotation support', () => {
+    const receipts = buildSourceReceipts({ results: [{ title: 'Institutional methods', url: 'https://gao.gov/methods', content: '', source: 'gao.gov', provider: 'google-search', reliabilityScore: 0.99, originalPassageStatus: 'unavailable', originalPassages: [], unavailableReason: 'http-error', generatedGroundingSegments: [{ kind: 'generated-grounding-segment', text: 'Synthetic case funding was spent.', sourceUrl: 'https://gao.gov/methods', claimSupport: 'provider-attributed-unverified' }] }] });
+    expect(receipts[0].confidence).toBe('low');
+    expect(receipts[0].span).toBeUndefined();
+    expect(receipts[0].excerpt).toBeUndefined();
+    expect(receipts[0].originalPassageStatus).toBe('unavailable');
+    expect(receipts[0].generatedGroundingSegments?.[0].claimSupport).toBe('provider-attributed-unverified');
+    expect(summarizeSourceReceipts(receipts).confidence).toBe('low');
+  });
   it('normalizes web and scrape receipts', () => {
     const results: WebResearchResult[] = [
       {
@@ -19,6 +32,7 @@ describe('source receipts', () => {
         reliabilityScore: 0.92,
         query: 'corridor access',
         retrievedAt: '2026-04-30T00:00:00.000Z',
+        originalPassageStatus: 'retrieved',
       },
     ];
 
@@ -52,6 +66,7 @@ describe('source receipts', () => {
           source: 'reuters.com',
           provider: 'google-search',
           reliabilityScore: 0.95,
+          originalPassageStatus: 'retrieved',
         },
         {
           title: 'AP source',
@@ -60,6 +75,7 @@ describe('source receipts', () => {
           source: 'apnews.com',
           provider: 'google-search',
           reliabilityScore: 0.95,
+          originalPassageStatus: 'retrieved',
         },
         {
           title: 'Local source',
@@ -68,6 +84,7 @@ describe('source receipts', () => {
           source: 'example.org',
           provider: 'google-search',
           reliabilityScore: 0.9,
+          originalPassageStatus: 'retrieved',
         },
         {
           title: 'UN source',
@@ -76,6 +93,7 @@ describe('source receipts', () => {
           source: 'news.un.org',
           provider: 'google-search',
           reliabilityScore: 0.92,
+          originalPassageStatus: 'retrieved',
         },
         {
           title: 'Think tank source',
@@ -84,6 +102,7 @@ describe('source receipts', () => {
           source: 'brookings.edu',
           provider: 'google-search',
           reliabilityScore: 0.85,
+          originalPassageStatus: 'retrieved',
         },
       ],
     });

@@ -22,6 +22,10 @@ vi.mock('@/lib/firebase/analyst-profile-admin', () => ({
   isUserOnboarded: vi.fn(),
 }));
 
+vi.mock('@/lib/firebase/user-profile-server', () => ({
+  initializeServerUserProfile: vi.fn().mockResolvedValue({ status: 'existing' }),
+}));
+
 vi.mock('@/lib/auth/admin-gate', () => ({
   getAdminPrincipalAccess: vi.fn().mockReturnValue({ admin: false, reason: null }),
 }));

@@ -191,3 +191,17 @@ it('rejects evidence capsules belonging to a different owner', async () => {
     getCapsule: async () => capsule,
   })).rejects.toThrow('Active ContextCapsule not found');
 });
+
+it('passes capsule document selection into retrieval before ranking', async () => {
+  const pack = await buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', objective: 'Deadline' }, {
+    getCapsule: async () => capsule,
+    listKnowledgeDocuments: async () => [], listOutputCapsules: async () => [], listCapsuleMemories: async () => [],
+    getDocumentById: async () => null,
+    retrieveRelevantChunks: async (_owner, _situation, _query, options) => {
+      expect(options).toMatchObject({ documentIds: ['doc-1'], maxChunks: 8 });
+      return [{ id: 'late', documentId: 'doc-1', documentTitle: 'Selected', text: 'Deadline evidence',
+        index: 40, charStart: 40000, charEnd: 40017 }];
+    },
+  });
+  expect(pack.sourcedParagraphs[0]).toMatchObject({ documentId: 'doc-1', chunkId: 'late', charStart: 40000 });
+});

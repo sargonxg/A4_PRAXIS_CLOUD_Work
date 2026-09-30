@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { loadMemoById, memoDocumentId, saveMemoDraft } from '@/lib/firebase/memo-service';
+import { approveMemoBody, loadMemoById, memoDocumentId, saveMemoDraft } from '@/lib/firebase/memo-service';
 import { buildMemoOutputReview } from '@/lib/memo/output-review';
 
 type MemoTestRef = {
@@ -12,6 +12,31 @@ type MemoTestRef = {
 };
 
 describe('memo service helpers', () => {
+  it('records approval only for the current saved body and invalidates it after an edit', async () => {
+    const fixture = createMemoDb({});
+    const input = { caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Memo', graphSnapshotId: 'graph-1',
+      blocks: [{ id: 'memo-body', type: 'paragraph' as const, content: 'Expenditure is unknown.', citations: [], metadata: {} }] };
+    const record = await saveMemoDraft('user-1', input, fixture.db as never);
+    const review = await buildMemoOutputReview({ body: input.blocks[0].content, report: null, verifierStatus: 'disabled' });
+    await expect(approveMemoBody('user-1', record.memo.id, { versionId: 'wrong-version', bodyHash: review.bodyHash,
+      intendedUse: 'internal-analysis', limitations: 'Missing spending record.' }, fixture.db as never)).rejects.toThrow(/newer memo version/i);
+    const approved = await approveMemoBody('user-1', record.memo.id, { versionId: record.memo.currentVersionId,
+      bodyHash: review.bodyHash, intendedUse: 'internal-analysis', limitations: 'Missing spending record.' }, fixture.db as never);
+    expect(approved?.memo).toMatchObject({ status: 'final', humanApproval: { reviewerUid: 'user-1', bodyHash: review.bodyHash } });
+    await saveMemoDraft('user-1', { ...input, blocks: [{ ...input.blocks[0], content: 'Spending remains unsubstantiated.' }] }, fixture.db as never);
+    expect((await loadMemoById('user-1', record.memo.id, fixture.db as never))?.memo.humanApproval).toBeNull();
+  });
+
+  it('replays an agent operation without adding a version or replacing later human edits', async () => {
+    const fixture = createMemoDb({});
+    const input = { caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Memo', graphSnapshotId: 'graph-1', operationId: 'agent:run-1:policy-memo',
+      blocks: [{ id: 'memo-body', type: 'paragraph' as const, content: 'Original.', citations: [], metadata: {} }] };
+    await saveMemoDraft('user-1', input, fixture.db as never);
+    await saveMemoDraft('user-1', { ...input, operationId: undefined, blocks: [{ ...input.blocks[0], content: 'Reviewed edit.' }] }, fixture.db as never);
+    const replay = await saveMemoDraft('user-1', input, fixture.db as never);
+    expect(replay.versions).toHaveLength(2);
+    expect(replay.versions.at(-1)?.blocks[0].content).toBe('Reviewed edit.');
+  });
   it('round-trips the same generated review receipt through memo, version, and primary block', async () => {
     const body = 'The policy was approved.';
     const outputReview = await buildMemoOutputReview({ body, report: null, verifierStatus: 'disabled' });
@@ -134,6 +159,7 @@ function createMemoDb(
   versions: Record<string, Array<Record<string, unknown>>> = {},
   historicalMatchPath?: string,
 ) {
+  records['users/user-1'] ??= { uid: 'user-1' };
   const readPaths: string[] = [];
   const refFor = (path: string): MemoTestRef => ({
     path,
@@ -165,7 +191,12 @@ function createMemoDb(
     },
   };
   return {
-    db: { collection: (name: string) => refFor(name), collectionGroup: vi.fn(() => query) },
+    db: { collection: (name: string) => refFor(name), collectionGroup: vi.fn(() => query),
+      runTransaction: async (work: (transaction: { get: (ref: MemoTestRef) => ReturnType<MemoTestRef['get']>; set: (ref: MemoTestRef, data: Record<string, unknown>, options?: { merge: boolean }) => void }) => Promise<void>) => {
+        const writes: Array<() => Promise<void>> = [];
+        await work({ get: (ref) => ref.get(), set: (ref, data, options) => { writes.push(() => ref.set(data, options)); } });
+        for (const write of writes) await write();
+      } },
     readPaths,
     where: query.where,
   };

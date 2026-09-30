@@ -80,6 +80,8 @@ describe('agent runtime proof smoke', () => {
     const toolCalls: AgentToolCall[] = [];
     const approvals: AgentApproval[] = [];
     const result = await executeAgentRun(dispatchPayload, {
+      executionLease: async (_input, work) => work(async () => undefined, 'in-memory-lease'),
+      assertOwnerWritable: async () => undefined,
       getRun: async () => run,
       updateStatus: async (input) => {
         run = {

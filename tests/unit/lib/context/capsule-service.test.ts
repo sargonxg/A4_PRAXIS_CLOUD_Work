@@ -24,6 +24,7 @@ import {
   listCapsuleInventory,
   listCapsules,
   listCapsuleReviewCards,
+  listCapsuleReviewCardsPage,
   rejectCapsuleReviewCard,
   promoteCapsuleSourceGaps,
   promoteCapsuleOntologyExtensionToGlobalAco,
@@ -58,6 +59,62 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('pages light inventory without losing rows and rejects a cursor from another owner or filter', async () => {
+    const db = new FakeFirestore();
+    for (let i = 0; i < 5; i++) await createCapsule('u1', { capsuleId: `page-${i}`, label: `Source ${i}` }, deps(db));
+    const first = await listCapsuleInventory('u1', { metadataOnly: true, limit: 2 }, deps(db));
+    const second = await listCapsuleInventory('u1', { metadataOnly: true, limit: 2, cursor: first.nextCursor! }, deps(db));
+    const third = await listCapsuleInventory('u1', { metadataOnly: true, limit: 2, cursor: second.nextCursor! }, deps(db));
+    expect([...first.capsules, ...second.capsules, ...third.capsules].map((row) => row.capsuleId)).toEqual(['page-0', 'page-1', 'page-2', 'page-3', 'page-4']);
+    expect(first).toMatchObject({ hasMore: true, summaryScope: 'page', summary: { activeCapsules: 2 } });
+    expect(third).toMatchObject({ hasMore: false, nextCursor: null });
+    expect(first.capsules.every((row) => !row.v3 && !row.readiness && !row.usage)).toBe(true);
+    await expect(listCapsuleInventory('u2', { limit: 2, cursor: first.nextCursor! }, deps(db))).rejects.toThrow(/cursor/i);
+    await expect(listCapsuleInventory('u1', { limit: 2, cursor: first.nextCursor!, situationId: 'other' }, deps(db))).rejects.toThrow(/cursor/i);
+  });
+
+  it('pages review cards beyond the legacy 100-card window', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'review-pages' }, deps(db));
+    for (let i = 0; i < 105; i++) db.data.set(`users/u1/capsules/review-pages/reviewCards/card-${String(i).padStart(3, '0')}`, {
+      reviewCardId: `card-${i}`, ownerUid: 'u1', capsuleId: capsule.capsuleId, title: `Card ${i}`, state: 'proposed',
+      sourceType: 'source-gap', target: 'capsuleEnvelope', proposedEnvelopePatch: {}, evidence: [],
+    });
+    const first = await listCapsuleReviewCardsPage('u1', capsule.capsuleId, { limit: 100 }, deps(db));
+    const second = await listCapsuleReviewCardsPage('u1', capsule.capsuleId, { limit: 100, cursor: first.nextCursor! }, deps(db));
+    expect(first.cards).toHaveLength(100);
+    expect(second.cards).toHaveLength(5);
+    expect(second.hasMore).toBe(false);
+  });
+
+  it('projects only the builder domain without transferring private draft instructions', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'domain-draft', memoryPosture: {
+      builderDraft: { domain: 'diplomacy', systemFrame: 'Private instructions', purpose: 'Private purpose' },
+      privateNotes: 'Do not transfer to the library list',
+    } }, deps(db));
+    const inventory = await listCapsuleInventory('u1', { metadataOnly: true, limit: 50 }, deps(db));
+    expect(inventory.capsules[0].memoryPosture).toEqual({ builderDraft: { domain: 'diplomacy' } });
+    expect(JSON.stringify(inventory)).not.toContain('Private instructions');
+  });
+
+  it('rejects a stale whole-field proposal but permits independent reviewed changes', async () => {
+    const db = new FakeFirestore();
+    const capsule = await createCapsule('u1', { capsuleId: 'stale-proposal', label: 'Original' }, deps(db));
+    const proposal = (reviewCardId: string, patch: Record<string, unknown>) => createCapsuleReviewCard('u1', capsule.capsuleId, {
+      reviewCardId, title: reviewCardId, sourceType: 'source-gap', target: 'capsuleEnvelope',
+      state: 'owner_review', proposedEnvelopePatch: patch,
+    }, deps(db));
+    const older = await proposal('older-summary', { summary: 'Old proposal' });
+    const newer = await proposal('newer-summary', { summary: 'Newly reviewed summary' });
+    const independent = await proposal('independent-label', { label: 'Better label' });
+    const metadata = { reviewerUid: 'u1', diffHash: 'review-diff', confirmationReason: 'Reviewed the source and approved this change.' };
+    await applyCapsuleReviewCard('u1', capsule.capsuleId, newer.reviewCardId, metadata, deps(db));
+    await expect(applyCapsuleReviewCard('u1', capsule.capsuleId, older.reviewCardId, metadata, deps(db))).rejects.toThrow(/changed.*proposal|stale/i);
+    await applyCapsuleReviewCard('u1', capsule.capsuleId, independent.reviewCardId, metadata, deps(db));
+    expect(await getCapsule('u1', capsule.capsuleId, deps(db))).toMatchObject({ summary: 'Newly reviewed summary', label: 'Better label' });
+  });
+
   it('keeps new source documents attached when rebuilding an existing architect capsule', async () => {
     const db = new FakeFirestore();
     const input = { capsuleId: 'architect-rebuild', situationId: 'case-a', jobPrompt: 'Inspect synthetic commitments.', domainId: 'generic', documents: [
@@ -2138,11 +2195,11 @@ class FakeFirestore {
 }
 
 class FakeCollection {
-  constructor(private db: FakeFirestore, private path: string, private maxDocs?: number, private selectedFields?: string[]) {}
+  constructor(private db: FakeFirestore, private path: string, private maxDocs?: number, private selectedFields?: string[], private afterId?: string, private byId = false) {}
 
   select(...fields: string[]) {
     this.db.projections.push(fields);
-    return new FakeCollection(this.db, this.path, this.maxDocs, fields);
+    return new FakeCollection(this.db, this.path, this.maxDocs, fields, this.afterId, this.byId);
   }
 
   doc(id = `doc-${this.db.data.size + 1}`) {
@@ -2150,11 +2207,15 @@ class FakeCollection {
   }
 
   limit(maxDocs: number) {
-    return new FakeCollection(this.db, this.path, maxDocs);
+    return new FakeCollection(this.db, this.path, maxDocs, this.selectedFields, this.afterId, this.byId);
   }
 
-  orderBy() {
-    return this;
+  orderBy(field?: unknown) {
+    return new FakeCollection(this.db, this.path, this.maxDocs, this.selectedFields, this.afterId, typeof field === 'object');
+  }
+
+  startAfter(id: string) {
+    return new FakeCollection(this.db, this.path, this.maxDocs, this.selectedFields, id, this.byId);
   }
 
   where(field: string, operation: string, value: string) {
@@ -2170,10 +2231,13 @@ class FakeCollection {
 
   async get() {
     const prefix = `${this.path}/`;
-    const docs = Array.from(this.db.data.entries())
+    let entries = Array.from(this.db.data.entries())
       .filter(([path]) => path.startsWith(prefix) && !path.slice(prefix.length).includes('/'))
+      .filter(([path]) => !this.afterId || path.slice(prefix.length) > this.afterId);
+    if (this.byId) entries = entries.sort(([a], [b]) => a.localeCompare(b));
+    const docs = entries
       .map(([path, value]) => new FakeSnapshot(true, this.selectedFields
-        ? Object.fromEntries(this.selectedFields.filter((field) => value[field] !== undefined).map((field) => [field, value[field]]))
+        ? projectedFields(value, this.selectedFields)
         : value, path.split('/').pop() ?? 'unknown'));
     return { docs: typeof this.maxDocs === 'number' ? docs.slice(0, this.maxDocs) : docs };
   }
@@ -2200,6 +2264,22 @@ class FakeDoc {
     const current = this.db.data.get(this.path) ?? {};
     this.db.data.set(this.path, options?.merge ? { ...current, ...value } : value);
   }
+}
+
+function projectedFields(value: Record<string, unknown>, fields: string[]) {
+  const result: Record<string, unknown> = {};
+  for (const field of fields) {
+    const keys = field.split('.');
+    const selected = keys.reduce<unknown>((parent, key) => (parent as Record<string, unknown>)?.[key], value);
+    if (selected === undefined) continue;
+    let target = result;
+    for (const key of keys.slice(0, -1)) {
+      target[key] ??= {};
+      target = target[key] as Record<string, unknown>;
+    }
+    target[keys[keys.length - 1]] = selected;
+  }
+  return result;
 }
 
 function assertFirestoreDefined(value: unknown, path: string): void {

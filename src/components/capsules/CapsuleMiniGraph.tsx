@@ -28,7 +28,7 @@ export function CapsuleMiniGraph({
 }) {
   const profile = useMemo(() => buildGraphProfile(seed, nodeCount, edgeCount, entityTypeCounts), [seed, nodeCount, edgeCount, entityTypeCounts]);
   const points = useMemo(() => buildConstellation(seed, profile.nodes), [seed, profile.nodes]);
-  const caption = `${profile.nodes} ${profile.entityMix} · ${profile.edges} links`;
+  const caption = profile.nodes ? `${profile.nodes} recorded nodes · ${profile.edges} links` : 'No recorded graph yet';
 
   return (
     <span
@@ -37,7 +37,7 @@ export function CapsuleMiniGraph({
       tabIndex={onOpen ? 0 : undefined}
       onClick={onOpen}
       onKeyDown={onOpen ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(); } } : undefined}
-      title="Open Inspect for the full graph: ontology binding, semantic layers, claims, and tacit knowledge"
+      title="Schematic overview of recorded graph counts. Inspect the capsule for actual entities, links and evidence."
       className={cn(
         'flex w-full max-w-full items-center gap-2 rounded-md border border-slate-100 bg-white/70 px-2 py-1.5',
         onOpen && 'cursor-pointer transition hover:border-slate-200 hover:bg-white',
@@ -47,7 +47,7 @@ export function CapsuleMiniGraph({
       <svg viewBox="0 0 96 28" className="h-7 w-[clamp(4rem,28vw,6rem)] shrink-0" aria-hidden focusable="false">
         {points.map((point, index) => {
           const next = points[(index + 1) % points.length];
-          if (points.length < 2) return null;
+          if (points.length < 2 || index >= profile.edges) return null;
           return (
             <line
               key={`edge-${index}`}
@@ -73,7 +73,7 @@ export function CapsuleMiniGraph({
         ))}
       </svg>
       <span className="min-w-0 flex-1">
-        <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Graph · ontology</span>
+        <span className="block font-mono text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">Graph overview · schematic</span>
         <span className="block truncate text-[11px] font-semibold text-slate-600">{caption}</span>
       </span>
     </span>
@@ -104,9 +104,9 @@ function hashSeed(seed: string): number {
 
 function buildGraphProfile(seed: string, nodeCount: number, edgeCount: number, entityTypeCounts?: Record<string, number>): { nodes: number; edges: number; entityMix: string } {
   const hash = hashSeed(seed);
-  // Real seed counts win; otherwise derive a believable, capsule-specific shape.
-  const nodes = nodeCount > 0 ? nodeCount : 4 + (hash % 9);
-  const edges = edgeCount > 0 ? edgeCount : nodes + ((hash >>> 4) % (nodes + 3));
+  // Missing counts stay empty. A decorative constellation is not evidence.
+  const nodes = Math.max(0, Number.isFinite(nodeCount) ? Math.round(nodeCount) : 0);
+  const edges = Math.max(0, Number.isFinite(edgeCount) ? Math.round(edgeCount) : 0);
   return {
     nodes,
     edges,
@@ -125,7 +125,7 @@ function entityMixFromCounts(entityTypeCounts?: Record<string, number>): string 
 }
 
 function buildConstellation(seed: string, nodeCount: number): Array<{ x: number; y: number; r: number; emphasis: number }> {
-  const count = Math.max(3, Math.min(9, nodeCount || 5));
+  const count = Math.max(0, Math.min(9, nodeCount));
   const points: Array<{ x: number; y: number; r: number; emphasis: number }> = [];
   let state = hashSeed(seed);
   const next = () => {

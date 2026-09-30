@@ -27,14 +27,14 @@ export const legalPages: LegalPage[] = [
     slug: 'privacy',
     title: 'Privacy Policy',
     summary: 'How PRAXIS handles account, workspace, source, document, and product telemetry data.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
         heading: 'Data We Collect',
         body: [
           'PRAXIS stores account identifiers, authentication metadata, analyst profile choices, workspace configuration, saved context, user documents, source receipts, conversations, generated outputs, and operational telemetry needed to run the service.',
-          'Uploaded documents and source material remain user workspace data. PRAXIS stores metadata, short excerpts, retrieval receipts, and generated analysis required to provide the product.',
+          'Uploaded documents and source material remain user workspace data. Storage can include original files, full extracted text, retrieval chunks and embeddings, metadata, source receipts, conversations and generated analysis; it is not limited to short excerpts.',
         ],
       },
       {
@@ -46,9 +46,18 @@ export const legalPages: LegalPage[] = [
         ],
       },
       {
+        heading: 'AI Processing and Source Research',
+        body: [
+          'Selected workspace context and source material may be sent to the enabled model service to answer a question, extract proposed claims or draft analysis. Outside research can also send search terms to the configured search service and retrieve linked web pages.',
+          'The response identifies the model/provider actually used where runtime information is available. A model name, premium label or citation does not establish a provider retention, training-use or confidentiality commitment. Such commitments must follow the applicable service configuration and agreement.',
+          'A generated grounding summary is different from an original source passage. Retained source links, captured passages and model output support inspection; they do not independently certify a claim.',
+        ],
+      },
+      {
         heading: 'User Control',
         body: [
-          'Authenticated users can export or delete account data through the product-supported routes where available. Deletion requests are handled as account deletion and workspace erasure workflows.',
+          'Authenticated users can request export or account deletion through supported product or support workflows. Successful sign-out does not delete stored workspace data. Complete cross-store erasure, provider retention and backup exceptions require their own verification; an account closure alone is not proof of full erasure.',
+          'Self-service erasure can be unavailable until storage access controls have been verified. Where it is enabled, cancel a renewing subscription first. Incomplete cleanup remains pending and must be retried or handled through support.',
           'Security or privacy requests can be sent to security@tacitus.me.',
         ],
       },
@@ -58,7 +67,7 @@ export const legalPages: LegalPage[] = [
     slug: 'cookies',
     title: 'Cookie Notice',
     summary: 'How PRAXIS uses essential cookies, sign-in storage, analytics settings, and consent controls.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
@@ -87,7 +96,7 @@ export const legalPages: LegalPage[] = [
     slug: 'gdpr',
     title: 'GDPR and Privacy Rights',
     summary: 'How access, correction, export, deletion, objection, restriction, and support requests work.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
@@ -101,7 +110,7 @@ export const legalPages: LegalPage[] = [
         heading: 'Workspace and Generated Data',
         body: [
           'Saved context, uploaded documents, source receipts, conversations, generated outputs, and audit trails may contain user-provided or user-derived personal data.',
-          'Deletion and export workflows are handled at the account or workspace level where supported, subject to legal, security, billing, abuse-prevention, and backup-integrity exceptions.',
+          'Deletion and export requests must identify their scope across workspace records, documents, outputs and operational records. Any legal, security, billing, abuse-prevention or backup exception must be assessed and communicated rather than inferred from deleting a sign-in identity.',
         ],
       },
       {
@@ -117,7 +126,7 @@ export const legalPages: LegalPage[] = [
     slug: 'data-processing',
     title: 'Data Processing Addendum',
     summary: 'Customer-data processing roles, instructions, providers, security controls, retention, deletion, and support channels.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
@@ -138,7 +147,7 @@ export const legalPages: LegalPage[] = [
         heading: 'Security, Retention, and Deletion',
         body: [
           'PRAXIS applies server-side secret handling, role-based service access, encrypted provider-key storage, production security headers, audit receipts, and reliability controls as part of its baseline.',
-          'Retention and deletion follow the public data-retention page, subject to security, legal, billing, abuse-prevention, and backup-integrity obligations.',
+          'Retention and deletion follow the public data-retention posture. Fixed periods, backup handling, provider data-use terms and regulated-workload commitments are confirmed for their actual configuration; the beta does not promise uniform immediate erasure or zero retention.',
         ],
       },
     ],
@@ -147,7 +156,7 @@ export const legalPages: LegalPage[] = [
     slug: 'terms',
     title: 'Terms of Service',
     summary: 'Operational terms for using PRAXIS as a beta service for sourced policy work.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
@@ -155,6 +164,7 @@ export const legalPages: LegalPage[] = [
         body: [
           'PRAXIS is currently a beta software service. Features, limits, pricing, integrations, and data-processing behavior may change as the product matures.',
           'Paid plans use Polar hosted checkout and customer portal when billing is configured. Sandbox or test-mode billing is labeled in the product and does not represent a live charge.',
+          'When paid upgrades are unavailable, plan prices and feature lists are proposals, not enabled entitlements. Team permissions, SSO, residency and private deployment require separate implementation, acceptance and any applicable written agreement.',
           'Users are responsible for reviewing generated outputs before relying on them in policy, legal, diplomatic, humanitarian, security, or institutional decisions.',
         ],
       },
@@ -178,7 +188,7 @@ export const legalPages: LegalPage[] = [
     slug: 'security',
     title: 'Security',
     summary: 'Security posture, reporting channel, and current launch-readiness baseline for PRAXIS.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
@@ -196,6 +206,13 @@ export const legalPages: LegalPage[] = [
         ],
       },
       {
+        heading: 'Scope of the Beta',
+        body: [
+          'Working sign-in, protected routes and reviewed release journeys do not establish an independent security certification or acceptance of every account, sharing and institutional workflow.',
+          'SSO, organization roles, residency, private deployment, complete erasure and recovery commitments must be verified for their actual configured path before an institutional engagement relies on them.',
+        ],
+      },
+      {
         heading: 'Reporting',
         body: [
           'Report suspected vulnerabilities to security@tacitus.me with reproduction steps, affected routes, and expected impact.',
@@ -208,7 +225,7 @@ export const legalPages: LegalPage[] = [
     slug: 'sub-processors',
     title: 'Sub-processors',
     summary: 'Infrastructure and service providers that may process PRAXIS customer or workspace data.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
@@ -216,6 +233,13 @@ export const legalPages: LegalPage[] = [
         body: [
           'Google Cloud provides core infrastructure, including Cloud Run, Firestore, Cloud SQL, Cloud Storage, Secret Manager, Cloud Tasks, Pub/Sub, Cloud Build, Artifact Registry, and Vertex AI.',
           'Cloudflare provides DNS. GitHub hosts source code and workflow metadata. Polar processes billing, checkout, subscription, and customer portal data when subscriptions are activated.',
+        ],
+      },
+      {
+        heading: 'Model and Provider Configuration',
+        body: [
+          'Vertex AI is the default model runtime. Availability of other model paths depends on enabled configuration and provider access; actual execution may use an explicitly reported fallback.',
+          'Provider data-use and retention commitments depend on the service and agreement in force. This provider list does not itself establish a no-training, zero-retention or regulated-data commitment for a model.',
         ],
       },
       {
@@ -237,7 +261,7 @@ export const legalPages: LegalPage[] = [
     slug: 'data-retention',
     title: 'Data Retention',
     summary: 'Current retention posture for account, workspace, document, output, telemetry, and audit data.',
-    updatedAt: '2026-05-31',
+    updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
@@ -245,19 +269,23 @@ export const legalPages: LegalPage[] = [
         body: [
           'Workspace data is retained while an account or workspace remains active so PRAXIS can provide continuity across saved context, conversations, source receipts, documents, and outputs.',
           'Generated artifacts and audit receipts are retained with the workspace unless deleted through supported product or support workflows.',
+          'Retention includes original uploaded files where stored, full extracted text, chunks/embeddings, capsule and review versions, conversations and generated products. Removing an attachment from a question does not itself erase these records.',
         ],
       },
       {
         heading: 'Operational Data',
         body: [
           'Operational logs, health checks, runtime ledgers, and security audit artifacts are retained for reliability, abuse prevention, and incident response.',
-          'Launch-readiness artifacts redact bearer tokens, secrets, service-account emails, and private-key-shaped values before being saved.',
+          'Logs, model traces and saved review/test evidence require separate handling from the main workspace. Redacted release evidence is not a guarantee that every operational record contains no user-derived text.',
+          'The beta does not publish a single fixed retention period covering every workspace, operational, backup and provider record. Specific periods and exceptions must be confirmed for the actual store and configuration; no retention days are implied here.',
         ],
       },
       {
         heading: 'Deletion',
         body: [
-          'Account deletion is treated as a GDPR-style erasure request where applicable. Some records may be retained where required for security, billing, abuse prevention, legal obligations, or backup integrity.',
+          'Account deletion is treated as an erasure request where applicable. Completion must be checked across owner-scoped workspace records, uploaded and generated files, runtime records and relevant traces. Deleting an authentication account alone does not establish that all copies have been erased.',
+          'The supported erasure workflow retains a minimal deletion marker and cleanup receipt. Billing webhook deduplication and provider accounting, platform logs and backups, shared published ontology records, and optional external indexes require their own retention or cleanup handling. A pending external cleanup is not reported as completed erasure.',
+          'Legal, billing, security or backup exceptions and external provider records may require separate handling. Request a scope/status confirmation through security@tacitus.me; the current beta does not promise immediate removal from every backup or provider system.',
         ],
       },
     ],

@@ -28,6 +28,17 @@ describe('capsule graph proposal routes', () => {
     vi.clearAllMocks();
   });
 
+  it.each(['nodes', 'edges'])('returns a rebuildable conflict for stale %s approvals', async (kind) => {
+    service.applyCapsuleReviewCard.mockRejectedValueOnce(Object.assign(new Error('Capsule changed after the proposal. Rebuild it.'), { status: 409 }));
+    const route = kind === 'nodes' ? await import('@/app/api/context/capsules/[capsuleId]/graph/nodes/route')
+      : await import('@/app/api/context/capsules/[capsuleId]/graph/edges/route');
+    const response = await (route.POST as unknown as MockedAuthRouteHandler)(new Request('http://localhost/api/graph', {
+      method: 'POST', body: JSON.stringify({ operation: 'approve', reviewCardId: 'stale', confirmationReason: 'Reviewed proposal' }),
+    }), { uid: 'u1', isDemo: false }, { params: Promise.resolve({ capsuleId: 'cap-1' }) });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'STALE_CAPSULE_PROPOSAL', error: expect.stringMatching(/Rebuild/) });
+  });
+
   it('creates node proposal review cards without canonical mutation', async () => {
     service.proposeCapsuleGraphNodeChange.mockResolvedValueOnce({
       capsule: { capsuleId: 'cap-1', version: 1 },

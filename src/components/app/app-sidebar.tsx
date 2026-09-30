@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { Suspense, useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Boxes,
   BookOpen,
@@ -28,7 +28,7 @@ import {
 } from 'lucide-react';
 import { PraxisLink } from '@/components/shared/praxis-link';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
-import { itemMatchesPath, NAV_GROUPS, type PrimaryNavGroup, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
+import { primaryNavForPath, NAV_GROUPS, type PrimaryNavGroup, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 import { useAuth } from '@/lib/auth/auth-context';
 import { cn } from '@/lib/utils/cn';
 import { useAppStore } from '@/stores/app-store';
@@ -53,7 +53,14 @@ const ICONS: Record<PrimaryNavIcon, typeof Home> = {
 };
 
 export function AppSidebar() {
-  const pathname = usePathname();
+  return <Suspense fallback={<aside className="w-72 shrink-0 border-r border-slate-200 p-4" aria-label="PRAXIS navigation" aria-busy="true">Loading navigation…</aside>}><AppSidebarContent /></Suspense>;
+}
+
+function AppSidebarContent() {
+  const path = usePathname();
+  const searchParams = useSearchParams();
+  const query = searchParams.toString();
+  const pathname = `${path}${query ? `?${query}` : ''}`;
   const router = useRouter();
   const { user, logout } = useAuth();
   const { sidebarOpen, toggleSidebar } = useAppStore();
@@ -135,7 +142,7 @@ export function AppSidebar() {
 }
 
 function isGroupActive(group: PrimaryNavGroup, pathname: string): boolean {
-  return group.items.some((item) => itemMatchesPath(item, pathname));
+  return group.items.some((item) => item.id === primaryNavForPath(pathname)?.id);
 }
 
 function ContextCapsulePanel() {
@@ -203,11 +210,12 @@ function NavGroup({
       <div className="space-y-1">
         {group.items.map((item) => {
           const Icon = ICONS[item.icon];
-          const active = itemMatchesPath(item, pathname);
+          const active = primaryNavForPath(pathname)?.id === item.id;
           return (
             <PraxisLink
               key={item.id}
               href={item.href}
+              aria-current={active ? 'page' : undefined}
               title={item.label}
               className={cn(
                 'flex cursor-pointer items-center justify-center rounded-lg px-2 py-2 text-sm font-medium transition',
@@ -251,11 +259,12 @@ function NavGroup({
         <div className="mt-1 space-y-0.5">
           {group.items.map((item) => {
             const Icon = ICONS[item.icon];
-            const active = itemMatchesPath(item, pathname);
+            const active = primaryNavForPath(pathname)?.id === item.id;
             return (
               <PraxisLink
                 key={item.id}
                 href={item.href}
+                aria-current={active ? 'page' : undefined}
                 className={cn(
                   'group flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition',
                   active

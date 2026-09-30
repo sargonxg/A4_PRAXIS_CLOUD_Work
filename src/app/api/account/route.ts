@@ -14,14 +14,12 @@ import { getAuth } from 'firebase-admin/auth';
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
-import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { getAdminDbOrThrow, getAdminStorage, getDefaultBucketName } from '@/lib/firebase/admin';
 import { handleRouteError } from '@/lib/api/standard-error';
-
-const SITUATION_SUBCOLLECTIONS = [
-  'graph', 'documents', 'reports', 'scenarios', 'chats',
-  'tool-data', 'briefings', 'dossiers', 'talking-points',
-  'risk-assessments', 'conflict-grammar',
-];
+import { eraseOwnerAccount, OwnerErasureError, pendingExternalErasureStores } from '@/lib/account/owner-erasure';
+import { eraseOwnerRuntimeData } from '@/lib/agent-runtime/postgres';
+import { eraseOwnerDocumentMirror, isDocumentSqlMirrorConfigured } from '@/lib/agent-runtime/document-postgres';
+import { eraseOwnerAskThreadMemory, isAskThreadSqlConfigured } from '@/lib/agent-runtime/ask-thread-postgres';
 
 const ACCOUNT_PATCH_FIELDS = new Set(['displayName', 'role', 'orgId', 'orgName', 'marketingConsent', 'photoURL']);
 
@@ -59,20 +57,6 @@ function cleanAccountPatch(input: unknown): Record<string, string | boolean> | n
 function serializeFirestoreData(data: Record<string, unknown> | undefined): Record<string, unknown> {
   if (!data) return {};
   return JSON.parse(JSON.stringify(data)) as Record<string, unknown>;
-}
-
-async function purgeCollection(
-  colRef: FirebaseFirestore.CollectionReference,
-  db: FirebaseFirestore.Firestore,
-): Promise<void> {
-  let snap = await colRef.limit(200).get();
-  while (!snap.empty) {
-    const batch = db.batch();
-    snap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
-    if (snap.size < 200) break;
-    snap = await colRef.limit(200).get();
-  }
 }
 
 export const GET = withAuth(async (_request: Request, user) => {
@@ -157,44 +141,33 @@ export const DELETE = withAuth(async (_request: Request, user) => {
       );
     }
 
-    const uid = user.uid;
-    const db = getAdminDbOrThrow();
-
-    // 1. Cascade-delete all situations and their subcollections
-    const situationsSnap = await db.collection('users').doc(uid).collection('situations').get();
-    for (const sitDoc of situationsSnap.docs) {
-      for (const name of SITUATION_SUBCOLLECTIONS) {
-        await purgeCollection(sitDoc.ref.collection(name), db);
-      }
-      await sitDoc.ref.delete();
+    if (process.env.PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED !== 'true') {
+      return NextResponse.json({ error: 'Account deletion is temporarily unavailable. Contact TACITUS for account cleanup.', code: 'account_erasure_unavailable' }, { status: 503 });
     }
-
-    // 2. Delete credit transaction history
-    const txSnap = await db.collection('credit_transactions')
-      .where('userId', '==', uid)
-      .limit(500)
-      .get();
-    if (!txSnap.empty) {
-      const batch = db.batch();
-      txSnap.docs.forEach((d) => batch.delete(d.ref));
-      await batch.commit();
+    const report = await eraseOwnerAccount(user.uid, {
+      db: getAdminDbOrThrow(),
+      bucket: getAdminStorage().bucket(getDefaultBucketName()),
+      deleteAuthUser: (uid) => getAuth().deleteUser(uid),
+      externalCleanup: [
+        { name: 'postgres_runtime', configured: Boolean(process.env.AGENT_RUNTIME_DATABASE_URL || process.env.PRAXIS_DATABASE_URL || process.env.DATABASE_URL), erase: eraseOwnerRuntimeData },
+        { name: 'postgres_document_mirror', configured: isDocumentSqlMirrorConfigured(), erase: eraseOwnerDocumentMirror },
+        { name: 'postgres_ask_memory', configured: isAskThreadSqlConfigured(), erase: eraseOwnerAskThreadMemory },
+      ],
+      pendingExternalStores: pendingExternalErasureStores(),
+    });
+    if (report.status === 'pending') {
+      return NextResponse.json({
+        success: false, pending: true, report,
+        message: 'Account cleanup is in progress. Retry deletion to finish; contact TACITUS if a provider cleanup remains pending.',
+      }, { status: 202 });
     }
-
-    // 3. Delete user Firestore document
-    await db.collection('users').doc(uid).delete();
-
-    // 4. Delete Firebase Auth user record
-    await getAuth().deleteUser(uid);
-
-    // 5. Clear session cookie
     const cookieStore = await cookies();
     cookieStore.delete('tacitus-auth-session');
-
-    return new Response(
-      JSON.stringify({ success: true, message: 'Account permanently deleted.' }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } }
-    );
+    return NextResponse.json({ success: true, message: 'Account and owned workspace data deleted.', report });
   } catch (err) {
+    if (err instanceof OwnerErasureError) {
+      return NextResponse.json({ error: err.message, code: err.code, billingPath: '/app/settings?tab=billing' }, { status: 409 });
+    }
     return handleRouteError(err, 'account-delete');
   }
 });

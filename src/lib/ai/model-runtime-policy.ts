@@ -66,6 +66,7 @@ export function getAskPraxisRuntimeModelIds(): string[] {
   return unique([
     policy.frontierPrimary.chatModelId,
     policy.frontierPrimary.deepModelId,
+    getModelMatrixEntry('cheap_classify').model,
     ...policy.stableFallback.deep,
     ...policy.stableFallback.chat,
     ...policy.stableFallback.cheap,
@@ -78,8 +79,6 @@ export function isAskPraxisRuntimeModelId(value: unknown): value is string {
 
 export function getAskPraxisModelLabel(modelId: string): string {
   const policy = getAskPraxisModelRuntimePolicy();
-  if (modelId === policy.frontierPrimary.chatModelId) return 'Gemini 3.5 Flash';
-  if (modelId === policy.frontierPrimary.deepModelId) return 'Gemini 3.5 Flash';
   return policy.stableModelLabels[modelId] ?? modelId;
 }
 
@@ -88,7 +87,7 @@ export function buildModelFallbackCandidates(input: {
   depth: AskRuntimeDepth;
 }): ModelFallbackCandidate[] {
   const policy = getAskPraxisModelRuntimePolicy();
-  const defaultModelId = input.depth === 'deep'
+  const defaultModelId = input.depth === 'cheap' ? getModelMatrixEntry('cheap_classify').model : input.depth === 'deep'
     ? policy.frontierPrimary.deepModelId
     : policy.frontierPrimary.chatModelId;
   const selected = input.selectedModelId && isAskPraxisRuntimeModelId(input.selectedModelId)
@@ -103,7 +102,8 @@ export function buildModelFallbackCandidates(input: {
       ? policy.stableFallback.cheap
       : policy.stableFallback.chat;
 
-  return unique([selected, ...fallbacks]).map((modelId, index) => ({
+  const balancedFallback = input.depth === 'deep' ? [policy.frontierPrimary.chatModelId] : [];
+  return unique([selected, ...balancedFallback, ...fallbacks]).slice(0, 3).map((modelId, index) => ({
     modelId,
     lifecycleTier: modelId === policy.frontierPrimary.chatModelId || modelId === policy.frontierPrimary.deepModelId
       ? 'frontier_primary'

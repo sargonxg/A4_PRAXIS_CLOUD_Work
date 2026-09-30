@@ -89,6 +89,8 @@ async function ensureSchema(): Promise<void> {
       );
       CREATE INDEX IF NOT EXISTS agent_runs_owner_capsule_created_idx
         ON agent_runs (owner_uid, capsule_id, created_at DESC);
+      ALTER TABLE agent_runs ADD COLUMN IF NOT EXISTS execution_token TEXT;
+      ALTER TABLE agent_runs ADD COLUMN IF NOT EXISTS execution_lease_until TIMESTAMPTZ;
       CREATE TABLE IF NOT EXISTS agent_run_events (
         id TEXT PRIMARY KEY,
         run_id TEXT NOT NULL REFERENCES agent_runs(id) ON DELETE CASCADE,
@@ -141,6 +143,81 @@ async function ensureSchema(): Promise<void> {
     `).then(() => undefined);
   }
   return schemaReady;
+}
+
+export type AgentRunExecutionClaim = {
+  ownerUid: string;
+  runId: string;
+  token: string;
+  leaseSeconds: number;
+};
+
+/** Account erasure: fixed table allowlist, parameterized owner and one transaction. */
+export async function eraseOwnerRuntimeData(ownerUid: string): Promise<void> {
+  if (!ownerUid.trim()) throw new Error('An owner is required for runtime erasure.');
+  if (!getDatabaseUrl()) return;
+  await ensureSchema();
+  const client = await getPool().connect();
+  try {
+    await client.query('BEGIN');
+    for (const table of ['ask_thread_turns', 'ask_threads', 'document_ingestion_records', 'agent_runs'] as const) {
+      const existing = await client.query('SELECT to_regclass($1) AS relation', [table]);
+      if (existing.rows[0]?.relation) await client.query(`DELETE FROM ${table} WHERE owner_uid = $1`, [ownerUid]);
+    }
+    await client.query('COMMIT');
+  } catch (error) {
+    await client.query('ROLLBACK').catch(() => undefined);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+export async function claimAgentRunExecution(input: AgentRunExecutionClaim): Promise<boolean> {
+  await ensureSchema();
+  const result = await getPool().query(`
+    UPDATE agent_runs SET execution_token = $3,
+      execution_lease_until = CURRENT_TIMESTAMP + $4 * INTERVAL '1 second'
+    WHERE owner_uid = $1 AND id = $2 AND status IN ('queued', 'running')
+      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+      AND (execution_token IS NULL OR execution_lease_until IS NULL OR execution_lease_until <= CURRENT_TIMESTAMP)
+    RETURNING id
+  `, [input.ownerUid, input.runId, input.token, boundedLeaseSeconds(input.leaseSeconds)]);
+  return result.rows.length === 1;
+}
+
+export async function renewAgentRunExecution(input: AgentRunExecutionClaim): Promise<boolean> {
+  await ensureSchema();
+  const result = await getPool().query(`
+    UPDATE agent_runs SET execution_lease_until = CURRENT_TIMESTAMP + $4 * INTERVAL '1 second'
+    WHERE owner_uid = $1 AND id = $2 AND execution_token = $3
+      AND execution_lease_until > CURRENT_TIMESTAMP AND status IN ('queued', 'running')
+      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+    RETURNING id
+  `, [input.ownerUid, input.runId, input.token, boundedLeaseSeconds(input.leaseSeconds)]);
+  return result.rows.length === 1;
+}
+
+export async function ownsAgentRunExecution(input: AgentRunExecutionClaim): Promise<boolean> {
+  await ensureSchema();
+  const result = await getPool().query(`
+    SELECT id FROM agent_runs WHERE owner_uid = $1 AND id = $2 AND execution_token = $3
+      AND execution_lease_until > CURRENT_TIMESTAMP AND status IN ('queued', 'running')
+      AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)
+  `, [input.ownerUid, input.runId, input.token]);
+  return result.rows.length === 1;
+}
+
+export async function releaseAgentRunExecution(input: AgentRunExecutionClaim): Promise<void> {
+  await ensureSchema();
+  await getPool().query(`
+    UPDATE agent_runs SET execution_token = NULL, execution_lease_until = NULL
+    WHERE owner_uid = $1 AND id = $2 AND execution_token = $3
+  `, [input.ownerUid, input.runId, input.token]);
+}
+
+function boundedLeaseSeconds(value: number): number {
+  return Number.isFinite(value) ? Math.max(30, Math.min(300, Math.floor(value))) : 120;
 }
 
 export async function createAgentRun(input: CreateAgentRunInput): Promise<AgentRun> {
@@ -725,6 +802,7 @@ export async function updateAgentRunStatus(input: {
   message?: string | null;
   data?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
+  executionToken?: string;
 }): Promise<AgentRun | null> {
   await ensureSchema();
   const current = await getAgentRun(input.ownerUid, input.runId);
@@ -742,10 +820,12 @@ export async function updateAgentRunStatus(input: {
           started_at = $3,
           completed_at = $4,
           metadata = agent_runs.metadata || $7::jsonb
-      WHERE owner_uid = $5 AND id = $6
+      WHERE owner_uid = $5 AND id = $6 AND status = $8
+        AND ($9::text IS NULL OR (execution_token = $9 AND execution_lease_until > CURRENT_TIMESTAMP
+          AND (expires_at IS NULL OR expires_at > CURRENT_TIMESTAMP)))
       RETURNING *
     `,
-    [input.toStatus, now, startedAt, completedAt, input.ownerUid, input.runId, JSON.stringify(metadataPatch)],
+    [input.toStatus, now, startedAt, completedAt, input.ownerUid, input.runId, JSON.stringify(metadataPatch), current.status, input.executionToken ?? null],
   );
   const run = result.rows[0] ? rowToAgentRun(result.rows[0]) : null;
   if (run) {
