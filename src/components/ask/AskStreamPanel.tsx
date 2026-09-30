@@ -92,6 +92,7 @@ type AskThreadTurn = {
     outputHref?: string | null;
     provider?: string;
     model?: string;
+    fallbackFrom?: string | null;
     intent?: string;
     contextReceipt?: Record<string, unknown>;
     contextCores?: {
@@ -1886,8 +1887,11 @@ function AskTurnReceipt({ turn }: { turn: AskThreadTurn }) {
   const cores = runtime.contextCores;
   const contextReceipt = isRecord(runtime.contextReceipt) ? runtime.contextReceipt : null;
   const runtimeModelLabel = runtime.answerEnvelope
-    ? buildProofSummaryFromAskEnvelope(runtime.answerEnvelope, { selectedModelId: runtime.model }).modelPolicyLabel
-    : modelPolicyLabelFor({ selectedModelId: runtime.model });
+    ? buildProofSummaryFromAskEnvelope(runtime.answerEnvelope, {
+      selectedModelId: runtime.model,
+      fallbackPosture: runtime.fallbackFrom ? 'fallback' : null,
+    }).modelPolicyLabel
+    : modelPolicyLabelFor({ selectedModelId: runtime.model, fallbackPosture: runtime.fallbackFrom ? 'fallback' : null });
   const sourceCount = retrieval?.sourceDocumentCount ?? cores?.sourceDocumentCoreIds?.length ?? contextReceiptSourceCount(contextReceipt);
   const gapCount = retrieval?.activeGapCount ?? contextReceiptWarningCount(contextReceipt);
   const evidenceCount = numberValue(contextReceipt?.evidenceCount);

@@ -5195,6 +5195,7 @@ function ConversationReceiptSummary({ envelope }: { envelope?: AskAnswerEnvelope
   const generationModelPolicyLabel = generationReceipt
     ? modelPolicyLabelFor({
       selectedModelId: generationReceipt.selectedModel,
+      modelTier: receipt.routingDecision.modelTier,
       fallbackPosture: generationReceipt.fallbackModel ? 'fallback' : null,
     })
     : null;
@@ -5245,6 +5246,7 @@ function ConversationAgentActivityRail({ envelope, onAction }: { envelope?: AskA
   const generationModelPolicyLabel = generationReceipt
     ? modelPolicyLabelFor({
       selectedModelId: generationReceipt.selectedModel,
+      modelTier: receipt?.routingDecision.modelTier,
       fallbackPosture: generationReceipt.fallbackModel ? 'fallback' : null,
     })
     : null;

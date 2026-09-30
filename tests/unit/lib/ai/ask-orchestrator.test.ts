@@ -6,6 +6,17 @@ import {
 import type { AskContextReceipt } from '@/lib/ai/ask-conversation';
 
 describe('Ask PRAXIS conversation orchestrator', () => {
+  it('keeps evidence card counts separate from distinct source counts in read and status receipts', () => {
+    const receipt = buildAskConversationOrchestrationReceipt({
+      prompt: 'Recall the supplied facts.', intent: 'normal_answer',
+      contextReceipt: contextReceipt({ health: 'ready', evidenceCount: 1 }),
+      sourcePreviewCount: 2, sourceCount: 1, activeGapCount: 0,
+    });
+    expect(receipt.capsule.sourcePreviewCount).toBe(2);
+    expect(receipt.capsuleReadReceipt.sourceCount).toBe(1);
+    expect(buildAskOrchestrationStatusEvents(receipt).filter((event) => event.sourceCount !== undefined).map((event) => event.sourceCount)).toEqual(expect.arrayContaining([1]));
+    expect(buildAskOrchestrationStatusEvents(receipt).some((event) => event.sourceCount === 2)).toBe(false);
+  });
   it('records the task budget and bounded model attempts for explicit recall despite stale deep preferences', () => {
     const receipt = buildAskConversationOrchestrationReceipt({
       prompt: 'Recall the actor names using only the supplied notes. Do not use web sources or run agents.',

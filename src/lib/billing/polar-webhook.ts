@@ -63,8 +63,13 @@ export function polarSubscriptionPatchFromEvent(event: PolarEventLike, products:
   if (!plan) return null; // Customer metadata is never a trusted product map.
   const metadata = objectValue(data.metadata);
   const customer = objectValue(data.customer);
-  const uid = stringValue(customer.externalId ?? customer.external_id ?? metadata.uid ?? data.externalCustomerId ?? data.external_customer_id);
-  if (!uid) return null;
+  const uidCandidates = [customer.externalId, customer.external_id, metadata.uid, data.externalCustomerId, data.external_customer_id]
+    .filter(value => value !== undefined && value !== null);
+  const uid = uidCandidates[0];
+  // A signed event must still identify one valid owner. Never choose one
+  // conflicting identity or allow an identifier to address a nested document.
+  if (typeof uid !== 'string' || !/^[^\s/\\]{1,128}$/.test(uid)
+    || uid === '.' || uid === '..' || uidCandidates.some(candidate => candidate !== uid)) return null;
 
   const cancelAtPeriodEnd = booleanValue(data.cancelAtPeriodEnd ?? data.cancel_at_period_end);
   const eventStatus = statusForEvent(type, stringValue(data.status), cancelAtPeriodEnd);
@@ -119,6 +124,19 @@ export async function applyPolarSubscriptionPatch(db: Firestore, patch: PolarSub
     if (!userSnap.exists || account?.accountDeletionStatus === 'deleting' || account?.accountDeletionStatus === 'deleted') {
       recordEvent('owner_unavailable');
       return 'owner_unavailable';
+    }
+    const replacementActivation = (patch.subscriptionStatus === 'active' || patch.subscriptionStatus === 'trialing')
+      && Boolean(patch.polarSubscriptionId) && patch.polarSubscriptionId !== account?.polarSubscriptionId;
+    const differentSubscription = Boolean(account?.polarSubscriptionId)
+      && account?.polarSubscriptionId !== patch.polarSubscriptionId;
+    const differentCustomer = Boolean(account?.polarCustomerId)
+      && account?.polarCustomerId !== patch.polarCustomerId;
+    // An old subscription can change later than its replacement. Its terminal
+    // event must not replace the current entitlement. A new activation may
+    // establish a new binding; events for the current ID retain its customer.
+    if ((differentSubscription || differentCustomer) && !replacementActivation) {
+      recordEvent('stale');
+      return 'stale';
     }
     const previousTime = Date.parse(isoDateValue(account?.subscriptionUpdatedAt) ?? '');
     const sourceTime = Date.parse(patch.subscriptionUpdatedAt);

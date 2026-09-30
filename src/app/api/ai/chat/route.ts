@@ -56,7 +56,7 @@ import {
   classifyAskIntent,
   type AskIntent,
 } from '@/lib/ai/ask-conversation';
-import { buildAskAnswerEnvelope, buildResearchGraphSourcePreviewCards, buildSourcePreviewCards, type AskAnswerEnvelope, type AskCapsuleSuggestionReceipt, type AskGenerationReceipt } from '@/lib/ai/ask-answer-envelope';
+import { buildAskAnswerEnvelope, buildResearchGraphSourcePreviewCards, buildSourcePreviewCards, countResolvedAskCapsules, summarizeAskSourceIdentities, type AskAnswerEnvelope, type AskCapsuleSuggestionReceipt, type AskGenerationReceipt } from '@/lib/ai/ask-answer-envelope';
 import { buildAskChatFinishPayloads } from '@/lib/ai/ask-chat-stream-payload';
 import {
   buildAskConversationOrchestrationReceipt,
@@ -609,11 +609,13 @@ fabricate sources, figures, dates, or identifiers.`;
     });
     runtimeReceipt.capsuleHealth = runtimeReceipt.contextReceipt.health;
     const sourcePreviewCards = buildSourcePreviewCards({ evidencePack: answerEvidencePack });
+    const resolvedCapsuleCount = countResolvedAskCapsules({ context: capsuleContext, calibratedCapsules: _user.calibration.toolContext.capsules });
     let orchestrationReceipt = buildAskConversationOrchestrationReceipt({
       prompt,
       intent: askIntent,
       contextReceipt: runtimeReceipt.contextReceipt,
       sourcePreviewCount: sourcePreviewCards.length,
+      sourceCount: summarizeAskSourceIdentities(sourcePreviewCards).sourceCount,
       activeGapCount: uniqueStrings([
         ...(turnCapsule?.activeGaps ?? []),
         ...(answerEvidencePack?.openGaps ?? []),
@@ -872,8 +874,8 @@ fabricate sources, figures, dates, or identifiers.`;
               fallbackModel: selectedReceipt.fallbackFrom ?? null,
               finishReason,
               usage: totalUsage,
-              sourceCount: sourceCardsForEnvelope().length,
-              capsuleCount: normalizedAppliedCapsules.length,
+              sourceCount: summarizeAskSourceIdentities(sourceCardsForEnvelope()).sourceCount,
+              capsuleCount: resolvedCapsuleCount,
               warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
             }),
           };
@@ -903,8 +905,8 @@ fabricate sources, figures, dates, or identifiers.`;
           }),
           budgetMode: orchestrationReceipt.generationBudget.mode,
           maxOutputTokens: orchestrationReceipt.generationBudget.maxOutputTokens,
-          sourceCount: sourcePreviewCards.length,
-          capsuleCount: normalizedAppliedCapsules.length,
+          sourceCount: summarizeAskSourceIdentities(sourcePreviewCards).sourceCount,
+          capsuleCount: resolvedCapsuleCount,
           warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
         },
         ...buildAskOrchestrationStatusEvents(orchestrationReceipt),
@@ -921,8 +923,8 @@ fabricate sources, figures, dates, or identifiers.`;
           }),
           finishReason: runtimeReceipt.generationReceipt?.finishReason ?? null,
           usage: runtimeReceipt.generationReceipt?.usage ?? null,
-          sourceCount: sourceCardsForEnvelope().length,
-          capsuleCount: normalizedAppliedCapsules.length,
+          sourceCount: answerEnvelope.sourceAudit.sourceCount,
+          capsuleCount: resolvedCapsuleCount,
           warningCount: runtimeReceipt.contextReceipt?.warnings.length ?? 0,
         });
       },

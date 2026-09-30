@@ -1,4 +1,5 @@
 import { getAskPraxisModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
+import { getModelMatrixEntry } from '@/lib/ai/model-matrix';
 import { normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 
 export type ProofContextHealth = 'ready' | 'review' | 'thin' | 'missing' | 'degraded';
@@ -68,25 +69,24 @@ export function modelPolicyLabelFor(input: {
 } = {}): string {
   const tier = cleanLower(input.modelTier);
   const policyId = cleanLower(input.modelPolicy);
-  const lifecycleTier = cleanLower(input.lifecycleTier);
   const mode = cleanLower(input.mode);
   const fallbackPosture = cleanLower(input.fallbackPosture);
   const selectedModelId = cleanString(input.selectedModelId);
   const policy = getAskPraxisModelRuntimePolicy();
+  // A lifecycle category or a ready fallback chain is not an executed fallback.
+  const fallbackSuffix = fallbackPosture === 'fallback' ? ' (fallback)' : '';
 
   if (
     tier === 'sourceability'
     || mode?.includes('sourceability')
   ) {
-    return 'sourceability review';
+    return `sourceability review${fallbackSuffix}`;
   }
 
-  if (lifecycleTier === 'stable_fallback' || fallbackPosture?.includes('fallback')) {
-    return 'standard policy reasoning (fallback)';
-  }
+  if (tier === 'fast') return `economical recall and extraction${fallbackSuffix}`;
 
   if (tier === 'standard') {
-    return 'standard policy reasoning';
+    return `standard policy reasoning${fallbackSuffix}`;
   }
 
   if (
@@ -95,10 +95,11 @@ export function modelPolicyLabelFor(input: {
     || selectedModelId === policy.frontierPrimary.deepModelId
     || policy.stableFallback.deep.includes(selectedModelId ?? '')
   ) {
-    return 'deep policy reasoning';
+    return `deep policy reasoning${fallbackSuffix}`;
   }
 
-  return 'standard policy reasoning';
+  if (selectedModelId === getModelMatrixEntry('cheap_classify').model) return `economical recall and extraction${fallbackSuffix}`;
+  return `standard policy reasoning${fallbackSuffix}`;
 }
 
 export function buildProofSummaryFromAskEnvelope(
@@ -144,7 +145,7 @@ export function buildProofSummaryFromAskEnvelope(
       modelTier: routingDecision?.modelTier ?? fallback.modelTier,
       modelPolicy: fallback.modelPolicy,
       lifecycleTier: fallback.lifecycleTier,
-      fallbackPosture: fallback.fallbackPosture,
+      fallbackPosture: generationReceipt?.fallbackModel ? 'fallback' : fallback.fallbackPosture,
     }),
     groundingPosture: stringField(grounding?.groundingPosture) ?? stringField(readReceipt?.groundingPosture),
     degradedReason: stringField(grounding?.degradedReason) ?? stringField(fallback.degradedReason),

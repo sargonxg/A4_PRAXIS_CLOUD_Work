@@ -216,6 +216,41 @@ export interface AskContextProvenanceChip {
   tone: 'inspired' | 'grounded' | 'review';
 }
 
+/** Count source identities without removing the passage and receipt cards. */
+export function summarizeAskSourceIdentities(cards: readonly SourcePreviewCard[]): { sourceCount: number; sourceReceiptCount: number } {
+  const documentByReceipt = new Map<string, string>();
+  for (const card of cards) {
+    if (card.documentId && card.sourceReceiptId) documentByReceipt.set(card.sourceReceiptId, card.documentId);
+  }
+  const sources = new Set<string>();
+  const receipts = new Set<string>();
+  for (const card of cards) {
+    if (card.sourceReceiptId) receipts.add(card.sourceReceiptId);
+    const documentId = card.documentId ?? (card.sourceReceiptId ? documentByReceipt.get(card.sourceReceiptId) : undefined);
+    sources.add(documentId ? `document:${documentId}` : card.sourceReceiptId ? `receipt:${card.sourceReceiptId}` : `card:${card.id}`);
+  }
+  return { sourceCount: sources.size, sourceReceiptCount: receipts.size };
+}
+
+type ResolvedAskCapsule = { capsuleId: string; version: number };
+
+/** Only server-resolved saved capsules count; version zero is synthetic fallback context. */
+export function countResolvedAskCapsules(input: {
+  context?: {
+    capsule?: ResolvedAskCapsule;
+    associatedCapsules?: readonly ResolvedAskCapsule[];
+    dockCapsules?: readonly { capsule: ResolvedAskCapsule }[];
+  } | null;
+  calibratedCapsules?: readonly ResolvedAskCapsule[];
+}): number {
+  return new Set([
+    ...(input.context?.capsule ? [input.context.capsule] : []),
+    ...(input.context?.associatedCapsules ?? []),
+    ...(input.context?.dockCapsules ?? []).map((entry) => entry.capsule),
+    ...(input.calibratedCapsules ?? []),
+  ].filter((capsule) => capsule.version > 0 && capsule.capsuleId.trim()).map((capsule) => capsule.capsuleId)).size;
+}
+
 export interface AskContextDiagnostics {
   activeCapsule: string;
   sourceLanesUsed: SourcePreviewType[];
@@ -1131,8 +1166,7 @@ function buildSourceAudit(input: {
   claimLedgerSummary: SourceabilityLedgerSummary;
 }): AskSourceAuditSummary {
   return {
-    sourceCount: input.sourceCards.length,
-    sourceReceiptCount: input.sourceCards.filter((card) => Boolean(card.sourceReceiptId)).length,
+    ...summarizeAskSourceIdentities(input.sourceCards),
     sourceTypes: Array.from(new Set(input.sourceCards.map((card) => card.sourceType))),
     gapCount: input.gaps.length,
     supportedClaimCount: input.claimLedgerSummary.supportedClaims,

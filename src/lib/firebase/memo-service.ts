@@ -1,5 +1,6 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
+import { omitUndefinedMetadata } from '@/lib/firebase/ask-thread-service';
 import { createMemoVersion } from '@/lib/memo/export';
 import { buildMemoOutputReview, memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import { isCurrentMemoHumanApproval, type MemoReviewUse } from '@/lib/memo/human-review';
@@ -187,7 +188,10 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     ...(outputReview ? { outputReview } : {}),
   };
 
-  const savedVersion = { ...version, ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) };
+  // Optional source dates/passages and block metadata must be Firestore-safe.
+  // Preserve native values and array positions; never invent missing evidence.
+  const savedMemo = omitUndefinedMetadata({ ...memo, ...memoMetadata });
+  const savedVersion = omitUndefinedMetadata({ ...version, ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) });
   await db.runTransaction(async (transaction) => {
     const owner = await transaction.get(db.collection('users').doc(uid));
     if (!owner.exists || ['deleting', 'deleted'].includes(String(owner.data()?.accountDeletionStatus))) {
@@ -197,10 +201,10 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     if ((current.data()?.currentVersionId ?? null) !== (existing?.memo.currentVersionId ?? null)) {
       throw new MemoReviewConflictError('Another memo version was saved. Reopen it before applying your changes.');
     }
-    transaction.set(memoRef, { ...memo, ...memoMetadata, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
+    transaction.set(memoRef, { ...savedMemo, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
     transaction.set(memoRef.collection('versions').doc(version.id), savedVersion);
   });
-  return { memo: { ...memo, ...memoMetadata }, versions: [...(existing?.versions ?? []), savedVersion] };
+  return { memo: savedMemo, versions: [...(existing?.versions ?? []), savedVersion] };
 }
 
 function artifactMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> {
@@ -256,8 +260,8 @@ export async function approveMemoBody(uid: string, memoId: string, input: {
     const humanApproval = signMemoHumanApproval({ memoId, versionId: input.versionId, reviewerUid: uid,
       bodyHash: input.bodyHash, approvedAt: new Date().toISOString(), intendedUse: input.intendedUse,
       limitations: input.limitations.trim() });
-    transaction.set(ref, { ownerUid: uid, status: 'final', humanApproval, updatedAt: humanApproval.approvedAt }, { merge: true });
-    transaction.set(versionRef, { humanApproval }, { merge: true });
+    transaction.set(ref, omitUndefinedMetadata({ ownerUid: uid, status: 'final', humanApproval, updatedAt: humanApproval.approvedAt }), { merge: true });
+    transaction.set(versionRef, omitUndefinedMetadata({ humanApproval }), { merge: true });
   });
   return loadMemoById(uid, memoId, db);
 }

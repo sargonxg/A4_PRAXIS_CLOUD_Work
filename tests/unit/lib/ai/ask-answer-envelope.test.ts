@@ -5,6 +5,8 @@ import {
   buildConversationDocumentPack,
   buildResearchGraphSourcePreviewCards,
   buildSourcePreviewCards,
+  countResolvedAskCapsules,
+  summarizeAskSourceIdentities,
   conversationDocumentPackToMemoBlocks,
 } from '@/lib/ai/ask-answer-envelope';
 import { buildAskConversationOrchestrationReceipt } from '@/lib/ai/ask-orchestrator';
@@ -12,6 +14,44 @@ import type { CapsuleEvidencePack } from '@/lib/agent-runtime/evidence-pack';
 import type { AskContextReceipt } from '@/lib/ai/ask-conversation';
 
 describe('ask answer envelope', () => {
+  it('counts a paragraph and its receipt stub as one source while preserving both evidence cards', () => {
+    const cards = buildSourcePreviewCards({ evidencePack: evidencePack() });
+    const envelope = buildAskAnswerEnvelope({ prompt: 'Recall supplied facts.', answer: 'Access was restricted.', intent: 'normal_answer', sourceCards: cards });
+    expect(envelope.sourceCards).toHaveLength(2);
+    expect(envelope.sourceAudit).toMatchObject({ sourceCount: 1, sourceReceiptCount: 1 });
+  });
+
+  it('counts explicit document and receipt identities without collapsing independent unknown cards', () => {
+    const card = buildSourcePreviewCards({ evidencePack: evidencePack() })[0];
+    expect(summarizeAskSourceIdentities([
+      card, { ...card, id: 'second-paragraph', chunkId: 'chunk-2' },
+      { ...card, id: 'digest', sourceReceiptId: undefined },
+      { ...card, id: 'receipt', documentId: undefined },
+      { ...card, id: 'other-document', documentId: 'doc-2', sourceReceiptId: 'receipt-2' },
+      { ...card, id: 'unknown-a', documentId: undefined, sourceReceiptId: undefined },
+      { ...card, id: 'unknown-b', documentId: undefined, sourceReceiptId: undefined },
+    ])).toEqual({ sourceCount: 4, sourceReceiptCount: 2 });
+    expect(summarizeAskSourceIdentities([])).toEqual({ sourceCount: 0, sourceReceiptCount: 0 });
+  });
+
+  it('counts the actually resolved primary capsule even without applied metadata', () => {
+    const capsule = evidencePack().activeCapsule;
+    expect(countResolvedAskCapsules({ context: { capsule, associatedCapsules: [], dockCapsules: [] } })).toBe(1);
+  });
+
+  it('deduplicates resolved primary, associated, dock and calibrated capsules and excludes synthetic placeholders', () => {
+    const capsule = evidencePack().activeCapsule;
+    expect(countResolvedAskCapsules({
+      context: {
+        capsule,
+        associatedCapsules: [capsule, { ...capsule, capsuleId: 'reference-1' }],
+        dockCapsules: [{ capsule }],
+      },
+      calibratedCapsules: [capsule, { ...capsule, capsuleId: 'reference-2' }, { ...capsule, capsuleId: 'thin-placeholder', version: 0 }],
+    })).toBe(3);
+    expect(countResolvedAskCapsules({ context: { capsule: { ...capsule, version: 0 } } })).toBe(0);
+    expect(countResolvedAskCapsules({})).toBe(0);
+  });
   it('normalizes evidence-pack paragraphs into always-visible source cards', () => {
     const cards = buildSourcePreviewCards({
       evidencePack: evidencePack(),
@@ -202,7 +242,7 @@ describe('ask answer envelope', () => {
       usage: { inputTokens: 100, outputTokens: 240, totalTokens: 340 },
     });
     expect(envelope.sourceAudit).toMatchObject({
-      sourceCount: sourceCards.length,
+      sourceCount: 1,
       gapCount: 1,
       unsupportedClaimCount: 0,
     });
@@ -378,7 +418,7 @@ describe('ask answer envelope', () => {
       detectedIntent: 'legal_policy_context',
       selectedPolicyContext: 'U.S. federal / AI governance',
       activeCapsulesUsed: ['starter-situation-us-federal-ai-governance-baseline'],
-      sourceCount: sourceCards.length,
+      sourceCount: 1,
       unsupportedClaimsCount: 0,
       humanReviewRecommendation: expect.stringMatching(/review/i),
     });
