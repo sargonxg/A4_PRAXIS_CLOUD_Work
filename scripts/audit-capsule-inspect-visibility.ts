@@ -15,7 +15,8 @@ type Finding = {
 const findings: Finding[] = [];
 const componentSource = readFileSync(join(process.cwd(), 'src', 'components', 'capsules', 'CapsuleLibraryCard.tsx'), 'utf8');
 const librarySource = readFileSync(join(process.cwd(), 'src', 'components', 'capsules', 'CapsuleLibrary.tsx'), 'utf8');
-const workbenchSource = readFileSync(join(process.cwd(), 'src', 'components', 'capsules', 'CapsuleWorkbenchPanel.tsx'), 'utf8');
+const inspectionSource = readFileSync(join(process.cwd(), 'src', 'components', 'capsules', 'CapsuleInspectionExperience.tsx'), 'utf8');
+const advancedSource = readFileSync(join(process.cwd(), 'src', 'components', 'capsules', 'workbench', 'CapsuleAdvancedDrawer.tsx'), 'utf8');
 const researchSectionSource = readFileSync(join(process.cwd(), 'src', 'components', 'capsules', 'workbench', 'CapsuleResearchSection.tsx'), 'utf8');
 
 for (const expected of [
@@ -44,8 +45,9 @@ for (const expected of [
   if (!researchSectionSource.includes(expected)) add('ui-contract', `inspect research section missing ${expected}`);
 }
 
-if (!workbenchSource.includes('<CapsuleResearchSection research={research} />')) {
-  add('ui-contract', 'immediate inspect depth does not render CapsuleResearchSection');
+if (!inspectionSource.includes('<CapsuleAdvancedDrawer model={model}')
+  || !advancedSource.includes('<CapsuleResearchSection research={model.research} />')) {
+  add('ui-contract', 'shared inspection does not expose the research model through its progressive detail view');
 }
 
 for (const starter of CAPSULE_STARTER_DEFINITIONS) {

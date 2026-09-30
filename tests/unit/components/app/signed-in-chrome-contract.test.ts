@@ -14,7 +14,9 @@ describe('signed-in app chrome contract', () => {
 
     expect(appShell).toContain("import { SignedInChrome } from '@/components/app/signed-in-chrome'");
     expect(appShell).toContain('<SignedInChrome');
-    expect(appShell).toContain('showAccountButton={isOnePageCockpit}');
+    expect(appShell).toContain('showAccountButton={false}');
+    expect(appShell).not.toContain('<FloatingPraxis');
+    expect(appShell).not.toContain('<ActivityPanel');
     expect(appShell).toContain('data-testid="praxis-one-page-app-shell"');
   });
 

@@ -31,6 +31,13 @@ export const legalPages: LegalPage[] = [
     pendingLegalReview: false,
     sections: [
       {
+        heading: 'Project Operator',
+        body: [
+          'PRAXIS is experimental research and analysis software operated by Giulio Catanzariti under the TACITUS project name. No TACITUS legal entity has been incorporated. Contact hello@tacitus.me about information access, correction or deletion without sending sensitive identity documents in an initial message.',
+          'This notice describes the application. Website analytics and inquiries are described separately at https://www.tacitus.me/legal. Project status does not remove applicable privacy obligations.',
+        ],
+      },
+      {
         heading: 'Data We Collect',
         body: [
           'PRAXIS stores account identifiers, authentication metadata, analyst profile choices, workspace configuration, saved context, user documents, source receipts, conversations, generated outputs, and operational telemetry needed to run the service.',
@@ -41,7 +48,7 @@ export const legalPages: LegalPage[] = [
         heading: 'How We Use Data',
         body: [
           'We use workspace data to authenticate users, build context for AI-assisted analysis, persist outputs, maintain audit trails, debug reliability issues, and protect the service from abuse.',
-          'We do not sell user data. External model and infrastructure providers are limited to the sub-processors listed in the public sub-processor page.',
+          'We do not sell user data. The public provider page describes the documented baseline. Confirm enabled model, document and user-selected providers for the particular workflow before institutional material is shared; this notice does not certify a complete deployment-specific inventory.',
           'The current production posture uses United States infrastructure by default. Enterprise residency commitments require a separate written arrangement before regulated workloads are onboarded.',
         ],
       },
@@ -80,6 +87,7 @@ export const legalPages: LegalPage[] = [
       {
         heading: 'Analytics and Product Telemetry',
         body: [
+          'Optional Google and Firebase visit analytics are not initialized by the application. Any future introduction requires a separate permission interface. Essential sign-in, security and operational requests remain necessary to run the workspace.',
           'PRAXIS may collect privacy-conscious product telemetry to understand reliability, page performance, feature adoption, and abuse patterns.',
           'Where non-essential analytics are introduced, PRAXIS will maintain appropriate consent and opt-out controls for users and regions that require them.',
         ],
@@ -124,7 +132,7 @@ export const legalPages: LegalPage[] = [
   },
   {
     slug: 'data-processing',
-    title: 'Data Processing Addendum',
+    title: 'Data Processing Overview',
     summary: 'Customer-data processing roles, instructions, providers, security controls, retention, deletion, and support channels.',
     updatedAt: '2026-09-30',
     pendingLegalReview: false,
@@ -132,15 +140,15 @@ export const legalPages: LegalPage[] = [
       {
         heading: 'Processing Roles',
         body: [
-          'For customer workspace data, PRAXIS generally acts as a processor or service provider acting on user instructions, while the customer remains responsible for lawful input data and review of outputs.',
-          'For account administration, security, billing, abuse prevention, and service operations, PRAXIS may act as an independent controller where applicable law recognizes that role.',
+          'This page describes processing for scoping purposes; it is not an executed data-processing agreement. Responsible parties, controller and processor roles, lawful instructions and safeguards must be established for the particular evaluation before institutional material is uploaded.',
+          'The project operator is responsible for the processing they undertake. Applicable responsibilities depend on the actual processing; a project name does not replace the responsible person or contracting party.',
         ],
       },
       {
         heading: 'Processing Instructions',
         body: [
           'PRAXIS processes customer data to provide authenticated workspaces, saved context, document handling, retrieval, AI-assisted analysis, output generation, receipts, reliability monitoring, and support.',
-          'AI model and infrastructure sub-processors are limited to the public sub-processor list and operational providers needed to run the service.',
+          'The public provider page describes the documented baseline. Confirm the enabled model and document providers, user-selected integrations, provider terms and processing locations for the particular workflow.',
         ],
       },
       {
@@ -155,16 +163,16 @@ export const legalPages: LegalPage[] = [
   {
     slug: 'terms',
     title: 'Terms of Service',
-    summary: 'Operational terms for using PRAXIS as a beta service for sourced policy work.',
+    summary: 'Experimental-use terms: permitted inputs, human review, availability limits and mandatory rights.',
     updatedAt: '2026-09-30',
     pendingLegalReview: false,
     sections: [
       {
-        heading: 'Beta Service',
+        heading: 'Experimental Service',
         body: [
-          'PRAXIS is currently a beta software service. Features, limits, pricing, integrations, and data-processing behavior may change as the product matures.',
-          'Paid plans use Polar hosted checkout and customer portal when billing is configured. Sandbox or test-mode billing is labeled in the product and does not represent a live charge.',
-          'When paid upgrades are unavailable, plan prices and feature lists are proposals, not enabled entitlements. Team permissions, SSO, residency and private deployment require separate implementation, acceptance and any applicable written agreement.',
+          'PRAXIS is an experimental workspace operated by Giulio Catanzariti under the TACITUS project name. No TACITUS legal entity has been incorporated. Features, limits, integrations and access may change or be withdrawn as the project develops.',
+          'Current free access is subject to the limits shown in the application. Paid upgrades are unavailable. Future prices, institutional options and feature descriptions are proposals, not purchase offers or service commitments.',
+          'Team permissions, SSO, residency and private deployment require separate implementation, verification, identified contracting parties and applicable arrangements before any commitment.',
           'Users are responsible for reviewing generated outputs before relying on them in policy, legal, diplomatic, humanitarian, security, or institutional decisions.',
         ],
       },
@@ -180,6 +188,9 @@ export const legalPages: LegalPage[] = [
         body: [
           'PRAXIS may help organize legal, policy, diplomatic, or operational analysis, but generated content is not legal, financial, security, or professional advice.',
           'Human review is required before publication, operational action, or external sharing.',
+          'Recorded workflow checks do not certify analytical quality. AI-generated work may omit evidence, misattribute sources or make unsupported deductions. Independently check source passages, dates, calculations and conclusions.',
+          'No service-level agreement, certification or guarantee of uninterrupted availability, analytical accuracy or suitability for a particular purpose is offered. Nothing in these terms excludes rights or liabilities that applicable law does not permit to be excluded.',
+          'Use public or synthetic material for experimentation. Do not upload classified, privileged, sensitive personal or confidential institutional records without separately established authorization and suitable data-handling arrangements.',
         ],
       },
     ],
@@ -229,10 +240,10 @@ export const legalPages: LegalPage[] = [
     pendingLegalReview: false,
     sections: [
       {
-        heading: 'Active Providers',
+        heading: 'Documented Infrastructure Baseline',
         body: [
           'Google Cloud provides core infrastructure, including Cloud Run, Firestore, Cloud SQL, Cloud Storage, Secret Manager, Cloud Tasks, Pub/Sub, Cloud Build, Artifact Registry, and Vertex AI.',
-          'Cloudflare provides DNS. GitHub hosts source code and workflow metadata. Polar processes billing, checkout, subscription, and customer portal data when subscriptions are activated.',
+          'Cloudflare provides DNS. GitHub hosts source code and workflow metadata. Polar is a documented billing integration; paid upgrades are unavailable and this listing does not offer a subscription.',
         ],
       },
       {

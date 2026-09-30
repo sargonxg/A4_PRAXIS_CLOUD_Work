@@ -1,0 +1,50 @@
+{
+  "schemaVersion": "1.0",
+  "revised": "2026-09-30",
+  "project": {
+    "name": "TACITUS",
+    "operator": "Giulio Catanzariti",
+    "status": "Independent experimental research and software project; no TACITUS legal entity has been incorporated.",
+    "use": "AI-generated work requires independent source review. Recorded workflow checks do not certify analytical accuracy, availability or suitability for a particular purpose."
+  },
+  "verification": {
+    "date": "2026-09-30",
+    "scope": "Recorded real-service acceptance on source 4480650. This website change summarizes the receipt; it does not run a new private production canary."
+  },
+  "access": {
+    "free": "Current free access, subject to the limits shown in PRAXIS.",
+    "paid": "Paid upgrades are unavailable. Future prices and features are proposals, not offers."
+  },
+  "capabilities": [
+    {
+      "name": "Upload documents, review capsule proposals, attach saved context, return to conversations",
+      "status": "Documented current core",
+      "detail": "Inspect source material before relying on an answer."
+    },
+    {
+      "name": "User, Situation, Tool and Output capsule formats",
+      "status": "Reference formats",
+      "detail": "Four downloadable examples illustrate the model. They do not establish four complete PRAXIS authoring paths."
+    },
+    {
+      "name": "Conversational ontology editing and lossless interchange",
+      "status": "In development",
+      "detail": "Full round-trip portability needs validation."
+    },
+    {
+      "name": "Queued research, delegated agents and exports",
+      "status": "In development",
+      "detail": "A queued research/owner-approval journey was recorded as passing. Reliable general task completion and complete source fidelity remain unvalidated; generated briefs still require review."
+    },
+    {
+      "name": "Team libraries, institutional controls and deployment options",
+      "status": "Scope before commitment",
+      "detail": "Discuss permissions, data handling, support and feasibility before a pilot."
+    },
+    {
+      "name": "CONCORDIA and Wind Tunnel",
+      "status": "Experimental",
+      "detail": "Synthetic modeled outputs do not establish live mediation performance, public opinion or behavioral validity."
+    }
+  ]
+}

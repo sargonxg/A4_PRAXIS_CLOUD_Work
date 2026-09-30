@@ -37,11 +37,11 @@ test('mobile and desktop users can create and attach quick context, then reach t
   await expect(composer).toBeVisible({ timeout: 30_000 });
   const welcome = page.getByRole('button', { name: 'Dismiss welcome', exact: true });
   if (await welcome.isVisible()) await welcome.click();
-  const actions = page.getByRole('button', { name: 'Capsule Dock actions', exact: true });
+  const actions = page.getByRole('button', { name: 'Context details', exact: true });
   await expect(actions).toBeVisible();
   expect((await actions.boundingBox())?.height).toBeGreaterThanOrEqual(44);
   await actions.click();
-  await page.getByRole('menuitem', { name: 'Build context', exact: true }).click();
+  await page.getByRole('button', { name: 'Build context', exact: true }).click();
   const builder = page.getByTestId('ask-inline-context-builder');
   await expect(builder).toBeVisible();
   await builder.getByRole('button', { name: 'Create and attach', exact: true }).click();
@@ -54,7 +54,6 @@ test('mobile and desktop users can create and attach quick context, then reach t
   }
   await page.reload();
   await expect(page.getByTestId('capsule-dock')).toContainText(/Policy/, { timeout: 30_000 });
-  await page.getByTestId('context-toggle').click();
-  await page.getByTestId('advanced-edit-context').getByRole('link', { name: 'Build context', exact: true }).click();
+  await page.getByRole('link', { name: 'New capsule', exact: true }).click();
   await expect(page.getByLabel('What should this capsule do?')).toBeVisible();
 });

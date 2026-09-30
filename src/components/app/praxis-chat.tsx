@@ -15,7 +15,6 @@ import {
   ExternalLink,
   FileOutput,
   Loader2,
-  Plus,
   RotateCcw,
   SendHorizontal,
   ShieldCheck,
@@ -119,7 +118,7 @@ export function PraxisChat({
 }: PraxisChatProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const draftOwnerScope = mode === 'public' ? 'public' : `authenticated:${user?.id ?? 'pending'}`;
+  const draftOwnerScope = mode === 'public' ? 'public' : `authenticated:${user?.id ?? 'pending'}:${threadId ?? 'home'}`;
   const [draft, setDraft] = useState({ ownerScope: draftOwnerScope, text: initialPrompt });
   const input = scopedAskChatDraft(draft, draftOwnerScope);
   const setInput = useCallback((text: string) => setDraft({ ownerScope: draftOwnerScope, text }), [draftOwnerScope]);
@@ -145,16 +144,16 @@ export function PraxisChat({
   const isPublic = mode === 'public';
   const showExamples = variant === 'home' && messages.length === 0;
   const promptPlaceholder = isPublic
-    ? 'Ask the question. Sign in after this to keep going.'
-    : 'Ask PRAXIS about a policy question, source gap, saved context, or draft.';
+    ? 'What would you like to understand or write?'
+    : 'Ask a question, compare the evidence, or draft a brief…';
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
   useEffect(() => {
-    setDraft((previous) => ({ ...previous, text: initialPrompt }));
-  }, [initialPrompt]);
+    setDraft({ ownerScope: draftOwnerScope, text: initialPrompt });
+  }, [draftOwnerScope, initialPrompt]);
 
   useEffect(() => {
     if (!autoFocus) return;
@@ -382,7 +381,7 @@ export function PraxisChat({
             return;
           }
           updateAssistant({
-            content: payload?.error ?? `Ask PRAXIS could not start (${response.status}).`,
+            content: payload?.message ?? payload?.error ?? `Ask PRAXIS could not start (${response.status}).`,
           });
           setError(payload?.code === 'capsule_context_required' ? 'Add context or try a direct question again.' : null);
           return;
@@ -400,6 +399,7 @@ export function PraxisChat({
           for (const line of lines) consumeDataLine(line.trimEnd());
         }
         if (lineBuffer.trim()) consumeDataLine(lineBuffer.trimEnd());
+        if (!requestController.signal.aborted) window.dispatchEvent(new CustomEvent('praxis-conversation-updated'));
       } catch {
         restoreFailedPrompt();
         updateAssistant({ content: 'Network error. Please check the connection and try again.' });
@@ -458,7 +458,7 @@ export function PraxisChat({
   };
 
   const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key !== 'Enter' || event.shiftKey) return;
+    if (event.key !== 'Enter' || event.shiftKey || event.nativeEvent.isComposing) return;
     event.preventDefault();
     void sendWithText(input);
   };
@@ -520,25 +520,23 @@ export function PraxisChat({
       <div className={cn('flex min-h-0 flex-1 flex-col', compact ? 'h-full' : '')}>
         {variant === 'home' && showHomeHeading ? (
           <div className={cn('order-first mb-6 text-center', messages.length ? 'sr-only' : 'sm:pb-2')}>
-            <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
+            <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[var(--color-praxis-emerald-700)]">
               <Sparkles className="h-3.5 w-3.5" />
               Ask PRAXIS
             </p>
-            <h1 className="mt-4 text-balance font-serif text-4xl font-semibold leading-tight tracking-tight text-[color:var(--color-app-text)] sm:text-5xl">
-              {isPublic ? 'Policy analysis you can inspect.' : 'Write trusted knowledge products.'}
+            <h1 className="praxis-page-heading mt-3 text-balance">
+              {isPublic ? 'Policy analysis you can inspect.' : 'What are we working on?'}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-              {isPublic ? 'Ask a hard question. Bring your sources and methods. Review the evidence, assumptions and options.' : greeting ?? 'Capsules keep the context clear.'}
+              {isPublic ? 'Ask a hard question. Bring your sources and methods. Review the evidence, assumptions and options.' : greeting ?? 'Start with a question. Bring your context when it helps.'}
             </p>
           </div>
         ) : null}
 
-        {contextBar ? <div className="mb-3">{contextBar}</div> : null}
-
         <div className={cn(
           'min-h-0 flex-1 overflow-y-auto',
           variant === 'home' && messages.length === 0 ? 'hidden' : '',
-          variant === 'floating' ? 'px-3 py-3' : 'rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/80 p-3 shadow-[var(--shadow-card)]',
+          variant === 'floating' ? 'px-3 py-3' : 'praxis-conversation-surface px-1 py-4 sm:px-3',
         )}>
           {messages.length === 0 ? (
             <div>
@@ -593,7 +591,7 @@ export function PraxisChat({
                     if (isPublic) window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
                   }
                 }}
-                className="rounded-[var(--radius-md)] border border-[var(--color-app-border)] bg-white px-3 py-3 text-left text-sm transition hover:-translate-y-0.5 hover:border-emerald-500/50 hover:bg-[color:var(--color-archive-paper-strong)] hover:shadow-[0_4px_14px_rgba(16,185,129,0.12)]"
+                className="praxis-prompt-suggestion rounded-lg px-4 py-4 text-left text-sm transition"
               >
                 <span className="block font-semibold text-slate-950">{mission.title}</span>
                 <span className="mt-1 block text-xs leading-5 text-slate-600">{mission.outcome}</span>
@@ -603,7 +601,7 @@ export function PraxisChat({
         ) : null}
 
         <form onSubmit={submit} className={cn(
-          'mt-3 rounded-2xl border bg-white p-3 shadow-[0_8px_32px_rgba(15,23,42,0.06)] focus-within:border-emerald-600/50',
+          'praxis-chat-composer mt-3 p-3 sm:p-4',
           isPublic || showExamples ? 'order-first mb-4' : '',
           variant === 'floating' ? 'border-slate-700 bg-slate-950 shadow-none' : 'border-[var(--color-app-border)]',
         )}>
@@ -619,32 +617,17 @@ export function PraxisChat({
             onKeyDown={onKeyDown}
             rows={compact ? 2 : 4}
             className={cn(
-              'w-full resize-none rounded-[var(--radius-md)] border px-4 py-3 text-base leading-7 outline-none transition placeholder:text-slate-500 focus:border-emerald-500',
+              'w-full resize-none rounded-[var(--radius-md)] border px-3 py-3 text-base leading-7 outline-none transition placeholder:text-[var(--color-app-text-secondary)]',
               variant === 'floating'
                 ? 'border-slate-700 bg-slate-900 text-white'
-                : 'border-transparent bg-[color:var(--color-archive-paper-strong)] text-slate-950',
+                : 'border-transparent bg-transparent text-[var(--color-deep-ink)]',
             )}
             placeholder={promptPlaceholder}
           />
+          {contextBar ? <div className="mb-3 border-t border-[var(--color-app-border)] pt-3">{contextBar}</div> : null}
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              {onToggleContext ? (
-                <button
-                  type="button"
-                  data-testid="context-toggle"
-                  aria-expanded={contextOpen}
-                  onClick={onToggleContext}
-                  className={cn(
-                    'inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border px-3 text-xs font-semibold',
-                    contextOpen
-                      ? 'border-emerald-500/45 bg-emerald-500/10 text-emerald-800'
-                      : 'border-[var(--color-app-border)] bg-white text-slate-700 hover:bg-slate-50',
-                  )}
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  {contextLabel.replace(/^\+\s*/, '')}
-                </button>
-              ) : null}
+              {!contextBar && onToggleContext ? <button type="button" data-testid="context-toggle" aria-expanded={contextOpen} onClick={onToggleContext} className="praxis-header-control px-3 text-xs">{contextLabel.replace(/^\+\s*/, '')}</button> : null}
               {!isPublic && !demoMode && (messages.length > 0 || input.trim()) ? (
                 <ConversationCapsuleButton messages={messages} notes={input} threadId={conversationThreadId} capsuleId={activeCapsuleId} disabled={isStreaming || !cacheReady} onError={setError} />
               ) : null}
@@ -652,16 +635,17 @@ export function PraxisChat({
                 <button
                   type="button"
                   onClick={clearChat}
-                  className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-app-border)] bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  disabled={isStreaming}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-app-border)] bg-white px-3 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                  title="Clear this view. Saved conversations remain in the sidebar."
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
-                  Clear
+                  Clear view
                 </button>
               ) : null}
               {error ? <span className="text-xs font-medium text-amber-700">{error}</span> : null}
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              {!isPublic ? <JevReviewControl /> : null}
               {isPublic ? (
                 <Link
                   href="/login"
@@ -671,6 +655,10 @@ export function PraxisChat({
                   Sign in
                 </Link>
               ) : null}
+              <details className="relative">
+                <summary className="praxis-header-control cursor-pointer px-3 text-xs font-semibold">{deepResearch ? 'Options · Research on' : 'Options'}</summary>
+                <div className="absolute bottom-full right-0 z-30 mb-2 grid w-[min(18rem,calc(100vw-2rem))] gap-3 rounded-xl border border-[var(--color-app-border)] bg-white p-3 shadow-[var(--shadow-float)]">
+                  {!isPublic ? <JevReviewControl /> : null}
               <button
                 type="button"
                 data-testid="praxis-chat-deep-research-toggle"
@@ -687,6 +675,9 @@ export function PraxisChat({
                 <Sparkles className="h-4 w-4" />
                 Deep research
               </button>
+                  <p className="text-xs leading-5 text-[var(--color-app-text-secondary)]">Deep research runs a multi-step, sourced task. Review its results and receipts before use.</p>
+                </div>
+              </details>
               <button
                 type="submit"
                 data-testid="marketing-primary-cta"
@@ -694,7 +685,7 @@ export function PraxisChat({
                 className={cn(
                   'inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] px-4 text-sm font-semibold transition',
                   input.trim() && !isStreaming
-                    ? 'bg-emerald-700 text-white shadow-[0_4px_14px_rgba(16,185,129,0.25)] hover:bg-emerald-600'
+                    ? 'bg-[var(--color-praxis-emerald-700)] text-white hover:bg-[var(--color-praxis-emerald-800)]'
                     : 'bg-slate-200 text-slate-500',
                 )}
               >
@@ -704,6 +695,7 @@ export function PraxisChat({
             </div>
           </div>
           {isPublic ? <p className="px-2 pb-1 pt-3 text-xs leading-5 text-slate-500">Sign in to run your question and save the work. AI-generated analysis needs your review.</p> : null}
+          {!isPublic ? <p className="px-1 pb-1 pt-3 text-xs leading-5 text-[var(--color-app-text-secondary)]">PRAXIS is experimental. Check sources and claims before sharing. <span className="hidden sm:inline">Shift + Enter for a new line.</span></p> : null}
         </form>
       </div>
     </section>

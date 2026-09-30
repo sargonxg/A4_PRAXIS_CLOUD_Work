@@ -65,7 +65,7 @@ export async function authenticateFirebaseCanary(
   if (!isOnboardingUrl(page)) {
     await expectSignedInAppShell(page);
     if (options.expectComposer !== false) {
-      await expect(page.getByLabel(/Describe a task or responsibility/i)).toBeVisible({ timeout: 30_000 });
+      await expect(page.getByTestId('marketing-hero-prompt')).toBeVisible({ timeout: 30_000 });
     }
   }
 }

@@ -64,15 +64,34 @@ requireIncludes('src/lib/agent-runtime/workflow-plan.ts', [
 ]);
 
 requireIncludes('src/components/praxis/tasklet-praxis-workbench.tsx', [
-  'capsule-v3-human-gated-context',
-  'A Wikipedia for agents',
-  'Human tacit knowledge',
-  'Agent operating contract',
-  'Memory posture',
-  'Marketplace readiness',
-  'Review-card-only agents',
-  'agentsMayMutateCanonical',
-  'reviewCardOnlyAgentIds',
+  '<CapsuleInspectionExperience capsule={capsule}',
+]);
+
+requireIncludes('src/components/capsules/CapsuleInspectionExperience.tsx', [
+  'currentCapsule.agentOperatingContract', 'currentCapsule.agentPermissions',
+  'currentCapsule.governance', 'currentCapsule.memoryPosture',
+  'currentCapsule.ontologyBinding', 'currentCapsule.outputContracts',
+  'capsuleId={owned && authenticated ? model.capsuleId : undefined}',
+  'reviewEnabled={owned && authenticated}',
+  'onReviewed={setReviewed}',
+]);
+
+requireIncludes('src/components/capsules/workbench/CapsuleAdvancedDrawer.tsx', [
+  '<CapsuleTacitKnowledgeSection tacitKnowledge={model.tacitKnowledge}',
+  '<CapsuleAgentWorkflowSection agents={model.agents}',
+  '<CapsuleQualitySection', '<CapsuleOutputsSection outputs={model.outputs}',
+  'capsuleId={input.reviewEnabled ? model.capsuleId : undefined}',
+]);
+
+requireIncludes('src/lib/context/capsule-workbench-view-model.ts', [
+  'memoryPosture.canonical', 'memoryPosture.advisory',
+  'Advisory memory is not canonical until a review card is applied.',
+  "reviewState: 'advisory'", 'allowedActions',
+]);
+
+requireIncludes('src/components/capsules/workbench/CapsuleReviewQueueSection.tsx', [
+  'snapshot?.capsule', 'reason.trim()',
+  'current.reviewCards', 'onReviewed?.',
 ]);
 
 requireIncludes('src/app/(landing)/learn/page.tsx', [

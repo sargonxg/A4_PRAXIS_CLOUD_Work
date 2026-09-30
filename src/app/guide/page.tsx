@@ -27,11 +27,11 @@ export const metadata: Metadata = {
 const steps = [
   {
     title: 'Start with a policy question',
-    body: 'Create an account or sign in, then open Home. Type the decision or question in Ask PRAXIS and send it. You can start without a capsule. Your signed-in conversations are saved so you can return to them.',
+    body: 'Create an account or sign in, then open Chat. Type your question in Ask PRAXIS and send it. You can start without a capsule. Your signed-in conversations are saved so you can return to them.',
   },
   {
     title: 'Add sources or saved context',
-    body: 'Open Capsules to choose saved context or a starter method, then attach it to your question. Check the attached name, version and material beside the composer. Say whether to use only that material or collect outside sources.',
+    body: 'Choose Attach context beside the composer, or open Capsules to find saved context and starter methods. Use in chat attaches your selection. Check its name and saved version; Context details holds the optional roles and settings. Say whether to use only that material or collect outside sources.',
   },
   {
     title: 'Check the evidence',
@@ -39,11 +39,11 @@ const steps = [
   },
   {
     title: 'Create context worth reusing',
-    body: 'Build context separately in Capsules. Describe its purpose and audience, add notes or TXT, text-based PDF and Word files, then inspect the proposed claims. Apply or reject them with a reason. Confirm the private save before attaching the saved context to Ask.',
+    body: 'Choose New capsule and follow Purpose → Material → Review and save. Add notes or TXT, text-based PDF and Word files, then inspect the proposed claims. Apply or reject them with a reason. Save and use in chat attaches the saved version. Inspect any capsule through Overview, Evidence, Timeline and Review; technical details expand when needed.',
   },
   {
     title: 'Save the output',
-    body: 'Open a useful answer in the editor, correct its primary text, save and reopen it. Feedback that has not been applied has not changed the draft. Whole-draft review belongs to the exact saved version; editing makes earlier approval outdated. A downloaded draft is not publication approval.',
+    body: 'Open a useful answer in the editor, correct its text, save and reopen it. Unapplied feedback has not changed the draft. Human review belongs to the exact saved version; editing makes earlier approval outdated. Preview a handover package before creating its temporary download. It includes the saved work and context references; recipients may still need access to original sources.',
   },
 ];
 

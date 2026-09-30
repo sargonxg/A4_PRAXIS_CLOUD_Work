@@ -1,5 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { CapsuleMethodInspection } from '../src/components/capsules/CapsuleMethodInspection';
 
 const root = process.cwd();
 const failures: string[] = [];
@@ -129,20 +132,60 @@ for (const token of [
 }
 
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
-for (const token of [
-  'Workflow',
-  'Reasoning scaffold',
-  'Cognee memory benefit',
-  'Ontology/graph seed',
-  'Generation contract',
-  'Human review gates',
-  'Why this improves answers',
-  'usedCapsuleIntelligenceProfile',
-  'usedCogneeAdvisoryMemory',
-]) {
-  if (!workbench.includes(token)) failures.push(`capsule inspector/Ask receipt missing ${token}`);
+for (const token of ['<CapsuleInspectionExperience capsule={capsule}', 'usedCapsuleIntelligenceProfile', 'usedCogneeAdvisoryMemory']) {
+  if (!workbench.includes(token)) failures.push(`capsule inspection/Ask receipt wiring missing ${token}`);
 }
 if (workbench.includes('/app/ontology')) failures.push('capsule intelligence work must not add /app/ontology as a top-level surface');
+
+// The inspector now composes shared views. Verify data and permission wiring,
+// rather than requiring obsolete marketing headings in the large workbench.
+for (const [path, tokens] of [
+  ['src/components/capsules/CapsuleInspectionExperience.tsx', [
+    '<CapsuleMethodInspection snapshot={currentCapsule.starterSnapshot}',
+    '<CapsuleReviewQueueSection reviewQueue={model.reviewQueue}',
+    'capsuleId={owned && authenticated ? model.capsuleId : undefined}',
+    'currentCapsule.agentOperatingContract', 'currentCapsule.memoryPosture',
+    'currentCapsule.ontologyBinding', 'currentCapsule.outputContracts',
+    '<CapsuleAdvancedDrawer model={model}',
+  ]],
+  ['src/components/capsules/workbench/CapsuleAdvancedDrawer.tsx', [
+    '<CapsuleResearchSection research={model.research}',
+    '<CapsuleTacitKnowledgeSection tacitKnowledge={model.tacitKnowledge}',
+  ]],
+  ['src/components/capsules/workbench/CapsuleTacitKnowledgeSection.tsx', [
+    'state="canonical"', 'state="advisory"', 'tacitKnowledge.advisoryCount',
+  ]],
+  ['src/lib/ai/context-kernel.ts', [
+    'usedMemoryItemIds', 'ignoredMemoryItemIds', 'advisoryOnly: true',
+    "promotionRequired: 'review-card'", 'usedCapsuleIntelligenceProfile',
+  ]],
+] as const) {
+  const source = read(path);
+  for (const token of tokens) if (!source.includes(token)) failures.push(`${path} missing capsule contract wiring: ${token}`);
+}
+
+for (const token of ['buildCapsuleStarterPromptBlock(capsule.capsuleId, capsule.starterSnapshot)',
+  '[llm_generation_contract]', '[advisory_memory_non_canonical]',
+  'NOT canonical until a review card is applied', 'runtime returned a receipt for that mutation']) {
+  if (!contextInjection.includes(token)) failures.push(`capsule generation/memory boundary missing ${token}`);
+}
+
+const savedMethod = {
+  deviceProfile: {
+    reasoningOperation: 'saved-owned-method-v2', inputContract: ['saved-input-contract'],
+    methodSteps: ['saved-method-step'], disconfirmingChecks: ['saved-disconfirming-check'],
+    sourceabilityRequirements: ['saved-source-requirement'], humanReviewGate: 'saved-human-review-gate',
+  },
+  inspectionSections: [{ label: 'Method graph and ontology', detail: 'saved-graph-ontology-template' }],
+};
+const methodHtml = renderToStaticMarkup(createElement(CapsuleMethodInspection, { snapshot: savedMethod }));
+for (const content of ['saved-owned-method-v2', 'saved-input-contract', 'saved-method-step', 'saved-disconfirming-check',
+  'saved-source-requirement', 'saved-human-review-gate', 'saved-graph-ontology-template', 'not evidence or a guarantee of correctness']) {
+  if (!methodHtml.includes(content)) failures.push(`shared method inspection does not render its saved contract: ${content}`);
+}
+if (renderToStaticMarkup(createElement(CapsuleMethodInspection, { snapshot: null })) !== '') {
+  failures.push('shared method inspection must not invent a method for an absent snapshot');
+}
 
 const readReceipt = read('src/lib/agent-runtime/capsule-read-receipt.ts');
 for (const token of ['AgentReadContract', 'buildAgentReadContractFromReceipt', 'advisoryLabels', 'humanGates', 'stopConditions', 'outputRestrictions']) {

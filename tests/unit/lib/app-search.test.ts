@@ -47,7 +47,7 @@ describe('app search service', () => {
       id: 'cap-1',
       type: 'capsule',
       label: 'Crisis brief',
-      href: '/app/capsules?capsuleId=cap-1',
+      href: '/app/capsules?lane=inspect&starter=cap-1',
       sourcePosture: '2 sources',
     });
     expect(AppSearchResultSchema.safeParse(result.groups.capsules[0]).success).toBe(true);

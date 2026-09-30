@@ -4,6 +4,7 @@ import { Bot, GitBranch, History, Link2, UserRound } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils/cn';
 import { formatConfidence } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+import type { CapsuleClaimReceiptDisplay } from '@/lib/context/capsule-workbench-view-model';
 
 export type CapsuleGraphWhyPanelConfidenceKind = 'EXTRACTED' | 'INFERRED' | 'AMBIGUOUS' | 'ASSESSED';
 
@@ -31,6 +32,14 @@ export type CapsuleGraphWhyPanelSelection = {
   sourceLabel?: string;
   targetLabel?: string;
   judgeRationale?: string;
+  detail?: string;
+  provenance?: string;
+  sourceReceiptIds?: string[];
+  version?: number | null;
+  validFrom?: string;
+  validUntil?: string;
+  asOf?: string;
+  recordedAt?: string;
 };
 
 export type CapsuleGraphWhyPanelContradiction = {
@@ -45,17 +54,19 @@ export function CapsuleGraphWhyPanel({
   contradictions,
   onOpenClaim,
   onSelectElement,
+  receipts = [],
 }: {
   selection: CapsuleGraphWhyPanelSelection | null;
   contradictions: CapsuleGraphWhyPanelContradiction[];
   onOpenClaim?: (claimId: string) => void;
   onSelectElement?: (elementId: string) => void;
+  receipts?: CapsuleClaimReceiptDisplay[];
 }) {
   if (!selection) {
     return (
       <div className="border-t border-slate-100 bg-slate-50 p-3 lg:border-l lg:border-t-0" data-testid="capsule-graph-why-panel">
         <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Graph detail</p>
-        <p className="mt-2 text-xs text-slate-500">Click a node or edge to inspect why it exists.</p>
+        <p className="mt-2 text-sm text-slate-600">Select an item in the map or evidence list to inspect its source and rationale.</p>
       </div>
     );
   }
@@ -63,7 +74,7 @@ export function CapsuleGraphWhyPanel({
   const generatedBy = selection.generatedBy;
 
   return (
-    <div className="border-t border-slate-100 bg-slate-50 p-3 lg:border-l lg:border-t-0" data-testid="capsule-graph-why-panel">
+    <div className="min-w-0 border-t border-slate-100 bg-slate-50 p-4 lg:border-l lg:border-t-0" data-testid="capsule-graph-why-panel" aria-live="polite">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">Graph detail</p>
@@ -83,11 +94,24 @@ export function CapsuleGraphWhyPanel({
         <Chip label={selection.acoType} className="border-emerald-200 bg-emerald-50 text-emerald-800" />
         <Chip label={selection.confidenceKind ?? 'confidence kind not set'} className={confidenceKindClass(selection.confidenceKind)} />
         <Chip label={formatConfidence(selection.confidence)} className="border-slate-200 bg-white text-slate-600" />
+        <Chip label={`Review: ${selection.reviewState}`} className="border-slate-200 bg-white text-slate-700" />
       </div>
+      <p className="mt-2 text-xs leading-5 text-slate-600">Recorded confidence describes this annotation; it does not establish factual accuracy.</p>
+      {selection.detail ? <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-slate-800">{selection.detail}</p> : null}
+
+      <PanelBlock title="Source evidence">
+        {receipts.length ? receipts.map((receipt, index) => <article key={`${receipt.sourceId}-${index}`} className="mt-3 border-l-2 border-[color:var(--color-praxis-emerald-500)] pl-3">
+          <p className="text-sm font-semibold text-slate-900">{receipt.publisher || receipt.sourceId}</p>
+          <blockquote className="mt-2 whitespace-pre-wrap break-words text-sm leading-6 text-slate-700" data-selection-zone="source-pack">{receipt.snippet || 'No source excerpt captured.'}</blockquote>
+          <p className="mt-2 text-xs leading-5 text-slate-600">{receipt.page != null ? `Page ${receipt.page}` : receipt.charOffset != null ? `Character offset ${receipt.charOffset}` : 'Location not recorded'} · {receipt.date || 'Date not recorded'}</p>
+          {receipt.url && /^https?:\/\//i.test(receipt.url) ? <a href={receipt.url} target="_blank" rel="noreferrer" className="mt-1 inline-flex min-h-11 max-w-full items-center break-all text-xs font-semibold text-[color:var(--color-praxis-emerald-700)] underline">Open original source</a> : <p className="mt-1 break-all font-mono text-xs text-slate-600">{receipt.sourceId}</p>}
+        </article>) : <p className="text-sm leading-6 text-slate-600">No source excerpt is recorded for this selection. {selection.sourceReceiptIds?.length ? 'Source references are listed below; review their originals before relying on the relationship.' : 'A displayed relationship alone is not evidence.'}</p>}
+        {selection.sourceReceiptIds?.length ? <p className="mt-2 break-all font-mono text-xs leading-5 text-slate-600">Source refs: {selection.sourceReceiptIds.join(', ')}</p> : null}
+      </PanelBlock>
 
       <PanelBlock title="Why this exists">
         <p className="text-xs leading-5 text-slate-700">
-          {selection.rationale || 'No recorded rationale (extracted directly from source)'}
+          {selection.rationale || 'No rationale recorded'}
         </p>
         {selection.judgeRationale ? (
           <p className="mt-2 rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-xs leading-5 text-amber-900">
@@ -100,7 +124,7 @@ export function CapsuleGraphWhyPanel({
               key={claimId}
               type="button"
               onClick={() => onOpenClaim?.(claimId)}
-              className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-[10px] font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800"
+              className="inline-flex min-h-11 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 font-mono text-xs font-semibold text-slate-700 hover:border-emerald-300 hover:text-emerald-800"
             >
               <Link2 className="h-3 w-3" />
               {claimId}
@@ -111,7 +135,10 @@ export function CapsuleGraphWhyPanel({
         </div>
       </PanelBlock>
 
+      <details className="mt-3 rounded-md border border-slate-200 bg-white p-3">
+      <summary className="min-h-11 cursor-pointer text-sm font-semibold text-slate-800">Provenance and history</summary>
       <PanelBlock title="Provenance">
+        <p className="mb-2 break-words text-xs leading-5 text-slate-600">{selection.provenance || 'Provenance not recorded'}{selection.version != null ? ` · version ${selection.version}` : ''}</p>
         {generatedBy ? (
           <div className="grid gap-1.5 text-xs leading-5 text-slate-600">
             <p className="flex items-center gap-1.5">
@@ -128,6 +155,8 @@ export function CapsuleGraphWhyPanel({
       </PanelBlock>
 
       <PanelBlock title="History">
+        <p className="mb-2 text-xs leading-5 text-slate-600">As of: {selection.asOf || 'not recorded'} · Recorded: {selection.recordedAt || 'not recorded'}</p>
+        {selection.validFrom || selection.validUntil ? <p className="mb-2 text-xs leading-5 text-slate-600">Validity: {selection.validFrom || 'open start'} → {selection.validUntil || 'open end'}</p> : null}
         {selection.invalidationReason || selection.invalidatedAt || selection.supersededBy ? (
           <div className="space-y-2 text-xs leading-5 text-slate-600">
             <p><span className="font-semibold text-slate-500">Reason:</span> {selection.invalidationReason ?? 'Invalidation reason not recorded.'}</p>
@@ -147,8 +176,9 @@ export function CapsuleGraphWhyPanel({
           <p className="text-xs leading-5 text-slate-500">No invalidation or supersession history recorded.</p>
         )}
       </PanelBlock>
+      </details>
 
-      <PanelBlock title="CONTRADICTS">
+      {contradictions.length ? <PanelBlock title="CONTRADICTS">
         {contradictions.length ? (
           <ul className="space-y-1.5">
             {contradictions.map((item) => (
@@ -167,7 +197,7 @@ export function CapsuleGraphWhyPanel({
         ) : (
           <p className="text-xs leading-5 text-slate-500">No CONTRADICTS edges recorded for this selection.</p>
         )}
-      </PanelBlock>
+      </PanelBlock> : null}
     </div>
   );
 }

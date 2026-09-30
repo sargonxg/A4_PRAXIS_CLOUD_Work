@@ -7,7 +7,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { useAuth } from '@/lib/auth/auth-context';
 import { CapsuleLibraryCard } from '@/components/capsules/CapsuleLibraryCard';
-import { CapsuleSpotlights } from '@/components/capsules/CapsuleSpotlights';
 import {
   CAPSULE_LIBRARY_CATEGORIES,
   CAPSULE_LIBRARY_ENTRIES,
@@ -20,11 +19,12 @@ import {
   type CapsuleLibraryEntry,
 } from '@/lib/capsules/library';
 import { activeContextPatchForLibraryEntry, tryLibraryCapsule } from '@/lib/capsules/library-try';
-import { CAPSULE_DOCK_SLOT_LABELS, type CapsuleDockSlotKind } from '@/lib/context/active-context-stack';
+import { type CapsuleDockSlotKind } from '@/lib/context/active-context-stack';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { cn } from '@/lib/utils/cn';
 
 interface CapsuleLibraryProps {
+  standalone?: boolean;
   entries?: CapsuleLibraryEntry[];
   initialCategory?: CapsuleLibraryCategory | 'all';
   busyCapsuleId?: string | null;
@@ -155,13 +155,14 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
       attachedCapsuleIds={[...(stack.capsuleId ? [stack.capsuleId] : []), ...stack.capsuleRefs.map((ref) => ref.capsuleId)]}
       onPreviewCapsule={(entry) => router.push(`/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`)}
     />
-    {inventoryCurrent && inventory.nextCursor ? <button type="button" data-testid="load-more-saved-capsules" disabled={loading} className="mt-4 min-h-10 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 disabled:opacity-50" onClick={() => { setInventory((current) => ({ ...current, loading: true, error: false })); if (requestedCursor === inventory.nextCursor) setReload((value) => value + 1); else setPageRequest({ ownerId, cursor: inventory.nextCursor }); }}>{loading ? 'Loading more…' : 'Load more saved capsules'}</button> : null}
+    {inventoryCurrent && inventory.nextCursor ? <button type="button" data-testid="load-more-saved-capsules" disabled={loading} className="mt-4 min-h-11 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 disabled:opacity-50" onClick={() => { setInventory((current) => ({ ...current, loading: true, error: false })); if (requestedCursor === inventory.nextCursor) setReload((value) => value + 1); else setPageRequest({ ownerId, cursor: inventory.nextCursor }); }}>{loading ? 'Loading more…' : 'Load more saved capsules'}</button> : null}
     {inventoryCurrent ? <p className="mt-2 text-xs text-slate-500">{inventory.capsules.length} saved capsule{inventory.capsules.length === 1 ? '' : 's'} loaded{inventory.nextCursor ? '. Load more to include older work in search and filters.' : '.'}</p> : null}
     </>
   );
 }
 
 export function CapsuleLibrary({
+  standalone = false,
   entries = CAPSULE_LIBRARY_ENTRIES,
   initialCategory = 'all',
   busyCapsuleId = null,
@@ -180,7 +181,7 @@ export function CapsuleLibrary({
   const [typeFacet, setTypeFacet] = useState(initialTypeFacet ?? 'all');
   const [domainFacet, setDomainFacet] = useState(initialDomainFacet ?? 'all');
   const [teamFacet, setTeamFacet] = useState(initialTeamFacet ?? 'all');
-  const [originFacet, setOriginFacet] = useState<'all' | 'user' | 'starter' | 'archived'>('all');
+  const [originFacet, setOriginFacet] = useState<'all' | 'user' | 'starter' | 'archived'>(standalone ? 'user' : 'all');
   const [reviewFacet, setReviewFacet] = useState('all');
   const [sortOrder, setSortOrder] = useState('recent');
   const [visibleWindow, setVisibleWindow] = useState({ filterKey: '', count: 24 });
@@ -211,6 +212,8 @@ export function CapsuleLibrary({
       .filter((item) => item.entries.length > 0),
     [filtered, visibleCount],
   );
+  const Heading = standalone ? 'h1' : 'h2';
+  const GroupHeading = standalone ? 'h2' : 'h3';
   const hasActiveFilters = category !== 'all' || searchInput || searchQuery || typeFacet !== 'all' || domainFacet !== 'all' || teamFacet !== 'all' || originFacet !== 'all' || reviewFacet !== 'all';
 
   function resetFilters() {
@@ -228,8 +231,7 @@ export function CapsuleLibrary({
     <section className="rounded-[var(--radius-lg)] border border-slate-200 bg-white p-4 shadow-[var(--shadow-card)]" data-testid="capsule-library">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-emerald-700">Capsule Repository</p>
-          <h2 className="mt-1 text-xl font-semibold text-slate-950">Context Capsules library</h2>
+          <Heading className={cn('font-serif font-semibold text-[var(--color-deep-ink)]', standalone ? 'praxis-page-heading text-3xl' : 'text-2xl')}>Your context library</Heading>
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
             Reuse your sources, assumptions and analytical approach. Preview saved context or adapt a starter, then attach it to your question.
           </p>
@@ -242,8 +244,8 @@ export function CapsuleLibrary({
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        <Link href="/app/capsules/builder" className="inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white">Build from your material</Link>
-        <Link href="/app" className="inline-flex min-h-10 items-center rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700">Ask PRAXIS</Link>
+        <Link href="/app/capsules/builder" className="inline-flex min-h-11 items-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white">Create capsule</Link>
+        <Link href="/app" className="inline-flex min-h-11 items-center rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700">Ask PRAXIS</Link>
       </div>
       <div className="mt-4 flex flex-wrap gap-2" aria-label="Capsule ownership">
         <CategoryChip active={originFacet === 'all'} label="All available" onClick={() => setOriginFacet('all')} />
@@ -251,9 +253,16 @@ export function CapsuleLibrary({
         <CategoryChip active={originFacet === 'starter'} label="Starter templates" onClick={() => setOriginFacet('starter')} />
         <CategoryChip active={originFacet === 'archived'} label="Archived" onClick={() => setOriginFacet('archived')} />
       </div>
-      {!hasActiveFilters && !entries.some((entry) => entry.origin === 'user') ? <CapsuleSpotlights entries={entries} busyCapsuleId={busyCapsuleId} onAttach={onTryCapsule} /> : null}
-      <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center">
-        <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Capsule categories">
+      <div className="mt-4">
+        <label className="relative block max-w-2xl">
+          <span className="sr-only">Search capsules</span>
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <input type="search" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search your context" className="min-h-11 w-full rounded-lg border border-[var(--color-mineral)] bg-white pl-9 pr-3 text-base text-[var(--color-deep-ink)] focus-visible:outline-2 focus-visible:outline-[var(--color-praxis-emerald-600)]" />
+        </label>
+      </div>
+      <details className="mt-3">
+        <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold text-[var(--color-graphite)] underline underline-offset-4">Filters and sorting{hasActiveFilters ? ' · filters active' : ''}</summary>
+        <div className="mt-2 flex flex-wrap gap-2" aria-label="Capsule categories">
           <CategoryChip active={category === 'all'} label="All" onClick={() => setCategory('all')} />
           {CAPSULE_LIBRARY_CATEGORIES.map((item) => (
             <CategoryChip
@@ -264,18 +273,6 @@ export function CapsuleLibrary({
             />
           ))}
         </div>
-        <label className="relative block">
-          <span className="sr-only">Search capsules</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input
-            type="search"
-            value={searchInput}
-            onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="Search capsules"
-            className="min-h-10 w-full rounded-[var(--radius-md)] border border-slate-200 bg-white pl-9 pr-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500"
-          />
-        </label>
-      </div>
 
       <div className="mt-3 grid gap-2 md:grid-cols-3" aria-label="Capsule taxonomy filters">
         <FacetSelect
@@ -301,30 +298,32 @@ export function CapsuleLibrary({
         />
       </div>
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="grid gap-1 text-xs font-semibold text-slate-600">Review state<select aria-label="Filter by review state" value={reviewFacet} onChange={(event) => setReviewFacet(event.target.value)} className="min-h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="all">All review states</option><option value="draft">Draft</option><option value="needs-review">Needs review</option><option value="decisions-saved">Review decisions saved</option><option value="starter">Starter template</option></select></label>
-        <label className="grid gap-1 text-xs font-semibold text-slate-600">Sort<select aria-label="Sort capsules" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} className="min-h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="recent">Your recent work first</option><option value="title">Title</option><option value="structure">Structural completeness</option></select></label>
+        <label className="grid gap-1 text-xs font-semibold text-slate-600">Review state<select aria-label="Filter by review state" value={reviewFacet} onChange={(event) => setReviewFacet(event.target.value)} className="min-h-11 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="all">All review states</option><option value="draft">Draft</option><option value="needs-review">Needs review</option><option value="decisions-saved">Review decisions saved</option><option value="starter">Starter template</option></select></label>
+        <label className="grid gap-1 text-xs font-semibold text-slate-600">Sort<select aria-label="Sort capsules" value={sortOrder} onChange={(event) => setSortOrder(event.target.value)} className="min-h-11 rounded-md border border-slate-200 bg-white px-3 text-sm"><option value="recent">Your recent work first</option><option value="title">Title</option><option value="structure">Structural completeness</option></select></label>
         <p role="status" className="pb-2 text-xs text-slate-500">{filtered.length} match{filtered.length === 1 ? '' : 'es'} in loaded capsules</p>
       </div>
-      <p className="mt-3 text-xs leading-5 text-slate-500">Structure measures completeness, not factual accuracy. Review decisions apply to specific proposals. Starter templates still need your current sources and review.</p>
+      </details>
+      <p className="mt-3 text-xs leading-5 text-[var(--color-graphite)]">Saved context still needs review. Starter templates need your sources; structure scores do not measure factual accuracy.</p>
 
       {categoryGroups.length ? (
         <div className="mt-4 grid gap-5">
           {categoryGroups.map((group) => (
             <section key={group.id} aria-label={`${group.label} capsules`}>
               <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-2">
-                <h3 className="text-sm font-semibold text-slate-900">{group.label}</h3>
+                <GroupHeading className="text-sm font-semibold text-slate-900">{group.label}</GroupHeading>
                 <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{group.entries.length} shown</span>
               </div>
               <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                 {group.entries.map((entry) => {
                   const proposedSlot = proposeDockSlotForCapsule(entry);
-                  const slotLabel = proposedSlot === 'tool' ? 'Tool' : CAPSULE_DOCK_SLOT_LABELS[proposedSlot];
                   return (
                     <CapsuleLibraryCard
                       key={entry.id}
                       variant="full"
+                      simplified
                       capsuleId={entry.id}
                       title={entry.title}
+                      openLabel="Inspect capsule"
                       onSelect={onPreviewCapsule ? () => onPreviewCapsule(entry) : undefined}
                       summary={entry.valueProp}
                       subtitle={`${entry.origin === 'user' ? 'Your capsule' : 'Starter library'} / ${entry.category.replace('-', ' ')}`}
@@ -351,23 +350,23 @@ export function CapsuleLibrary({
                       }))}
                       busy={busyCapsuleId === entry.id}
                       addAction={{
-                        label: busyCapsuleId === entry.id ? 'Attaching…' : `Add to ${slotLabel === 'Tool' ? 'methods' : slotLabel === 'Output' ? 'output preferences' : 'context'}`,
+                        label: busyCapsuleId === entry.id ? 'Attaching…' : attachedCapsuleIds.includes(entry.id) ? 'Open in chat' : 'Use in chat',
                         onAdd: () => onTryCapsule?.(entry, proposedSlot),
                         disabled: entry.reviewState === 'archived' || !onTryCapsule || Boolean(busyCapsuleId),
                       }}
                       footerActions={<>
                         <Link
                           href={`/app/capsules?starter=${encodeURIComponent(entry.id)}&lane=inspect`}
-                          className="inline-flex min-h-9 items-center gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                          className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                         >
                           <Eye className="h-4 w-4" />
                           Inspect
                         </Link>
-                        {entry.origin === 'user' && onManageCapsule ? <>
-                          <button type="button" disabled={Boolean(busyCapsuleId)} onClick={() => onManageCapsule(entry, 'fork')} className="inline-flex min-h-9 items-center gap-1 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"><Copy className="h-3.5 w-3.5" />Private copy</button>
-                          {entry.reviewState !== 'archived' ? <button type="button" disabled={Boolean(busyCapsuleId) || attachedCapsuleIds.includes(entry.id)} title={attachedCapsuleIds.includes(entry.id) ? 'Detach this capsule in Home before archiving.' : 'Archive; sources and review history are retained.'} onClick={() => setArchiveCandidate(entry.id)} className="inline-flex min-h-9 items-center gap-1 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button> : null}
+                        {entry.origin === 'user' && onManageCapsule ? <details className="relative"><summary className="inline-flex min-h-11 cursor-pointer items-center px-2 text-sm font-medium underline">More</summary><div className="flex flex-wrap gap-2 pb-2">
+                          <button type="button" disabled={Boolean(busyCapsuleId)} onClick={() => onManageCapsule(entry, 'fork')} className="inline-flex min-h-11 items-center gap-1 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"><Copy className="h-3.5 w-3.5" />Private copy</button>
+                          {entry.reviewState !== 'archived' ? <button type="button" disabled={Boolean(busyCapsuleId) || attachedCapsuleIds.includes(entry.id)} title={attachedCapsuleIds.includes(entry.id) ? 'Detach this capsule in Home before archiving.' : 'Archive; sources and review history are retained.'} onClick={() => setArchiveCandidate(entry.id)} className="inline-flex min-h-11 items-center gap-1 rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700 disabled:opacity-50"><Archive className="h-3.5 w-3.5" />Archive</button> : null}
                           {archiveCandidate === entry.id ? <span className="w-full rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">Archive this capsule? Its sources and review history remain available.<span className="mt-2 flex gap-3"><button type="button" onClick={() => { onManageCapsule(entry, 'archive'); setArchiveCandidate(null); }} className="min-h-9 font-semibold underline">Confirm archive</button><button type="button" onClick={() => setArchiveCandidate(null)} className="min-h-9 underline">Keep capsule</button></span></span> : null}
-                        </> : null}
+                        </div></details> : null}
                       </>}
                     />
                   );
@@ -393,7 +392,7 @@ export function CapsuleLibrary({
           ) : null}
         </div>
       )}
-      {filtered.length > visibleCount ? <button type="button" onClick={() => setVisibleWindow({ filterKey, count: visibleCount + 24 })} className="mt-4 min-h-10 rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700">Show more results ({filtered.length - visibleCount} remaining)</button> : null}
+      {filtered.length > visibleCount ? <button type="button" onClick={() => setVisibleWindow({ filterKey, count: visibleCount + 24 })} className="mt-4 min-h-11 rounded-md border border-slate-200 px-4 text-sm font-semibold text-slate-700">Show more results ({filtered.length - visibleCount} remaining)</button> : null}
     </section>
   );
 }
@@ -418,7 +417,7 @@ function FacetSelect({
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="min-h-10 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-500"
+        className="min-h-11 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none transition focus:border-emerald-500"
       >
         <option value="all">{allLabel}</option>
         {options.map((option) => (
@@ -438,7 +437,7 @@ function CategoryChip({ active, label, onClick }: { active: boolean; label: stri
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'whitespace-nowrap rounded-[var(--radius-full)] border px-3 py-1.5 text-xs font-semibold transition',
+        'min-h-11 whitespace-nowrap rounded-lg border px-3 py-2 text-xs font-semibold transition',
         active ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
       )}
     >

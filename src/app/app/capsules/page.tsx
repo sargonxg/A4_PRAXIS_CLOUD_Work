@@ -1,5 +1,4 @@
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const CapsuleLibraryWithTry = dynamic(
@@ -21,34 +20,32 @@ export default async function CapsulesPage({ searchParams }: CapsulesPageProps) 
   const initialFactoryLane = lane === 'repository' || lane === 'sources' ? 'sources' : undefined;
   const initialPanel = panel === 'ask' || tab === 'work' ? 'ask' : 'capsules';
 
+  if (lane === 'inspect' || lane === 'repository' || lane === 'sources' || panel === 'ask' || tab === 'work') {
+    return <TaskletPraxisWorkbench
+      mode="app"
+      capsuleId={starter || 'default'}
+      initialPanel={initialPanel}
+      initialFactoryLane={lane === 'inspect' ? 'inspect' : initialFactoryLane}
+      inspectionOnly={lane === 'inspect'}
+    />;
+  }
+
   return (
-    <>
-      {lane === 'inspect' ? <div className="bg-emerald-50/30 px-4 py-3 sm:px-6 lg:px-8">
-        <Link href="/app/capsules" className="text-sm font-semibold underline">Back to capsule library</Link>
-      </div> : <div className="bg-emerald-50/30 px-4 pt-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-[1400px]">
-          <CapsuleLibraryWithTry initialCategory="all" />
-        </div>
-      </div>}
-      <TaskletPraxisWorkbench
-        mode="app"
-        capsuleId={starter || 'default'}
-        initialPanel={initialPanel}
-        initialFactoryLane={lane === 'inspect' ? 'inspect' : initialFactoryLane}
-      />
-    </>
+    <div className="mx-auto w-full max-w-6xl" data-testid="capsule-library-route">
+      <CapsuleLibraryWithTry initialCategory="all" standalone />
+    </div>
   );
 }
 
 function WorkbenchLoadingSkeleton() {
   return (
-    <main className="grid min-h-screen gap-4 bg-emerald-50/30 p-4" data-testid="tasklet-workbench-loading-skeleton">
+    <section className="grid min-h-96 gap-4 p-4" data-testid="tasklet-workbench-loading-skeleton" role="status" aria-label="Loading capsule workspace">
       <Skeleton className="h-16 w-full" />
       <div className="grid min-h-0 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <Skeleton className="h-[32rem] w-full" />
         <Skeleton className="hidden h-[32rem] w-full lg:block" />
       </div>
-    </main>
+    </section>
   );
 }
 

@@ -72,6 +72,8 @@ import { withContextAware } from '@/lib/api/with-context-aware';
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
+import { CapsuleVersionConflictError } from '@/lib/context/capsule-version-resolution';
+import { checkAndDeductCreditsForUid } from '@/lib/api/with-credits';
 
 function completeProfile() {
   return {
@@ -160,6 +162,20 @@ describe('withCalibration', () => {
     vi.clearAllMocks();
     // Restore default: completed onboarding profile
     (getAnalystProfile as ReturnType<typeof vi.fn>).mockResolvedValue(completeProfile());
+  });
+
+  it('returns a recoverable pin conflict before charging or invoking answer generation', async () => {
+    vi.mocked(buildCalibratedContext).mockRejectedValueOnce(new CapsuleVersionConflictError('case', 2));
+    const handler = vi.fn();
+    const route = withCalibration('chat', 'ai_chat', { blockOnThinContext: false })(handler);
+    const user = { uid: 'u1', email: '', name: '', isDemo: false };
+    const response = await (route as unknown as (r: Request, u: typeof user) => Promise<Response>)(
+      new Request('http://x', { method: 'POST', body: JSON.stringify({ capsuleId: 'case' }) }), user,
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ error: 'capsule_version_unavailable', details: { capsuleId: 'case', requestedVersion: 2, recoverable: true } });
+    expect(checkAndDeductCreditsForUid).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('injects calibration into handler', async () => {

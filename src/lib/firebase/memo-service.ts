@@ -2,6 +2,7 @@ import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { omitUndefinedMetadata } from '@/lib/firebase/ask-thread-service';
 import { createMemoVersion } from '@/lib/memo/export';
+import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
 import { buildMemoOutputReview, memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import { isCurrentMemoHumanApproval, type MemoReviewUse } from '@/lib/memo/human-review';
 import { signMemoHumanApproval, verifyMemoHumanApproval } from '@/lib/memo/human-review-server';
@@ -162,6 +163,9 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     changeNote: input.changeNote,
   });
   const now = new Date().toISOString();
+  const previousVersion = existing?.versions.find((item) => item.id === existing.memo.currentVersionId);
+  const contextSnapshot = recordMemoContextSnapshot(input,
+    (previousVersion as (MemoVersion & Record<string, unknown>) | undefined)?.contextSnapshot, Boolean(existing));
   const memo: Memo = {
     id: memoId,
     caseId: input.caseId,
@@ -175,23 +179,20 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
   };
   const memoMetadata = {
     humanApproval: null,
-    ...(input.capsuleId ? { capsuleId: input.capsuleId } : {}),
-    ...(typeof input.capsuleVersion === 'number' ? { capsuleVersion: input.capsuleVersion } : {}),
-    ...(input.conversationId ? { conversationId: input.conversationId } : {}),
-    ...(input.runId ? { runId: input.runId } : {}),
-    ...(input.outputTarget ? { outputTarget: input.outputTarget } : {}),
-    ...(input.sourceReceiptIds ? { sourceReceiptIds: input.sourceReceiptIds } : {}),
-    ...(input.sourceReceipts ? { sourceReceipts: input.sourceReceipts } : {}),
-    ...(input.unsupportedClaims ? { unsupportedClaims: input.unsupportedClaims } : {}),
-    ...(input.claimChecks ? { claimChecks: input.claimChecks } : {}),
-    ...(input.outputCapsuleId ? { outputCapsuleId: input.outputCapsuleId } : {}),
+    contextSnapshot,
+    capsuleId: contextSnapshot.capsuleId, capsuleVersion: contextSnapshot.capsuleVersion,
+    conversationId: contextSnapshot.conversationId, runId: contextSnapshot.runId,
+    outputTarget: contextSnapshot.outputTarget, outputCapsuleId: contextSnapshot.outputCapsuleId,
+    sourceReceiptIds: contextSnapshot.sourceReceiptIds, sourceReceipts: contextSnapshot.sourceReceipts,
+    unsupportedClaims: contextSnapshot.unsupportedClaims, claimChecks: contextSnapshot.claimChecks,
     ...(outputReview ? { outputReview } : {}),
   };
 
   // Optional source dates/passages and block metadata must be Firestore-safe.
   // Preserve native values and array positions; never invent missing evidence.
   const savedMemo = omitUndefinedMetadata({ ...memo, ...memoMetadata });
-  const savedVersion = omitUndefinedMetadata({ ...version, ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) });
+  const savedVersion = omitUndefinedMetadata({ ...version, contextSnapshot,
+    ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) });
   await db.runTransaction(async (transaction) => {
     const owner = await transaction.get(db.collection('users').doc(uid));
     if (!owner.exists || ['deleting', 'deleted'].includes(String(owner.data()?.accountDeletionStatus))) {

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import LoginPage from '@/app/(auth)/login/page';
 
-const runtime = vi.hoisted(() => ({ shallow: false, loading: false, cursor: 0, hooks: new Map<number, unknown>(), effects: [] as Array<() => void>, signIn: vi.fn(), push: vi.fn() }));
+const runtime = vi.hoisted(() => ({ shallow: false, loading: false, query: 'redirect=%2Fapp%3Fpanel%3Dmemo', cursor: 0, hooks: new Map<number, unknown>(), effects: [] as Array<() => void>, signIn: vi.fn(), push: vi.fn() }));
 vi.mock('react', async (original) => {
   const react = await original<typeof import('react')>();
   return { ...react,
@@ -23,7 +23,7 @@ vi.mock('react', async (original) => {
     useEffect: (effect: () => void, deps: unknown[]) => { if (runtime.shallow) runtime.effects.push(effect); else react.useEffect(effect, deps); },
   };
 });
-vi.mock('next/navigation', () => ({ useRouter: () => ({ push: runtime.push }), useSearchParams: () => new URLSearchParams({ redirect: '/app?panel=memo' }) }));
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: runtime.push }), useSearchParams: () => new URLSearchParams(runtime.query) }));
 vi.mock('@/lib/auth/auth-context', () => ({ useAuth: () => ({ user: null, loading: runtime.loading, authError: null, clearAuthError: vi.fn(), signInWithEmail: runtime.signIn, signUpWithEmail: vi.fn(), signInWithGoogle: vi.fn(), resetPassword: vi.fn() }) }));
 vi.mock('@/components/ui/instrument', () => ({ LivingContextRail: () => null }));
 vi.mock('framer-motion', async () => {
@@ -52,6 +52,7 @@ function find(tree: ReactNode, predicate: (element: Element) => boolean) {
 beforeEach(() => {
   runtime.shallow = false;
   runtime.loading = false;
+  runtime.query = 'redirect=%2Fapp%3Fpanel%3Dmemo';
   runtime.hooks.clear();
   runtime.effects = [];
   runtime.signIn.mockReset().mockResolvedValue({ success: true });
@@ -60,6 +61,33 @@ beforeEach(() => {
 });
 
 describe('login readiness', () => {
+  it('shows one heading and no imaginary queued work when there is no question', () => {
+    const html = renderToStaticMarkup(<LoginPage />);
+    expect(html.match(/<h1\b/g)).toHaveLength(1);
+    expect(html).not.toContain('Your question will be carried forward');
+    expect(html).not.toContain('PRAXIS run queued');
+    expect(html).not.toContain('Intelligence Systems');
+    expect(html).toContain('autoComplete="email"');
+    expect(html).toContain('autoComplete="current-password"');
+  });
+  it('shows the actual question only when one is supplied', () => {
+    runtime.query += '&capsulePrompt=Compare%20the%20two%20positions';
+    const html = renderToStaticMarkup(<LoginPage />);
+    expect(html).toContain('Your question will be carried forward');
+    expect(html).toContain('Compare the two positions');
+  });
+  it('carries the question in the safe return URL when browser storage is blocked', async () => {
+    runtime.query = 'capsulePrompt=Keep%20this%20question';
+    vi.stubGlobal('window', { localStorage: { setItem: () => { throw new Error('Storage blocked'); } } });
+    form();
+    for (const effect of runtime.effects) effect();
+    let tree = form();
+    (find(tree, (node) => node.props.id === 'email').props.onChange as (event: unknown) => void)({ target: { value: 'analyst@example.test' } });
+    (find(tree, (node) => node.props.id === 'password').props.onChange as (event: unknown) => void)({ target: { value: 'safe-test-password' } });
+    tree = form();
+    await (find(tree, (node) => typeof node.props.onSubmit === 'function').props.onSubmit as (event: unknown) => Promise<void>)({ preventDefault: vi.fn() });
+    expect(runtime.push).toHaveBeenCalledWith('/app?capsulePrompt=Keep+this+question');
+  });
   it('renders submit and identity inputs disabled before hydration', () => {
     const html = renderToStaticMarkup(<LoginPage />);
     expect(html.match(/<input[^>]+id="email"[^>]*>/)?.[0]).toMatch(/ disabled(?:=""|(?=\s|>))/);

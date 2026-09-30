@@ -16,6 +16,7 @@ import {
   type PraxisCapsule,
 } from '@/lib/context/capsule-service';
 import { buildCapsuleStarterPromptBlock } from '@/lib/product/context-capsules';
+import { resolveCapsuleReference, stackWithResolvedGoverningCapsule, validateCapsuleVersionPins } from './capsule-version-resolution';
 
 export interface InjectableContextInput {
   uid: string;
@@ -61,17 +62,26 @@ export async function resolveInjectableContext(
   input: InjectableContextInput,
   deps?: CapsuleServiceDeps,
 ): Promise<InjectableContext> {
+  validateCapsuleVersionPins(input.activeContextStack);
   const pointer = cleanPointer(input.capsuleId ?? input.contextPackageId);
   const incomingStack = input.activeContextStack
     ? sanitizeActiveContextStack(input.activeContextStack)
     : null;
 
-  let capsule: PraxisCapsule | null = null;
-  if (pointer) {
-    capsule = await getCapsule(input.uid, pointer, deps);
+  const requestedStack = incomingStack
+    ? sanitizeActiveContextStack({ ...incomingStack, capsuleId: pointer ?? incomingStack.capsuleId })
+    : pointer ? sanitizeActiveContextStack({ capsuleId: pointer }) : null;
+  // Resolve every attachment before compatibility writes or default recovery.
+  // A missing pin must never become a latest/default/thin-context substitution.
+  const attached = new Map<string, PraxisCapsule>();
+  for (const ref of requestedStack?.capsuleRefs ?? []) {
+    const loaded = await resolveCapsuleReference(input.uid, ref, deps);
+    if (loaded) attached.set(ref.capsuleId, loaded);
   }
+  const requestedPointer = pointer ?? requestedStack?.capsuleId;
+  let capsule: PraxisCapsule | null = requestedPointer ? attached.get(requestedPointer) ?? null : null;
 
-  let resolvedStack = incomingStack;
+  let resolvedStack = requestedStack;
   if (!capsule && incomingStack && incomingStack.stackId === DEFAULT_CONTEXT_STACK_ID) {
     const saved = await saveContextStackCompat(input.uid, incomingStack, deps);
     capsule = saved.capsule;
@@ -82,12 +92,24 @@ export async function resolveInjectableContext(
     capsule = (await getOrMigrateDefaultCapsule(input.uid, deps)).capsule;
   }
 
-  const stack = resolvedStack
+  let stack = resolvedStack
     ? sanitizeActiveContextStack({ ...capsuleToStack(capsule), ...resolvedStack })
     : capsuleToStack(capsule);
+  stack = stackWithResolvedGoverningCapsule(stack, capsule);
+  stack.capsuleRefs = stack.capsuleRefs.map((ref) => ({
+    ...ref,
+    version: attached.get(ref.capsuleId)?.version ?? (ref.capsuleId === capsule.capsuleId ? capsule.version : ref.version),
+  }));
   const resolvedAt = new Date().toISOString();
-  const associated = await resolveAssociatedCapsules(input.uid, capsule, deps);
-  const dock = await resolveDockCapsules(input.uid, capsule, stack, deps);
+  const dock = await resolveDockCapsules(capsule, stack, attached);
+  const dockIds = new Set(dock.entries.map((entry) => entry.capsule.capsuleId));
+  const overflow = stack.capsuleRefs.filter((ref) => ref.capsuleId !== capsule.capsuleId && !dockIds.has(ref.capsuleId));
+  const associated = await resolveAssociatedCapsules(input.uid, capsule, deps, attached);
+  for (const ref of overflow) {
+    const loaded = attached.get(ref.capsuleId);
+    if (loaded && !associated.capsules.some((item) => item.capsuleId === loaded.capsuleId)) associated.capsules.push(loaded);
+    else if (!loaded && !associated.missingIds.includes(ref.capsuleId)) associated.missingIds.push(ref.capsuleId);
+  }
   return {
     capsule,
     associatedCapsules: associated.capsules,
@@ -116,10 +138,9 @@ export async function resolveInjectableContext(
  * governing capsule pointer.
  */
 async function resolveDockCapsules(
-  uid: string,
   primaryCapsule: PraxisCapsule,
   stack: ActiveContextStackState,
-  deps?: CapsuleServiceDeps,
+  attached: Map<string, PraxisCapsule>,
 ): Promise<{ entries: DockCapsuleEntry[]; missingIds: string[] }> {
   const { slots } = buildCapsuleDockSlots(stack);
   const entries: DockCapsuleEntry[] = [];
@@ -130,7 +151,7 @@ async function resolveDockCapsules(
       entries.push({ role: slot.kind, capsule: primaryCapsule });
       continue;
     }
-    const loaded = await getCapsule(uid, slot.item.capsuleId, deps);
+    const loaded = attached.get(slot.item.capsuleId);
     if (!loaded || loaded.archivedAt) {
       missingIds.push(slot.item.capsuleId);
       continue;
@@ -573,6 +594,7 @@ async function resolveAssociatedCapsules(
   uid: string,
   capsule: PraxisCapsule,
   deps?: CapsuleServiceDeps,
+  attached: Map<string, PraxisCapsule> = new Map(),
 ): Promise<{ capsules: PraxisCapsule[]; missingIds: string[] }> {
   const candidateIds = uniqueStrings(capsule.associatedCapsuleIds)
     .filter((capsuleId) => capsuleId !== capsule.capsuleId)
@@ -580,7 +602,7 @@ async function resolveAssociatedCapsules(
   const capsules: PraxisCapsule[] = [];
   const missingIds: string[] = [];
   for (const capsuleId of candidateIds) {
-    const associated = await getCapsule(uid, capsuleId, deps);
+    const associated = attached.get(capsuleId) ?? await getCapsule(uid, capsuleId, deps);
     if (!associated || associated.archivedAt) {
       missingIds.push(capsuleId);
       continue;

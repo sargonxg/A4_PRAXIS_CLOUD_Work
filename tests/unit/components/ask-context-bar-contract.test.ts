@@ -10,7 +10,7 @@ const chatShellPath = join(root, 'src/components/app/praxis-chat-first-shell.tsx
 const floatingPraxisPath = join(root, 'src/components/app/floating-praxis.tsx');
 
 describe('Ask context bar contract', () => {
-  it('keeps context provenance always visible above the Ask composer', () => {
+  it('keeps named, versioned context inside the composer with technical detail disclosed on demand', () => {
     expect(existsSync(askContextBarPath)).toBe(true);
     const barSource = readFileSync(askContextBarPath, 'utf8');
     const chatSource = readFileSync(praxisChatPath, 'utf8');
@@ -18,7 +18,8 @@ describe('Ask context bar contract', () => {
     const floatingSource = readFileSync(floatingPraxisPath, 'utf8');
 
     expect(chatSource).toContain('contextBar?: ReactNode');
-    expect(chatSource.indexOf('{contextBar')).toBeLessThan(chatSource.indexOf('<form onSubmit={submit}'));
+    expect(chatSource.indexOf('{contextBar')).toBeGreaterThan(chatSource.indexOf('<form onSubmit={submit}'));
+    expect(chatSource.indexOf('{contextBar')).toBeLessThan(chatSource.indexOf('type="submit"'));
     expect(shellSource).toContain('<AskContextBar');
     expect(shellSource).toContain('contextBar={');
     expect(floatingSource).toContain('<AskContextBar');
@@ -31,6 +32,13 @@ describe('Ask context bar contract', () => {
       'data-testid="capsule-dock-slots"',
       'data-testid="capsule-dock-stack"',
       'data-testid="capsule-dock-warning"',
+      'data-testid="attached-context-chips"',
+      'triggerLabel="Attach context"',
+      'aria-label={`Detach ${item.label}`}',
+      'item.versionLabel',
+      'label: capsule?.label',
+      'version: capsule?.version',
+      'detailsOpen ? <section',
       'Capsule Dock',
       'Stack:',
       'stackPolicyLabel',

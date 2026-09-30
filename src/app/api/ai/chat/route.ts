@@ -10,6 +10,7 @@ import { buildSituationContext } from '@/lib/ai/situation-context';
 import { isServerDemoMode, hashInput, getCachedResponse, formatAsStreamResponse } from '@/lib/compat/sample-mode';
 import { withAuth } from '@/lib/api/with-auth';
 import { withCalibration } from '@/lib/api/with-calibration';
+import { CapsuleVersionConflictError } from '@/lib/context/capsule-version-resolution';
 import { checkAndDeductCreditsForUid } from '@/lib/api/with-credits';
 import { validateAiRequest } from '@/lib/api/validate-request';
 import { handleRouteError } from '@/lib/api/standard-error';
@@ -273,6 +274,7 @@ export const POST = withCalibration('chat', 'ai_chat', {
               situationId: requestSituationId,
               query: executionPreference.allowWorkspaceRetrieval ? prompt : undefined,
             }).catch((err) => {
+              if (err instanceof CapsuleVersionConflictError) throw err;
               console.warn('[chat] full capsule resolution failed; using thin fallback context:', err);
               recordContextHealthDegradation(
                 contextHealthDegradations,
@@ -307,13 +309,16 @@ export const POST = withCalibration('chat', 'ai_chat', {
     }
     if (turnCapsule) {
       systemPrompt += '\n\n' + turnCapsule.retrievalPlan.promptBlock;
-      if (!instantContextMode && _user.uid && (capsuleContext?.capsule?.capsuleId ?? capsuleId)) {
+      if (!instantContextMode && _user.uid && capsuleContext && capsuleContext.capsule.version > 0) {
         const evidencePack = await buildCapsuleEvidencePack({
           ownerUid: _user.uid,
-          capsuleId: capsuleContext?.capsule?.capsuleId ?? capsuleId ?? 'default',
+          capsuleId: capsuleContext.capsule.capsuleId,
+          capsuleVersion: capsuleContext.capsule.version,
+          resolvedCapsule: capsuleContext.capsule,
           objective: prompt,
           maxParagraphs: 6,
         }).catch((err) => {
+          if (err instanceof CapsuleVersionConflictError) throw err;
           console.warn('[chat] evidence pack build failed (non-fatal):', err);
           recordContextHealthDegradation(
             contextHealthDegradations,
@@ -930,6 +935,11 @@ fabricate sources, figures, dates, or identifiers.`;
       },
     });
   } catch (err) {
+    if (err instanceof CapsuleVersionConflictError) {
+      return Response.json({ error: err.code, message: err.message,
+        details: { capsuleId: err.capsuleId, requestedVersion: err.requestedVersion, recoverable: true, action: 'reattach_capsule' },
+      }, { status: 409, headers: { 'X-Praxis-Safeguard': err.code } });
+    }
     return handleRouteError(err, 'chat');
   }
 });

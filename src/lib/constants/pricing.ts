@@ -42,7 +42,7 @@ export const PRICING_TIERS: PricingTier[] = [
     usage: 'Individual policy workspace',
     maxSituations: 10,
     highlighted: true,
-    cta: 'Upgrade',
+    cta: 'Discuss a proposal',
     audience: 'Individual analysts, policy officers, and researchers',
     availability: 'Proposed paid plan',
     features: [
@@ -59,7 +59,7 @@ export const PRICING_TIERS: PricingTier[] = [
     price: 199,
     usage: 'Shared context library · per seat',
     maxSituations: 25,
-    cta: 'Start Team',
+    cta: 'Discuss a proposal',
     audience: 'Mediation teams, policy units, and research desks',
     availability: 'Proposed paid plan',
     features: [
@@ -118,4 +118,4 @@ export const PLAN_USAGE_BUCKETS = [
  * Keep operation-level costs in `src/lib/api/with-credits.ts`.
  */
 export const INTERNAL_COST_DISCLOSURE_NOTICE =
-  'Workspace and research limits apply. Proposed plan prices and features are not active entitlements; confirmed terms are shown before any supported purchase.';
+  'Experimental workspace limits apply. Paid upgrades are unavailable. Future plan prices and features are proposals, not active entitlements or purchase offers.';

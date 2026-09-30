@@ -2,13 +2,11 @@
 
 import { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils/cn';
-import { ArrowRight, Loader2, Mail, Chrome, Paperclip, Upload, Monitor, Mic } from 'lucide-react';
+import { ArrowRight, Loader2, Mail, Chrome } from 'lucide-react';
+import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
-import { LivingContextRail } from '@/components/ui/instrument';
 import {
   PENDING_POLICY_AGENT_ID_KEY,
   PENDING_TASKLET_PROMPT_KEY,
@@ -46,9 +44,14 @@ function LoginForm() {
   const capsulePathParam = searchParams.get('capsulePath');
   const capsuleOutputParam = searchParams.get('capsuleOutput');
   const policyAgentParam = searchParams.get('policyAgentId');
-  const appRedirect = planParam === 'analyst' || planParam === 'team'
-    ? `/app/settings?tab=billing&checkoutPlan=${planParam}`
+  const requestedRedirect = planParam === 'analyst' || planParam === 'team'
+    ? '/app/settings?tab=billing'
     : resolvePostLoginRedirect(searchParams, false);
+  const returnUrl = new URL(requestedRedirect, 'https://praxis.invalid');
+  if (capsulePromptParam?.trim() && (returnUrl.pathname === '/app' || returnUrl.pathname === '/app/capsules/builder')) {
+    if (!returnUrl.searchParams.has('prompt') && !returnUrl.searchParams.has('capsulePrompt')) returnUrl.searchParams.set('capsulePrompt', capsulePromptParam.trim());
+  }
+  const appRedirect = `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`;
   const {
     user,
     loading,
@@ -98,15 +101,9 @@ function LoginForm() {
   const controlsDisabled = !interactive || loading || isLoading;
   useEffect(() => { setInteractive(true); }, []);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
-  const previewRailCells = [
-    { id: 'profile', label: 'Profile', value: mode === 'signup' ? 'New analyst' : 'Returning analyst', detail: 'Private posture', state: 'ready' as const },
-    { id: 'context', label: 'Context', value: capsuleTemplateParam ?? 'Saved work', detail: capsulePromptParam ? 'Question carried forward' : 'Ready when needed', state: capsulePromptParam ? 'active' as const : 'quiet' as const },
-    { id: 'source', label: 'Sources', value: capsulePathParam ? 'Path attached' : 'Ready to attach', detail: 'Receipts after sign-in', state: capsulePathParam ? 'ready' as const : 'review' as const },
-    { id: 'output', label: 'Output', value: capsuleOutputParam ?? planParam ?? 'Brief', detail: 'Intent preserved', state: capsuleOutputParam || planParam ? 'active' as const : 'quiet' as const },
-    { id: 'readiness', label: 'Readiness', value: 'Pickup ready', detail: 'Redirect preserved', state: 'ready' as const },
-  ];
 
   useEffect(() => {
+    try {
     const prompt = capsulePromptParam?.trim();
     if (prompt) {
       window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY, prompt);
@@ -123,6 +120,9 @@ function LoginForm() {
     }
     if (policyAgentParam) {
       window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, policyAgentParam);
+    }
+    } catch {
+      // The safe workspace URL also carries the question when browser storage is unavailable.
     }
   }, [capsulePromptParam, capsuleTemplateParam, capsulePathParam, capsuleOutputParam, policyAgentParam]);
 
@@ -226,359 +226,71 @@ function LoginForm() {
     }
   }
 
-  return (
-    <div className="civic-atelier-shell cartographic-grid praxis-checker-constellation min-h-screen text-slate-950">
-      <div className="grid min-h-screen lg:grid-cols-[minmax(0,1.08fr)_minmax(420px,0.72fr)]">
-        <section className="relative hidden overflow-hidden border-r border-slate-200/80 lg:block">
-          <div className="relative flex min-h-screen flex-col p-8">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-5">
-              <PraxisBrandChip subtitle="Private policy workspace" />
-              <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600 shadow-sm">
-                praxis.tacitus.me/app
-              </span>
-            </div>
+  const title = mode === 'signup' ? 'Create your workspace' : mode === 'reset' ? 'Reset your password' : 'Welcome to PRAXIS';
+  const fieldClass = 'min-h-11 w-full rounded-lg border border-[var(--color-mineral)] bg-white px-3 py-2.5 text-base text-[var(--color-deep-ink)] placeholder:text-[var(--color-graphite)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-praxis-emerald-600)] disabled:opacity-60';
 
-            <div className="flex flex-1 flex-col justify-center py-10">
-              <p className="text-center text-sm font-medium text-slate-500">Sign in once. PRAXIS keeps the question ready.</p>
-              <h1 className="mx-auto mt-6 max-w-3xl text-center font-serif text-5xl font-semibold tracking-tight text-slate-950">
-                Pick up the work where you left it.
-              </h1>
-              <LivingContextRail cells={previewRailCells} compact className="mx-auto mt-8 max-w-3xl" />
-              <div className="mx-auto mt-5 w-full max-w-3xl rounded-[10px] border border-emerald-500/25 bg-white/90 p-5 shadow-[0_20px_70px_rgba(15,23,42,0.10)]">
-                <span className="sr-only">PRAXIS run queued</span>
-                <p className="px-1 py-2 text-xl text-slate-400">Ask the question you need answered</p>
-                <div className="mt-10 flex items-center justify-between border-t border-slate-100 pt-4">
-                  <div className="flex items-center gap-2 text-slate-600">
-                    {[Paperclip, Upload, Monitor].map((Icon, index) => (
-                      <span key={index} className="rounded-md border border-slate-200 p-2">
-                        <Icon className="h-4 w-4" />
-                      </span>
-                    ))}
-                  </div>
-                  <span className="rounded-md p-2 text-slate-600">
-                    <Mic className="h-4 w-4" />
-                  </span>
-                </div>
-              </div>
-              <div className="mx-auto mt-8 flex max-w-3xl justify-center gap-10 border-b border-slate-200 text-sm font-semibold text-slate-400">
-                {['Analysis', 'Monitoring', 'Review', 'Context'].map((tab, index) => (
-                  <span
-                    key={tab}
-                    className={cn(
-                      'pb-3',
-                      index === 0
-                        ? 'border-b-2 border-emerald-500/45 text-emerald-700'
-                        : '',
-                    )}
-                  >
-                    {tab}
-                  </span>
-                ))}
-              </div>
+  function changeMode(next: 'signin' | 'signup' | 'reset') {
+    setMode(next);
+    setError('');
+    setSuccessMsg('');
+    clearAuthError();
+  }
+
+  return (
+    <main className="civic-atelier-shell cartographic-grid flex min-h-screen items-center justify-center px-4 py-8 text-[var(--color-deep-ink)]">
+      <div className="w-full max-w-md">
+        <Link href="/" className="mb-6 inline-flex min-h-11 items-center"><PraxisBrandChip subtitle="Ask. Source. Review." /></Link>
+        <section className="rounded-xl border border-[var(--color-mineral)] bg-[var(--color-archive-paper-strong)] p-5 sm:p-8" aria-labelledby="login-title">
+          <h1 id="login-title" className="font-serif text-3xl font-semibold">{title}</h1>
+          <p className="mt-2 text-sm leading-6 text-[var(--color-graphite)]">
+            {mode === 'reset' ? 'Enter your email to request a reset link.' : 'Ask a question. Attach saved context when you need it.'}
+          </p>
+          {capsulePromptParam?.trim() ? (
+            <div className="mt-4 rounded-lg border border-[var(--color-praxis-emerald-300)] bg-[var(--color-praxis-emerald-50)] p-3">
+              <p className="text-xs font-semibold text-[var(--color-praxis-emerald-700)]">Your question will be carried forward</p>
+              <p className="mt-1 line-clamp-3 break-words text-sm">{capsulePromptParam.trim()}</p>
             </div>
+          ) : null}
+          {mode !== 'reset' ? <>
+            <button type="button" onClick={handleGoogleSignIn} disabled={controlsDisabled} className="mt-6 flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[var(--color-mineral)] bg-white px-4 py-3 text-sm font-semibold hover:bg-[var(--color-archive-paper)] disabled:opacity-60">
+              <Chrome className="h-5 w-5" aria-hidden="true" /> Continue with Google
+            </button>
+            <div className="my-5 flex items-center gap-3 text-xs text-[var(--color-graphite)]"><span className="h-px flex-1 bg-[var(--color-mineral)]" />or use email<span className="h-px flex-1 bg-[var(--color-mineral)]" /></div>
+          </> : null}
+          <form onSubmit={mode === 'reset' ? handleResetPassword : handleEmailSubmit} data-interactive={interactive && !loading ? 'true' : 'false'} aria-busy={controlsDisabled} className="mt-5 space-y-4">
+            {mode === 'signup' ? <div>
+              <label htmlFor="name" className="mb-1.5 block text-sm font-medium">Name</label>
+              <input id="name" name="name" autoComplete="name" type="text" value={name} onChange={(event) => { setName(event.target.value); setError(''); }} placeholder="Your name" required disabled={controlsDisabled} className={fieldClass} />
+            </div> : null}
+            <div>
+              <label htmlFor="email" className="mb-1.5 block text-sm font-medium">Email</label>
+              <input id="email" name="email" autoComplete="email" inputMode="email" type="email" value={email} onChange={(event) => { setEmail(event.target.value); setError(''); setSuccessMsg(''); }} placeholder="you@example.com" required disabled={controlsDisabled} aria-invalid={Boolean(error)} aria-describedby={error ? 'login-error' : undefined} className={fieldClass} />
+            </div>
+            {mode !== 'reset' ? <div>
+              <div className="flex items-center justify-between gap-2">
+                <label htmlFor="password" className="text-sm font-medium">Password</label>
+                {mode === 'signin' ? <button type="button" onClick={() => changeMode('reset')} disabled={controlsDisabled} className="min-h-11 text-xs font-medium underline underline-offset-4">Forgot password?</button> : null}
+              </div>
+              <input id="password" name="password" autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} type="password" value={password} onChange={(event) => { setPassword(event.target.value); setError(''); }} required minLength={mode === 'signup' ? 6 : undefined} disabled={controlsDisabled} aria-invalid={Boolean(error)} aria-describedby={mode === 'signup' ? 'password-help' : error ? 'login-error' : undefined} className={fieldClass} />
+              {mode === 'signup' ? <p id="password-help" className="mt-2 text-xs text-[var(--color-graphite)]">Use at least 6 characters. {password ? `Password strength: ${passwordStrength.label}.` : 'A longer, unique password is best.'}</p> : null}
+            </div> : null}
+            {error ? <p id="login-error" role="alert" className="rounded-lg border border-[var(--color-evidence-review)] px-3 py-2 text-sm">{error}</p> : null}
+            {successMsg ? <p role="status" className="rounded-lg bg-[var(--color-praxis-emerald-50)] px-3 py-2 text-sm">{successMsg}</p> : null}
+            <button type="submit" disabled={controlsDisabled} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-praxis-emerald-700)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--color-praxis-emerald-800)] disabled:opacity-60">
+              {isLoading || loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : mode === 'reset' ? <Mail className="h-4 w-4" aria-hidden="true" /> : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
+              {isLoading ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'reset' ? 'Send reset link' : 'Sign in'}
+            </button>
+          </form>
+          <div className="mt-3 text-center text-sm">
+            {mode === 'signin' ? <button type="button" disabled={controlsDisabled} onClick={() => changeMode('signup')} className="min-h-11 font-medium underline underline-offset-4">New here? Create an account</button> : <button type="button" disabled={controlsDisabled} onClick={() => changeMode('signin')} className="min-h-11 font-medium underline underline-offset-4">Back to sign in</button>}
           </div>
         </section>
-
-        <section className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: 'easeOut' }}
-            className="relative z-10 w-full max-w-md"
-          >
-            <div className="praxis-shell-modal border border-slate-200 bg-white p-6 backdrop-blur-sm sm:p-8">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15, duration: 0.5 }}
-            className="mb-6 text-center"
-          >
-            <PraxisBrandChip subtitle="Sourced policy work" className="mb-4 justify-center" />
-            <h1 className="font-serif text-3xl tracking-wide text-slate-950">
-              PRAXIS
-            </h1>
-            <p className="mt-1.5 text-xs font-semibold tracking-[0.24em] text-emerald-700 uppercase">
-              PRAXIS | Ask. Source. Review.
-            </p>
-            <p className="mt-2 text-sm tracking-widest text-slate-500 uppercase">
-              Open your workspace
-            </p>
-          </motion.div>
-
-          {/* Google Sign In */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.25, duration: 0.5 }}
-          >
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={controlsDisabled}
-              className={cn(
-                'group flex w-full items-center justify-center gap-3 rounded-lg px-4 py-3',
-                'border border-slate-200 bg-white text-sm font-medium text-slate-800 shadow-sm',
-                'transition-all duration-200',
-                'hover:border-slate-300 hover:bg-slate-50',
-                'active:scale-[0.98]',
-                'disabled:cursor-not-allowed disabled:opacity-60'
-              )}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Chrome className="h-5 w-5 text-slate-500" />
-                  Continue with Google
-                </>
-              )}
-            </button>
-            <p className="mt-2 text-center text-xs text-slate-500">
-              Uses secure Google sign-in in this tab. Choose the account you want tied to PRAXIS.
-            </p>
-          </motion.div>
-
-          {/* Divider */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className="my-5 flex items-center gap-3"
-          >
-            <div className="h-px flex-1 bg-slate-200" />
-            <span className="text-xs tracking-wider text-slate-400 uppercase">
-              or email
-            </span>
-            <div className="h-px flex-1 bg-slate-200" />
-          </motion.div>
-
-          {/* Email/Password form */}
-          <motion.form
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.35, duration: 0.5 }}
-            onSubmit={mode === 'reset' ? handleResetPassword : handleEmailSubmit}
-            data-interactive={interactive && !loading ? 'true' : 'false'}
-            aria-busy={!interactive || loading || isLoading}
-            className="space-y-3.5"
-          >
-            {mode === 'reset' && (
-              <p className="text-xs text-slate-500">
-                Enter your email and we&apos;ll send a password reset link.
-              </p>
-            )}
-
-            {mode === 'signup' && (
-              <div>
-                <label
-                  htmlFor="name"
-                  className="mb-1.5 block text-xs font-medium tracking-wide text-slate-500 uppercase"
-                >
-                  Full Name
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => { setName(e.target.value); setError(''); }}
-                  placeholder="Dr. Jane Smith"
-                  disabled={controlsDisabled}
-                  className={cn(
-                    'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
-                    'placeholder:text-slate-400',
-                    'transition-colors duration-200',
-                    'focus:border-emerald-500/45 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none',
-                    'disabled:cursor-not-allowed disabled:opacity-50',
-                    'border-slate-200 hover:border-slate-300'
-                  )}
-                />
-              </div>
-            )}
-
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-1.5 block text-xs font-medium tracking-wide text-slate-500 uppercase"
-              >
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => { setEmail(e.target.value); setError(''); setSuccessMsg(''); }}
-                placeholder="your.name@organization.gov"
-                disabled={controlsDisabled}
-                className={cn(
-                  'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
-                  'placeholder:text-slate-400',
-                  'transition-colors duration-200',
-                  'focus:border-emerald-500/45 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none',
-                  'disabled:cursor-not-allowed disabled:opacity-50',
-                  error ? 'border-crimson/50' : 'border-slate-200 hover:border-slate-300'
-                )}
-              />
-            </div>
-
-            {mode !== 'reset' && (
-              <div>
-                <div className="mb-1.5 flex items-center justify-between">
-                  <label
-                    htmlFor="password"
-                    className="block text-xs font-medium tracking-wide text-slate-500 uppercase"
-                  >
-                    Password
-                  </label>
-                  {mode === 'signin' && (
-                    <button
-                      type="button"
-                      onClick={() => { setMode('reset'); setError(''); setSuccessMsg(''); }}
-                      className="text-xs text-slate-500 hover:text-emerald-700 hover:underline"
-                    >
-                      Forgot password?
-                    </button>
-                  )}
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                  placeholder={mode === 'signup' ? 'Create a password (min 6 chars)' : 'Enter your password'}
-                  disabled={controlsDisabled}
-                  className={cn(
-                    'w-full rounded-lg border bg-white px-4 py-3 text-sm text-slate-950',
-                    'placeholder:text-slate-400',
-                    'transition-colors duration-200',
-                    'focus:border-emerald-500/45 focus:ring-1 focus:ring-emerald-500/30 focus:outline-none',
-                    'disabled:cursor-not-allowed disabled:opacity-50',
-                    error ? 'border-crimson/50' : 'border-slate-200 hover:border-slate-300'
-                  )}
-                />
-                {mode === 'signup' && password && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <div className="h-1 flex-1 rounded-full bg-slate-100">
-                        <div
-                          className={cn('h-full rounded-full transition-all duration-300', passwordStrength.color)}
-                          style={{ width: `${passwordStrength.score}%` }}
-                        />
-                      </div>
-                      <span className="text-[10px] font-medium text-slate-500 w-16 text-right">
-                        {passwordStrength.label}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {error && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="text-xs text-crimson"
-              >
-                {error}
-              </motion.p>
-            )}
-
-            {successMsg && (
-              <motion.p
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="text-xs text-emerald-600"
-              >
-                {successMsg}
-              </motion.p>
-            )}
-
-            <button
-              type="submit"
-              disabled={controlsDisabled}
-              className={cn(
-                'group flex w-full items-center justify-center gap-2 rounded-lg px-4 py-3',
-                'bg-slate-950 text-white font-semibold text-sm',
-                'transition-all duration-200',
-                'hover:bg-emerald-700 hover:shadow-lg hover:shadow-slate-300/60',
-                'active:scale-[0.98]',
-                'disabled:cursor-not-allowed disabled:opacity-60'
-              )}
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Mail className="h-4 w-4" />
-                  {mode === 'signup' ? 'Create workspace' : mode === 'reset' ? 'Send Reset Link' : 'Open PRAXIS'}
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </>
-              )}
-            </button>
-
-            {/* Toggle sign in / sign up / reset */}
-            <p className="text-center text-xs text-slate-500">
-              {mode === 'signin' ? (
-                <>
-                  Don&apos;t have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setMode('signup'); setError(''); setSuccessMsg(''); }}
-                    className="font-semibold text-emerald-700 hover:underline"
-                  >
-                    Create one
-                  </button>
-                </>
-              ) : mode === 'reset' ? (
-                <>
-                  Remember your password?{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setMode('signin'); setError(''); setSuccessMsg(''); }}
-                    className="font-semibold text-emerald-700 hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </>
-              ) : (
-                <>
-                  Already have an account?{' '}
-                  <button
-                    type="button"
-                    onClick={() => { setMode('signin'); setError(''); setSuccessMsg(''); }}
-                    className="font-semibold text-emerald-700 hover:underline"
-                  >
-                    Sign in
-                  </button>
-                </>
-              )}
-            </p>
-          </motion.form>
-
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.45, duration: 0.5 }}
-            className="mt-5 rounded-lg border border-slate-200 bg-[color:var(--color-app-bg)] px-4 py-3"
-          >
-            <p className="text-center text-xs text-slate-600">
-              <span className="font-semibold text-slate-900">Free workspace</span> includes Ask PRAXIS, saved context, source receipts, and draft tools.
-            </p>
-          </motion.div>
-        </div>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.5 }}
-          className="mt-6 text-center text-xs text-slate-500"
-        >
-          Secured by TACITUS Intelligence Systems
-        </motion.p>
-      </motion.div>
-        </section>
+        <p className="mt-5 text-center text-xs leading-5 text-[var(--color-graphite)]">Independent experimental software by Giulio Catanzariti. Current access is free; generated work needs human review.</p>
+        <nav aria-label="Login information" className="mt-2 flex justify-center gap-4 text-xs text-[var(--color-graphite)]">
+          <Link href="/legal/privacy" className="inline-flex min-h-11 items-center underline">Privacy</Link><Link href="/legal/terms" className="inline-flex min-h-11 items-center underline">Terms</Link><Link href="/guide" className="inline-flex min-h-11 items-center underline">How it works</Link>
+        </nav>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -586,7 +298,7 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="civic-atelier-shell cartographic-grid praxis-checker-constellation flex min-h-screen items-center justify-center">
+        <div className="civic-atelier-shell flex min-h-screen items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
         </div>
       }

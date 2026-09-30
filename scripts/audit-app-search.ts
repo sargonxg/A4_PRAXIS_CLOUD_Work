@@ -8,6 +8,7 @@ import {
 } from '@/lib/app-search/shared-contracts';
 import { buildAppDiagnosticSummary, type AppDiagnosticRedFlag } from '@/lib/diagnostics/app-red-flags';
 import { CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
+import { WORKSPACE_ROUTES } from '@/lib/navigation/primary-nav';
 
 type AuditInput = {
   cwd: string;
@@ -21,9 +22,13 @@ export type AppSearchAuditResult = {
 };
 
 const ROUTE_FILES: Record<string, string> = {
-  '/app': 'src/app/app/page.tsx',
-  '/app/capsules': 'src/app/app/capsules/page.tsx',
-  '/app/settings?tab=system': 'src/app/app/settings/page.tsx',
+  [WORKSPACE_ROUTES.chat]: 'src/app/app/page.tsx',
+  [WORKSPACE_ROUTES.capsules]: 'src/app/app/capsules/page.tsx',
+  [WORKSPACE_ROUTES.newCapsule]: 'src/app/app/capsules/builder/page.tsx',
+  [WORKSPACE_ROUTES.savedWork]: 'src/app/app/recent-work/page.tsx',
+  [WORKSPACE_ROUTES.settings]: 'src/app/app/settings/page.tsx',
+  '/agents/[runId]': 'src/app/agents/[runId]/page.tsx',
+  '/app/conversations/[conversationId]': 'src/app/app/conversations/[conversationId]/page.tsx',
   '/api/health/runtime': 'src/app/api/health/runtime/route.ts',
   '/api/health/agentic-search': 'src/app/api/health/agentic-search/route.ts',
   '/api/admin/system-health': 'src/app/api/admin/system-health/route.ts',
@@ -65,13 +70,22 @@ export function auditAppSearchContracts(input: AuditInput): AppSearchAuditResult
 }
 
 function routeExists(cwd: string, href: string): boolean {
-  if (href.startsWith('/agents/[')) return true;
-  const path = ROUTE_FILES[href];
+  const path = routeFileForHref(href);
   return path ? existsSync(join(cwd, path)) : false;
 }
 
 function isAllowedHref(href: string): boolean {
-  return href === '/app' || href === '/app/capsules' || href === '/app/settings?tab=system' || href.startsWith('/agents/[') || href.startsWith('/app/conversations/');
+  const routeFile = routeFileForHref(href);
+  return Boolean(routeFile && !routeFile.startsWith('src/app/api/'));
+}
+
+function routeFileForHref(href: string): string | undefined {
+  if (!href.startsWith('/') || href.startsWith('//') || href.includes('\\')) return undefined;
+  const pathname = href.split(/[?#]/)[0];
+  if (ROUTE_FILES[pathname]) return ROUTE_FILES[pathname];
+  if (/^\/agents\/[a-zA-Z0-9_-]+$/.test(pathname)) return ROUTE_FILES['/agents/[runId]'];
+  if (/^\/app\/conversations\/[a-zA-Z0-9_-]+$/.test(pathname)) return ROUTE_FILES['/app/conversations/[conversationId]'];
+  return undefined;
 }
 
 function graphFreshness(input: AuditInput): { status: 'healthy' | 'stale' | 'degraded'; detail: string } {

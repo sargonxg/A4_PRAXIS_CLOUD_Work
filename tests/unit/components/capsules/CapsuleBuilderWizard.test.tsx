@@ -52,11 +52,11 @@ describe('CapsuleBuilderWizard snapshot lifecycle', () => {
     changePurpose(tree, 'Compare first decision options.'); tree = render();
     click(tree, 'Save draft'); await settle(); tree = render();
     expect(textContent(tree)).toContain('Private snapshot saved.');
-    expect(textContent(tree)).toContain('Use in Ask');
+    expect(textContent(tree)).toContain('Use in chat');
     changePurpose(tree, 'Compare revised decision options.'); tree = render();
     expect(textContent(tree)).toContain('Unsaved changes.');
-    expect(elements(tree).filter((element) => element.type === 'button').map(textContent)).toContain('Save and use in Ask');
-    click(tree, 'Save and use in Ask'); await settle();
+    expect(elements(tree).filter((element) => element.type === 'button').map(textContent)).toContain('Save and use in chat');
+    click(tree, 'Save and use in chat'); await settle();
     const payload = JSON.parse(fetcher.mock.calls.at(-1)![1].body);
     expect(payload.purpose).toBe('Compare revised decision options.');
     expect(payload.sourcing).toMatchObject({ allowedDomains: [], blockedDomains: [] });
@@ -69,7 +69,7 @@ describe('CapsuleBuilderWizard snapshot lifecycle', () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ error: 'Temporary save failure' }, { status: 503 })));
     render(); runtime.flush(); let tree = render();
     changePurpose(tree, 'Keep this private draft after a failure.'); tree = render();
-    click(tree, 'Save and use in Ask'); await settle(); tree = render();
+    click(tree, 'Save and use in chat'); await settle(); tree = render();
     expect(textContent(tree)).toContain('Temporary save failure');
     expect(elements(tree).find((element) => element.type === 'textarea')?.props.value).toBe('Keep this private draft after a failure.');
     expect(runtime.push).not.toHaveBeenCalled();
@@ -96,7 +96,7 @@ describe('CapsuleBuilderWizard snapshot lifecycle', () => {
     let resolve!: (response: Response) => void;
     vi.stubGlobal('fetch', vi.fn().mockImplementation(() => new Promise<Response>((done) => { resolve = done; })));
     render(); runtime.flush(); let tree = render();
-    changePurpose(tree, 'Account A private request.'); tree = render(); click(tree, 'Save and use in Ask');
+    changePurpose(tree, 'Account A private request.'); tree = render(); click(tree, 'Save and use in chat');
     runtime.user = { id: 'account-b' }; render(); runtime.flush(); render();
     resolve(Response.json({ capsule: { capsuleId: 'account-a-private-receipt' } })); await settle(); tree = render();
     expect(textContent(tree)).not.toContain('Private snapshot saved.');

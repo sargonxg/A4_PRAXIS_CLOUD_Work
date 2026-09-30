@@ -38,8 +38,7 @@ describe('Capsule Studio living graph UI contract', () => {
       'Trust & readiness',
       'History/diff',
       'Proposed changes',
-      'GraphLite advisory projection',
-      'Firestore canonical',
+      'Recorded context projection',
       'Build graph from sources',
       'data-testid="capsule-studio-graph-search"',
       'data-testid="capsule-graph-detail-panel"',
@@ -89,7 +88,8 @@ describe('Capsule Studio living graph UI contract', () => {
     expect(whyPanelSource).toContain('data-testid="capsule-graph-why-panel"');
     for (const expected of [
       'Why this exists',
-      'No recorded rationale (extracted directly from source)',
+      'No rationale recorded',
+      'No source excerpt is recorded',
       'derivedFrom',
       'onOpenClaim',
       'generatedBy',
@@ -103,8 +103,11 @@ describe('Capsule Studio living graph UI contract', () => {
     }
   });
 
-  it('keeps the graph viewer generic while wiring claim chips from the section', () => {
-    expect(viewerSource).not.toContain("from '@/lib/context/capsule-workbench-view-model'");
+  it('wires actual claim receipts into the generic graph and keyboard list', () => {
+    expect(viewerSource).toContain('import type { CapsuleClaimDisplay }');
+    expect(viewerSource).toContain('receipts={receipts}');
+    expect(viewerSource).toContain('data-testid="capsule-graph-keyboard-list"');
+    expect(whyPanelSource).not.toContain('No recorded rationale (extracted directly from source)');
     expect(sectionSource).toContain('onOpenClaim={handleOpenClaim}');
     expect(sectionSource).toContain('querySelector(\'[data-testid="capsule-claim-receipts"]\')');
   });

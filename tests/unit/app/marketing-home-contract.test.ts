@@ -59,15 +59,13 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
       'data-testid="marketing-hero-prompt"',
       'data-testid="marketing-primary-cta"',
       'data-testid="public-sign-in-affordance"',
-      '<HomeTopBar isPublic={isPublic} />',
-      'className="praxis-app-surface praxis-focus-surface min-h-screen text-slate-950"',
+      'praxis-focus-surface',
       'Sign in to save and reuse capsules.',
-      'Write trusted knowledge products.',
-      'Capsules keep the context clear.',
+      'What are we working on?',
+      'Start with a question. Bring your context when it helps.',
       'Ask',
       'Context Capsules library',
       'Boardroom',
-      'Drafts',
       'Guide',
       'Release notes',
     ]) {
@@ -97,6 +95,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     }
 
     expect(shellSource).toContain('isPublic ? <PublicShell>{body}</PublicShell> : body');
+    expect(shellSource).not.toContain('HomeTopBar');
   });
 
   it('keeps the public composer first and offers clear saved-context entry points', () => {
@@ -105,9 +104,9 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(chatSource).toContain('Policy analysis you can inspect.');
     expect(chatSource).toContain('Sign in to run your question and save the work.');
     expect(chatSource).toContain("isPublic || showExamples ? 'order-first mb-4'");
-    expect(shellSource).toContain('Explore capsules');
-    expect(shellSource).toContain('Build your own');
-    expect(shellSource).toContain('How saved context guides the analysis');
+    expect(shellSource).toContain('Attach context');
+    expect(shellSource).toContain('New capsule');
+    expect(shellSource).toContain('How context works');
     expect(shellSource).toContain("item.id === 'ask' || item.id === 'context'");
   });
 

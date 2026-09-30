@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { COMMAND_SEARCH_ACTIONS } from '@/lib/app-search/static-actions';
+import { capsuleInspectionHref, WORKSPACE_ROUTES } from '@/lib/navigation/primary-nav';
 import { listCapsules, type PraxisCapsule } from '@/lib/context/capsule-service';
 import { CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 import { listKnowledgeDocuments, type KnowledgeDocument } from '@/lib/knowledge/library-service';
@@ -201,7 +202,7 @@ export function normalizeCapsuleSearchResult(capsule: PraxisCapsule, query: stri
     type: 'capsule',
     label: capsule.label || capsule.capsuleId,
     description: tags.length ? tags.slice(0, 3).join(' / ') : 'ContextCapsule workspace item',
-    href: `/app/capsules?capsuleId=${encodeURIComponent(capsule.capsuleId)}`,
+    href: capsuleInspectionHref(capsule.capsuleId),
     score: scoreResult(query, haystack, 'capsule', capsule.updatedAt) + (labelMatchesExactly ? 300 : 0),
     badges: [
       health,
@@ -236,7 +237,7 @@ export function normalizeKnowledgeDocumentSearchResult(doc: KnowledgeDocument, q
     type: doc.sourceType === 'source' ? 'source' : 'document',
     label: doc.title || doc.documentId,
     description: doc.digest?.shortSummary || doc.sourceNote || doc.policyDomain || 'Repository document',
-    href: `/app/capsules?lane=repository&documentId=${encodeURIComponent(doc.id)}`,
+    href: `${WORKSPACE_ROUTES.sources}&documentId=${encodeURIComponent(doc.id)}`,
     score: scoreResult(query, haystack, 'document', doc.updatedAt),
     badges: [doc.fileType || 'document', sourcePosture, `${doc.chunkCount} chunks`],
     sourcePosture,
@@ -275,7 +276,7 @@ function normalizeAgentRunSearchResult(run: AgentRun, query: string): AppSearchR
     type: 'agent_run',
     label: output.policyAgentLabel ? `${output.policyAgentLabel}: ${output.objective}` : output.objective,
     description: output.outputTargetLabel ? `Output target: ${output.outputTargetLabel}` : 'Durable AgentRun ledger entry',
-    href: `/app/capsules?capsuleId=${encodeURIComponent(output.capsuleId)}&runId=${encodeURIComponent(output.runId)}`,
+    href: `/agents/${encodeURIComponent(output.runId)}`,
     score: scoreResult(query, haystack, 'agent_run', output.updatedAt),
     badges: [output.status, output.outputTargetLabel ?? 'no output target', `${output.sourceCount ?? 0} sources`],
     sourcePosture: output.sourcePosture ?? null,
@@ -328,7 +329,7 @@ function starterCapsuleResults(query: string): AppSearchResult[] {
       type: 'capsule' as const,
       label: starter.label,
       description: starter.summary,
-      href: `/app/capsules?starter=${encodeURIComponent(starter.starterId)}`,
+      href: capsuleInspectionHref(starter.starterId),
       score: scoreResult(query, haystack, 'capsule', null) + (labelMatchesExactly ? 300 : 0),
       badges: ['starter', device ? 'thinking device' : starter.category, `${starter.sourcePack.length} sources`],
       sourcePosture: starter.sourcePack.length ? `${starter.sourcePack.length} starter sources` : 'starter context',

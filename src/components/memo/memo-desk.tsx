@@ -764,7 +764,12 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
             ? `${activeCapsule.capsuleId}-v${activeCapsule.version}`
             : `memo-studio-${Date.now().toString(36)}`,
           status: 'draft',
-          changeNote: 'Saved from Memo Studio with active context capsule.',
+          capsuleId: activeCapsule?.capsuleId ?? null,
+          capsuleVersion: activeCapsule?.version ?? null,
+          sourceReceiptIds: [],
+          sourceReceipts: sources.map((url) => ({ url, title: hostnameOf(url), kind: 'source-reference',
+            originalPassageStatus: 'unavailable', claimSupportVerified: false })),
+          changeNote: 'Saved from Memo Studio with the current context selection and source references.',
         }),
       });
       if (!res.ok) throw new Error(`status ${res.status}`);

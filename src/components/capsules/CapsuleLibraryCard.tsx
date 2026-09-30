@@ -61,6 +61,8 @@ export interface CapsuleLibraryCardDragAction {
 
 export interface CapsuleLibraryCardProps {
   variant: CapsuleLibraryCardVariant;
+  /** A scan-friendly library entry. Deeper evidence remains available in inspection. */
+  simplified?: boolean;
   capsuleId: string;
   title: string;
   summary?: string | null;
@@ -104,6 +106,7 @@ export interface CapsuleLibraryCardProps {
 
 export function CapsuleLibraryCard({
   variant,
+  simplified = false,
   capsuleId,
   title,
   summary,
@@ -172,6 +175,12 @@ export function CapsuleLibraryCard({
     unsupportedAssessed ? `${unsupportedClaims} unsupported` : 'Not assessed',
     ...metadata,
   ].filter(Boolean) as string[];
+  const scanMetadata = [
+    ...metadata,
+    `${sourceCount} source ref${sourceCount === 1 ? '' : 's'}`,
+    `${claimCount} claim${claimCount === 1 ? '' : 's'}`,
+    unsupportedAssessed ? `${unsupportedClaims} unsupported` : 'Support not assessed',
+  ].filter(Boolean) as string[];
   const visibleScoreboard = scoreboardItems?.length
     ? scoreboardItems
     : [
@@ -190,7 +199,7 @@ export function CapsuleLibraryCard({
       className={cn(
         isCompact
           ? 'praxis-card-panel specimen-card od-praxis-card flex h-full w-full flex-col overflow-hidden rounded-lg p-0 transition hover:-translate-y-0.5'
-          : 'flex h-full min-h-[18rem] w-full flex-col overflow-hidden rounded-lg border bg-white p-0 text-left transition hover:-translate-y-0.5 hover:shadow-md',
+          : 'specimen-card flex h-full w-full flex-col overflow-hidden rounded-lg border bg-white p-0 text-left transition hover:border-[var(--color-praxis-emerald-500)]',
         isCompact ? 'min-h-[15rem]' : 'shadow-sm',
         active ? 'border-sky-300 shadow-sky-100' : isCompact ? 'border-black/10' : 'border-slate-200',
         busy && 'opacity-75',
@@ -223,12 +232,12 @@ export function CapsuleLibraryCard({
                 <span className="block text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">{subtitle}</span>
               ) : null}
               <span className="block text-base font-semibold leading-6 text-slate-950">{title}</span>
-              <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Categories</span>
+              {!simplified ? <span className="mt-2 block text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">Categories</span> : null}
             </span>
           </span>
           <span className="flex shrink-0 flex-col items-end gap-1">
             {badges.map((badge) => <CardBadge key={`${badge.label}-${badge.testId ?? ''}`} badge={badge} />)}
-            {roleLabel ? <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">{roleLabel}</span> : null}
+            {roleLabel && !simplified ? <span className="rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-700">{roleLabel}</span> : null}
             {readiness ? <CapsuleReadinessBadge size="sm" {...readiness} /> : null}
           </span>
         </span>
@@ -236,14 +245,14 @@ export function CapsuleLibraryCard({
         <span className="mt-2 flex flex-wrap items-center gap-1.5" aria-label={`${title} categories`}>
           {categoryLabel ? <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">{categoryLabel}</span> : null}
           {domainLabel ? <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">{domainLabel}</span> : null}
-          {tags.map((tag) => <CardBadge key={`${tag.label}-${tag.testId ?? ''}`} badge={tag} />)}
+          {!simplified ? tags.map((tag) => <CardBadge key={`${tag.label}-${tag.testId ?? ''}`} badge={tag} />) : null}
         </span>
 
         {badgeRail}
 
-        {visibleMetadata.length ? (
+        {(simplified ? scanMetadata : visibleMetadata).length ? (
           <span className="mt-2 flex flex-wrap items-center gap-2 text-[11px] font-semibold text-slate-500">
-            {visibleMetadata.map((item) => (
+            {(simplified ? scanMetadata : visibleMetadata).map((item) => (
               <span key={item} className={unsupportedClaims && item.includes('unsupported') ? 'text-amber-700' : undefined}>{item}</span>
             ))}
           </span>
@@ -263,7 +272,7 @@ export function CapsuleLibraryCard({
           </span>
         ) : null}
 
-        {researchSignals ? (
+        {researchSignals && !simplified ? (
           <span
             className="mt-2 grid gap-1.5 rounded-md border border-emerald-100 bg-emerald-50/70 p-2 text-[11px] font-semibold text-emerald-900 sm:grid-cols-2"
             data-testid="capsule-research-signals"
@@ -280,7 +289,7 @@ export function CapsuleLibraryCard({
           </span>
         ) : null}
 
-        {!isCompact ? (
+        {!isCompact && !simplified ? (
           <CapsuleMiniGraph
             className="mt-3"
             seed={capsuleId}
@@ -290,6 +299,7 @@ export function CapsuleLibraryCard({
             entityTypeCounts={graph?.entityTypeCounts ?? undefined}
           />
         ) : null}
+        {simplified ? <span className="mt-3 block border-t border-slate-200 pt-3 text-xs text-slate-600">{graphNodes ? `${graphNodes} recorded graph nodes · ${graphEdges} links` : 'No recorded graph yet'}</span> : null}
 
         <span className={cn('mt-3 block text-sm leading-6 text-slate-600', isCompact ? 'line-clamp-2' : 'line-clamp-3')}>
           {summary || 'No capsule summary available yet.'}
@@ -308,7 +318,7 @@ export function CapsuleLibraryCard({
           </span>
         ) : null}
 
-        {!isCompact ? (
+        {!isCompact && !simplified ? (
           <span className="mt-3 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-slate-600" data-testid="capsule-repository-v2-scoreboard">
             {visibleScoreboard.map((item) => (
               <span key={item.label} className="rounded-md bg-slate-50 px-2 py-1">
@@ -331,7 +341,7 @@ export function CapsuleLibraryCard({
                   onClick={() => addAction.onAdd()}
                   disabled={addAction.disabled}
                   className={cn(
-                    'bg-emerald-700 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60',
+                    'min-h-11 bg-[var(--color-praxis-emerald-700)] px-3 py-2 text-sm font-semibold text-white hover:bg-[var(--color-praxis-emerald-800)] disabled:cursor-not-allowed disabled:opacity-60',
                     addRoleOptions.length ? 'rounded-l-md' : 'rounded-md',
                   )}
                 >
@@ -344,7 +354,7 @@ export function CapsuleLibraryCard({
                     aria-expanded={roleMenuOpen}
                     onClick={() => setRoleMenuOpen((open) => !open)}
                     disabled={addAction.disabled}
-                    className="inline-flex h-8 w-8 items-center justify-center rounded-r-md border-l border-emerald-500 bg-emerald-700 text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-r-md border-l border-[var(--color-praxis-emerald-500)] bg-[var(--color-praxis-emerald-700)] text-white hover:bg-[var(--color-praxis-emerald-800)] disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', roleMenuOpen && 'rotate-180')} />
                   </button>
@@ -363,7 +373,7 @@ export function CapsuleLibraryCard({
                           addAction.onAdd(option.value);
                           setRoleMenuOpen(false);
                         }}
-                        className="rounded px-2 py-1.5 text-left hover:bg-emerald-50 hover:text-emerald-800"
+                        className="min-h-11 rounded px-2 py-2 text-left hover:bg-emerald-50 hover:text-emerald-800"
                       >
                         {option.label}
                       </button>

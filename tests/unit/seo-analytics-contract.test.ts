@@ -41,14 +41,17 @@ describe('SEO analytics contract', () => {
     expect(chat).toContain('showHomeHeading = true');
   });
 
-  it('loads the PRAXIS Google tag once from the root layout for all routes', () => {
+  it('keeps optional visit analytics disabled before a consent interface exists', () => {
     const layout = readFileSync(join(root, 'src/app/layout.tsx'), 'utf8');
     const landingPage = readFileSync(join(root, 'src/app/page.tsx'), 'utf8');
+    const firebaseClient = readFileSync(join(root, 'src/lib/firebase/config.ts'), 'utf8');
 
-    expect(layout).toContain('NEXT_PUBLIC_GA_MEASUREMENT_ID');
-    expect(layout).toContain('NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID');
-    expect(layout).toContain('https://www.googletagmanager.com/gtag/js?id=${gaMeasurementId}');
-    expect(layout).toContain("gtag('config', '${gaMeasurementId}', { anonymize_ip: true })");
+    expect(layout).not.toContain('googletagmanager.com/gtag/js');
+    expect(layout).not.toContain("gtag('config'");
     expect(landingPage).not.toContain('googletagmanager.com/gtag/js');
+    expect(firebaseClient).toContain('analytics: Analytics | null = null');
+    expect(firebaseClient).not.toContain('getAnalytics(');
+    expect(firebaseClient).toContain('getAuth(app)');
+    expect(firebaseClient).toContain('getFirestore(app)');
   });
 });

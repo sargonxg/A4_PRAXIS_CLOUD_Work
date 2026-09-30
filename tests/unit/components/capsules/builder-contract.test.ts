@@ -32,7 +32,7 @@ describe('Capsule Builder UX contract', () => {
     const privateSave = wizard.slice(wizard.indexOf('async function saveDraft()'), wizard.indexOf('async function saveAndUse()'));
     expect(privateSave).toContain("fetch('/api/context/capsules'");
     expect(privateSave).not.toContain('/publish');
-    expect(wizard).toContain('Save and use in Ask');
+    expect(wizard).toContain('Save and use in chat');
     expect(wizard).toContain('Sources and generated proposals still need review.');
     expect(wizard).toContain('Package publication is a separate advanced workflow.');
     expect(wizard).toContain('Check draft structure');

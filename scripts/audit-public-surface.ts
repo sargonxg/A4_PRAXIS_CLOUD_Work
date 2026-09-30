@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { auditAppHomeDispatch } from './lib/public-home-dispatch';
+import { PUBLIC_NAV_ITEMS } from '@/lib/navigation/primary-nav';
 
 const root = process.cwd();
 const failures: string[] = [];
@@ -37,6 +38,7 @@ const policyMissions = read('src/lib/product/policy-missions.ts');
 const workbench = read('src/components/praxis/tasklet-praxis-workbench.tsx');
 const boardroom = read('src/components/boardroom/boardroom-workspace.tsx');
 const appShell = read('src/components/app/app-shell.tsx');
+const publicShell = read('src/components/app/public-shell.tsx');
 const sitemap = read('src/app/sitemap.ts');
 const dockerfile = read('Dockerfile');
 
@@ -62,16 +64,15 @@ requireAll('marketing home', publicHomeSurface, [
   'marketing-home',
   'data-testid="praxis-chat-first-shell"',
   'data-testid="simple-home-chat"',
-  'Write trusted knowledge products.',
-  'Capsules keep the context clear.',
+  '<h1',
+  'aria-labelledby="public-workflow-title"',
+  '<PublicIntroduction />',
   'POLICY_MISSION_EXAMPLES',
   'data-testid="marketing-hero-prompt"',
   'data-testid="marketing-primary-cta"',
   'Continue',
   'Ask',
   'Context Capsules library',
-  'Guide',
-  'Pricing',
   'isPublic ? <PublicShell>{body}</PublicShell> : body',
 ]);
 forbidAll('marketing home', publicHomeSurface, [
@@ -107,7 +108,7 @@ forbidAll('signed-in app index', appIndex, ['AskPraxisHome']);
 failures.push(...auditAppHomeDispatch(appIndex));
 requireAll('signed-in launchpad', sharedHomeSurface, [
   'app-launchpad',
-  'Write trusted knowledge products.',
+  'showHomeHeading={!isPublic}',
   'POLICY_MISSION_EXAMPLES',
   'Ask PRAXIS',
   'fetch(\'/api/ai/chat\'',
@@ -148,8 +149,17 @@ requireAll('boardroom workspace', boardroom, [
 
 requireAll('app shell', appShell, [
   'data-testid="praxis-one-page-app-shell"',
-  "pathname === '/app'",
+  'AppSidebar',
+  'id="workspace-main"',
+  '<PraxisRouteTransition>{children}</PraxisRouteTransition>',
+  "if (loading || !user) return",
 ]);
+
+requireAll('public navigation', publicShell, ['PUBLIC_NAV_ITEMS.map', 'public-sign-in-affordance']);
+for (const href of ['/guide', '/pricing']) {
+  if (!PUBLIC_NAV_ITEMS.some((item) => item.href === href)) failures.push(`public navigation missing route: ${href}`);
+  if (!existsSync(join(root, `src/app${href}/page.tsx`))) failures.push(`public navigation route target missing: ${href}`);
+}
 
 for (const required of ['/learn', '/guide', '/pricing', '/release-notes']) {
   if (!sitemap.includes(required)) failures.push(`sitemap missing public route: ${required}`);

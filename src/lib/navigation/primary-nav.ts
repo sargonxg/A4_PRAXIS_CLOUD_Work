@@ -50,23 +50,23 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     label: 'Workspace',
     defaultOpen: true,
     items: [
-      { id: 'home', label: 'Home', icon: 'MessageSquareText', href: '/app', shortcut: 'g h', hint: 'Ask from the active capsule' },
+      { id: 'home', label: 'Chat', icon: 'MessageSquareText', href: '/app', matchPaths: ['/app/conversations'], shortcut: 'g h', hint: 'Ask, draft, and review with your context' },
       { id: 'capsules', label: 'Capsules', icon: 'FolderKanban', href: '/app/capsules', shortcut: 'g c', hint: 'Manage, improve, source, and download reusable capsules' },
-      { id: 'boardroom', label: 'Boardroom', icon: 'ShieldCheck', href: '/app/boardroom', shortcut: 'g b', hint: 'Run a chaired multi-lens discussion' },
-      { id: 'recent-work', label: 'Recent work', icon: 'FileText', href: '/app/recent-work', shortcut: 'g r', hint: 'Reopen generated work and saved artifacts' },
     ],
   },
   {
-    id: 'knowledge',
-    label: 'Knowledge',
-    defaultOpen: true,
+    id: 'advanced',
+    label: 'More',
+    defaultOpen: false,
     items: [
+      { id: 'boardroom', label: 'Boardroom', icon: 'ShieldCheck', href: '/app/boardroom', shortcut: 'g b', hint: 'Compare perspectives in a chaired discussion' },
+      { id: 'recent-work', label: 'Saved work', icon: 'FileText', href: '/app/recent-work', shortcut: 'g r', hint: 'Reopen briefs and saved artifacts' },
       {
         id: 'marketplace',
-        label: 'Marketplace',
+        label: 'Starter capsules',
         icon: 'BriefcaseBusiness',
         href: '/app/capsules?lane=marketplace',
-        hint: 'Start from verified capsule patterns',
+        hint: 'Choose a starting pattern and review its sources',
       },
       { id: 'settings', label: 'Settings', icon: 'Settings', href: '/app/settings', shortcut: 'g s', hint: 'Profile, billing, system posture' },
     ],
@@ -75,6 +75,21 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
 
 /** Flat list of every nav item — used for keyboard shortcuts + path matching. */
 export const PRIMARY_NAV: readonly PrimaryNavItem[] = NAV_GROUPS.flatMap((g) => g.items);
+
+/** Existing routes shared by navigation, search and contextual actions. */
+export const WORKSPACE_ROUTES = {
+  chat: PRIMARY_NAV.find((item) => item.id === 'home')!.href,
+  capsules: PRIMARY_NAV.find((item) => item.id === 'capsules')!.href,
+  savedWork: PRIMARY_NAV.find((item) => item.id === 'recent-work')!.href,
+  settings: PRIMARY_NAV.find((item) => item.id === 'settings')!.href,
+  newCapsule: '/app/capsules/builder',
+  sources: '/app/capsules?lane=sources',
+  starters: '/app/capsules?lane=marketplace',
+} as const;
+
+export function capsuleInspectionHref(capsuleId: string): string {
+  return `${WORKSPACE_ROUTES.capsules}?${new URLSearchParams({ lane: 'inspect', starter: capsuleId })}`;
+}
 
 export type PrimaryNavId = PrimaryNavItem['id'];
 
@@ -90,9 +105,6 @@ function homeDestination(navId: string, id = navId): HomeSidebarDestination {
 export const HOME_SIDEBAR_DESTINATIONS = [
   homeDestination('home', 'ask'),
   homeDestination('capsules', 'context'),
-  homeDestination('boardroom'),
-  homeDestination('recent-work'),
-  { id: 'drafts', label: 'Drafts', href: '/app?panel=memo', publicHref: '/login?mode=signup&redirect=%2Fapp%3Fpanel%3Dmemo', icon: 'FileText' },
 ] as const satisfies readonly HomeSidebarDestination[];
 
 export const PUBLIC_NAV_ITEMS = [
@@ -107,7 +119,7 @@ export const PUBLIC_FOOTER_LINKS = [
   { label: 'Privacy', href: '/legal/privacy' },
   { label: 'Cookies', href: '/legal/cookies' },
   { label: 'GDPR', href: '/legal/gdpr' },
-  { label: 'DPA', href: '/legal/data-processing' },
+  { label: 'Data processing', href: '/legal/data-processing' },
   { label: 'Terms', href: '/legal/terms' },
   { label: 'Security', href: '/legal/security' },
   { label: 'Sub-processors', href: '/legal/sub-processors' },
@@ -116,7 +128,7 @@ export const PUBLIC_FOOTER_LINKS = [
 
 export const ROUTE_LABELS: readonly { href: string; label: string }[] = [
   { href: '/', label: 'Home' },
-  { href: '/app', label: 'PRAXIS' },
+  { href: '/app', label: 'Chat' },
   { href: '/learn', label: 'Learn' },
   { href: '/guide', label: 'Guide' },
   { href: '/pricing', label: 'Pricing' },
@@ -124,6 +136,8 @@ export const ROUTE_LABELS: readonly { href: string; label: string }[] = [
   { href: '/changelog', label: 'Changelog' },
   { href: '/help', label: 'Help' },
   { href: '/legal', label: 'Legal' },
+  { href: '/app/capsules/builder', label: 'New capsule' },
+  { href: '/app/conversations', label: 'Conversations' },
   ...PRIMARY_NAV.map((item) => ({ href: item.href, label: item.label })),
 ];
 

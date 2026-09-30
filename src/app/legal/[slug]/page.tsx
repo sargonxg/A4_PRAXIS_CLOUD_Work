@@ -50,7 +50,12 @@ export default async function LegalPage({ params }: LegalPageProps) {
               {page.summary}
             </p>
             <p className="max-w-3xl rounded-md border border-[color:var(--color-rose-gold)]/45 bg-white/55 px-4 py-3 text-sm leading-6 text-[color:var(--color-ink)]/68">
-              This page states the current PRAXIS beta operating posture. Enterprise-specific terms, residency, or procurement language require a separate written agreement.
+              PRAXIS is part of TACITUS, an independent experimental project
+              operated by Giulio Catanzariti. No TACITUS legal entity has been
+              incorporated. Institutional terms, data handling and contracting
+              parties must be established before an evaluation. Nothing on this
+              page excludes rights or liabilities that applicable law does not
+              allow to be excluded.
             </p>
           </div>
         </div>

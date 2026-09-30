@@ -17,6 +17,22 @@ const directPrompts = [
 ];
 
 describe('explicit Ask conversation restrictions', () => {
+  it.each([
+    'Using only the attached saved capsule and its original uploaded source text, identify the actor, deadline and funding uncertainty. Do not browse or invent missing details.',
+    'Use only the attached saved ContextCapsule to draft the brief.',
+    'Use the attached saved sources only for this answer.',
+  ])('keeps saved attached material exclusive: %s', (prompt) => {
+    const preference = resolveAskExecutionPreference(prompt);
+    expect(preference).toMatchObject({ suppliedContextOnly: true, allowExternalSources: false, allowWorkspaceRetrieval: false });
+    expect(Object.keys(filterAskToolsForExecution({ analyzeDocument: {}, webSearch: {}, queryConflictGraph: {}, runDeepResearch: {} }, preference)))
+      .toEqual(['analyzeDocument']);
+  });
+
+  it('does not treat a quoted saved-capsule instruction as the requested evidence scope', () => {
+    const preference = resolveAskExecutionPreference('Explain the phrase "use only the attached saved capsule" and research current official sources.');
+    expect(preference).toMatchObject({ suppliedContextOnly: false, allowExternalSources: true, allowWorkspaceRetrieval: true });
+  });
+
   it('lets calibration inspect malformed raw messages safely before schema validation rejects them', () => {
     const malformed = [null, 'not a message', {}, { role: null, content: 'invalid' }];
     expect(readAskMessages(malformed)).toEqual([]);

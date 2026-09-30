@@ -17,43 +17,46 @@ export function CapsuleLivePreview({ json }: CapsuleLivePreviewProps) {
     : [parsedJson.error];
 
   return (
-    <aside className="border border-[#d8d1c5] bg-[#fffdf8] p-5">
-      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#786f62]">Live preview</p>
+    <aside className="specimen-card min-w-0 rounded-lg border border-[var(--color-mineral)] bg-[var(--color-archive-paper-strong)] p-5">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-graphite)]">Live preview</p>
       {capsule ? (
         <div className="mt-4 space-y-4">
           <div>
-            <h3 className="text-lg font-semibold text-[#24211b]">{capsule.id}</h3>
-            <p className="text-sm text-[#5b5347]">{capsule.persona.systemFrame}</p>
+            <h3 className="font-serif text-2xl font-semibold text-[var(--color-deep-ink)]">Your working context</h3>
+            <p className="mt-2 break-words text-sm leading-6 text-[var(--color-graphite)]">{capsule.persona.systemFrame}</p>
           </div>
           <dl className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <dt className="text-[#786f62]">Domain</dt>
-              <dd className="font-medium">{capsule.persona.domain}</dd>
+              <dt className="text-[var(--color-graphite)]">Domain</dt>
+              <dd className="font-medium">{readable(capsule.persona.domain)}</dd>
             </div>
             <div>
-              <dt className="text-[#786f62]">Output</dt>
-              <dd className="font-medium">{capsule.output.format}</dd>
+              <dt className="text-[var(--color-graphite)]">Output</dt>
+              <dd className="font-medium">{readable(capsule.output.format)}</dd>
             </div>
             <div>
-              <dt className="text-[#786f62]">Sources</dt>
-              <dd className="font-medium">{capsule.sourcing.mode}</dd>
+              <dt className="text-[var(--color-graphite)]">Sources</dt>
+              <dd className="font-medium">{readable(capsule.sourcing.mode)}</dd>
             </div>
             <div>
-              <dt className="text-[#786f62]">Guardrail</dt>
+              <dt className="text-[var(--color-graphite)]">Guardrail</dt>
               <dd className="font-medium">
                 {capsule.guardrails.citationRequired ? 'Citations required' : 'Citations advised'}
               </dd>
             </div>
           </dl>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#786f62]">Frameworks</p>
-            <p className="mt-2 text-sm text-[#4f483f]">
-              {capsule.persona.frameworks.length ? capsule.persona.frameworks.join(', ') : 'No frameworks selected yet'}
+          <details>
+            <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">Technical details</summary>
+            <p className="break-all font-mono text-xs text-[var(--color-graphite)]">{capsule.id}</p>
+            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--color-graphite)]">Frameworks</p>
+            <p className="mt-2 text-sm text-[var(--color-graphite)]">
+              {capsule.persona.frameworks.length ? capsule.persona.frameworks.map(readable).join(', ') : 'No frameworks selected yet'}
             </p>
-          </div>
+          </details>
+          <p className="border-t border-[var(--color-mineral)] pt-3 text-xs leading-5 text-[var(--color-graphite)]">This preview describes draft settings. It does not verify sources or approve generated claims.</p>
         </div>
       ) : (
-        <div className="mt-4 space-y-2 text-sm text-[#8a3d2c]">
+        <div role="status" className="mt-4 space-y-2 break-words text-sm text-[var(--color-oxide)]">
           {issues.map((issue) => (
             <p key={issue}>{issue}</p>
           ))}
@@ -69,4 +72,8 @@ function safeJson(value: string): { ok: true; value: unknown } | { ok: false; er
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : 'Invalid JSON' };
   }
+}
+
+function readable(value: string): string {
+  return value.replace(/[-_]/g, ' ').replace(/^./, (first) => first.toUpperCase());
 }

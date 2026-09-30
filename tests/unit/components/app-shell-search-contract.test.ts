@@ -8,15 +8,17 @@ describe('AppShell search contract', () => {
   it('opens global search from one-page cockpit custom events', () => {
     expect(source).toContain("'open-praxis-search'");
     expect(source).toContain('SearchOpenEvent');
-    expect(source).toContain('openSearch(searchEvent.detail?.query)');
+    expect(source).toContain('openSearch((event as SearchOpenEvent).detail?.query)');
   });
 
-  it('renders global search outside the legacy shell branch', () => {
-    const overlayIndex = source.indexOf('{searchOpen && (');
+  it('renders global search once alongside the shared app shell', () => {
+    const overlayIndex = source.indexOf('{searchOpen ?');
     const onePageIndex = source.indexOf('data-testid="praxis-one-page-app-shell"');
 
     expect(overlayIndex).toBeGreaterThan(onePageIndex);
     expect(source).toContain('data-testid="praxis-one-page-app-shell"');
     expect(source).toContain('<GlobalSearch');
+    expect(source.match(/<GlobalSearch\b/g)).toHaveLength(1);
+    expect(source).not.toContain('isOnePageCockpit');
   });
 });

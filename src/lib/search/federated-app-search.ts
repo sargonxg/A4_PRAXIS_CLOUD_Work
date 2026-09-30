@@ -1,4 +1,5 @@
 import type { AppSearchResponse, AppSearchResult } from '@/lib/app-search/app-search';
+import { capsuleInspectionHref, WORKSPACE_ROUTES } from '@/lib/navigation/primary-nav';
 
 export type SearchResultGroup =
   | 'Ask'
@@ -115,12 +116,12 @@ export function buildFederatedSearchResults(input: {
       icon: 'command',
     })));
 
-  results.push({
+  if (!input.commands.some((command) => command.id === 'open-workspace')) results.push({
     id: 'open-workspace',
     group: 'Sources',
-    label: 'Open Workspace',
+    label: 'Sources and receipts',
     description: 'Review source and document repository items inside Capsules.',
-    href: '/app/capsules?lane=repository',
+    href: WORKSPACE_ROUTES.sources,
     icon: 'sources',
   });
 
@@ -255,7 +256,7 @@ function capsuleResult(item: CapsuleSearchItem): SearchResult {
     group: 'Capsules',
     label: item.label ?? item.title ?? 'ContextCapsule',
     description: item.scope ? `${item.scope} capsule` : id,
-    href: `/app/capsules?capsuleId=${encodeURIComponent(id)}`,
+    href: capsuleInspectionHref(id),
     icon: 'capsule',
     status: blockers > 0 ? 'blocked' : warnings > 0 ? 'warn' : 'ok',
     meta: `${sourceCount} sources / ${documentCount} docs`,
@@ -269,7 +270,7 @@ function repositoryResult(item: RepositorySearchItem): SearchResult {
     group: 'Sources',
     label: item.name ?? 'Knowledge repository',
     description: item.description ?? 'Source and document repository item',
-    href: `/app/capsules?lane=repository&repositoryId=${encodeURIComponent(id)}`,
+    href: `${WORKSPACE_ROUTES.sources}&repositoryId=${encodeURIComponent(id)}`,
     icon: 'sources',
     meta: `${item.documentCount ?? 0} docs / ${item.sourceCount ?? 0} sources`,
   };
