@@ -86,7 +86,7 @@ export function AskContextBar({
   stack: ActiveContextStackState;
   variant?: 'home' | 'floating';
 }) {
-  const { user, analystProfile } = useAuth();
+  const { user, analystProfile, loading: authLoading } = useAuth();
   const storeSituation = useSituationStore((state) => state.activeSituation);
   const situations = useSituationStore((state) => state.situations);
   const [pickerSlot, setPickerSlot] = useState<CapsuleDockSlotKind | null>(null);
@@ -98,6 +98,8 @@ export function AskContextBar({
   const [refreshKey, setRefreshKey] = useState(0);
   const dark = variant === 'floating';
   const isPublic = mode === 'public';
+  const contextReady = !isPublic && !authLoading && Boolean(user?.id) && hydrated;
+  const mutationDisabled = !contextReady || saving;
   const selectedSituation = activeSituation
     ?? storeSituation
     ?? situations.find((item) => item.id === stack.situationId)
@@ -120,6 +122,7 @@ export function AskContextBar({
   const dockSlots = useMemo(() => buildCapsuleDockSlots(stack), [stack]);
 
   async function persistStack(next: ActiveContextStackState) {
+    if (mutationDisabled) return false;
     setSaving(true);
     setSaveError(null);
     try {
@@ -146,6 +149,7 @@ export function AskContextBar({
   }
 
   async function clearContext() {
+    if (mutationDisabled) return;
     const empty = defaultActiveContextStack();
     setSaving(true);
     setSaveError(null);
@@ -171,12 +175,14 @@ export function AskContextBar({
   }
 
   function toggleSlotPicker(kind: CapsuleDockSlotKind) {
+    if (mutationDisabled) return;
     setPickerSlot((value) => (value === kind ? null : kind));
     setBuilderOpen(false);
     setActionsOpen(false);
   }
 
   function toggleBuilder() {
+    if (mutationDisabled) return;
     setBuilderOpen((value) => !value);
     setPickerSlot(null);
     setActionsOpen(false);
@@ -248,6 +254,7 @@ export function AskContextBar({
                 <button
                   type="button"
                   onClick={toggleBuilder}
+                  disabled={mutationDisabled}
                   className={actionClassName(dark, builderOpen)}
                   title="Build context"
                 >
@@ -262,7 +269,7 @@ export function AskContextBar({
                 <button
                   type="button"
                   onClick={() => void clearContext()}
-                  disabled={saving}
+                  disabled={mutationDisabled}
                   className={actionClassName(dark)}
                   title="Clear context"
                 >
@@ -316,7 +323,7 @@ export function AskContextBar({
                   </Link>
                 ) : (
                   <>
-                    <button type="button" role="menuitem" onClick={toggleBuilder} className={cn(actionClassName(dark, builderOpen), 'w-full justify-start')}>
+                    <button type="button" role="menuitem" onClick={toggleBuilder} disabled={mutationDisabled} className={cn(actionClassName(dark, builderOpen), 'w-full justify-start')}>
                       <Wand2 className="h-3.5 w-3.5" />
                       Build context
                     </button>
@@ -325,7 +332,7 @@ export function AskContextBar({
                       Pick capsule
                     </Link>
                     <ApprovalInboxButton dark={dark} />
-                    <button type="button" role="menuitem" onClick={() => { setActionsOpen(false); void clearContext(); }} disabled={saving} className={cn(actionClassName(dark), 'w-full justify-start')}>
+                    <button type="button" role="menuitem" onClick={() => { setActionsOpen(false); void clearContext(); }} disabled={mutationDisabled} className={cn(actionClassName(dark), 'w-full justify-start')}>
                       {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
                       Clear context
                     </button>
@@ -346,7 +353,7 @@ export function AskContextBar({
             <CapsuleDockSlotCard
               key={slot.kind}
               dark={dark}
-              disabled={isPublic}
+              disabled={!contextReady}
               active={pickerSlot === slot.kind}
               saving={saving}
               slot={slot}
@@ -376,7 +383,7 @@ export function AskContextBar({
                   <button
                     type="button"
                     onClick={() => void detachCapsule(item.capsuleId)}
-                    disabled={saving}
+                    disabled={mutationDisabled}
                     title={`Detach ${item.label}`}
                     className={cn('inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50', dark ? 'hover:bg-slate-800 hover:text-red-300' : 'hover:bg-red-50 hover:text-red-700')}
                   >
@@ -406,7 +413,7 @@ export function AskContextBar({
         </div>
       ) : null}
 
-      {!isPublic && pickerSlot ? (
+      {contextReady && pickerSlot ? (
         <div className={cn('mt-2 flex flex-wrap items-center gap-2 rounded-[var(--radius-md)] border p-2', dark ? 'border-slate-800 bg-slate-900' : 'border-slate-200 bg-slate-50')}>
           <span className={cn('text-xs font-semibold', dark ? 'text-slate-300' : 'text-slate-600')}>
             Attach {dockSlots.slots.find((slot) => slot.kind === pickerSlot)?.label ?? ''} capsule
@@ -437,7 +444,7 @@ export function AskContextBar({
         </div>
       ) : null}
 
-      {!isPublic && builderOpen ? (
+      {contextReady && builderOpen ? (
         <InlineQuickContextBuilder
           className="mt-2"
           saveStack={saveStack}
@@ -540,7 +547,7 @@ function CapsuleDockSlotCard({
         <button
           type="button"
           onClick={onClear}
-          disabled={saving}
+          disabled={disabled || saving}
           title={`Remove ${slot.item?.label} from the ${slot.label} slot`}
           className={cn(
             'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full transition disabled:opacity-50',

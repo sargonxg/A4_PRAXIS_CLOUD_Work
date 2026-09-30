@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
-import { CapsuleLibrary } from '@/components/capsules/CapsuleLibrary';
+import { Children, isValidElement, type ReactElement, type ReactNode } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { CapsuleLibrary, CapsuleLibraryWithTry } from '@/components/capsules/CapsuleLibrary';
 import {
   CAPSULE_LIBRARY_CATEGORIES,
   CAPSULE_LIBRARY_ENTRIES,
@@ -9,11 +10,201 @@ import {
   capsuleRepositoryEntryFromCapsule,
   filterCapsuleLibraryEntries,
   filterCapsuleRepositoryEntries,
+  proposeDockSlotForCapsule,
 } from '@/lib/capsules/library';
 import { sanitizeCapsule } from '@/lib/context/capsule-service';
 import { POLICY_CAPSULE_SPOTLIGHTS } from '@/lib/capsules/spotlights';
+import { defaultActiveContextStack } from '@/lib/context/active-context-stack';
+
+// Run owner transitions through the real component without adding a DOM dependency.
+const runtime = vi.hoisted(() => {
+  let cursor = 0;
+  const states: unknown[] = [];
+  const effects = new Map<number, { deps: readonly unknown[]; cleanup?: () => void }>();
+  const pending: Array<() => void> = [];
+  return {
+    user: { id: 'owner' } as { id: string } | null,
+    authLoading: false,
+    hydrated: false,
+    lifecycle: false,
+    saveStack: vi.fn(),
+    push: vi.fn(),
+    useState<T>(initial: T | (() => T)) {
+      const index = cursor++;
+      if (!(index in states)) states[index] = typeof initial === 'function' ? (initial as () => T)() : initial;
+      return [states[index] as T, (update: T | ((previous: T) => T)) => {
+        states[index] = typeof update === 'function' ? (update as (previous: T) => T)(states[index] as T) : update;
+      }] as const;
+    },
+    useEffect(effect: () => void | (() => void), deps: readonly unknown[]) {
+      const index = cursor++;
+      const previous = effects.get(index);
+      if (previous && deps.length === previous.deps.length && deps.every((value, i) => Object.is(value, previous.deps[i]))) return;
+      pending.push(() => {
+        effects.get(index)?.cleanup?.();
+        const cleanup = effect();
+        effects.set(index, { deps, cleanup: cleanup || undefined });
+      });
+    },
+    render<T>(callback: () => T) { cursor = 0; return callback(); },
+    flushEffects() { for (const effect of pending.splice(0)) effect(); },
+    reset() {
+      for (const effect of effects.values()) effect.cleanup?.();
+      states.length = 0;
+      effects.clear();
+      pending.length = 0;
+      cursor = 0;
+      this.lifecycle = false;
+    },
+  };
+});
+vi.mock('react', async (importOriginal) => {
+  const original = await importOriginal<typeof import('react')>();
+  return {
+    ...original,
+    useState: <T,>(initial: T | (() => T)) => runtime.lifecycle ? runtime.useState(initial) : original.useState(initial),
+    useEffect: (effect: () => void | (() => void), deps: readonly unknown[]) => runtime.lifecycle ? runtime.useEffect(effect, deps) : original.useEffect(effect, deps),
+    useMemo: <T,>(factory: () => T, deps: readonly unknown[]) => runtime.lifecycle ? factory() : original.useMemo(factory, deps),
+  };
+});
+vi.mock('next/navigation', () => ({ useRouter: () => ({ push: runtime.push }) }));
+vi.mock('@/lib/auth/auth-context', () => ({ useAuth: () => ({ user: runtime.user, loading: runtime.authLoading }) }));
+vi.mock('@/components/app/use-active-context-stack', () => ({
+  useActiveContextStack: () => ({ stack: defaultActiveContextStack(), hydrated: runtime.hydrated, saveStack: runtime.saveStack }),
+}));
 
 describe('CapsuleLibrary', () => {
+  beforeEach(() => {
+    runtime.reset();
+    runtime.user = { id: 'owner' };
+    runtime.authLoading = false;
+    runtime.hydrated = false;
+    vi.clearAllMocks();
+  });
+  afterEach(() => { runtime.reset(); vi.unstubAllGlobals(); });
+
+  it('hides account A immediately while account B inventory is pending or failed, then loads only B on retry', async () => {
+    const bRequest = deferredResponse();
+    const aCapsule = ownedCapsule({ capsuleId: 'a-private', label: 'Account A confidential title', coreRefs: { documentCoreIds: ['a-confidential-document'] } });
+    const bCapsule = ownedCapsule({ capsuleId: 'b-private', label: 'Account B title', coreRefs: { documentCoreIds: ['b-document'] } });
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(Response.json({ capsules: [aCapsule] }))
+      .mockReturnValueOnce(bRequest.promise)
+      .mockResolvedValueOnce(Response.json({ capsules: [bCapsule] }));
+    vi.stubGlobal('fetch', fetcher);
+    renderInventory();
+    await settleInventory();
+    expect(renderInventory().entries[0]).toMatchObject({ id: 'a-private', title: 'Account A confidential title', coreRefs: { documentCoreIds: ['a-confidential-document'] } });
+
+    runtime.user = { id: 'account-b' };
+    expect(renderInventory().entries.every((entry) => entry.origin === 'starter')).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await settleInventory();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(renderInventory().entries.every((entry) => entry.origin === 'starter')).toBe(true);
+    bRequest.resolve(Response.json({ error: 'unavailable' }, { status: 503 }));
+    await settleInventory();
+    const failed = renderInventory();
+    expect(failed.entries.every((entry) => entry.origin === 'starter')).toBe(true);
+    expect(failed.retry).toBeDefined();
+    failed.retry!();
+    renderInventory();
+    await settleInventory();
+    const recovered = renderInventory().entries;
+    expect(recovered[0]).toMatchObject({ id: 'b-private', title: 'Account B title', coreRefs: { documentCoreIds: ['b-document'] } });
+    expect(recovered.some((entry) => entry.id === 'a-private')).toBe(false);
+  });
+
+  it('aborts an old account inventory request and ignores its late response after another account loads', async () => {
+    const lateA = deferredResponse();
+    const fetcher = vi.fn()
+      .mockReturnValueOnce(lateA.promise)
+      .mockResolvedValueOnce(Response.json({ capsules: [ownedCapsule({ capsuleId: 'b-private' })] }));
+    vi.stubGlobal('fetch', fetcher);
+    renderInventory();
+    await settleInventory();
+    runtime.user = { id: 'account-b' };
+    renderInventory();
+    await settleInventory();
+    expect(fetcher.mock.calls[0][1].signal.aborted).toBe(true);
+    expect(renderInventory().entries[0].id).toBe('b-private');
+    lateA.resolve(Response.json({ capsules: [ownedCapsule({ capsuleId: 'a-private' })] }));
+    await settleInventory();
+    expect(renderInventory().entries[0].id).toBe('b-private');
+    expect(renderInventory().entries.some((entry) => entry.id === 'a-private')).toBe(false);
+  });
+
+  it('keeps the public catalog visible and skips private inventory requests until auth settles', async () => {
+    const fetcher = vi.fn().mockResolvedValue(Response.json({ capsules: [ownedCapsule()] }));
+    vi.stubGlobal('fetch', fetcher);
+    runtime.authLoading = true;
+    expect(renderInventory().entries.every((entry) => entry.origin === 'starter')).toBe(true);
+    await settleInventory();
+    expect(fetcher).not.toHaveBeenCalled();
+    runtime.user = null;
+    runtime.authLoading = false;
+    renderInventory();
+    await settleInventory();
+    expect(fetcher).not.toHaveBeenCalled();
+    runtime.user = { id: 'owner' };
+    renderInventory();
+    await settleInventory();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(renderInventory().entries[0].origin).toBe('user');
+    runtime.user = null;
+    expect(renderInventory().entries.every((entry) => entry.origin === 'starter')).toBe(true);
+    await settleInventory();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { owner: true, authLoading: false, hydrated: false, disabled: true },
+    { owner: true, authLoading: false, hydrated: true, disabled: false },
+    { owner: false, authLoading: false, hydrated: false, disabled: false },
+    { owner: false, authLoading: true, hydrated: false, disabled: true },
+  ])('gates spotlight and grid attachment by account context readiness: %j', (state) => {
+    runtime.user = state.owner ? { id: 'owner' } : null;
+    runtime.authLoading = state.authLoading;
+    runtime.hydrated = state.hydrated;
+    const method = CAPSULE_LIBRARY_ENTRIES.find((entry) => entry.id === 'starter-tool-institutional-logic-lens')!;
+    const html = renderToStaticMarkup(<CapsuleLibraryWithTry entries={[method]} />);
+    const attachmentButtons = (html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? [])
+      .filter((button) => /Add (?:method|format|context|to )/.test(button));
+    expect(attachmentButtons.length).toBeGreaterThanOrEqual(2);
+    expect(attachmentButtons.every((button) => button.includes('disabled=""') === state.disabled)).toBe(true);
+    expect(html).toContain('Inspect capsule');
+    expect(runtime.saveStack).not.toHaveBeenCalled();
+  });
+
+  it('keeps a seeded starter’s exact catalog type and domain when metadata omits its snapshot', () => {
+    for (const spotlight of POLICY_CAPSULE_SPOTLIGHTS) {
+      const starter = CAPSULE_LIBRARY_ENTRIES.find((entry) => entry.id === spotlight.id)!;
+      const metadata = { ...ownedCapsule({ capsuleId: starter.id, version: 8 }), starterSnapshot: undefined, v3: undefined };
+      const [loaded] = buildCapsuleRepositoryEntries({ userCapsules: [metadata], starterEntries: [starter] });
+      expect(loaded.origin).toBe('user');
+      expect(loaded.version).toBe(8);
+      expect(loaded.title).toBe(metadata.label);
+      expect(loaded.capsuleType, starter.id).toBe(starter.capsuleType);
+      expect(loaded.starterDomain, starter.id).toBe(starter.starterDomain);
+      expect(proposeDockSlotForCapsule(loaded), starter.id).toBe(proposeDockSlotForCapsule(starter));
+      expect(loaded.coreRefs.documentCoreIds).toEqual(metadata.coreRefs.documentCoreIds);
+    }
+  });
+
+  it('does not treat an unknown user ID that resembles a starter as a catalog method', () => {
+    const custom = ownedCapsule({
+      capsuleId: 'starter-tool-institutional-logic-lens-private-copy',
+      scope: 'situation', starterSnapshot: undefined, v3: undefined,
+      coreRefs: { situationCoreId: 'custom-case', documentCoreIds: ['custom-document'] },
+      community: { tags: [] },
+    });
+    const entry = capsuleRepositoryEntryFromCapsule(custom);
+    expect(entry.origin).toBe('user');
+    expect(entry.capsuleType).toBe('situation');
+    expect(entry.starterDomain).toBe('generic');
+    expect(proposeDockSlotForCapsule(entry)).toBe('situation');
+  });
+
   it('builds featured entries from real ranked starter capsules for every category', () => {
     expect(CAPSULE_LIBRARY_CATEGORIES.map((category) => category.id)).toEqual([
       'conflict',
@@ -141,6 +332,27 @@ describe('CapsuleLibrary', () => {
     expect(filterCapsuleRepositoryEntries(entries, 'legal', 'ceasefire ledger')).toEqual([]);
   });
 });
+
+function renderInventory() {
+  runtime.lifecycle = true;
+  const tree = runtime.render(() => CapsuleLibraryWithTry({ entries: CAPSULE_LIBRARY_ENTRIES.slice(0, 2) }));
+  const children = Children.toArray(tree.props.children);
+  const library = children.find((child) => isValidElement(child) && child.type === CapsuleLibrary) as ReactElement<Parameters<typeof CapsuleLibrary>[0]>;
+  const alert = children.find((child) => isValidElement(child) && (child.props as { role?: string }).role === 'alert') as ReactElement<{ children: ReactNode }> | undefined;
+  const retryButton = alert && Children.toArray(alert.props.children).find((child) => isValidElement(child) && child.type === 'button') as ReactElement<{ onClick: () => void }> | undefined;
+  return { entries: library.props.entries!, retry: retryButton?.props.onClick };
+}
+
+async function settleInventory() {
+  runtime.flushEffects();
+  for (let i = 0; i < 12; i++) await Promise.resolve();
+}
+
+function deferredResponse() {
+  let resolve!: (response: Response) => void;
+  const promise = new Promise<Response>((done) => { resolve = done; });
+  return { promise, resolve };
+}
 
 function ownedCapsule(overrides: Record<string, unknown> = {}) {
   return sanitizeCapsule({

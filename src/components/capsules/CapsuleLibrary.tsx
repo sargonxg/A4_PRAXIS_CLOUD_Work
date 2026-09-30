@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
+import { useAuth } from '@/lib/auth/auth-context';
 import { CapsuleLibraryCard } from '@/components/capsules/CapsuleLibraryCard';
 import { CapsuleSpotlights } from '@/components/capsules/CapsuleSpotlights';
 import {
@@ -36,41 +37,56 @@ interface CapsuleLibraryProps {
 
 export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCapsule' | 'busyCapsuleId' | 'status'>) {
   const router = useRouter();
-  const { saveStack, stack } = useActiveContextStack();
-  const [userCapsules, setUserCapsules] = useState<PraxisCapsule[]>([]);
+  const { user, loading: authLoading } = useAuth();
+  const { saveStack, stack, hydrated } = useActiveContextStack();
+  const ownerId = user?.id ?? null;
+  const attachmentReady = !authLoading && (!user || hydrated);
+  const [inventory, setInventory] = useState<{
+    ownerId: string | null;
+    capsules: PraxisCapsule[];
+    loading: boolean;
+    error: boolean;
+  }>({ ownerId: null, capsules: [], loading: false, error: false });
   const [busyCapsuleId, setBusyCapsuleId] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
-  const [loadError, setLoadError] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [reload, setReload] = useState(0);
+  const inventoryCurrent = !authLoading && ownerId !== null && inventory.ownerId === ownerId;
+  const loading = !authLoading && ownerId !== null && (!inventoryCurrent || inventory.loading);
+  const loadError = inventoryCurrent && inventory.error;
   const entries = useMemo(
     () => buildCapsuleRepositoryEntries({
-      userCapsules,
+      userCapsules: inventoryCurrent ? inventory.capsules : [],
       starterEntries: props.entries ?? CAPSULE_LIBRARY_ENTRIES,
     }),
-    [props.entries, userCapsules],
+    [props.entries, inventory, inventoryCurrent],
   );
 
   useEffect(() => {
+    if (authLoading || !ownerId) return;
     let cancelled = false;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30_000);
     fetch('/api/context/capsules', { credentials: 'include', signal: controller.signal })
       .then((response) => { if (!response.ok) throw new Error('Load failed'); return response.json(); })
       .then((body: { capsules?: PraxisCapsule[] } | null) => {
-        if (!cancelled && Array.isArray(body?.capsules)) setUserCapsules(body.capsules);
+        if (!Array.isArray(body?.capsules)) throw new Error('Load failed');
+        if (!cancelled) setInventory({ ownerId, capsules: body.capsules, loading: false, error: false });
       })
-      .catch(() => { if (!cancelled) setLoadError(true); })
-      .finally(() => { clearTimeout(timeout); if (!cancelled) setLoading(false); });
+      .catch(() => { if (!cancelled) setInventory({ ownerId, capsules: [], loading: false, error: true }); })
+      .finally(() => { clearTimeout(timeout); });
     return () => {
       cancelled = true;
       clearTimeout(timeout);
       controller.abort();
     };
-  }, [reload]);
+  }, [authLoading, ownerId, reload]);
 
   async function handleTryCapsule(entry: CapsuleLibraryEntry, slotKind: CapsuleDockSlotKind) {
-    if (busyCapsuleId) return;
+    if (busyCapsuleId || !attachmentReady) return;
+    if (!user) {
+      router.push(`/login?mode=signup&redirect=${encodeURIComponent('/app/capsules')}`);
+      return;
+    }
     setBusyCapsuleId(entry.id);
     setStatus(null);
     const result = entry.origin === 'starter'
@@ -97,13 +113,14 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
   return (
     <>
     {loading ? <p role="status" className="mb-2 text-sm text-slate-600">Loading your saved capsules…</p> : null}
-    {loadError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm">Your saved capsules could not be loaded. Starters are still shown below. <button type="button" disabled={loading} className="font-semibold underline" onClick={() => { setLoadError(false); setLoading(true); setReload((value) => value + 1); }}>Retry</button></p> : null}
+    {user && !hydrated ? <p role="status" className="mb-2 text-sm text-slate-600">Loading your saved context before attaching capsules…</p> : null}
+    {loadError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm">Your saved capsules could not be loaded. Starters are still shown below. <button type="button" disabled={loading} className="font-semibold underline" onClick={() => { setInventory({ ownerId, capsules: [], loading: true, error: false }); setReload((value) => value + 1); }}>Retry</button></p> : null}
     <CapsuleLibrary
       {...props}
       entries={entries}
       busyCapsuleId={busyCapsuleId}
       status={status}
-      onTryCapsule={(entry, slotKind) => void handleTryCapsule(entry, slotKind)}
+      onTryCapsule={attachmentReady ? (entry, slotKind) => void handleTryCapsule(entry, slotKind) : undefined}
     />
     </>
   );

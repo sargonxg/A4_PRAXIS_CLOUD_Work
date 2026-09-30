@@ -4,6 +4,7 @@ import {
 } from '@/lib/product/capsule-quality-ranking';
 import {
   CAPSULE_STARTER_DEFINITIONS,
+  getCapsuleStarterDefinition,
   resolveCapsuleTaxonomy,
   type CapsuleResolvedTaxonomy,
   type CapsuleStarterDefinition,
@@ -189,8 +190,9 @@ export function buildCapsuleRepositoryEntries(input: {
 export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): CapsuleLibraryEntry {
   const refs = capsule.coreRefs;
   const tags = capsule.community?.tags ?? [];
-  const capsuleType = capsuleTypeForCapsule(capsule);
-  const starterDomain = domainForCapsule(capsule);
+  const starter = getCapsuleStarterDefinition(capsule.capsuleId);
+  const capsuleType = starter?.category ?? capsuleTypeForCapsule(capsule);
+  const starterDomain = starter?.domain ?? domainForCapsule(capsule);
   const taxonomy = resolveCapsuleTaxonomy({
     capsuleId: capsule.capsuleId,
     category: capsuleType,

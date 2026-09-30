@@ -75,7 +75,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const isPublic = mode === 'public';
   const pathname = usePathname();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
   const requestedCapsuleId = searchParams.get('capsuleId')?.trim() ?? '';
@@ -91,6 +91,8 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const [contextOpen, setContextOpen] = useState(false);
   const [savingContext, setSavingContext] = useState(false);
   const [contextError, setContextError] = useState('');
+  const contextReady = !isPublic && !authLoading && Boolean(ownerId) && hydrated && handoffReady;
+  const mutationDisabled = !contextReady || savingContext;
 
   useEffect(() => { attachmentRef.current = { stack, saveStack }; }, [stack, saveStack]);
 
@@ -128,6 +130,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   }, [activeCapsuleId, selectedCapsuleRefs.length]);
 
   async function activateCapsule(capsuleId: string) {
+    if (mutationDisabled) return;
     const next = selectedCapsuleRefs.length
       ? swapCapsuleRef(stack, selectedCapsuleRefs[0].capsuleId, { capsuleId, role: 'primary', primary: true })
       : attachCapsuleRef(stack, { capsuleId, role: 'primary', primary: true });
@@ -147,6 +150,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   }
 
   async function attachReferenceCapsule(capsuleId: string) {
+    if (mutationDisabled) return;
     const next = attachCapsuleRef(stack, {
       capsuleId,
       role: selectedCapsuleRefs.length ? 'reference' : 'primary',
@@ -168,6 +172,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   }
 
   async function detachCapsule(capsuleId: string) {
+    if (mutationDisabled) return;
     const next = detachCapsuleRef(stack, capsuleId);
     setSavingContext(true);
     setContextError('');
@@ -185,6 +190,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   }
 
   async function makePrimaryCapsule(capsuleId: string) {
+    if (mutationDisabled) return;
     const currentPrimary = selectedCapsuleRefs[0]?.capsuleId;
     if (!currentPrimary || currentPrimary === capsuleId) return;
     const target = selectedCapsuleRefs.find((ref) => ref.capsuleId === capsuleId);
@@ -243,7 +249,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
               </div>
             ) : null}
             <PraxisChat
-              contextReady={isPublic || (hydrated && !savingContext && handoffReady)}
+              contextReady={isPublic || !mutationDisabled}
               mode={mode}
               showHomeHeading={!isPublic}
               activeContextStack={stack}
@@ -256,7 +262,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                       mode={mode}
                       stack={stack}
                       saveStack={saveStack}
-                      hydrated={hydrated}
+                      hydrated={hydrated && (isPublic || handoffReady)}
                       persisted={persisted}
                       variant="home"
                       onOpenAdvancedContext={() => setContextOpen(true)}
@@ -278,7 +284,9 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
             />
             {contextOpen ? (
               <ContextDrawer
+                key={ownerId ?? 'guest'}
                 activeCapsuleId={activeCapsuleId}
+                mutationDisabled={mutationDisabled}
                 hydrated={hydrated}
                 isPublic={isPublic}
                 persisted={persisted}
@@ -444,6 +452,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
 
 function ContextDrawer({
   activeCapsuleId,
+  mutationDisabled,
   hydrated,
   isPublic,
   persisted,
@@ -455,6 +464,7 @@ function ContextDrawer({
   onMakePrimaryCapsule,
 }: {
   activeCapsuleId?: string | null;
+  mutationDisabled: boolean;
   hydrated: boolean;
   isPublic: boolean;
   persisted: boolean;
@@ -541,14 +551,17 @@ function ContextDrawer({
           type="button"
           data-testid="launchpad-capsule-chip"
           onClick={() => activeCapsuleId && onActivateCapsule(activeCapsuleId)}
+          disabled={mutationDisabled}
           className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
           <Library className="h-3.5 w-3.5 text-emerald-700" />
           {selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} capsule${selectedCapsuleRefs.length === 1 ? '' : 's'} attached` : 'No capsules attached'}
         </button>
         <div className="flex flex-wrap items-center gap-2">
-          <CapsuleListPicker activeCapsuleId={activeCapsuleId ?? null} onSelect={onActivateCapsule} />
-          <CapsuleImportButton onImported={(result) => onAttachReferenceCapsule(result.capsuleId)} />
+          <fieldset disabled={mutationDisabled} className="contents">
+            <CapsuleListPicker activeCapsuleId={activeCapsuleId ?? null} onSelect={onActivateCapsule} />
+            <CapsuleImportButton onImported={(result) => onAttachReferenceCapsule(result.capsuleId)} />
+          </fieldset>
           <Link href="/app/capsules/builder" className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
             <PlusCircle className="h-3.5 w-3.5" />
             Build context
@@ -567,7 +580,9 @@ function ContextDrawer({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-slate-600">Attach context</span>
-            <CapsuleListPicker activeCapsuleId={null} onSelect={onAttachReferenceCapsule} />
+            <fieldset disabled={mutationDisabled} className="contents">
+              <CapsuleListPicker activeCapsuleId={null} onSelect={onAttachReferenceCapsule} />
+            </fieldset>
           </div>
         </div>
 
@@ -589,6 +604,7 @@ function ContextDrawer({
                   <button
                     type="button"
                     onClick={() => onMakePrimaryCapsule(ref.capsuleId)}
+                    disabled={mutationDisabled}
                     className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     <CheckCircle2 className="h-3 w-3" />
@@ -598,6 +614,7 @@ function ContextDrawer({
                 <button
                   type="button"
                   onClick={() => onDetachCapsule(ref.capsuleId)}
+                  disabled={mutationDisabled}
                   className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   <X className="h-3 w-3" />
