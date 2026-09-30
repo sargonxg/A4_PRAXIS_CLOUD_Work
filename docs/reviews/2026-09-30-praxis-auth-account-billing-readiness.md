@@ -1,6 +1,6 @@
 # PRAXIS authentication, account cleanup, and billing readiness
 
-Date: September 30, 2026. This is a local implementation and operational evidence ledger. The main release ledger owns later deployed revisions and live user journey results.
+Date: September 30, 2026. This is a source implementation and operational evidence ledger. Current source checkpoint: `2441af6ccecc343d7201ef31e75993c32422128c` (pushed; deployment and live receipts pending the release coordinator). The main release ledger owns deployed revisions and live user journey results.
 
 ## Implemented contracts
 
@@ -32,7 +32,7 @@ Date: September 30, 2026. This is a local implementation and operational evidenc
 
 ### Account deletion
 
-DELETE is gated by `PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED=true`. Keep it unset until the exact Firestore and Storage guards have been released, cross-service Storage permission is verified, and live owner-write checks pass. A frontend deployment alone is insufficient.
+DELETE requires `PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED=true`. The current frontend deployment source explicitly sets it to `false`; keep deletion disabled until the exact Firestore and Storage guards have been released, cross-service Storage permission is verified, and live owner-write checks pass. A frontend deployment alone is insufficient. This source setting is not a runtime readback receipt.
 
 When enabled, deletion first marks `users/{uid}.accountDeletionStatus=deleting` transactionally. A renewing Polar subscription must be canceled first. The marker is server-managed and blocks ordinary server work, client writes, paid entitlement grants, and late agent mirrors.
 
@@ -72,28 +72,43 @@ Evidence directory: `output/playwright/practical-refinement-20260930/`.
 | `cloud-focused-final.txt` | Final combined cloud-lane regression group; use its recorded count/exit result. |
 | `starter-grant-red.txt` / `starter-grant-green.txt` | Missing helper failed before; four focused signup/session/readiness files and 24 tests passed after the server-owned atomic grant. |
 | `starter-grant-eslint.txt` | Scoped signup, client hydration and session lint result. |
+| `deploy-config-preservation-green.txt` | Three structural tests passed: update-only environment/secrets flags, unchanged signing mounts, and explicit erasure disablement. |
 | `firebase-rules-script-green.txt` | Guarded release and Cloud Build source/hash structure checks. |
 
 Additional focused tests verify separate SQL pools and the Rules release guard. Tests use fixtures and mocks; they do not prove production account deletion or paid checkout.
 
 The final combined cloud group passed 14 files and 120 tests before the additional starter-grant cases. Independent review confirmed the grant transaction, verified-session ordering, outage behavior and removal of client grants. Previously deployed rules may still permit the legacy 5,000-credit client profile shape; verify the exact new rules release and a fresh-account journey before claiming production enforcement of the new 1,000-token allowance.
 
-## Current operational evidence and release path
+## Historical baseline and current source release path
 
-- At 13:44 UTC, the public runtime health checks passed on revision `praxis-frontend-01082-nkw`, commit `4480650999b5bd2808b55cba58f16e5a9a83d343`. This is a dated observation, not a claim about a later release.
-- Existing local Google credentials could not refresh (`invalid_grant`). No token was obtained, interactive sign-in started, or credential changed.
-- Local Polar required configuration was absent. Deployed Polar products, mounts, purchase and cancellation remain unproven.
-- Test credential presence does not prove a disposable identity. This lane has not deleted an account or run lifecycle writes against it.
-- Current GitHub frontend builds provide a release route independent of local Google sign-in. No existing Actions workflow deploys Firebase rules. `cloudbuild.yaml` records a historical CLI preflight permission limitation; it is not current proof of every REST permission.
-- `cloudbuild.frontend.yaml` uses `--set-secrets` with no Polar mounts. This can replace separately mounted billing secrets; the release owner must preserve configured mounts before enabling paid checkout.
+- Historical observation at 13:44 UTC: public runtime health checks passed on revision `praxis-frontend-01082-nkw`, commit `4480650999b5bd2808b55cba58f16e5a9a83d343`. This is not the current release receipt.
+- Historical local credential probe: Google refresh failed with `invalid_grant`. No token was obtained, interactive sign-in started, or credential changed. This did not establish a production outage.
+- Historical local billing probe: required Polar configuration was absent. It did not inspect deployed Polar products or mounts; paid checkout, webhook delivery and cancellation remain unproven by this lane.
+- Test credential presence does not prove a disposable identity. This lane has not deleted an account or run paid lifecycle calls against it.
+- The frontend Cloud Build route can use its existing build identity independently of local Google sign-in. No separate Actions rules-release workflow was found at the baseline audit. `cloudbuild.yaml` records a historical CLI preflight permission limitation; it is not current proof of every REST permission.
+- Current `cloudbuild.frontend.yaml` uses `--update-env-vars` and `--update-secrets`. These preserve unlisted operator configuration and secret mounts, including any existing Polar configuration; they do not add missing Polar setup. Existing cookie/session signing mounts are unchanged. Earlier `--set-*` replacement behavior was corrected before the source checkpoint above was pushed.
 
 `scripts/deploy-firebase-rules.mjs` provides a guarded REST route using existing Google credentials/Cloud Build identity, without changing credentials or IAM. `--plan` prints local hashes. Default mode reads releases and compiles sources. Exact project, known bucket and expected source hashes are required. `--apply` creates rulesets, updates only the checked releases, and reads back release/source hashes into a redacted receipt.
 
-The full route checks that the Firebase Storage service agent already has `roles/firebaserules.firestoreServiceAgent`; it fails before publication if the grant cannot be verified. `--only=firestore` supports a standalone Firestore release while Storage and account deletion remain unpublished/disabled. Hashes normalize CRLF to LF so the same committed source matches Windows and Linux checkouts. Use the hash receipt from the exact release source; do not silently substitute changed rules.
+The full route checks that the Firebase Storage service agent already has `roles/firebaserules.firestoreServiceAgent`; it fails before publication if the grant cannot be verified. `--only=firestore` publishes no Storage release and does not enable account deletion. Current publication status awaits the coordinator's release/readback receipts. Hashes normalize CRLF to LF so the same committed source matches Windows and Linux checkouts. Use the hash receipt from the exact release source; do not silently substitute changed rules.
 
 The frontend Cloud Build configuration now includes an independent `verify-publish-firestore-rules` step after the existing preflights. It installs the repository's pinned Google Auth dependency in an isolated temporary prefix, with bounded installation and execution time, and attempts only Firestore publication through the build's existing identity. A permission/configuration/source mismatch produces an explicit pending log and redacted receipt; it permits the frontend build and never sets the erasure flag or changes IAM. The current source hash is pinned in the build substitution and checked by a structural test. The build log records `FIREBASE_RULES_RECEIPT`; do not infer rules success from the overall frontend build result.
 
 Rules readback confirms published source, not propagation or user-level behavior. Root must verify owner create with 1,000 starter credits, active owner uploads, deleting-owner denial, inability to clear the marker, and normal account/Ask/capsule persistence after propagation. Keep runtime, checkout, rules publication and authenticated lifecycle results separate.
+
+## Remaining operator prerequisites
+
+### Paid billing
+
+- Verify the deployed configuration contains `POLAR_ACCESS_TOKEN`, `POLAR_WEBHOOK_SECRET`, `POLAR_PRODUCT_ANALYST` and `POLAR_PRODUCT_TEAM`, without printing their values. Verify the product IDs belong to the intended Polar organization and mode; `POLAR_SERVER=sandbox` selects sandbox, otherwise the client selects production.
+- Configure and verify signed subscription-event delivery to `https://praxis.tacitus.me/api/billing/webhook`. Confirm the deployed identity can persist subscription state and delivery deduplication in Firestore. Existing source tests do not prove this provider connection.
+- Use an explicitly authorized disposable billing identity to prove checkout, customer portal/cancellation, one allowance per period, repeated-delivery deduplication, and expired/revoked access. A sandbox receipt proves sandbox behavior; a real paid purchase needs separate authorization. No paid provider call was performed by this lane.
+
+### Account erasure
+
+- Release and read back the exact Firestore **and** Storage source hashes for `praxisbytacitus` and `praxisbytacitus.firebasestorage.app`. Verify the Storage service agent's existing `roles/firebaserules.firestoreServiceAgent` grant. The frontend's Firestore-only step cannot satisfy the Storage prerequisite.
+- Prove propagated rules allow active-owner persistence/upload and deny deleting-owner writes and marker removal. Inventory every configured Firestore, Storage and SQL owner store; optional Neo4j/Cognee/Vertex indexes need a verified cleanup adapter or an explicit pending operator receipt.
+- Validate bounded cleanup, partial-failure retry, late-worker/upload denial and final Auth removal with an explicitly disposable account in an approved environment. Cancel any renewing Polar subscription first. Enable the production erasure flag only through a controlled release after these prerequisites, and retain the final authenticated cleanup receipt. Retention remains limited to the documented tombstone/receipt, provider accounting/deduplication, platform logs/backups and deliberately promoted shared records.
 
 ## Official references checked
 

@@ -4,6 +4,8 @@ PRAXIS is live and its tested core journeys work. Its most consequential next im
 
 This is a read-only assessment and proposed backlog. Recommendations below have not been implemented by this analysis. Existing unrelated working-tree changes were preserved.
 
+Implementation followed this dated assessment. Consult the [implementation ledger](2026-09-30-praxis-implementation-ledger.md) and [refinement release record](2026-09-30-praxis-live-release.md) for delivered changes, current production evidence and remaining gates. Findings below describe the inspected baseline; they are not a fresh assertion that repaired behavior is still broken.
+
 ## Evidence and limits
 
 - Live application source: `4480650999b5bd2808b55cba58f16e5a9a83d343`; revision `praxis-frontend-01082-nkw`; Cloud Build `4b8fff18-5a9d-4c4a-9d97-5cff8fe89cb8`.

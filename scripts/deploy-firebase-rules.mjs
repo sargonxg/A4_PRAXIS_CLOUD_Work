@@ -9,6 +9,37 @@ const RULES_API = 'https://firebaserules.googleapis.com/v1';
 const BUCKETS = new Set(['praxisbytacitus.firebasestorage.app', 'praxisbytacitus.appspot.com']);
 export const rulesHash = (source) => createHash('sha256').update(source.replace(/\r\n/g, '\n')).digest('hex');
 
+// Keep only bounded identifiers. Free text, credentials, headers and stacks
+// must never enter the release receipt, even under an otherwise allowed key.
+function remoteErrorDiagnostic(response) {
+  const identifier = (value, pattern, limit) => typeof value === 'string' && value.length <= limit && value.trim() === value && pattern.test(value) ? value : undefined;
+  const hostname = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+  const error = response.data?.error;
+  const diagnostic = {};
+  if (Number.isInteger(response.status) && response.status >= 100 && response.status <= 599) diagnostic.status = response.status;
+  if (Number.isInteger(error?.code) && error.code >= 0 && error.code <= 599) diagnostic.code = error.code;
+  const details = (Array.isArray(error?.details) ? error.details : [])
+    .filter(detail => detail?.['@type'] === 'type.googleapis.com/google.rpc.ErrorInfo')
+    .slice(0, 8).map(detail => {
+      const item = {};
+      const reason = identifier(detail.reason, /^[A-Z][A-Z0-9_]*$/, 128);
+      const domain = identifier(detail.domain, hostname, 253);
+      if (reason) item.reason = reason;
+      if (domain) item.domain = domain;
+      const metadata = {};
+      const permission = identifier(detail.metadata?.permission, /^[a-z][a-z0-9_]*(?:\.[a-z][a-zA-Z0-9_]*){2,}$/, 256);
+      const service = identifier(detail.metadata?.service, hostname, 253);
+      const consumer = identifier(detail.metadata?.consumer, /^projects\/(?:[0-9]{1,20}|[a-z][a-z0-9-]{4,28}[a-z0-9])$/, 64);
+      if (permission) metadata.permission = permission;
+      if (service) metadata.service = service;
+      if (consumer) metadata.consumer = consumer;
+      if (Object.keys(metadata).length) item.metadata = metadata;
+      return item;
+    }).filter(item => Object.keys(item).length);
+  if (details.length) diagnostic.details = details;
+  return diagnostic;
+}
+
 /** Read/compile by default. Exact project, bucket and source hashes are required
  * before creating rulesets or updating releases. No credentials or IAM changes. */
 export async function releaseFirebaseRules(options) {
@@ -28,7 +59,10 @@ export async function releaseFirebaseRules(options) {
     receipt.lastOperation = `${method} ${new URL(url).pathname}`;
     save();
     const response = await request(url, { method, ...(body ? { body } : {}) });
-    if (!response.ok) throw new Error(`rules_request_failed_${response.status}`);
+    if (!response.ok) {
+      receipt.remoteError = remoteErrorDiagnostic(response);
+      throw new Error(`rules_request_failed_${response.status}`);
+    }
     return response.data;
   };
   try {
@@ -111,7 +145,8 @@ async function main() {
         const response = await client.request({ url, method: options.method, data: options.body, timeout: 15_000 });
         return { ok: response.status >= 200 && response.status < 300, status: response.status, data: response.data };
       } catch (error) {
-        return { ok: false, status: error.response?.status || 503, data: null };
+        // The call helper whitelists identifiers before any receipt is saved.
+        return { ok: false, status: error.response?.status || 503, data: error.response?.data ?? null };
       }
     },
     onReceipt: receipt => {

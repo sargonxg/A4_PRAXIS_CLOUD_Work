@@ -18,6 +18,7 @@ test.describe('Capsule Studio', () => {
 
     await page.goto(`${BASE}/app/capsules/builder`);
     await page.getByLabel('What should this capsule do?').fill('QA fixture only: inspect actors and a dated commitment; do not treat this as a real-world event.');
+    await page.getByRole('button', { name: 'Continue to material', exact: true }).click();
     const fixtureText = 'Synthetic QA fixture, not a real-world event.\nActor: Example Council\nOn 2026-09-20 the Example Council agreed to review the proposal.\nThe review deadline is 2026-10-01.\nFunding approval remains unconfirmed.';
     const fixturePage = await page.context().newPage();
     await fixturePage.setContent(`<pre>${fixtureText}</pre>`);

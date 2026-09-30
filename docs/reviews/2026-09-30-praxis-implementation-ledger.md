@@ -1,8 +1,10 @@
 # PRAXIS implementation ledger — 2026-09-30
 
-Status: application implementation and local release checks passed; exact-source deployment and authenticated live acceptance are pending.
+Status: the initial refinement implementation is live. Onboarding/framework corrections and complete authenticated acceptance are in progress; the latest [release record](2026-09-30-praxis-live-release.md) is the authority for current source and proof.
 
 This ledger turns all 80 recommendations in the [improvement analysis](2026-09-30-praxis-improvement-analysis.md) into owned work and acceptance criteria. The user authorized implementation and shipping, with particular emphasis on the library, useful policy and political analysis, lower-cost and premium models, and task-appropriate agent routing. The [production acceptance record](2026-09-29-praxis-production-acceptance.md) remains the authority for the previously verified release. This ledger records the new work; it does not replace historical release evidence.
+
+The per-agent delivery rows preserve their pre-integration evidence and limitations. Read them with integrated validation and exact-source live acceptance; a historical "pending" entry does not assert that subsequently verified behavior remains unavailable.
 
 ## Delivery states
 
@@ -42,6 +44,10 @@ September 30, 2026, against the frozen application source:
 - Independent auth/quota/review/worker/rules source review found no additional blocker. Strict starter-credit bootstrap protection still requires Firestore Rules publication and user-level checks. Account erasure remains explicitly disabled. GCS cleanup, admitted writes and previously signed download URLs retain reconciliation/expiry limitations.
 
 Firestore Rules publication is a separate bounded pipeline operation with an explicit readback or pending receipt. Runtime environment and secret updates preserve unlisted operator configuration. Neither frontend deployment nor Rules source readback establishes Storage propagation or complete erasure.
+
+### Corrective release gate
+
+The onboarding navigation/readiness correction and Next.js security patch passed the final **426-file / 2,174-test** suite with zero failures/skips, production build/typecheck and zero-error full lint. The isolated route-audit retry and failed intermediate full receipt remain retained. Next.js/eslint are 16.3.6; fresh full/production dependency audits report zero high/critical and 44 moderate/three low findings. The bounded Rules-denial diagnostic passed nine focused tests, scoped lint and independent review; it changes no authorization or publication decision. Current real-service proof is recorded in the [refinement release record](2026-09-30-praxis-live-release.md).
 
 ## Owned work packets
 
