@@ -1,16 +1,24 @@
 import { describe, expect, it, vi } from 'vitest';
 import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
+import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
+import type { SaveMemoDraftInput } from '@/lib/firebase/memo-service';
+import type { Firestore } from 'firebase-admin/firestore';
+import { savedConversationTurnsToMessages } from '@/components/praxis/tasklet-workbench-conversation';
 import {
   AgentWorkerError,
   executeAgentRun,
   executeNoopAgentRun,
   postAgentRunThreadReturn,
+  persistAgentRunConversationReturn,
   type ExecuteAgentRunPayload,
 } from '@/lib/agent-runtime/worker';
 import type { AgentApproval, AgentRun, AgentRunEvent, AgentToolCall } from '@/lib/agent-runtime/types';
 
 // Mode tests inject persistence; execution ownership is exercised separately.
 vi.mock('@/lib/agent-runtime/owner-state', () => ({ assertAgentOwnerWritable: async () => undefined }));
+vi.mock('@/lib/context/capsule-version-resolution', () => ({
+  getCapsuleAtVersion: async (ownerUid: string, capsuleId: string, version: number) => ({ ownerUid, capsuleId, version }),
+}));
 vi.mock('@/lib/agent-runtime/execution-lease', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/agent-runtime/execution-lease')>();
   return { ...actual, withAgentRunExecutionLease: async (_input: unknown, work: (assertOwned: () => Promise<void>, token: string) => Promise<unknown>) => work(async () => undefined, 'test-lease') };
@@ -63,6 +71,7 @@ function makeRun(status: AgentRun['status'], metadata: Record<string, unknown> =
     internalEstimatedCostCents: null,
     internalSpendCents: 0,
     metadata: {
+      capsuleAgentExecutionContext: { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 1 },
       ...metadata,
       agentOperatingContract: {
         approvalThreshold: 'high',
@@ -202,6 +211,7 @@ describe('agent runtime no-op worker', () => {
     });
 
     const deps = {
+      persistAskConversationReturn: async () => undefined,
       persistAskThreadTurn: async (input: { turnId?: string | null; prompt: string; output: string; runtime?: Record<string, unknown> }) => {
         turns.set(String(input.turnId), input);
         return null;
@@ -261,6 +271,7 @@ describe('agent runtime no-op worker', () => {
       status: 'failed',
       failureMessage: 'Error: detailed stack\n    at secret frame',
       deps: {
+        persistAskConversationReturn: async () => undefined,
         persistAskThreadTurn: async (input: { turnId?: string | null; output: string; runtime?: Record<string, unknown> }) => {
           turns.set(String(input.turnId), input);
           return null;
@@ -320,6 +331,7 @@ describe('agent runtime no-op worker', () => {
       status: 'succeeded',
       outputHref: '/app?panel=memo',
       deps: {
+        persistAskConversationReturn: async () => undefined,
         persistAskThreadTurn: async () => {
           throw new Error('thread deleted');
         },
@@ -1241,6 +1253,7 @@ describe('agent runtime no-op worker', () => {
         });
         return { reviewCardId: input.reviewCardId ?? `quality-card-${reviewCards.length}` } as never;
       },
+      persistAskConversationReturn: async () => undefined,
       persistAskThreadTurn: async (input: { turnId?: string | null; runtime?: Record<string, unknown>; output: string }) => {
         turns.set(String(input.turnId), input);
         return null;
@@ -1704,5 +1717,235 @@ describe('agent runtime no-op worker', () => {
     ]));
     expect(mirrored.some((event) => event.data.flowName === 'capsuleSynthesisFlow')).toBe(true);
     expect(mirrored.some((event) => event.data.draftOutput)).toBe(true);
+  });
+});
+
+describe('canonical conversation agent return persistence', () => {
+  const conversationPath = 'users/user-1/conversations/ask-thread-1';
+  const returnPath = `${conversationPath}/turns/agent-result-run-1`;
+
+  function fixture(overrides: Array<[string, Record<string, unknown> | null]> = []) {
+    const records = new Map<string, Record<string, unknown>>([
+      ['users/user-1', { uid: 'user-1' }],
+      [conversationPath, { ownerUid: 'user-1', capsuleId: 'cap-1', title: 'Original Ask', turnCount: 1,
+        createdAt: '2026-05-15T12:00:00.000Z' }],
+      [`${conversationPath}/turns/original-ask`, { ownerUid: 'user-1', prompt: 'Write a short memo.',
+        output: 'Work is queued.', createdAt: '2026-05-15T12:00:01.000Z' }],
+    ]);
+    for (const [path, value] of overrides) {
+      if (value === null) records.delete(path);
+      else records.set(path, value);
+    }
+    type Ref = { path: string; collection: (name: string) => { doc: (id: string) => Ref } };
+    const ref = (path: string): Ref => ({ path, collection: (name) => ({ doc: (id) => ref(`${path}/${name}/${id}`) }) });
+    const db = {
+      collection: (name: string) => ({ doc: (id: string) => ref(`${name}/${id}`) }),
+      runTransaction: async (work: (tx: unknown) => Promise<void>) => {
+        const writes: Array<{ path: string; data: Record<string, unknown> }> = [];
+        await work({
+          get: async (address: Ref) => ({ exists: records.has(address.path),
+            data: () => records.has(address.path) ? structuredClone(records.get(address.path)) : undefined }),
+          set: (address: Ref, data: Record<string, unknown>) => { writes.push({ path: address.path, data }); },
+        });
+        for (const write of writes) records.set(write.path, { ...records.get(write.path), ...structuredClone(write.data) });
+      },
+    } as unknown as Firestore;
+    return { records, db };
+  }
+
+  it('reloads one durable assistant result beside an existing Ask turn, including after duplicate delivery', async () => {
+    const { records, db } = fixture();
+    const events: AgentRunEvent[] = [];
+    const run = makeRun('succeeded', { policyAgentId: 'sourceability-reviewer',
+      askThreadRef: { threadId: 'ask-thread-1', capsuleId: 'cap-1' } });
+    const deps = {
+      persistAskConversationReturn: async (input: Parameters<typeof persistAgentRunConversationReturn>[0]) => persistAgentRunConversationReturn(input, db),
+      persistAskThreadTurn: async () => null,
+      isAskThreadSqlConfigured: () => false,
+      appendEvent: async (event: AgentRunEvent) => { events.push(event); return event; },
+    };
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref: '/app?memoId=memo-1', deps });
+    const firstCreatedAt = records.get(returnPath)?.createdAt;
+    await postAgentRunThreadReturn({ run, payload, status: 'succeeded', outputHref: '/app?memoId=memo-1', deps });
+
+    // These are the nonempty canonical turn records the conversation GET reloads.
+    const turns = [...records.entries()].filter(([path]) => path.startsWith(`${conversationPath}/turns/`))
+      .map(([, record]) => record);
+    const messages = savedConversationTurnsToMessages(turns);
+    expect(turns).toHaveLength(2);
+    expect(messages).toHaveLength(3);
+    expect(messages.filter((message) => message.role === 'user').map((message) => message.text)).toEqual(['Write a short memo.']);
+    expect(messages.at(-1)).toMatchObject({ role: 'assistant', runtime: {
+      source: 'agent_run', runId: 'run-1', policyAgentId: 'sourceability-reviewer', outputHref: '/app?memoId=memo-1',
+    } });
+    expect(records.get(conversationPath)).toMatchObject({ title: 'Original Ask', turnCount: 2 });
+    expect(records.get(returnPath)?.createdAt).toBe(firstCreatedAt);
+    expect(events.map((event) => event.eventType)).toEqual(['thread_return_posted', 'thread_return_posted']);
+  });
+
+  it.each([
+    ['missing owner', 'users/user-1', null],
+    ['deleting owner', 'users/user-1', { accountDeletionStatus: 'deleting' }],
+    ['deleted owner', 'users/user-1', { accountDeletionStatus: 'deleted' }],
+    ['foreign conversation', conversationPath, { ownerUid: 'foreign-owner' }],
+    ['foreign result', returnPath, { ownerUid: 'foreign-owner' }],
+  ] as const)('refuses canonical writes for %s', async (_name, path, value) => {
+    const { records, db } = fixture([[path, value]]);
+    const before = JSON.stringify([...records]);
+    await expect(persistAgentRunConversationReturn({
+      uid: 'user-1', capsuleId: 'cap-1', threadId: 'ask-thread-1', turnId: 'agent-result-run-1',
+      prompt: '[agent-run-result]', output: 'Completed work.', runtime: { source: 'agent_run', runId: 'run-1' },
+    }, db)).rejects.toBeInstanceOf(Error);
+    expect(JSON.stringify([...records])).toBe(before);
+  });
+
+  it('saves an arriving result without reopening an archived conversation', async () => {
+    const { records, db } = fixture();
+    records.set(conversationPath, { ...records.get(conversationPath), status: 'archived' });
+    await persistAgentRunConversationReturn({
+      uid: 'user-1', capsuleId: 'cap-1', threadId: 'ask-thread-1', turnId: 'agent-result-run-1',
+      prompt: '[agent-run-result]', output: 'Completed work.', runtime: { source: 'agent_run', runId: 'run-1' },
+    }, db);
+    expect(records.get(conversationPath)).toMatchObject({ status: 'archived', title: 'Original Ask', turnCount: 2 });
+    expect(records.get(returnPath)).toMatchObject({ output: 'Completed work.' });
+  });
+
+  it('reports failed thread return and stops other store writes when the canonical owner gate rejects it', async () => {
+    const { db } = fixture([['users/user-1', { accountDeletionStatus: 'deleting' }]]);
+    const legacyWrite = vi.fn();
+    const events: AgentRunEvent[] = [];
+    await postAgentRunThreadReturn({
+      run: makeRun('succeeded', { askThreadRef: { threadId: 'ask-thread-1', capsuleId: 'cap-1' } }),
+      payload, status: 'succeeded',
+      deps: {
+        persistAskConversationReturn: async (input) => persistAgentRunConversationReturn(input, db),
+        persistAskThreadTurn: legacyWrite,
+        appendEvent: async (event) => { events.push(event); return event; },
+      },
+    });
+    expect(legacyWrite).not.toHaveBeenCalled();
+    expect(events.map((event) => event.eventType)).toEqual(['thread_return_failed']);
+  });
+});
+
+describe('agent memo exact capsule association', () => {
+  const modes = ['output-formatter', 'sourceability-reviewer', 'red-team-analyst',
+    'difference-checker', 'media-summarizer', 'human-friction-analyst', 'handover-builder'] as const;
+
+  it.each(modes)('preserves the original saved version for %s despite later metadata drift', async (policyAgentId) => {
+    const original = { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 2 };
+    const receiptVersions: unknown[] = [];
+    const getExactVersion = vi.fn(async (ownerUid: string, capsuleId: string, version: number | null) => (
+      { ownerUid, capsuleId, version } as never
+    ));
+    const save = vi.fn(async (_uid: string, input: SaveMemoDraftInput) => {
+      const snapshot = recordMemoContextSnapshot(input, undefined, false);
+      expect(snapshot).toMatchObject({ binding: 'recorded', capsuleId: payload.capsuleId,
+        capsuleVersion: 2, runId: payload.runId });
+      return { memo: { id: 'memo-pinned' } };
+    });
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId, capsuleAgentExecutionContext: original }),
+      updateStatus: async (input) => makeRun(input.toStatus, { policyAgentId,
+        capsuleAgentExecutionContext: { ...original, capsuleVersion: 99 }, capsuleVersion: 99 }),
+      getCapsuleAtVersion: getExactVersion,
+      appendEvent: async (event) => {
+        if (event.data.phase === 'capsule.read_receipt_created') {
+          receiptVersions.push((event.data.capsuleReadReceipt as { capsuleVersion: number }).capsuleVersion);
+        }
+        return event;
+      },
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      saveMemoDraft: save,
+    });
+    expect(result).toMatchObject({ status: 'succeeded', executionMode: policyAgentId, memoId: 'memo-pinned' });
+    expect(getExactVersion).toHaveBeenCalledWith(payload.ownerUid, payload.capsuleId, 2);
+    expect(save).toHaveBeenCalledOnce();
+    expect(receiptVersions).toEqual([2]);
+  });
+
+  it.each(modes)('saves explicit empty association for unsaved context in %s', async (policyAgentId) => {
+    const getExactVersion = vi.fn();
+    const receiptVersions: unknown[] = [];
+    const save = vi.fn(async (_uid: string, input: SaveMemoDraftInput) => {
+      expect(input).toMatchObject({ capsuleId: null, capsuleVersion: null, runId: payload.runId });
+      expect(recordMemoContextSnapshot(input, undefined, false)).toMatchObject({
+        binding: 'recorded', capsuleId: null, capsuleVersion: null, runId: payload.runId,
+      });
+      return { memo: { id: 'memo-unsaved-context' } };
+    });
+    await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId,
+        capsuleAgentExecutionContext: { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 0 } }),
+      updateStatus: async (input) => makeRun(input.toStatus, { policyAgentId }),
+      getCapsuleAtVersion: getExactVersion,
+      appendEvent: async (event) => {
+        if (event.data.phase === 'capsule.read_receipt_created') {
+          receiptVersions.push((event.data.capsuleReadReceipt as { capsuleVersion: number }).capsuleVersion);
+        }
+        return event;
+      },
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      saveMemoDraft: save,
+    });
+    expect(getExactVersion).not.toHaveBeenCalled();
+    expect(save).toHaveBeenCalledOnce();
+    expect(receiptVersions).toEqual([0]);
+  });
+
+  it.each(modes)('fails visibly without original version provenance in %s', async (policyAgentId) => {
+    const save = vi.fn();
+    const transitions: AgentRun['status'][] = [];
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId, capsuleAgentExecutionContext: undefined,
+        capsuleVersion: 99, capsuleReadReceipt: { capsuleId: payload.capsuleId, capsuleVersion: 99 } }),
+      updateStatus: async (input) => { transitions.push(input.toStatus); return makeRun(input.toStatus, { policyAgentId }); },
+      appendEvent: async (event) => event,
+      saveMemoDraft: save,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'context-resolved' } });
+    expect(transitions).toEqual(['running', 'failed']);
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { version: 2, capsuleId: payload.capsuleId, capsuleVersion: 2 },
+    { version: 1, capsuleId: 'foreign-capsule', capsuleVersion: 2 },
+    { version: 1, capsuleId: payload.capsuleId, capsuleVersion: null },
+    { version: 1, capsuleId: payload.capsuleId, capsuleVersion: -1 },
+    { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 1.5 },
+    { version: 1, capsuleId: payload.capsuleId, capsuleVersion: Number.MAX_SAFE_INTEGER + 1 },
+  ])('rejects malformed original snapshot %j before loading or saving', async (snapshot) => {
+    const getExactVersion = vi.fn();
+    const save = vi.fn();
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId: 'sourceability-reviewer', capsuleAgentExecutionContext: snapshot }),
+      updateStatus: async (input) => makeRun(input.toStatus),
+      getCapsuleAtVersion: getExactVersion,
+      appendEvent: async (event) => event,
+      saveMemoDraft: save,
+    })).rejects.toBeInstanceOf(AgentWorkerError);
+    expect(getExactVersion).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    null,
+    { ownerUid: 'foreign-owner', capsuleId: payload.capsuleId, version: 2 },
+    { ownerUid: payload.ownerUid, capsuleId: 'foreign-capsule', version: 2 },
+    { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: 99 },
+    { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: 2, archivedAt: '2026-09-30' },
+  ])('rejects unavailable or mismatched exact owner-scoped capsule %j', async (capsule) => {
+    const save = vi.fn();
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { policyAgentId: 'output-formatter',
+        capsuleAgentExecutionContext: { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 2 } }),
+      updateStatus: async (input) => makeRun(input.toStatus),
+      getCapsuleAtVersion: async () => capsule as never,
+      appendEvent: async (event) => event,
+      saveMemoDraft: save,
+    })).rejects.toBeInstanceOf(AgentWorkerError);
+    expect(save).not.toHaveBeenCalled();
   });
 });

@@ -10,7 +10,9 @@ import {
   type BoardroomCapsuleDockPayload,
 } from '@/lib/boardroom/capsule-dock';
 import { buildBoardroomAgentRunInput, BoardroomRunRequestSchema } from '@/lib/boardroom/schema';
-import { getCapsule, getOrMigrateDefaultCapsule, getStoredContextStack } from '@/lib/context/capsule-service';
+import { capsuleToStack, getCapsule, getOrMigrateDefaultCapsule, getStoredContextStack, type PraxisCapsule } from '@/lib/context/capsule-service';
+import { sanitizeActiveContextStack } from '@/lib/context/active-context-stack';
+import { getCapsuleAtVersion } from '@/lib/context/capsule-version-resolution';
 import { buildProtectedContextPromptBlock, resolveInjectableContext } from '@/lib/context/context-injection';
 import type { SelectedCoreIds } from '@/lib/agent-runtime/types';
 
@@ -27,31 +29,51 @@ export const POST = withAuth(async (request, user) => {
     return NextResponse.json({ error: 'Invalid boardroom run request', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const capsule = await resolveCapsule(user.uid, parsed.data.capsuleId);
-  if (!capsule || capsule.archivedAt) {
-    return NextResponse.json({ error: 'Active capsule not found' }, { status: 404 });
+  const situationSlot = parsed.data.capsuleDockPayload?.slots.find((slot) => slot.role === 'situation' && slot.capsuleId);
+  const requestedId = parsed.data.capsuleId ?? situationSlot?.capsuleId ?? undefined;
+  const explicitVersion = situationSlot?.version ?? null;
+  let capsule: PraxisCapsule;
+  let contextInjection: { promptBlock: string; capsuleDockPayload: BoardroomCapsuleDockPayload };
+  try {
+    let snapshot: PraxisCapsule | null;
+    let capturedVersion: number;
+    let capturedId: string;
+    if (explicitVersion !== null && requestedId) {
+      capturedId = requestedId;
+      capturedVersion = explicitVersion;
+      snapshot = await getCapsuleAtVersion(user.uid, capturedId, capturedVersion);
+    } else {
+      const selected = await resolveCapsule(user.uid, requestedId);
+      if (!selected || selected.archivedAt) {
+        return NextResponse.json({ error: 'Active capsule not found' }, { status: 404 });
+      }
+      if (!validSnapshot(selected, user.uid, requestedId ?? selected.capsuleId, selected.version)) return contextUnavailable();
+      capturedId = selected.capsuleId;
+      capturedVersion = selected.version;
+      snapshot = await getCapsuleAtVersion(user.uid, capturedId, capturedVersion);
+    }
+    if (!validSnapshot(snapshot, user.uid, capturedId, capturedVersion)) return contextUnavailable();
+    capsule = snapshot;
+    // Pin the governing capsule before compiling the complete typed dock.
+    // A queued run must never acquire newer context while awaiting execution.
+    contextInjection = await resolveBoardroomContextInjection(
+      user.uid, capsule, parsed.data.contextStackId, parsed.data.capsuleDockPayload,
+    );
+  } catch {
+    return contextUnavailable();
   }
-
-  // Compile the capsule dock (User / Situation / Tool / Output) into the same
-  // governed prompt layer Ask PRAXIS uses, so the board deliberates on the
-  // full docked context, not just the primary capsule pointer.
-  const contextInjection = await resolveBoardroomContextInjection(
-    user.uid,
-    capsule.capsuleId,
-    parsed.data.contextStackId,
-    parsed.data.capsuleDockPayload,
-  );
 
   try {
     const run = await createAgentRun(buildBoardroomAgentRunInput({
       ownerUid: user.uid,
       capsuleId: capsule.capsuleId,
+      capsuleVersion: capsule.version,
       contextStackId: parsed.data.contextStackId ?? capsule.capsuleId,
-      contextPackageId: `capsule:${capsule.capsuleId}:v${typeof capsule.version === 'number' ? capsule.version : 1}`,
+      contextPackageId: `capsule:${capsule.capsuleId}:v${capsule.version}`,
       selectedCoreIds: capsule.coreRefs as Partial<SelectedCoreIds>,
-      request: { ...parsed.data, capsuleId: capsule.capsuleId },
-      contextInjectionPromptBlock: contextInjection?.promptBlock ?? null,
-      capsuleDockPayload: contextInjection?.capsuleDockPayload ?? parsed.data.capsuleDockPayload ?? null,
+      request: { ...parsed.data, capsuleId: capsule.capsuleId, capsuleDockPayload: contextInjection.capsuleDockPayload },
+      contextInjectionPromptBlock: contextInjection.promptBlock,
+      capsuleDockPayload: contextInjection.capsuleDockPayload,
     }));
 
     const runOutput = toAgentRunOutput(run);
@@ -85,45 +107,68 @@ async function resolveCapsule(uid: string, capsuleId?: string) {
 
 async function resolveBoardroomContextInjection(
   uid: string,
-  capsuleId: string,
+  capsule: PraxisCapsule,
   contextStackId?: string | null,
   submittedDockPayload?: BoardroomCapsuleDockPayload | null,
-): Promise<{ promptBlock: string; capsuleDockPayload: BoardroomCapsuleDockPayload } | null> {
-  try {
-    const storedStack = await getStoredContextStack(uid, contextStackId ?? undefined).catch(() => null)
-      ?? await getStoredContextStack(uid).catch(() => null);
-    const capsuleDockPayload = submittedDockPayload
-      ? normalizeBoardroomCapsuleDockPayload(submittedDockPayload)
-      : null;
-    const activeContextStack = capsuleDockPayload
-      ? activeContextStackFromBoardroomDockPayload(capsuleDockPayload, storedStack ?? undefined)
-      : storedStack ?? undefined;
-    const injectable = await resolveInjectableContext({
-      uid,
-      capsuleId,
-      activeContextStack,
-    });
-    const protectedPrompt = buildProtectedContextPromptBlock(
-      injectable.promptBlock,
-      injectable.dockCapsules,
-      injectable.missingDockCapsuleIds,
-    );
-    return {
-      promptBlock: protectedPrompt.promptBlock,
-      capsuleDockPayload: capsuleDockPayload ?? normalizeBoardroomCapsuleDockPayload({
-        schemaVersion: 1,
-        stackId: injectable.stack?.stackId ?? contextStackId ?? null,
-        slots: injectable.dockCapsules.map((entry) => ({
-          role: entry.role,
-          capsuleId: entry.capsule.capsuleId,
-          label: entry.capsule.label,
-          version: entry.capsule.version,
-        })),
-      }),
-    };
-  } catch {
-    return null;
+): Promise<{ promptBlock: string; capsuleDockPayload: BoardroomCapsuleDockPayload }> {
+  const storedStack = await getStoredContextStack(uid, contextStackId ?? undefined).catch(() => null)
+    ?? await getStoredContextStack(uid).catch(() => null);
+  const capsuleDockPayload = submittedDockPayload
+    ? normalizeBoardroomCapsuleDockPayload(submittedDockPayload)
+    : null;
+  const baseStack = capsuleDockPayload
+    ? activeContextStackFromBoardroomDockPayload(capsuleDockPayload, storedStack ?? undefined)
+    : sanitizeActiveContextStack(storedStack ?? capsuleToStack(capsule));
+  const snapshotStack = capsuleToStack(capsule);
+  const activeContextStack = sanitizeActiveContextStack({
+    ...baseStack,
+    ...snapshotStack,
+    stackId: baseStack.stackId,
+    capsuleRefs: [
+      { capsuleId: capsule.capsuleId, label: capsule.label, role: 'situation', version: capsule.version, primary: true },
+      ...baseStack.capsuleRefs.filter((ref) => ref.capsuleId !== capsule.capsuleId && ref.role !== 'situation'
+        && (!ref.primary || ['user', 'tool', 'output'].includes(ref.role))),
+    ],
+  });
+  const injectable = await resolveInjectableContext({
+    uid,
+    capsuleId: capsule.capsuleId,
+    activeContextStack,
+  });
+  if (!validSnapshot(injectable.capsule, uid, capsule.capsuleId, capsule.version)) {
+    throw new Error('The compiled context does not match the selected saved capsule.');
   }
+  const protectedPrompt = buildProtectedContextPromptBlock(
+    injectable.promptBlock,
+    injectable.dockCapsules,
+    injectable.missingDockCapsuleIds,
+  );
+  return {
+    promptBlock: protectedPrompt.promptBlock,
+    capsuleDockPayload: capsuleDockPayload ? normalizeBoardroomCapsuleDockPayload({
+      ...capsuleDockPayload,
+      slots: capsuleDockPayload.slots.map((slot) => slot.role === 'situation'
+        ? { ...slot, capsuleId: capsule.capsuleId, label: capsule.label, version: capsule.version } : slot),
+    }) : normalizeBoardroomCapsuleDockPayload({
+      schemaVersion: 1,
+      stackId: injectable.stack?.stackId ?? contextStackId ?? null,
+      slots: injectable.dockCapsules.map((entry) => ({
+        role: entry.role,
+        capsuleId: entry.capsule.capsuleId,
+        label: entry.capsule.label,
+        version: entry.capsule.capsuleId === capsule.capsuleId ? capsule.version : entry.capsule.version,
+      })),
+    }),
+  };
+}
+
+function validSnapshot(capsule: PraxisCapsule | null, uid: string, capsuleId: string, version: number): capsule is PraxisCapsule {
+  return Boolean(capsule && !capsule.archivedAt && capsule.ownerUid === uid && capsule.capsuleId === capsuleId
+    && Number.isSafeInteger(version) && version > 0 && capsule.version === version);
+}
+
+function contextUnavailable(): Response {
+  return NextResponse.json({ error: 'Saved capsule context unavailable. Reattach the capsule and try again.', code: 'capsule_version_unavailable' }, { status: 409 });
 }
 
 function dispatchErrorMessage(err: unknown): string {

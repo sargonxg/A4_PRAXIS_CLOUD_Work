@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
+import type { BuildCapsuleEvidencePackInput } from '@/lib/agent-runtime/evidence-pack';
 vi.mock('@/lib/agent-runtime/owner-state', () => ({ assertAgentOwnerWritable: async () => undefined }));
+vi.mock('@/lib/context/capsule-version-resolution', () => ({
+  getCapsuleAtVersion: async (ownerUid: string, capsuleId: string, version: number) => ({ ownerUid, capsuleId, version }),
+}));
 
 vi.mock('@/lib/agent-runtime/execution-lease', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/agent-runtime/execution-lease')>();
@@ -53,6 +58,7 @@ function makeRun(status: AgentRun['status'], metadata: Record<string, unknown> =
     internalEstimatedCostCents: null,
     internalSpendCents: 0,
     metadata: {
+      capsuleAgentExecutionContext: { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 3 },
       policyAgentId: 'boardroom-discussion',
       outputDestination: 'library',
       selectedToolIds: ['context-resolve', 'boardroom-deliberation', 'board-executive-pack'],
@@ -76,6 +82,70 @@ function makeRun(status: AgentRun['status'], metadata: Record<string, unknown> =
 }
 
 describe('boardroom-discussion worker', () => {
+  it('pins evidence and the first saved memo to the original version despite transition metadata drift', async () => {
+    const buildEvidence = vi.fn(async (input: BuildCapsuleEvidencePackInput) => {
+      expect(input.capsuleVersion).toBe(3);
+      return makeEvidencePack();
+    });
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued'),
+      updateStatus: async (input) => makeRun(input.toStatus, {
+        capsuleAgentExecutionContext: { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 99 },
+      }),
+      buildEvidencePack: buildEvidence,
+      runBoardroomDiscussion: async (input) => { expect(input.evidencePack.activeCapsule.version).toBe(3); return makeBoardroomOutput(); },
+      appendEvent: async (event) => event,
+      appendToolCall: async (call) => call,
+      saveMemoDraft: async (_uid, input) => {
+        expect(recordMemoContextSnapshot(input, undefined, false)).toMatchObject({
+          binding: 'recorded', capsuleId: payload.capsuleId, capsuleVersion: 3, runId: payload.runId,
+        });
+        return { memo: { id: 'memo-original-version' } };
+      },
+      saveOutputCapsule: async () => null,
+    });
+    expect(result).toMatchObject({ status: 'succeeded', memoId: 'memo-original-version' });
+    expect(buildEvidence).toHaveBeenCalledOnce();
+  });
+
+  it.each([undefined, { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 0 }])(
+    'fails before evidence retrieval or generation without an original saved version: %j', async (snapshot) => {
+      const buildEvidence = vi.fn();
+      const runner = vi.fn();
+      const save = vi.fn();
+      const transitions: AgentRun['status'][] = [];
+      await expect(executeAgentRun(payload, {
+        getRun: async () => makeRun('queued', { capsuleAgentExecutionContext: snapshot }),
+        updateStatus: async (input) => { transitions.push(input.toStatus); return makeRun(input.toStatus); },
+        buildEvidencePack: buildEvidence,
+        runBoardroomDiscussion: runner,
+        saveMemoDraft: save,
+        appendEvent: async (event) => event,
+      })).rejects.toBeInstanceOf(AgentWorkerError);
+      expect(transitions).toEqual(['running', 'failed']);
+      expect(buildEvidence).not.toHaveBeenCalled();
+      expect(runner).not.toHaveBeenCalled();
+      expect(save).not.toHaveBeenCalled();
+    },
+  );
+
+  it('rejects a mismatched evidence pack before provider generation or persistence', async () => {
+    const runner = vi.fn();
+    const save = vi.fn();
+    const pack = makeEvidencePack() as unknown as { activeCapsule: { version: number } };
+    pack.activeCapsule.version = 99;
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued'),
+      updateStatus: async (input) => makeRun(input.toStatus),
+      buildEvidencePack: async () => pack as never,
+      runBoardroomDiscussion: runner,
+      saveMemoDraft: save,
+      appendEvent: async (event) => event,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'evidence-pack' } });
+    expect(runner).not.toHaveBeenCalled();
+    expect(save).not.toHaveBeenCalled();
+  });
+
   it('runs sequential participant turns and persists a board-executive artifact', async () => {
     const transitions: AgentRun['status'][] = [];
     const toolCalls: string[] = [];

@@ -65,6 +65,20 @@ export const BoardroomRunRequestSchema = z.object({
     }),
   maxRounds: z.number().int().min(1).max(4).default(2),
   outputTarget: z.enum(['board_executive_pack']).default('board_executive_pack'),
+}).superRefine((request, ctx) => {
+  const seenRoles = new Set<string>();
+  for (const [index, slot] of (request.capsuleDockPayload?.slots ?? []).entries()) {
+    if (seenRoles.has(slot.role)) {
+      ctx.addIssue({ code: 'custom', message: 'Each capsule dock role must appear once.', path: ['capsuleDockPayload', 'slots', index, 'role'] });
+    }
+    seenRoles.add(slot.role);
+    if (slot.version !== null && !slot.capsuleId) {
+      ctx.addIssue({ code: 'custom', message: 'A saved version requires a capsule.', path: ['capsuleDockPayload', 'slots', index, 'capsuleId'] });
+    }
+    if (slot.role === 'situation' && slot.capsuleId && request.capsuleId && slot.capsuleId !== request.capsuleId) {
+      ctx.addIssue({ code: 'custom', message: 'The situation capsule must match the selected capsule.', path: ['capsuleDockPayload', 'slots', index, 'capsuleId'] });
+    }
+  }
 });
 
 export type BoardroomRunRequest = z.infer<typeof BoardroomRunRequestSchema>;
@@ -159,6 +173,7 @@ export function normalizeBoardroomParticipants(value?: BoardroomParticipantId[])
 export function buildBoardroomAgentRunInput(input: {
   ownerUid: string;
   capsuleId: string;
+  capsuleVersion: number;
   contextStackId?: string | null;
   contextPackageId?: string | null;
   selectedCoreIds?: Partial<SelectedCoreIds>;
@@ -169,6 +184,9 @@ export function buildBoardroomAgentRunInput(input: {
   contextInjectionPromptBlock?: string | null;
   capsuleDockPayload?: BoardroomCapsuleDockPayload | null;
 }): CreateAgentRunInput {
+  if (!Number.isSafeInteger(input.capsuleVersion) || input.capsuleVersion < 1) {
+    throw new Error('Boardroom requires a positive saved capsule version.');
+  }
   const documentCoreIds = uniqueStrings([
     ...(input.selectedCoreIds?.documentCoreIds ?? []),
     ...input.request.selectedDocumentIds,
@@ -203,10 +221,11 @@ export function buildBoardroomAgentRunInput(input: {
     triggerType: 'manual',
     objective: input.request.question,
     traceId: input.traceId,
-    idempotencyKey: input.idempotencyKey ?? stableBoardroomIdempotencyKey(input.ownerUid, input.capsuleId, input.request),
+    idempotencyKey: input.idempotencyKey ?? stableBoardroomIdempotencyKey(input.ownerUid, input.capsuleId, input.capsuleVersion, input.request),
     maxStep,
     maxSessionMinutes: 45,
     metadata: {
+      capsuleAgentExecutionContext: { version: 1, capsuleId: input.capsuleId, capsuleVersion: input.capsuleVersion },
       policyAgentId: 'boardroom-discussion',
       policyAgentLabel: 'Boardroom Discussion',
       outputDestination: 'library',
@@ -281,11 +300,12 @@ function sanitizeSelectedSources(value: BoardroomSourceRef[]): BoardroomSourceRe
   }));
 }
 
-function stableBoardroomIdempotencyKey(ownerUid: string, capsuleId: string, request: BoardroomRunRequest): string {
+function stableBoardroomIdempotencyKey(ownerUid: string, capsuleId: string, capsuleVersion: number, request: BoardroomRunRequest): string {
   const hash = createHash('sha256')
     .update(JSON.stringify({
       ownerUid,
       capsuleId,
+      capsuleVersion,
       question: request.question,
       participantIds: request.participantIds,
       selectedDocumentIds: request.selectedDocumentIds,

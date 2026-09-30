@@ -65,6 +65,7 @@ describe('boardroom schemas and AgentRun mapping', () => {
     const input = buildBoardroomAgentRunInput({
       ownerUid: 'user-1',
       capsuleId: 'cap-1',
+      capsuleVersion: 2,
       contextStackId: 'default',
       selectedCoreIds: {
         situationCoreId: 'sit-1',
@@ -93,6 +94,7 @@ describe('boardroom schemas and AgentRun mapping', () => {
       sourceCoreIds: ['src-1', 'source-core-2'],
     });
     expect(input.metadata).toMatchObject({
+      capsuleAgentExecutionContext: { version: 1, capsuleId: 'cap-1', capsuleVersion: 2 },
       policyAgentId: 'boardroom-discussion',
       outputDestination: 'library',
       selectedToolIds: expect.arrayContaining([
@@ -128,6 +130,20 @@ describe('boardroom schemas and AgentRun mapping', () => {
       modelPolicy: 'praxis_frontier_deep_model_policy',
     });
     expect(JSON.stringify(input)).not.toMatch(/\bgemini\b|\bclaude\b|\bgpt-\d/i);
+  });
+
+  it.each([0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1])('does not build an executable run with invalid captured version %s', (capsuleVersion) => {
+    expect(() => buildBoardroomAgentRunInput({
+      ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion,
+      request: BoardroomRunRequestSchema.parse({ question: 'Should the board approve this?' }),
+    })).toThrow(/saved capsule version/i);
+  });
+
+  it('does not reuse the same idempotency identity across different captured capsule versions', () => {
+    const request = BoardroomRunRequestSchema.parse({ question: 'Should the board approve this?' });
+    const earlier = buildBoardroomAgentRunInput({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 2, request });
+    const later = buildBoardroomAgentRunInput({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 3, request });
+    expect(earlier.idempotencyKey).not.toBe(later.idempotencyKey);
   });
 
   it('parses the durable boardroom output shape for transcripts and synthesis', () => {
