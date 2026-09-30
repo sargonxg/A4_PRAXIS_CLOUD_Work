@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { normalizeMemoOutputReview } from '@/lib/memo/output-review';
 
 export const OutputCapsuleCitationSchema = z.object({
   id: z.string().min(1),
@@ -23,6 +24,13 @@ const BasePayloadSchema = z.object({
     body: z.string().min(1),
     citationIds: z.array(z.string()).default([]),
   })).default([]),
+});
+
+// Research memo diagnostics must survive the same shaped serializer as the body.
+// Optional fields preserve older output payloads; invalid receipts remain unknown.
+export const OptionsMemoPayloadSchema = BasePayloadSchema.extend({
+  outputReview: z.unknown().transform(normalizeMemoOutputReview).optional(),
+  sourceabilityScope: z.enum(['input_evidence', 'generated_answer']).optional(),
 });
 
 export const DailyReadPayloadSchema = BasePayloadSchema.extend({
@@ -113,7 +121,7 @@ export const OUTPUT_CAPSULE_PAYLOAD_SCHEMAS = {
   'risk-monitor-card-v1': CardPayloadSchema,
   'electoral-risk-card-v1': CardPayloadSchema,
   'governance-index-v1': CardPayloadSchema,
-  'options-memo-v1': BasePayloadSchema,
+  'options-memo-v1': OptionsMemoPayloadSchema,
   'diplomatic-cable-v1': BasePayloadSchema,
   'talking-points-v1': BasePayloadSchema,
   'board-executive-pack-v1': BoardExecutivePackPayloadSchema,

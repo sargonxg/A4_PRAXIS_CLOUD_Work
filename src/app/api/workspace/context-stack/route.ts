@@ -35,7 +35,11 @@ export const GET = withAuth(async (req, user) => {
       persisted: true,
     });
   }
-  const activeSnap = await getActiveStackPointer(user.uid);
+  const activePointer = await getActiveStackPointer(user.uid);
+  const activeSnap = activePointer?.stack;
+  if (activePointer?.cleared && activeSnap?.stackId === DEFAULT_CONTEXT_STACK_ID) {
+    return NextResponse.json({ stack: activeSnap, capsule: null, migrated: false, persisted: true });
+  }
   if (activeSnap && activeSnap.stackId !== DEFAULT_CONTEXT_STACK_ID) {
     const capsule = await getCapsule(user.uid, activeSnap.capsuleId ?? activeSnap.stackId);
     if (capsule && !capsule.archivedAt) {
@@ -67,13 +71,19 @@ export const PUT = withAuth(async (req, user) => {
 
   const body = await req.json().catch(() => null);
   const incoming = body && typeof body === 'object' && !Array.isArray(body) ? body as Partial<ActiveContextStackState> : {};
+  if ((!incoming.stackId || incoming.stackId === DEFAULT_CONTEXT_STACK_ID) && isExplicitClear(incoming)) {
+    const stack = sanitizeNamedStack(incoming);
+    // Detaching context changes only the active pointer, never a saved capsule.
+    await saveActiveStackPointer(user.uid, stack);
+    return NextResponse.json({ stack, capsule: null, persisted: true });
+  }
   if (incoming.stackId && incoming.stackId !== DEFAULT_CONTEXT_STACK_ID) {
     const requested = sanitizeNamedStack(incoming);
     const existing = await getCapsule(user.uid, requested.stackId);
     if (existing?.archivedAt) {
       return NextResponse.json({ error: 'Context capsule is archived' }, { status: 409 });
     }
-    const active = await getActiveStackPointer(user.uid);
+    const active = (await getActiveStackPointer(user.uid))?.stack;
     // Selecting a capsule changes the workspace pointer, not the saved capsule.
     // Dock requests carry only refs; preserve its document/source cores and version.
     const stack = sanitizeNamedStack({
@@ -123,10 +133,20 @@ function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveCont
   });
 }
 
-async function getActiveStackPointer(uid: string): Promise<ActiveContextStackState | null> {
+function isExplicitClear(input: Partial<ActiveContextStackState>): boolean {
+  // Missing legacy pointer fields must not acquire Clear semantics by sanitization.
+  if (input.capsuleId !== null || !Array.isArray(input.capsuleRefs) || input.capsuleRefs.length) return false;
+  const stack = sanitizeNamedStack(input);
+  return !stack.contextPackageId && !stack.userModelId && !stack.situationId && !stack.outputGoal
+    && !stack.sourceIds.length && !stack.documentIds.length && !stack.evidenceGaps.length
+    && Object.values(stack.contextBlocks).every((items) => !items.length);
+}
+
+async function getActiveStackPointer(uid: string): Promise<{ stack: ActiveContextStackState; cleared: boolean } | null> {
   const snap = await getActiveStackRef(uid).get();
   if (!snap.exists) return null;
-  return sanitizeNamedStack(snap.data() as Partial<ActiveContextStackState>);
+  const input = snap.data() as Partial<ActiveContextStackState>;
+  return { stack: sanitizeNamedStack(input), cleared: isExplicitClear(input) };
 }
 
 async function saveActiveStackPointer(uid: string, stack: ActiveContextStackState): Promise<void> {
