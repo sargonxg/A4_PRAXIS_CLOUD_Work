@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { createPolarClient, isPolarBillingConfigured, polarBillingMode, polarProductIdForPlan } from '@/lib/billing/polar-server';
+import { getCheckoutAvailability } from '@/lib/billing/checkout-availability';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,14 @@ export const POST = withAuth(async (request, user) => {
   const parsed = CheckoutSchema.safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json({ error: 'Invalid checkout request', details: parsed.error.flatten() }, { status: 400 });
+  }
+
+  if (!getCheckoutAvailability()[parsed.data.plan]) {
+    return NextResponse.json({
+      error: parsed.data.plan === 'team' ? 'Team subscriptions are not available.' : 'Practitioner checkout is not available.',
+      available: false,
+      fallbackHref: '/pricing',
+    }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
   }
 
   const productId = polarProductIdForPlan(parsed.data.plan);

@@ -1270,7 +1270,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                       )}
                     >
                       <span className="block truncate font-semibold">{capsule.label ?? capsule.capsuleId}</span>
-                      <span className="block font-mono text-[10px] text-slate-400">v{capsule.version} · score {capsule.health?.score ?? '--'}</span>
+                      <span className="block font-mono text-xs text-slate-600">v{capsule.version} · structure {capsule.health?.score ?? '--'}</span>
                     </button>
                   ))}
                 </div>
@@ -1299,18 +1299,19 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
               </div>
               <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-md bg-slate-50 px-2 py-1.5">
-                  <dt className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Score</dt>
+                  <dt className="text-xs font-semibold text-slate-600">Context score</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-slate-900">{trustScore ?? '--'}</dd>
                 </div>
                 <div className="rounded-md bg-slate-50 px-2 py-1.5">
-                  <dt className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Version</dt>
+                  <dt className="text-xs font-semibold text-slate-600">Version</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-slate-900">v{activeCapsule?.version ?? 1}</dd>
                 </div>
                 <div className="rounded-md bg-slate-50 px-2 py-1.5">
-                  <dt className="text-[9px] font-semibold uppercase tracking-[0.12em] text-slate-400">Sources</dt>
+                  <dt className="text-xs font-semibold text-slate-600">Sources</dt>
                   <dd className="mt-0.5 text-sm font-semibold text-slate-900">{sources.length}</dd>
                 </div>
               </dl>
+              <p className="mt-2 text-xs leading-5 text-slate-600">The score summarizes recorded structure and evidence signals. It does not measure factual accuracy.</p>
               <div className="mt-3 space-y-1.5">
                 {contextChecklist.slice(0, 3).map((item) => (
                   <div key={item.id} className="rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5">
@@ -1417,7 +1418,7 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
               <div className="mt-2 grid gap-2 text-[11px] leading-4 text-slate-600 sm:grid-cols-3">
                 <p><strong className="text-slate-800">User.</strong> {user?.name ?? user?.email ?? 'Analyst posture not loaded.'}</p>
                 <p><strong className="text-slate-800">Evidence.</strong> {sources.length ? `${sources.length} attached source${sources.length === 1 ? '' : 's'} available for citation.` : 'No source receipts attached yet.'}</p>
-                <p><strong className="text-slate-800">Trust.</strong> {trustScore === null ? 'Context posture pending.' : `${trustBand} posture, score ${trustScore}.`}</p>
+                <p><strong className="text-slate-800">Context score.</strong> {trustScore === null ? 'Context signals pending.' : `${trustScore}/100 (${trustBand}). A heuristic, not factual verification.`}</p>
               </div>
             </div>
             <EditorContent editor={editor} />
@@ -1600,13 +1601,14 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
                 />
                 <button
                   type="submit"
+                  aria-label="Send question"
                   disabled={askPending || askInput.trim().length === 0}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#111827] text-white disabled:opacity-40"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-[#111827] text-white disabled:opacity-40"
                 >
                   <Send className="h-4 w-4" />
                 </button>
               </div>
-              <p className="mt-1.5 text-[10px] text-slate-400">
+              <p className="mt-1.5 text-xs text-slate-600">
                 Enter to send · Shift+Enter for newline · /grounded, /cite in the editor.
               </p>
             </form>

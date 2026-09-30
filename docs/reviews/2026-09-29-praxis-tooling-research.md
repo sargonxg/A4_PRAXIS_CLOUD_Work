@@ -2,9 +2,9 @@
 
 Scoped decision memo for the existing Ask PRAXIS, capsule builder and policy-writing workflows. Public sources were retrieved on **2026-09-29**, approximately 23:22–23:31 UTC. This research used `research-ops`, `exa-search` and `agent-self-evaluation`. It changed no runtime code, dependency, configuration, credential or cloud resource.
 
-Local wording was refreshed on **2026-09-30** against the current source and acceptance documents. Public version/source observations retain their September 29 retrieval date; this refresh made no public-source or live-service calls.
+Local wording for the historical September 29 baseline was refreshed on **2026-09-30** against that baseline's source and acceptance documents. That baseline-only wording refresh made no public-source or live-service calls and did not refresh its September 29 version/source observations. The later September 30 security verification below used fresh official primary evidence.
 
-The latest local behavior inspection used source `4480650999b5bd2808b55cba58f16e5a9a83d343`. The stored final acceptance index was checked locally against that same source; no browser or live-service calls were repeated by this researcher.
+The historical September 29 local behavior baseline used source `4480650999b5bd2808b55cba58f16e5a9a83d343`. Its stored final acceptance index was checked locally against that same historical source; no browser or live-service calls were repeated for the baseline wording refresh. The [September 30 release record](2026-09-30-praxis-live-release.md) owns current application, correction, deployment and live-verification state. Package and provider observations below remain snapshots from their stated retrieval dates.
 
 ## Decision
 
@@ -146,3 +146,15 @@ The full-suite snapshot reported first-test failures in Boardroom and three Genk
 The four suites now load their modules once in `beforeAll` with a separate 120-second startup bound. Prompt mocks still reset per test, and behavior-test deadlines and schema/evidence validation remain unchanged. The final single-worker rerun passed **4 suites / 16 tests**, exit 0, starting at 11:32:52 with 101.08 seconds total duration. Actual flow/generation behavior bodies completed in 2–34 milliseconds. Targeted ESLint and `git diff --check` passed. These are local mocked-provider regressions, not live model availability or analytical-quality proof.
 
 Future simplification: profile the module graph, then isolate pure schema/evidence helpers from provider and storage startup where the profile supports it. Keep that reduction separate from the current release; no runtime rewrite was needed for these failures. Root integration owns full-suite, build, typecheck, Graphify and deployed journey verification.
+
+## September 30 official Next.js security update
+
+Fresh official evidence checked September 30 confirms [GHSA-vcvr-r3jv-pc5j](https://github.com/vercel/next.js/security/advisories/GHSA-vcvr-r3jv-pc5j), published September 30, as a critical remote-code-execution vulnerability in Node.js `next/og` `ImageResponse` when attacker-controlled values enter SVG content, attributes or styles. The affected range is `>=16.2.0 <16.3.6`; the first patched version is **16.3.6**. The official [16.3.6 release](https://github.com/vercel/next.js/releases/tag/v16.3.6), published September 22, explicitly identifies this fix. The [referenced patch](https://github.com/vercel/next.js/commit/868fad38690d72088868f299fa2bef339b26838e) updates Next's bundled image renderer, so update Next itself rather than assuming a direct Satori override patches the compiled renderer.
+
+The prepatch app's only `ImageResponse` module, `src/app/opengraph-image.tsx`, rendered fixed branding, colors and a literal label list. No attacker-controlled input path was observed in that module; this was source inspection, not an exploit test or deployed-version proof. The September 29 table's `16.3.5` entry remains historical. Current patch and live validation belong to the September 30 release record. This security update does not refresh the dated model/provider observations or introduce model pricing, savings or quality claims.
+
+## September 30 anti-slop application
+
+The requested [anti-slop repository](https://github.com/miqdadbadjuber/anti-slop) was inspected from a read-only local clone. Copy/UI/mobile/accessibility guidance is applied within the existing TACITUS design: concrete task labels, shorter instructions, fewer repeated cards, honest availability and visuals tied to evidence or options. Source quotations and substantive limitations remain intact. No global installer, user-owned agent configuration or extra framework is needed to apply this review.
+
+The next combined source contains upstream Next.js 16.3.7 and the minimal `@grpc/grpc-js` 1.14.5 override/lockfile patch. The integrated gate passed 440 files/2,396 tests and aggregate checks. The fresh build after final settings copy passed with exit 0 at 2026-09-30T22:09:25.634Z (final-build-receipt.json). Corrective deployment and live browser review remain pending in the [release record](2026-09-30-praxis-live-release.md); earlier September 29 package observations and the 16.3.6 security checkpoint remain dated history.

@@ -1,56 +1,76 @@
-# PRAXIS refinement release — September 30, 2026
+# PRAXIS release record: September 30, 2026
 
-Status: initial refinement release live; onboarding and framework security corrections are undergoing release validation. Complete real-service acceptance remains in progress.
+Status: the integrated local gate and fresh production build passed. Commit/push, corrective deployment and authenticated live acceptance remain pending. Historical journey results below belong to earlier named sources.
 
-This record covers source `2441af6ccecc343d7201ef31e75993c32422128c`, separately from the [previous acceptance](2026-09-29-praxis-production-acceptance.md). The user approved implementation and production deployment. Home and Capsules remain the visible product; Firestore ContextCapsules own user context and PostgreSQL/Cloud Tasks own durable execution.
+The next release combines the memo-persistence and truthful-receipt fixes in local checkpoint `90806daf` with upstream chat-first work at `7a56d33822c2e0aa28e25fec792bcb1750f524ac`. It applies the requested [anti-slop review](https://github.com/miqdadbadjuber/anti-slop): shorter copy, fewer repeated explanations, clear actions, useful visuals, and mobile/accessibility checks within the TACITUS design. Final source and deployment identities will be recorded after validation.
 
-## Delivered application changes
+## Validation and release status
 
-- Safer session validation, question/redirect continuity, onboarding and account-switch masking; server-owned one-time funded signup allowance.
-- Purpose → Material → Review/save capsule creation, owner-scoped recovery, explicit persistence scope, and current-snapshot Save and use.
-- Private/starter/archive library distinctions, honest completeness, pagination/filtering and owner-scoped lifecycle actions.
-- Selected-document retrieval before ranking; bounded TXT/PDF/DOCX ingestion with durable indexing checkpoints and retained original-source lineage.
-- Economical, balanced and complex-task routing with bounded fallback and actual executed model/provider receipts.
-- Inspectable original source passages separated from generated grounding; stale review conflicts rejected; saved memo approval bound to exact body/version, intended use and limitations.
-- Server-validated reviewed Markdown/Word export; memo editing invalidates approval. Word exports preserve paragraph text; native heading/table/link formatting remains a separate improvement.
-- SQL execution leases, conditional transitions, generation checkpoints and stable artifact operation IDs. Cross-store effects are not universally atomic or exactly once.
-- Updated user guide, synthetic worked policy example, truthful beta/pricing/legal language, architecture/product map, evaluation runner and [80-recommendation analysis](2026-09-30-praxis-improvement-analysis.md).
+| Gate | Current evidence / required next proof |
+| --- | --- |
+| Corrective source | Optional memo metadata is sanitized before Firestore writes; strict regressions preserve body, version, source and review lineage. Economical/fallback labels and resolved capsule/distinct-source counts are corrected locally. Ask-to-memo preserves only exact owner/id/version pins; 26 focused boundary tests and scoped lint passed. |
+| Dependencies | Next.js 16.3.7 and the minimal `@grpc/grpc-js` 1.14.5 override/lockfile patch are present. The integrated gate passed against the merged source; dependency findings retain their own dated audit receipts. |
+| Merged-source validation | Passed aggregate build/typecheck, architecture, repository, route, capsule, agent, GCP, surface and simplification checks; GCP had zero hard/soft warnings. ESLint: zero errors/five existing warnings. AI route audit passed. Full Vitest: 440 files/2,396 tests, all passed, zero skips. Fresh build after the final settings copy passed at 22:09:25.634 UTC. |
+| Deployment | Exact GitHub-source build, revision/traffic readback, runtime proof and Rules publication evidence are pending for this release. |
+| Real user journeys | Repeat signup, capsule creation, TXT/PDF/DOCX review/reuse, capsule-aware Ask/history, actual model routes, writing review/exports and queued research through memo correction/save/reopen/logout against the final source. Retain failed attempts and original outputs. |
+| Practitioner billing | Dedicated PRAXIS $49/month product, enabled raw seven-event webhook and both version-1 secret mounts verified. Mount revision `praxis-frontend-01086-kff` preserved upstream source `7a56d338`; checkout stays false. Corrective runtime, hosted checkout and signed subscription lifecycle remain pending. Team is unavailable. |
+| Account erasure | `PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED=false`. Rules guards passed; bounded cross-store cleanup, retries and final Auth removal remain unproven. |
 
-## Local and remote validation
+## Integrated local validation
 
-Local frozen-source validation: 426 Vitest files / 2,162 tests passed; production build and TypeScript passed; full lint had zero errors and five existing warnings. Dependency audit reported 44 moderate and three low findings, zero high/critical. Application route, capsule, agent, architecture, surface and simplification audits passed; static runtime deep-preship reported 140 PASS / two WARN / zero BLOCKED.
+`final-source-gate.json` records zero exit codes for repository shape, aggregate gate, lint, AI routes and full tests, completed at 22:04:35 UTC. Logs: `final-gate-repo-shape.log`, `final-gate-gate.log`, `final-gate-lint.log`, `final-gate-ai-routes.log`, `final-gate-tests.log`.
 
-Local browser fixtures passed Ask/auth, writing/review, builder/library and responsive public checks. Their APIs were mocked; they do not establish provider, database or session behavior. GitHub `verify-main` run `36742427165` passed for the release source. Production evidence is recorded separately below.
+The final settings copy now shows actual spendable balance for free and paid accounts. Its monthly activity counter does not imply 31,000 available tokens or a refill. Seventeen focused tests and scoped lint passed after the integrated gate. The fresh production build passed with exit 0 at `2026-09-30T22:09:25.634Z`, recorded in `final-build-receipt.json` and `final-build.log`. Commit/push, deployment and corrective live journeys are not yet recorded.
 
-Local Google operator credentials expired. Cloud Build must independently pass its resource preflight. Existing operator environment/secrets are preserved by update flags; account erasure remains explicitly disabled.
+## Provider setup and mount checkpoint
 
-The onboarding correction passed all 426 test files / 2,171 tests, production build/typecheck, zero-error lint and the existing audit gate. A fresh dependency check then detected today's critical Next.js advisory [GHSA-vcvr-r3jv-pc5j](https://github.com/vercel/next.js/security/advisories/GHSA-vcvr-r3jv-pc5j). The correction includes the smallest compatible patch: Next.js and eslint-config-next 16.3.6. The new audit reports 44 moderate / three low / zero high / zero critical findings. The app's sole `next/og` ImageResponse renders static branding with no observed user-input data flow; that inspection is not an exploit test.
+At 21:36:41 UTC, `operator-polar-provider-setup-1790804201239.json` verified product `c2716588-59a5-46dc-8e04-2a923db4f6b1` (PRAXIS Practitioner, USD 4,900 cents/month, interval count 1) and raw enabled webhook `be046682-216a-4c0a-8770-2ee37c94a160` at the exact billing URL with seven subscription events. The signing secret was stored as enabled version `projects/852128226674/secrets/praxis-polar-webhook-secret/versions/1`.
 
-Final patched-source gate: **426 files / 2,174 tests passed**, zero failures/skips (`security-patch-vitest-final.json`), production build/typecheck passed and full lint retained zero errors / five existing warnings. An earlier full run skipped two route-audit assertions after suite setup failed while graph refresh overlapped; its isolated rerun and the subsequent complete run both passed. Records are retained rather than replaced. Route/repository/architecture checks passed, the graph update completed, and the nine Rules-release tests plus independent source review passed. Rules denial receipts now retain only bounded identifiers/numeric codes, never raw error messages or credentials. Exact-source production acceptance remains pending.
+The 21:37:41 UTC read-only probe `operator-polar-stored-probe-1790804261349.json` confirmed the active merchant, six products, one webhook and unchanged five preexisting products. Narrow frontend secret access was verified. Mount revision `praxis-frontend-01086-kff` served 100% while preserving upstream source `7a56d338`, both version-1 secret references, the Practitioner ID and production mode. The redacted read-only receipt `polar-runtime-readback-1790804823411.json` at 21:47:03.409 UTC confirms those bindings and no Team product mount. `PRAXIS_ENABLE_PAID_CHECKOUT=false`; this configuration revision is not the corrective application release or paid lifecycle proof.
 
-## Production acceptance
+## Historical accepted release: `9e95085f`
 
-Initial release `2441af6ccecc343d7201ef31e75993c32422128c` is served as `praxis-frontend-01083-hls`, build `c1d042d7-1c6c-4e65-90af-62c432af6bd5`. Both GitHub checks and all nine Cloud Build steps passed. The real cloud preflight reported zero hard failures and one Scheduler warning; all seven runtime checks were healthy. Five public pages passed real-browser checks at 320 and 1440 pixels: ten renders, zero document overflow and zero page exceptions (`public-live.json`).
+The coordinator observed this source serving ordinary traffic on September 30. Recheck the live source before treating it as current.
 
-The original canary had exhausted its 1,000-token allowance (balance zero; total used 1,000), correctly returning a nonretryable 429. A fresh funded QA account passed real login, library filters, private notes capsule creation, current-version Save and use, actual Vertex answer with saved/reloaded history, exact-body internal review, Markdown and Word downloads, edit invalidation and mobile layouts. Another new account received 1,000 tokens through server initialization. These are partial checks, not a passed overall fresh-account journey.
+| Release evidence | Verified value |
+| --- | --- |
+| Application source | `9e95085f60e85bae8b4877f5548d6efd39dea79c` |
+| Cloud Run revision / traffic | `praxis-frontend-01084-s8p` / 100% at readback |
+| Cloud Build | `d7d99db1-a0d2-4ff9-9525-04f82dcc0982`; nine successful steps |
+| Image digest | `sha256:9ca680797f66ddd91ed17bbae0843e7fbe9d3115cdb0d45f41b89305ea88300f` |
+| GitHub checks | verify-main `36756461962`; persona `36756462152`; both passed |
+| Final local gate | 426 files / 2,174 tests; zero failures/skips; production build/typecheck passed; lint had zero errors and five existing warnings |
+| Runtime / cloud preflight | Seven healthy checks; zero GCP hard failures and one Scheduler warning |
 
-Full onboarding exposed a production navigation defect: after a 200 completion response, the completed canonical profile and session were correct, but cached client navigation stayed on onboarding. A full document navigation reached `/app`. A separate early click could run before auth/profile readiness and produce no save request. The correction uses validated full navigation and owner-scoped readiness, responsive serialized field saves, bounded retry and stale-response masking. Independent review closed retry, account-switch summary and failed-section recovery findings; 36 focused tests passed. Its exact-source production acceptance is pending.
+| Real-service journey on this source | Result and retained evidence |
+| --- | --- |
+| Main user path | Passed login, library, private notes capsule, latest-version Save and use, actual Vertex Ask/history, exact-body review, Markdown/DOCX downloads and paragraph text, edit invalidation, obsolete-export rejection, onboarding, owner isolation, relogin and mobile layout. `approved-refinement-live.json`, tag `1790793469421-9912a685`. |
+| Visible signup | Passed Create workspace, Firebase signup, server bootstrap, onboarding and relogin; exactly one 1,000-token starter grant. `visible-signup-live.json`. |
+| Three model routes | Economical `gemini-3.1-flash-lite`, Balanced `gemini-3.5-flash`, Complex `gemini-3.1-pro-preview` actually ran on Vertex without fallback and saved histories. `model-policy-live.json`. Execution does not establish analytical quality. |
+| TXT/PDF/DOCX reuse | Passed extraction, source/document identity, reject/apply/reload, saved version 3, attachment, source recall, history and mobile library. No external sources, executed tools or agent dispatch. `approved-upload-live.json`, tag `1790794632163-77bfced5`. |
+| Queued research memo | Failed at Firestore persistence: optional `sourceReceipts[0].publishedDate` was `undefined`. Run `fd913c21-8906-46b9-8fb2-b2ee7ffa1197` and `failed-9e95085f-memo-persist-*` remain retained. The local serializer fix needs a new deployed worker journey. |
 
-Firestore Rules publication failed on the initial release read with HTTP 403. No Rules writes occurred. Source publication, Storage guards and user-level propagation remain unverified; erasure stays disabled. Ordinary observed signup does not prove a global immutable 1,000-token bootstrap guarantee under legacy client rules.
+Agent review found unsupported pilot recommendations in Balanced/Complex output. Original answers and quote-based corrections remain in the [quality evaluation](2026-09-30-praxis-quality-evaluation.md). Independent human scores and measured capsule benefit remain absent.
 
-Serial complete source, model, upload/review/reuse and queued-worker receipts must be reconciled here after the correction is served. Analytical quality remains a separate unscored/independent-review gate.
+## Firebase Rules evidence
 
-Evidence directory: `output/playwright/practical-refinement-20260930/` (ignored local receipts; no auth-state exports).
+| Evidence | Result and boundary |
+| --- | --- |
+| Firestore source hash | `f742d194d5ea2868c8efc496cf630386d67b5cdb59dfec84ae20e7c00deed4ba` |
+| Storage source hash | `61ee883cbbea13a3acedc089db91ff3fbc6d677398467820e15994f2eeabff37` |
+| Operator publication | Both sources compiled, published and read back; rollback identities retained in `operator-both-rules-release-9e95085f.json`. |
+| Scoped access | Storage cross-service grant and five-permission CI Rules publisher role verified. Details are in the [account/billing record](2026-09-30-praxis-auth-account-billing-readiness.md). |
+| Exact CI identity read/test | No-source build `0d988eed-e4c6-45a1-bc06-0a5a92d2cf01` read both served sources, matched hashes and compiled without errors. `ci-rules-read-preflight-receipt.json`. Create/update execution needs a successful publishing build. |
+| User guard checks | All 55 passed: starter-grant/escalation controls, active Firestore/app/Storage use, deleting-owner denial, marker protection and protected-route `409 account_deleting`. `live-rules-propagation-1790795176330-168a9c3c.json`. The synthetic fixture is preserved; complete erasure was not performed. |
 
-## Remaining product and operational gates
+Source hashes, publication identities, permission propagation and application journeys are separate evidence. Re-publishing identical bytes may create another ruleset identity; record both.
 
-1. Configured paid checkout and a real sandbox purchase/webhook/entitlement/cancellation/refund lifecycle. Paid plans remain proposed until proven.
-2. Firestore/Storage Rules propagation and deletion-state enforcement, external provider erasure, storage reconciliation and retained-record exceptions. Account erasure is disabled; existing signed URLs expire independently.
-3. Independent analysts and representative users: measured capsule-versus-baseline quality, citation fidelity, task completion, revision burden and willingness to subscribe. Synthetic operational acceptance cannot establish these outcomes.
-4. Backup restoration, concurrent-user/load/capacity and broader interrupted/cancelled cross-store recovery proof. Health checks and local fault tests have narrower claims.
-5. Failed-run refund idempotency/workspace settlement, OCR/scanned-document support and native Word formatting.
-6. Institutional SSO/roles/residency/private deployments and optional JEV or upstream DIALECTICA integrations retain their separate agreements and acceptance gates.
+## Earlier checkpoints and remaining proof
 
-Rollback: preserve generated user work and redeploy a reviewed corrective commit or revert the application release through the existing main trigger. Rules changes require their own previous-ruleset receipt and scoped rollback; application rollback does not imply Rules rollback. Monitor runtime and key user journeys after any change.
+Initial refinement source `2441af6ccecc343d7201ef31e75993c32422128c` ran as `praxis-frontend-01083-hls`, build `c1d042d7-1c6c-4e65-90af-62c432af6bd5`. Its Rules preflight failed with missing `firebaserules.releases.get`; no Rules write occurred. Operator Google refresh and scoped IAM changes later resolved publication. Local ADC expiry did not establish a production outage.
 
-The [implementation ledger](2026-09-30-praxis-implementation-ledger.md) maps every recommendation to implementation, evidence and remaining gates. Historical findings remain dated; live acceptance does not erase limitations or constitute an analytical-quality study.
+Earlier gates of 2,162 and 2,171 tests preceded the final 2,174-test gate. The Next.js 16.3.6 correction and failed/intermediate assertions remain historical evidence. The serial supervisor has ended; the final release needs a fresh funded acceptance run. No credentials or browser auth-state exports are retained.
+
+Remaining proof includes failed-run settlement/refund idempotency, cancellation and interrupted/concurrent execution, email verification/reset/expiry recovery, complete erasure, OCR/scanned PDFs, native Word formatting, representative-user accessibility/usability, matched analyst-quality studies, paid lifecycle, restore and load testing. Healthy endpoints and synthetic happy paths do not close these gates.
+
+Evidence directory: `output/playwright/practical-refinement-20260930/` (ignored local receipts). The [implementation ledger](2026-09-30-praxis-implementation-ledger.md) maps all 80 recommendations; the [comprehensive analysis](2026-09-30-praxis-improvement-analysis.md) sets priorities and acceptance criteria. [September 29 acceptance](2026-09-29-praxis-production-acceptance.md) remains a separate dated baseline.

@@ -22,4 +22,28 @@ describe('experimental checkout availability', () => {
     expect(await response.json()).toMatchObject({ available: false, fallbackHref: '/pricing' });
     expect(provider.create).not.toHaveBeenCalled();
   });
+
+  it('does not sell Team even when checkout is enabled and provider configuration exists', async () => {
+    vi.stubEnv('PRAXIS_ENABLE_PAID_CHECKOUT', 'true');
+    const response = await POST(new Request('https://praxis.tacitus.me/api/billing/checkout', {
+      method: 'POST', body: JSON.stringify({ plan: 'team' }),
+    }));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toMatchObject({ available: false });
+    expect(provider.create).not.toHaveBeenCalled();
+  });
+
+  it('binds an enabled Practitioner checkout to the authenticated owner', async () => {
+    vi.stubEnv('PRAXIS_ENABLE_PAID_CHECKOUT', 'true');
+    provider.create.mockResolvedValue({ url: 'https://checkout.example.test/synthetic' });
+    const response = await POST(new Request('https://praxis.tacitus.me/api/billing/checkout', {
+      method: 'POST', body: JSON.stringify({ plan: 'analyst' }),
+    }));
+    expect(response.status).toBe(200);
+    expect(provider.create).toHaveBeenCalledWith(expect.objectContaining({
+      externalCustomerId: 'synthetic-owner',
+      products: ['synthetic-product'],
+      metadata: expect.objectContaining({ uid: 'synthetic-owner', plan: 'analyst' }),
+    }));
+  });
 });

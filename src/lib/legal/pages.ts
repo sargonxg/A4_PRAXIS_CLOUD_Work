@@ -171,7 +171,7 @@ export const legalPages: LegalPage[] = [
         heading: 'Experimental Service',
         body: [
           'PRAXIS is an experimental workspace operated by Giulio Catanzariti under the TACITUS project name. No TACITUS legal entity has been incorporated. Features, limits, integrations and access may change or be withdrawn as the project develops.',
-          'Current free access is subject to the limits shown in the application. Paid upgrades are unavailable. Future prices, institutional options and feature descriptions are proposals, not purchase offers or service commitments.',
+          'Free access and subscriptions are available only as shown on the current Pricing page. Checkout states the price, currency and renewal interval before purchase. Future plans and institutional options are proposals, not purchase offers or service commitments.',
           'Team permissions, SSO, residency and private deployment require separate implementation, verification, identified contracting parties and applicable arrangements before any commitment.',
           'Users are responsible for reviewing generated outputs before relying on them in policy, legal, diplomatic, humanitarian, security, or institutional decisions.',
         ],
@@ -243,7 +243,7 @@ export const legalPages: LegalPage[] = [
         heading: 'Documented Infrastructure Baseline',
         body: [
           'Google Cloud provides core infrastructure, including Cloud Run, Firestore, Cloud SQL, Cloud Storage, Secret Manager, Cloud Tasks, Pub/Sub, Cloud Build, Artifact Registry, and Vertex AI.',
-          'Cloudflare provides DNS. GitHub hosts source code and workflow metadata. Polar is a documented billing integration; paid upgrades are unavailable and this listing does not offer a subscription.',
+          'Cloudflare provides DNS. GitHub hosts source code and workflow metadata. When subscriptions are enabled, Polar processes checkout, customer billing details and subscription management.',
         ],
       },
       {

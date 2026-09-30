@@ -20,6 +20,7 @@ import { eraseOwnerAccount, OwnerErasureError, pendingExternalErasureStores } fr
 import { eraseOwnerRuntimeData } from '@/lib/agent-runtime/postgres';
 import { eraseOwnerDocumentMirror, isDocumentSqlMirrorConfigured } from '@/lib/agent-runtime/document-postgres';
 import { eraseOwnerAskThreadMemory, isAskThreadSqlConfigured } from '@/lib/agent-runtime/ask-thread-postgres';
+import { getCheckoutAvailability } from '@/lib/billing/checkout-availability';
 
 const ACCOUNT_PATCH_FIELDS = new Set(['displayName', 'role', 'orgId', 'orgName', 'marketingConsent', 'photoURL']);
 
@@ -73,6 +74,7 @@ export const GET = withAuth(async (_request: Request, user) => {
         totalCreditsUsed: 0,
         subscription: 'free',
         isDemo: true,
+        checkoutAvailability: { analyst: false, team: false, mode: 'unconfigured' },
       });
     }
 
@@ -90,6 +92,7 @@ export const GET = withAuth(async (_request: Request, user) => {
         totalCreditsUsed: 0,
         subscription: 'free',
         isDemo: false,
+        checkoutAvailability: getCheckoutAvailability(),
       });
     }
 
@@ -97,6 +100,7 @@ export const GET = withAuth(async (_request: Request, user) => {
       uid: user.uid,
       email: user.email,
       ...serializeFirestoreData(snap.data()),
+      checkoutAvailability: getCheckoutAvailability(),
     });
   } catch (err) {
     return handleRouteError(err, 'account-read');

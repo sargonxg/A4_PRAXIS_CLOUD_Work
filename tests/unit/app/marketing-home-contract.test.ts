@@ -129,7 +129,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(shellSource).toContain('Attach context');
     expect(shellSource).toContain('Detach');
     expect(shellSource).toContain('Build context');
-    expect(shellSource).toContain('Ask PRAXIS');
+    expect(chatSource).toContain('Ask PRAXIS');
     expect(shellSource).toContain('[-webkit-line-clamp:2]');
     expect(shellSource).not.toContain('block truncate text-[13px] font-medium text-slate-700');
     expect(shellSource).not.toContain('PRAXIS sample artifacts');

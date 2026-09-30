@@ -9,6 +9,7 @@ import {
   type SourcePreviewCard,
 } from '@/lib/ai/ask-answer-envelope';
 import { saveMemoDraft } from '@/lib/firebase/memo-service';
+import { CapsuleVersionConflictError, getCapsuleAtVersion } from '@/lib/context/capsule-version-resolution';
 import { saveOutputCapsule, type SaveOutputCapsuleInput } from '@/lib/output-capsules/storage';
 import {
   ASK_DOCUMENT_PACK_OUTPUT_TARGET_IDS,
@@ -77,10 +78,7 @@ export const POST = withAuth(async (request, user) => {
 
     const outputTarget = parsed.data.outputTarget;
     const pack = withOutputTarget(parsed.data.pack as ConversationDocumentPack, outputTarget);
-    const capsuleReceiptError = validateCapsuleReadReceipt(pack);
-    if (capsuleReceiptError) {
-      return NextResponse.json({ error: capsuleReceiptError, code: 'capsule_read_receipt_required' }, { status: 400 });
-    }
+    const capsuleAssociation = savedCapsuleAssociation(pack);
 
     const blocks = conversationDocumentPackToMemoBlocks(pack);
     if (user.isDemo) {
@@ -92,7 +90,20 @@ export const POST = withAuth(async (request, user) => {
       });
     }
 
-    const outputCapsuleInput = buildOutputCapsuleInput(pack, parsed.data.situationId, outputTarget);
+    if (capsuleAssociation.capsuleId !== null) {
+      const { capsuleId, capsuleVersion } = capsuleAssociation;
+      try {
+        const capsule = await getCapsuleAtVersion(user.uid, capsuleId, capsuleVersion);
+        if (!capsule || capsule.ownerUid !== user.uid || capsule.capsuleId !== capsuleId
+          || capsule.version !== capsuleVersion || capsule.archivedAt) {
+          throw new CapsuleVersionConflictError(capsuleId, capsuleVersion);
+        }
+      } catch {
+        throw new CapsuleVersionConflictError(capsuleId, capsuleVersion);
+      }
+    }
+
+    const outputCapsuleInput = buildOutputCapsuleInput(pack, parsed.data.situationId, outputTarget, capsuleAssociation);
     const outputCapsule = await saveOutputCapsule(user.uid, outputCapsuleInput);
     if (!outputCapsule) return NextResponse.json({ error: 'ContextCapsule not found for Ask artifact output.' }, { status: 404 });
 
@@ -105,8 +116,8 @@ export const POST = withAuth(async (request, user) => {
       blocks,
       status: 'draft',
       changeNote: 'Created from Ask PRAXIS document pack.',
-      capsuleId: artifactMetadata.capsuleId,
-      capsuleVersion: artifactMetadata.capsuleVersion,
+      capsuleId: capsuleAssociation.capsuleId,
+      capsuleVersion: capsuleAssociation.capsuleVersion,
       conversationId: artifactMetadata.conversationId,
       runId: artifactMetadata.runId,
       outputTarget: artifactMetadata.outputTarget,
@@ -130,6 +141,14 @@ export const POST = withAuth(async (request, user) => {
       outputCapsule,
     });
   } catch (err) {
+    if (err instanceof CapsuleVersionConflictError) {
+      return NextResponse.json({
+        error: err.code,
+        code: err.code,
+        message: err.message,
+        details: { capsuleId: err.capsuleId, requestedVersion: err.requestedVersion, recoverable: true, action: 'reattach_capsule' },
+      }, { status: 409, headers: { 'X-Praxis-Safeguard': err.code } });
+    }
     return handleRouteError(err, 'memos/from-ask-pack');
   }
 });
@@ -146,21 +165,35 @@ function withOutputTarget(pack: ConversationDocumentPack, outputTarget: AskDocum
   };
 }
 
-function validateCapsuleReadReceipt(pack: ConversationDocumentPack): string | null {
-  const sourceReceiptIds = collectSourceReceiptIds(pack);
-  const grounded = sourceReceiptIds.length > 0
-    || pack.sourceCards.some((card) => Boolean(card.documentId || card.chunkId || card.url));
-  if (!grounded) return null;
-  if (!pack.provenance.capsuleId || typeof pack.provenance.capsuleVersion !== 'number') {
-    return 'Grounded Ask artifacts require a capsule id and capsule version from the Ask read receipt.';
+type SavedCapsuleAssociation =
+  | { capsuleId: string; capsuleVersion: number }
+  | { capsuleId: null; capsuleVersion: null };
+
+function savedCapsuleAssociation(pack: ConversationDocumentPack): SavedCapsuleAssociation {
+  const capsuleId = pack.provenance.capsuleId ?? null;
+  const capsuleVersion = pack.provenance.capsuleVersion ?? null;
+  if (capsuleId !== null && (!capsuleId || capsuleId !== capsuleId.trim()
+    || capsuleId.length > 160 || capsuleId === '.' || capsuleId === '..'
+    || /[/?#[\]\\\u0000-\u001f\u007f]/.test(capsuleId))) {
+    throw new CapsuleVersionConflictError(capsuleId, capsuleVersion);
   }
-  return null;
+  // Version zero is an unsaved Ask receipt. Preserve that receipt in the pack,
+  // but never turn it into a saved capsule link or substitute a later version.
+  if (capsuleVersion === 0 || (capsuleId === null && capsuleVersion === null)) {
+    return { capsuleId: null, capsuleVersion: null };
+  }
+  if (capsuleId === null || capsuleVersion === null
+    || !Number.isSafeInteger(capsuleVersion) || capsuleVersion < 1) {
+    throw new CapsuleVersionConflictError(capsuleId ?? '', capsuleVersion);
+  }
+  return { capsuleId, capsuleVersion };
 }
 
 function buildOutputCapsuleInput(
   pack: ConversationDocumentPack,
   situationId: string,
   outputTarget: AskPersistedDocumentPackOutputTarget,
+  capsuleAssociation: SavedCapsuleAssociation,
 ): SaveOutputCapsuleInput {
   const metadata = buildArtifactMetadata(pack, outputTarget);
   const policyTarget = normalizePolicyOutputTarget(outputTarget);
@@ -189,7 +222,7 @@ function buildOutputCapsuleInput(
   }));
   return {
     situationId,
-    contextCapsuleId: metadata.capsuleId,
+    contextCapsuleId: capsuleAssociation.capsuleId,
     templateId: outputCapsuleTemplateIdForTarget(policyTarget),
     payload: {
       title: pack.title,
@@ -239,7 +272,9 @@ function artifactMetadataLines(metadata: ReturnType<typeof buildArtifactMetadata
   return [
     `conversation id: ${metadata.conversationId ?? 'not recorded'}`,
     `run id: ${metadata.runId ?? 'not queued'}`,
-    `capsule: ${metadata.capsuleId ?? 'not recorded'}${metadata.capsuleVersion ? ` v${metadata.capsuleVersion}` : ''}`,
+    `capsule: ${metadata.capsuleId ?? 'not recorded'}${metadata.capsuleVersion === 0
+      ? ' v0 (unsaved context)'
+      : metadata.capsuleVersion !== null ? ` v${metadata.capsuleVersion}` : ''}`,
     `source receipt ids: ${metadata.sourceReceiptIds.length ? metadata.sourceReceiptIds.join(', ') : 'none'}`,
     `unsupported claims: ${metadata.unsupportedClaims.length}`,
     `gaps: ${metadata.gaps.length}`,

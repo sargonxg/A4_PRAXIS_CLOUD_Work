@@ -144,7 +144,7 @@ export function CapsuleLibraryWithTry(props: Omit<CapsuleLibraryProps, 'onTryCap
     <>
     {loading ? <p role="status" className="mb-2 text-sm text-slate-600">Loading your saved capsules…</p> : null}
     {user && !hydrated ? <p role="status" className="mb-2 text-sm text-slate-600">Loading your saved context before attaching capsules…</p> : null}
-    {loadError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm">{requestedCursor ? 'More saved capsules could not be loaded. Previously loaded work is still available.' : 'Your saved capsules could not be loaded. Starters are still shown below.'} <button type="button" disabled={loading} className="font-semibold underline" onClick={() => { setInventory((current) => ({ ...current, ownerId, loading: true, error: false })); setReload((value) => value + 1); }}>Retry</button></p> : null}
+    {loadError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm">{requestedCursor ? 'More saved capsules could not be loaded. Previously loaded work is still available.' : 'Your saved capsules could not be loaded. Starters are still shown below.'} <button type="button" disabled={loading} className="inline-flex min-h-11 items-center px-3 font-semibold underline" onClick={() => { setInventory((current) => ({ ...current, ownerId, loading: true, error: false })); setReload((value) => value + 1); }}>Retry</button></p> : null}
     <CapsuleLibrary
       {...props}
       entries={entries}

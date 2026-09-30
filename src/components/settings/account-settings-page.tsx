@@ -36,6 +36,9 @@ import {
 } from '@/types/preferences';
 import { LANGUAGES } from '@/types/analyst-profile';
 import { EmptyState } from '@/components/ui/empty-state';
+import { PricingCheckoutButton } from '@/components/billing/pricing-checkout-button';
+import type { CheckoutAvailability } from '@/lib/billing/checkout-availability';
+import { PRICING_TIERS } from '@/lib/constants/pricing';
 
 type SettingsTab = 'profile' | 'billing' | 'usage' | 'security' | 'connectors' | 'workspace' | 'system';
 
@@ -57,6 +60,7 @@ type AccountRecord = {
   marketingConsent?: boolean;
   photoURL?: string;
   isDemo?: boolean;
+  checkoutAvailability?: CheckoutAvailability;
 };
 
 type MonthlyUsage = {
@@ -202,6 +206,7 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
 };
 
 const DEFAULT_USAGE: MonthlyUsage = { allowance: 31_000, used: 0, remaining: 31_000, conversationStarts: 0 };
+const practitionerPlan = PRICING_TIERS.find(tier => tier.id === 'analyst')!;
 
 const MEMORY_ENDPOINTS = {
   health: '/api/memory/health',
@@ -240,8 +245,8 @@ const AUTHENTICATED_TEST_LANES = [
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: LucideIcon; detail: string }> = [
   { id: 'profile', label: 'Profile', icon: UserRound, detail: 'Analyst profile and account basics' },
-  { id: 'billing', label: 'Access', icon: CreditCard, detail: 'Free experimental access and proposed plans' },
-  { id: 'usage', label: 'Usage', icon: BarChart3, detail: 'Credits and monthly allowance' },
+  { id: 'billing', label: 'Access', icon: CreditCard, detail: 'Current plan and subscription' },
+  { id: 'usage', label: 'Usage', icon: BarChart3, detail: 'Account balance and activity' },
   { id: 'security', label: 'Security', icon: ShieldCheck, detail: 'Password, sign out, data controls' },
   { id: 'connectors', label: 'Connectors', icon: KeyRound, detail: 'API keys and provider status' },
   { id: 'workspace', label: 'Writing preferences', icon: SlidersHorizontal, detail: 'Language, citations and output defaults' },
@@ -272,6 +277,7 @@ export function AccountSettingsPage() {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [settingsSearch, setSettingsSearch] = useState('');
   const checkoutStatus = searchParams.get('checkout');
+  const checkoutPlan = searchParams.get('checkoutPlan');
 
   const activeMeta = useMemo(() => TABS.find((tab) => tab.id === activeTab) ?? TABS[0], [activeTab]);
   const visibleTabs = useMemo(() => {
@@ -333,7 +339,7 @@ export function AccountSettingsPage() {
       body: JSON.stringify(accountDraft),
     });
     if (result.ok) {
-      setAccount(result.data.account);
+      setAccount(current => ({ ...current, ...result.data.account }));
       setStatus('Account saved.');
       await refreshCredits();
     } else {
@@ -350,7 +356,7 @@ export function AccountSettingsPage() {
       body: JSON.stringify({ photoURL }),
     });
     if (result.ok) {
-      setAccount(result.data.account);
+      setAccount(current => ({ ...current, ...result.data.account }));
       setStatus(photoURL ? 'Profile photo updated.' : 'Profile photo removed.');
     } else {
       setStatus(result.error);
@@ -400,6 +406,17 @@ export function AccountSettingsPage() {
     }
     if (result.ok && result.data.fallbackHref) router.push(result.data.fallbackHref);
     else setStatus(result.ok ? 'Billing portal is not available.' : result.error);
+  }
+
+  async function refreshBillingStatus() {
+    setBusyAction('billing-refresh');
+    const result = await fetchJson<AccountRecord>('/api/account');
+    if (result.ok) {
+      setAccount(result.data);
+      await refreshCredits();
+      setStatus('Subscription status refreshed.');
+    } else setStatus(result.error);
+    setBusyAction(null);
   }
 
   async function saveConnector(provider: ProviderSpec) {
@@ -556,16 +573,20 @@ export function AccountSettingsPage() {
               subscriptionStatus={account?.subscriptionStatus}
               subscriptionPlanId={account?.subscriptionPlanId}
               subscriptionProvider={account?.subscriptionProvider}
+              polarCustomerId={account?.polarCustomerId}
               subscriptionExpiresAt={account?.subscriptionExpiresAt}
               checkoutStatus={checkoutStatus}
+              checkoutPlan={checkoutPlan}
+              checkoutAvailability={account?.checkoutAvailability}
               credits={credits}
               totalCreditsUsed={totalCreditsUsed}
               busyAction={busyAction}
               onPortal={openBillingPortal}
+              onRefresh={refreshBillingStatus}
             />
           ) : null}
 
-          {activeTab === 'usage' ? <UsageTab usage={usage} /> : null}
+          {activeTab === 'usage' ? <UsageTab usage={usage} accountCredits={credits} plan={plan} /> : null}
 
           {activeTab === 'security' ? (
             <SecurityTab
@@ -753,38 +774,58 @@ function BillingTab({
   subscriptionStatus,
   subscriptionPlanId,
   subscriptionProvider,
+  polarCustomerId,
   subscriptionExpiresAt,
   checkoutStatus,
+  checkoutPlan,
+  checkoutAvailability,
   credits,
   totalCreditsUsed,
   busyAction,
   onPortal,
+  onRefresh,
 }: {
   plan: string;
   subscriptionStatus?: string;
   subscriptionPlanId?: string;
   subscriptionProvider?: string;
+  polarCustomerId?: string | null;
   subscriptionExpiresAt?: string | null;
   checkoutStatus?: string | null;
+  checkoutPlan?: string | null;
+  checkoutAvailability?: CheckoutAvailability;
   credits: number;
   totalCreditsUsed: number;
   busyAction: string | null;
   onPortal: () => void;
+  onRefresh: () => void;
 }) {
-  const hasPriorSubscription = plan !== 'free' && Boolean(subscriptionProvider) && subscriptionStatus === 'active';
+  const hasPriorSubscription = subscriptionProvider === 'polar' && Boolean(polarCustomerId);
+  const hasPaidPlan = plan !== 'free';
+  const practitionerAvailable = checkoutAvailability?.analyst === true;
+  const paidPlan = plan === 'analyst' ? 'Practitioner' : plan;
   return (
     <div className="space-y-5">
       <div className="rounded-lg border border-[var(--color-praxis-emerald-300)] bg-[var(--color-praxis-emerald-50)] p-4">
-        <h3 className="text-base font-semibold">Free experimental access</h3>
-        <p className="mt-2 text-sm leading-6">Current access has no paid upgrade. Use chat, create private capsules and review your work within the available allowance. Availability and limits may change.</p>
+        <h3 className="text-base font-semibold">{hasPriorSubscription ? (hasPaidPlan ? `${paidPlan} subscription` : 'Billing account') : 'Free experimental access'}</h3>
+        <p className="mt-2 text-sm leading-6">{hasPriorSubscription ? 'Your account shows the recorded status and available allowance. Manage billing or cancellation through the subscription portal.' : practitionerAvailable ? 'Try PRAXIS free, or choose Practitioner for a larger individual allowance.' : 'Paid upgrades are currently unavailable. Use chat, private capsules and reviewed drafts within your available allowance.'}</p>
       </div>
-      {checkoutStatus ? <p role="status" className="text-sm text-slate-600">A previous checkout link was opened. Paid upgrades are currently unavailable; this page does not start a transaction.</p> : null}
+      {checkoutStatus ? <div role="status" className="space-y-3 text-sm text-slate-600">
+        <p>{checkoutStatus === 'success' ? 'Checkout returned. Your plan updates when payment is confirmed.' : 'Checkout closed. Check your subscription status before starting again.'}</p>
+        <ActionButton icon={RefreshCcw} label={busyAction === 'billing-refresh' ? 'Refreshing…' : 'Refresh subscription status'} onClick={onRefresh} disabled={busyAction !== null} />
+      </div> : null}
       <div className="grid gap-3 sm:grid-cols-2">
-        <Metric label="Account record" value={plan} />
+        <Metric label="Current plan" value={paidPlan} />
         <Metric label="Available PRAXIS credits" value={credits} />
       </div>
+      {practitionerAvailable && !hasPaidPlan ? <div className="rounded-lg border border-slate-200 p-4">
+        <h3 className="font-semibold">{practitionerPlan.name} · ${practitionerPlan.price} USD / month</h3>
+        <p className="mt-2 text-sm leading-6 text-slate-600">{practitionerPlan.usage}. Renews monthly; manage or cancel in your account.</p>
+        {checkoutAvailability.mode === 'sandbox' ? <p className="mt-2 text-sm text-amber-800">Test checkout only; no live subscription is offered.</p> : null}
+        <PricingCheckoutButton plan="analyst" label={checkoutPlan === 'analyst' ? 'Continue to Practitioner checkout' : 'Choose Practitioner'} />
+      </div> : null}
       <div className="flex flex-wrap gap-3">
-        <Link href="/pricing" className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-sm font-semibold">Access and proposed plans</Link>
+        <Link href="/pricing" className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-sm font-semibold">Plans and availability</Link>
         <a href="https://tacitus.me/contact" className="inline-flex min-h-11 items-center rounded-lg bg-[var(--color-praxis-emerald-700)] px-4 text-sm font-semibold text-white">Ask about an experimental pilot</a>
       </div>
       <details className="rounded-lg border border-slate-200 p-3">
@@ -799,21 +840,27 @@ function BillingTab({
   );
 }
 
-function UsageTab({ usage }: { usage: MonthlyUsage }) {
+function UsageTab({ usage, accountCredits, plan }: { usage: MonthlyUsage; accountCredits: number; plan: string }) {
   const used = usage.creditsUsed ?? usage.used;
   return (
     <div className="space-y-5">
-      <div className="grid gap-3 md:grid-cols-3">
-        <Metric label="Monthly PRAXIS credits left" value={usage.unlimited ? 'unlimited' : usage.remaining} />
-        <Metric label="Monthly PRAXIS credits used" value={used} />
-        <Metric label="Monthly PRAXIS allowance" value={usage.unlimited ? 'unlimited' : usage.allowance} />
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Metric label="Available PRAXIS credits" value={accountCredits} />
+        {plan === 'free' ? <Metric label="Activity this month" value={`${used} credits`} /> : null}
       </div>
-      <InfoPanel title="Monthly free allowance">
-        <p>Month: {usage.monthKey ?? 'current'}</p>
-        <p>Used: {used} of {usage.allowance} PRAXIS credits</p>
-        <p>Conversation starts: {usage.conversationStarts ?? 0}</p>
-        <p>Next reset: {usage.nextResetAt || usage.resetAt ? new Date(usage.nextResetAt ?? usage.resetAt ?? '').toLocaleString() : 'not available'}</p>
-      </InfoPanel>
+      {plan === 'free' ? (
+        <>
+          <p className="text-sm leading-6 text-slate-600">Your starter allowance is one-time. Monthly activity tracking does not refill your account.</p>
+          <details className="rounded-lg border border-slate-200 p-3">
+            <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">Activity details</summary>
+            <div className="mt-3 space-y-2 text-sm text-slate-600">
+              <p>Month: {usage.monthKey ?? 'current'}</p>
+              <p>Conversation starts: {usage.conversationStarts ?? 0}</p>
+              <p>Activity counter resets: {usage.nextResetAt || usage.resetAt ? new Date(usage.nextResetAt ?? usage.resetAt ?? '').toLocaleString() : 'not available'}</p>
+            </div>
+          </details>
+        </>
+      ) : <p className="text-sm leading-6 text-slate-600">See Access for the recorded subscription period and billing controls.</p>}
     </div>
   );
 }
@@ -912,10 +959,10 @@ function ConnectorsTab({
                 </p>
               </div>
               <div className="flex gap-2">
-                <Link href={provider.docsUrl} target="_blank" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-slate-50">
+                <Link href={provider.docsUrl} target="_blank" className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-slate-50">
                   Docs
                 </Link>
-                <Link href={provider.signupUrl} target="_blank" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-slate-50">
+                <Link href={provider.signupUrl} target="_blank" className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-navy-700 hover:bg-slate-50">
                   Get key
                 </Link>
               </div>

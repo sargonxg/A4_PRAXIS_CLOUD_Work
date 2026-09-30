@@ -14,7 +14,6 @@ import {
   MessageSquareText,
   PlusCircle,
   ShieldCheck,
-  Sparkles,
   X,
 } from 'lucide-react';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
@@ -224,15 +223,11 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
             ) : null}
             {isPublic ? (
               <div className="mx-auto mb-6 max-w-3xl text-center sm:pb-2">
-                <p className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-emerald-500/25 bg-white px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-700">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Ask PRAXIS
-                </p>
-                <h1 className="mt-4 text-balance font-serif text-4xl font-semibold leading-tight tracking-tight text-[color:var(--color-app-text)] sm:text-5xl">
+                <h1 className="text-balance font-serif text-4xl font-semibold leading-tight tracking-tight text-[color:var(--color-app-text)] sm:text-5xl">
                   Policy analysis you can inspect.
                 </h1>
                 <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-                  Ask a hard question. Bring your sources and methods. Review the evidence, assumptions and options.
+                  Ask a policy question. Add sources when useful. Review the answer before sharing.
                 </p>
               </div>
             ) : null}
@@ -257,7 +252,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                       onMutationPending={setSavingContext}
                     />
                   )}
-                  {showUserCoreOnboarding ? <details className="mt-3 text-xs text-[var(--color-app-text-secondary)]"><summary className="cursor-pointer py-2 font-semibold">Add your perspective</summary><UserCoreOnboardingCard saveStack={saveStack} stack={stack} visible /></details> : null}
+                  {showUserCoreOnboarding ? <details className="mt-3 text-xs text-[var(--color-app-text-secondary)]"><summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold">Add your perspective</summary><UserCoreOnboardingCard saveStack={saveStack} stack={stack} visible /></details> : null}
                 </>
               )}
               contextLabel={contextLabel}
@@ -297,22 +292,14 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
 function PublicIntroduction() {
   return (
     <section aria-labelledby="public-workflow-title" className="mt-12 border-t border-slate-200 py-10">
-      <p className="text-xs font-semibold uppercase tracking-widest text-emerald-700">From question to reviewable work</p>
-      <h2 id="public-workflow-title" className="mt-3 max-w-3xl font-serif text-3xl text-slate-950 sm:text-4xl">Bring the question. Keep the context that matters.</h2>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">For analysts, policy teams and researchers preparing a brief, comparing options or checking a claim. Start with a question; sign in to get an answer and save your conversation. Sources and saved context are optional.</p>
-      <div className="mt-7 grid gap-4 md:grid-cols-3">
-        {[
-          { title: 'Ask and inspect', body: 'Describe the decision and the output you need. Read the answer alongside its sources, assumptions and missing evidence.' },
-          { title: 'Build reusable context', body: 'A Context Capsule saves the background you want to reuse. Start from a template, or upload TXT, PDF or Word documents and review the proposed facts before accepting them.' },
-          { title: 'Keep your work together', body: 'Attach a capsule to the next question, return to a saved conversation, or open a useful answer in the editor. Check the evidence before sharing.' },
-        ].map((item) => <article key={item.title} className="rounded-2xl border border-slate-200 bg-white/80 p-6"><h3 className="font-serif text-2xl text-slate-950">{item.title}</h3><p className="mt-3 text-sm leading-6 text-slate-600">{item.body}</p></article>)}
-      </div>
+      <h2 id="public-workflow-title" className="max-w-3xl font-serif text-3xl text-slate-950 sm:text-4xl">Keep the context worth reusing.</h2>
+      <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">For policy briefs, assessments and narrative analysis. Sign in to ask and save your conversation. A Context Capsule keeps sources, assumptions and methods together for your next question.</p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/guide" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white">Follow the quick start</Link>
-        <Link href="/learn" className="inline-flex min-h-11 items-center rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800">Learn about saved context</Link>
+        <Link href="/guide" className="inline-flex min-h-11 items-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white">Follow the quick start</Link>
+        <Link href="/learn" className="inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800">Read about Context Capsules</Link>
         <Link href="/pricing" className="inline-flex min-h-11 items-center px-4 text-sm font-semibold text-emerald-800">Plans and availability</Link>
       </div>
-      <p className="mt-5 text-sm leading-6 text-slate-500">PRAXIS is in beta. AI answers can be incomplete or wrong; a saved source is not a guarantee that a claim is correct.</p>
+      <p className="mt-5 text-sm leading-6 text-slate-600">Free experimental access. Check AI answers against their sources; saving context does not verify it.</p>
     </section>
   );
 }
@@ -349,7 +336,7 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
 
   return (
     <aside className={`${isPublic ? 'hidden lg:block ' : ''}h-fit rounded-2xl border border-slate-200/70 bg-white/60 p-3 lg:sticky lg:top-6`} aria-label="Primary PRAXIS destinations">
-      <p className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400">{isPublic ? 'Start here' : 'Workspace'}</p>
+      <p className="px-2 text-xs font-semibold text-slate-600">{isPublic ? 'Start here' : 'Workspace'}</p>
       <nav className="mt-3 flex flex-wrap gap-1 lg:grid">
         {destinations.map((item) => {
           const Icon = HOME_DESTINATION_ICONS[item.icon] ?? MessageSquareText;
@@ -373,20 +360,20 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
       </nav>
       {!isPublic && recents.length ? (
         <nav className="mt-3 lg:mt-5" aria-label="Recent conversations" data-testid="home-recent-conversations">
-          <p className="hidden px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-400 lg:block">Recent</p>
+          <p className="hidden px-2 text-xs font-semibold text-slate-600 lg:block">Recent</p>
           <button type="button" onClick={() => setRecentsOpen((open) => !open)} aria-expanded={recentsOpen} aria-controls="home-recent-list" className="inline-flex min-h-11 items-center px-3 text-sm font-semibold text-slate-600 lg:hidden">{recentsOpen ? 'Hide recent conversations' : 'Recent conversations'}</button>
           <div id="home-recent-list" className={`${recentsOpen ? 'grid' : 'hidden'} mt-2 gap-0.5 lg:grid`}>
             {recents.map((item) => (
               <Link
                 key={item.conversationId}
                 href={`/app/conversations/${encodeURIComponent(item.conversationId)}${item.capsuleId ? `?capsuleId=${encodeURIComponent(item.capsuleId)}` : ''}`}
-                className="group rounded-[var(--radius-md)] px-3 py-1.5 transition hover:bg-white"
+                className="group min-h-11 rounded-[var(--radius-md)] px-3 py-2 transition hover:bg-white"
                 title={item.title ?? item.conversationId}
               >
                 <span className="block overflow-hidden break-words text-[13px] font-medium leading-snug text-slate-700 [display:-webkit-box] [-webkit-box-orient:vertical] [-webkit-line-clamp:2] group-hover:text-slate-950">
                   {item.title ?? 'PRAXIS conversation'}
                 </span>
-                <span className="block font-mono text-[10px] text-slate-400">
+                <span className="block font-mono text-xs text-slate-600">
                   {formatRecentTimestamp(item.updatedAt)}
                 </span>
               </Link>
@@ -394,17 +381,14 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
           </div>
         </nav>
       ) : null}
-      <div className="mt-5 hidden rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] p-3 text-xs leading-5 text-slate-600 lg:block">
-        Ask first. Save the context worth reusing.
-      </div>
       <a
         href="https://tacitus.me"
         target="_blank"
         rel="noreferrer"
-        className="mt-3 hidden items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-emerald-700 lg:flex"
+        className="mt-3 hidden min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-2 text-xs font-semibold text-slate-600 transition hover:text-emerald-700 lg:flex"
         aria-label="TACITUS reviewable context infrastructure"
       >
-        TACITUS <span aria-hidden className="text-emerald-600">◳</span> reviewable context
+        About TACITUS
       </a>
     </aside>
   );
@@ -455,20 +439,20 @@ function ContextDrawer({
           <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/login?mode=signup&redirect=%2Fapp"
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               <Boxes className="h-3.5 w-3.5" />
               Attach context
             </Link>
             <Link
               href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository"
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               Import
             </Link>
             <Link
               href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%2Fbuilder"
-              className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
             >
               <PlusCircle className="h-3.5 w-3.5" />
               Build context
@@ -484,17 +468,17 @@ function ContextDrawer({
             </div>
             <Link
               href="/login?mode=signup&redirect=%2Fapp"
-              className="text-xs font-semibold text-emerald-700 underline-offset-2 hover:underline"
+              className="inline-flex min-h-11 items-center text-xs font-semibold text-emerald-700 underline-offset-2 hover:underline"
             >
               Sign in
             </Link>
           </div>
           <p className="mt-3 rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
-            No capsules attached yet. Ask PRAXIS can still answer directly.
+            Sign in to ask. A capsule is optional.
           </p>
           <Link
             href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository"
-            className="mt-2 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+            className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
           >
             <Boxes className="h-3.5 w-3.5" />
             Pick capsule
@@ -512,7 +496,7 @@ function ContextDrawer({
           data-testid="launchpad-capsule-chip"
           onClick={() => activeCapsuleId && onActivateCapsule(activeCapsuleId)}
           disabled={mutationDisabled}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-full)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-1.5 text-xs font-semibold text-slate-700"
+          className="inline-flex min-h-11 items-center gap-2 rounded-[var(--radius-md)] border border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-1.5 text-xs font-semibold text-slate-700"
         >
           <Library className="h-3.5 w-3.5 text-emerald-700" />
           {selectedCapsuleRefs.length ? `${selectedCapsuleRefs.length} capsule${selectedCapsuleRefs.length === 1 ? '' : 's'} attached` : 'No capsules attached'}
@@ -522,7 +506,7 @@ function ContextDrawer({
             <CapsuleListPicker activeCapsuleId={activeCapsuleId ?? null} onSelect={onActivateCapsule} />
             <CapsuleImportButton onImported={(result) => onAttachReferenceCapsule(result.capsuleId)} />
           </fieldset>
-          <Link href="/app/capsules/builder" className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+          <Link href="/app/capsules/builder" className="inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
             <PlusCircle className="h-3.5 w-3.5" />
             Build context
           </Link>
@@ -565,7 +549,7 @@ function ContextDrawer({
                     type="button"
                     onClick={() => onMakePrimaryCapsule(ref.capsuleId)}
                     disabled={mutationDisabled}
-                    className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                    className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                   >
                     <CheckCircle2 className="h-3 w-3" />
                     Make primary
@@ -575,7 +559,7 @@ function ContextDrawer({
                   type="button"
                   onClick={() => onDetachCapsule(ref.capsuleId)}
                   disabled={mutationDisabled}
-                  className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                  className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-sm)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                 >
                   <X className="h-3 w-3" />
                   Detach
@@ -585,11 +569,11 @@ function ContextDrawer({
           )) : (
             <div className="rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2">
               <p className="text-xs leading-5 text-slate-500">
-                No capsules attached yet. Ask PRAXIS can still answer directly.
+                No capsule attached. You can ask a question now.
               </p>
               <Link
                 href="/app/capsules?lane=repository"
-                className="mt-2 inline-flex items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                className="mt-2 inline-flex min-h-11 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 <Boxes className="h-3.5 w-3.5" />
                 Pick capsule

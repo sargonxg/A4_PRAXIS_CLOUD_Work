@@ -231,7 +231,7 @@
     "@google-cloud/firestore": "8.6.0",
     "@google/genai": "2.6.0",
     "google-gax": "5.0.6",
-    "@grpc/grpc-js": "1.14.4",
+    "@grpc/grpc-js": "1.14.5",
     "@grpc/proto-loader": "0.8.1",
     "@opentelemetry/auto-instrumentations-node": "0.80.0",
     "@opentelemetry/sdk-node": "0.222.0",
