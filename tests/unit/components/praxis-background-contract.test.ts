@@ -20,8 +20,12 @@ describe('PRAXIS shared ordered-connection background', () => {
     expect(globals).toContain('conic-gradient(from 90deg at 1px 1px');
   });
 
-  it('uses the same background class before and after login without separate inline dot grids', () => {
-    expect(login).toContain('praxis-checker-constellation');
+  it('uses quiet Civic paper at login and in the shared workspace while retaining contextual graph surfaces', () => {
+    expect(login).toContain('var(--color-archive-paper-strong)');
+    const shell = readFileSync(join(root, 'src/components/app/app-shell.tsx'), 'utf8');
+    expect(shell).toContain('praxis-workspace');
+    expect(globals).toMatch(/\.praxis-workspace\s*\{\s*background:\s*var\(--color-archive-paper-strong\)/);
+    expect(globals).toContain('.praxis-workspace .praxis-focus-surface { background: transparent; }');
     expect(workbench).toContain('praxis-checker-constellation');
     expect(readFileSync(join(root, 'src/components/app/praxis-chat-first-shell.tsx'), 'utf8')).toContain('praxis-focus-surface');
     expect(login).not.toContain('backgroundImage: `radial-gradient(circle at 1px 1px');

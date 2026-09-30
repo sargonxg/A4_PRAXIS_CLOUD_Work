@@ -81,9 +81,9 @@ function find(node: ReactNode, match: (element: Element) => boolean): Element {
   return element!;
 }
 function click(element: Element) { (element.props.onClick as () => void)(); }
-function bar(mode: 'public' | 'authenticated' = 'authenticated') {
+function bar(mode: 'public' | 'authenticated' = 'authenticated', onMutationPending?: (pending: boolean) => void) {
   runtime.cursor = 0;
-  return AskContextBar({ mode, hydrated: runtime.hydrated, stack: attachedStack(), saveStack: runtime.saveStack });
+  return AskContextBar({ mode, hydrated: runtime.hydrated, stack: attachedStack(), saveStack: runtime.saveStack, onMutationPending });
 }
 function shell(mode: 'public' | 'authenticated' = 'authenticated') {
   runtime.cursor = 0;
@@ -124,25 +124,56 @@ describe('Ask context mutation readiness', () => {
     }));
     expect(runtime.saveStack.mock.calls[0][0].capsuleRefs).toHaveLength(5);
   });
+  it('attaches a named canonical capsule with its pinned version without replacing existing context', () => {
+    runtime.hydrated = true;
+    const picker = find(bar(), (element) => named(element, 'CapsuleListPicker'));
+    (picker.props.onSelect as (id: string, capsule: unknown) => void)('new-case', { capsuleId: 'new-case', label: 'Reviewed policy sources', version: 11 });
+    expect(runtime.saveStack).toHaveBeenCalledWith(expect.objectContaining({
+      capsuleId: 'case-a',
+      capsuleRefs: expect.arrayContaining([
+        expect.objectContaining({ capsuleId: 'new-case', label: 'Reviewed policy sources', version: 11, role: 'reference' }),
+        expect.objectContaining({ capsuleId: 'case-a', version: 7, primary: true }),
+      ]),
+    }));
+    expect(runtime.saveStack.mock.calls[0][0].capsuleRefs).toHaveLength(6);
+  });
+
+  it('blocks Ask while a context write is pending and re-enables it after a failed save', async () => {
+    runtime.hydrated = true;
+    let fail!: (reason: Error) => void;
+    runtime.saveStack.mockImplementationOnce(() => new Promise((_resolve, reject) => { fail = reject; }));
+    const pending = vi.fn();
+    const picker = find(bar('authenticated', pending), (element) => named(element, 'CapsuleListPicker'));
+    (picker.props.onSelect as (id: string, capsule: unknown) => void)('new-case', { capsuleId: 'new-case', label: 'Reviewed sources', version: 11 });
+    expect(pending).toHaveBeenCalledWith(true);
+    fail(new Error('Save failed'));
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(pending).toHaveBeenLastCalledWith(false);
+    expect(renderToStaticMarkup(bar())).toContain('Save failed');
+  });
+
   it.each([
     { user: true, authLoading: false, hydrated: false, disabled: true },
     { user: true, authLoading: true, hydrated: true, disabled: true },
     { user: false, authLoading: false, hydrated: true, disabled: true },
     { user: true, authLoading: false, hydrated: true, disabled: false },
-  ])('gates desktop/mobile Clear, Build, slot mutations and overflow detach: %j', (state) => {
+  ])('gates named-chip detach, typed-slot mutations, Build and Clear at every viewport: %j', (state) => {
     runtime.user = state.user ? { id: 'owner-a' } : null;
     runtime.authLoading = state.authLoading;
     runtime.hydrated = state.hydrated;
-    click(find(bar(), (element) => element.props['aria-label'] === 'Capsule Dock actions'));
+    click(find(bar(), (element) => element.props.title === 'Show context details: sources, saved context, readiness'));
     const html = renderToStaticMarkup(bar());
     const mutations = (html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? [])
       .filter((button) => /Clear context|Build context|title="(?:Remove|Detach)|data-testid="capsule-dock-chip"/.test(button));
-    expect(mutations).toHaveLength(13);
+    expect(mutations).toHaveLength(15);
     for (const button of mutations) expect(button.includes('disabled=""'), button).toBe(state.disabled);
     expect(runtime.saveStack).not.toHaveBeenCalled();
   });
 
   it('ignores premature Clear callbacks and saves the complete cleared context after hydration', async () => {
+    click(find(bar(), (element) => element.props.title === 'Show context details: sources, saved context, readiness'));
     click(find(bar(), (element) => element.props.title === 'Clear context'));
     expect(runtime.saveStack).not.toHaveBeenCalled();
     runtime.hydrated = true;
@@ -154,17 +185,18 @@ describe('Ask context mutation readiness', () => {
 
   it('hides an open picker when the account context starts loading again', () => {
     runtime.hydrated = true;
+    click(find(bar(), (element) => element.props.title === 'Show context details: sources, saved context, readiness'));
     click(find(bar(), (element) => element.props['data-testid'] === 'capsule-dock-chip' && element.type === 'button'));
-    expect(renderToStaticMarkup(bar())).toContain('data-testid="CapsuleListPicker"');
+    expect(renderToStaticMarkup(bar()).match(/data-testid="CapsuleListPicker"/g)).toHaveLength(2);
     runtime.user = { id: 'owner-b' };
     runtime.hydrated = false;
-    expect(renderToStaticMarkup(bar())).not.toContain('data-testid="CapsuleListPicker"');
+    expect(renderToStaticMarkup(bar()).match(/data-testid="CapsuleListPicker"/g)).toHaveLength(1);
   });
 
   it('preserves public sign-in links and disables saved-context mutations', () => {
     runtime.user = null;
     const html = renderToStaticMarkup(bar('public'));
-    expect(html).toContain('Sign in to save context');
+    expect(html).toContain('Attach context');
     expect(html).toContain('/login?mode=signup&amp;redirect=%2Fapp');
     expect(html).not.toContain('Clear context');
     expect(html).not.toContain('title="Remove');

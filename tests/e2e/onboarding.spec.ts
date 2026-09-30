@@ -31,7 +31,9 @@ test.describe('onboarding first-login flow', () => {
       return;
     }
 
-    await expect(page.locator('h2')).toContainText(/Set up your analyst profile|Review your analyst profile/);
+    await expect(page.getByRole('heading', { level: 1, name: /Make PRAXIS yours|Your working preferences/ })).toBeVisible();
+    await expect(page.getByText('Preview the context your profile adds', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Finish later', exact: true })).toBeVisible();
     await finishOnboardingLater(page, BASE);
     await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
   });

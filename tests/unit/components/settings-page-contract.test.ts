@@ -7,7 +7,6 @@ const settingsRoute = readFileSync(join(process.cwd(), 'src/app/app/settings/pag
 const proxy = readFileSync(join(process.cwd(), 'src/proxy.ts'), 'utf8');
 const accountApi = readFileSync(join(process.cwd(), 'src/app/api/account/route.ts'), 'utf8');
 const appShell = readFileSync(join(process.cwd(), 'src/components/app/app-shell.tsx'), 'utf8');
-const checkoutRoute = readFileSync(join(process.cwd(), 'src/app/api/billing/checkout/route.ts'), 'utf8');
 
 describe('account settings page contract', () => {
   it('renders one canonical user settings destination with the expected tabs', () => {
@@ -31,7 +30,6 @@ describe('account settings page contract', () => {
       '/api/settings/ai',
       '/api/settings/api-keys',
       '/api/billing/portal',
-      '/api/billing/checkout',
     ]) {
       expect(settingsPage).toContain(route);
     }
@@ -67,13 +65,15 @@ describe('account settings page contract', () => {
     expect(settingsPage).toContain('/api/memory/reject');
   });
 
-  it('surfaces fixed Polar subscription state and intent-preserving checkout paths', () => {
+  it('keeps prior subscription records but does not initiate unavailable paid upgrades', () => {
     expect(settingsPage).toContain('subscriptionStatus');
     expect(settingsPage).toContain('subscriptionExpiresAt');
-    expect(settingsPage).toContain('/login?mode=signup&plan=analyst');
-    expect(settingsPage).toContain('/login?mode=signup&plan=team');
-    expect(checkoutRoute).toContain('checkout=success');
-    expect(checkoutRoute).toContain('checkout=cancelled');
+    expect(settingsPage).toContain('Free experimental access');
+    expect(settingsPage).toContain('Ask about an experimental pilot');
+    expect(settingsPage).not.toContain('/api/billing/checkout');
+    expect(settingsPage).not.toContain('checkoutPlan');
+    expect(settingsPage).not.toContain('Start Analyst checkout');
+    expect(settingsPage).toContain('hasPriorSubscription');
   });
 
   it('does not rewrite the settings route back into the cockpit panel', () => {
@@ -81,12 +81,13 @@ describe('account settings page contract', () => {
     expect(proxy).not.toContain("pathname.startsWith('/app/settings/')");
     expect(proxy).not.toContain("pathname.startsWith('/app/settings') || pathname === '/app/profile'");
     expect(appShell).toContain("goSettings: () => router.push('/app/settings')");
-    expect(appShell).toContain("pathname === '/app/settings'");
+    expect(appShell).toContain('<AppSidebar');
   });
 
   it('renders settings as a quiet workbench without legacy settings chrome copy', () => {
-    expect(settingsPage).toContain('od-praxis-surface');
-    expect(settingsPage).toContain('Search settings');
+    expect(settingsPage).toContain('Find a setting');
+    expect(settingsPage).toContain('Advanced settings');
+    expect(settingsPage).not.toContain('<LivingContextRail');
     expect(settingsPage).not.toContain('Active ContextCapsule');
     expect(settingsPage).not.toContain('User Core summary');
     expect(settingsPage).not.toContain('Review User Core');

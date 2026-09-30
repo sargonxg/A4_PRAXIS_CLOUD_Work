@@ -3,23 +3,21 @@
 import Link from 'next/link';
 import { PublicShell } from '@/components/app/public-shell';
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   CheckCircle2,
   Boxes,
-  ChevronDown,
   FileText,
   FolderKanban,
   Library,
   MessageSquareText,
-  MoreHorizontal,
   PlusCircle,
   ShieldCheck,
   Sparkles,
   X,
 } from 'lucide-react';
-import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
+import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import { useActiveContextStack } from '@/components/app/use-active-context-stack';
 import { useAuth } from '@/lib/auth/auth-context';
 import { attachSavedCapsuleForAsk } from '@/lib/capsules/ask-handoff';
@@ -30,7 +28,6 @@ import {
   promoteCapsuleRef,
   swapCapsuleRef,
 } from '@/lib/context/active-context-stack';
-import { getCapsuleCategoryPalette, type CapsuleCategoryId } from '@/lib/constants/aco-colors';
 import { HOME_SIDEBAR_DESTINATIONS, primaryNavForPath, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
 import { WorkedPolicyExample } from '@/components/marketing/worked-policy-example';
 
@@ -59,13 +56,6 @@ const CapsuleImportButton = dynamic(
   { ssr: false },
 );
 
-const PUBLIC_TOP_LINKS = [
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Learn', href: '/learn' },
-  { label: 'Guide', href: '/guide' },
-  { label: 'Release notes', href: '/release-notes' },
-] as const;
-
 const HOME_DESTINATION_ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ className?: string }>>> = {
   MessageSquareText,
   FolderKanban,
@@ -84,6 +74,8 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const ownerId = user?.id;
   const handoffKey = !isPublic && requestedCapsuleId ? JSON.stringify([ownerId ?? null, requestedCapsuleId]) : null;
   const initialPrompt = searchParams.get('prompt') ?? searchParams.get('capsulePrompt') ?? '';
+  const requestedThread = searchParams.get('thread') ?? '';
+  const threadId = /^[a-zA-Z0-9_-]{3,96}$/.test(requestedThread) ? requestedThread : undefined;
   const { stack, saveStack, persisted, hydrated } = useActiveContextStack({ remote: !isPublic });
   const attachmentRef = useRef({ stack, saveStack });
   const [handoff, setHandoff] = useState<{ key: string | null; status: 'loading' | 'failed' }>({ key: null, status: 'loading' });
@@ -131,11 +123,11 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
     return `${selectedCapsuleRefs.length || 1} capsule${(selectedCapsuleRefs.length || 1) === 1 ? '' : 's'}`;
   }, [activeCapsuleId, selectedCapsuleRefs.length]);
 
-  async function activateCapsule(capsuleId: string) {
+  async function activateCapsule(capsuleId: string, capsule?: PraxisCapsule) {
     if (mutationDisabled) return;
     const next = selectedCapsuleRefs.length
-      ? swapCapsuleRef(stack, selectedCapsuleRefs[0].capsuleId, { capsuleId, role: 'primary', primary: true })
-      : attachCapsuleRef(stack, { capsuleId, role: 'primary', primary: true });
+      ? swapCapsuleRef(stack, selectedCapsuleRefs[0].capsuleId, { capsuleId, label: capsule?.label, version: capsule?.version, role: 'primary', primary: true })
+      : attachCapsuleRef(stack, { capsuleId, label: capsule?.label, version: capsule?.version, role: 'primary', primary: true });
     setSavingContext(true);
     setContextError('');
     try {
@@ -151,10 +143,12 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
     }
   }
 
-  async function attachReferenceCapsule(capsuleId: string) {
+  async function attachReferenceCapsule(capsuleId: string, capsule?: PraxisCapsule) {
     if (mutationDisabled) return;
     const next = attachCapsuleRef(stack, {
       capsuleId,
+      label: capsule?.label,
+      version: capsule?.version,
       role: selectedCapsuleRefs.length ? 'reference' : 'primary',
       primary: selectedCapsuleRefs.length === 0,
     });
@@ -213,13 +207,12 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
 
   const body = (
     <div
-      className="praxis-app-surface praxis-focus-surface min-h-screen text-slate-950"
+      className={`praxis-focus-surface text-[var(--color-deep-ink)] ${isPublic ? 'praxis-app-surface min-h-screen' : ''}`}
       data-testid="praxis-chat-first-shell"
     >
-      <div data-testid={isPublic ? 'marketing-home' : 'app-launchpad'} className="mx-auto flex w-full max-w-7xl flex-col px-4 py-5 sm:px-6 lg:px-8">
-        {!isPublic ? <HomeTopBar isPublic={isPublic} /> : null}
-        <div className="mt-5 grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10">
-          <HomeSidebar isPublic={isPublic} pathname={`${pathname ?? '/'}${query ? `?${query}` : ''}`} />
+      <div data-testid={isPublic ? 'marketing-home' : 'app-launchpad'} className={`mx-auto flex w-full flex-col ${isPublic ? 'max-w-7xl px-4 py-5 sm:px-6 lg:px-8' : 'max-w-4xl'}`}>
+        <div className={isPublic ? 'mt-5 grid gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] lg:gap-10' : 'grid'}>
+          {isPublic ? <HomeSidebar isPublic pathname={`${pathname ?? '/'}${query ? `?${query}` : ''}`} /> : null}
           <section className="min-w-0">
             {contextError ? <p role="alert" className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">{contextError}</p> : null}
             {handoffKey && !handoffReady ? (
@@ -261,19 +254,17 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                       persisted={persisted}
                       variant="home"
                       onOpenAdvancedContext={() => setContextOpen(true)}
+                      onMutationPending={setSavingContext}
                     />
                   )}
-                  <UserCoreOnboardingCard
-                    saveStack={saveStack}
-                    stack={stack}
-                    visible={showUserCoreOnboarding}
-                  />
+                  {showUserCoreOnboarding ? <details className="mt-3 text-xs text-[var(--color-app-text-secondary)]"><summary className="cursor-pointer py-2 font-semibold">Add your perspective</summary><UserCoreOnboardingCard saveStack={saveStack} stack={stack} visible /></details> : null}
                 </>
               )}
               contextLabel={contextLabel}
               contextOpen={contextOpen}
               currentPath={isPublic ? '/' : '/app'}
               initialPrompt={initialPrompt}
+              threadId={threadId}
               onToggleContext={() => setContextOpen((value) => !value)}
               storageKey={isPublic ? 'praxis-public-home-draft' : 'praxis-authenticated-home-chat'}
             />
@@ -287,8 +278,8 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                 persisted={persisted}
                 savingContext={savingContext}
                 selectedCapsuleRefs={selectedCapsuleRefs}
-                onActivateCapsule={(capsuleId) => void activateCapsule(capsuleId)}
-                onAttachReferenceCapsule={(capsuleId) => void attachReferenceCapsule(capsuleId)}
+                onActivateCapsule={(capsuleId, capsule) => void activateCapsule(capsuleId, capsule)}
+                onAttachReferenceCapsule={(capsuleId, capsule) => void attachReferenceCapsule(capsuleId, capsule)}
                 onDetachCapsule={(capsuleId) => void detachCapsule(capsuleId)}
                 onMakePrimaryCapsule={(capsuleId) => void makePrimaryCapsule(capsuleId)}
               />
@@ -323,32 +314,6 @@ function PublicIntroduction() {
       </div>
       <p className="mt-5 text-sm leading-6 text-slate-500">PRAXIS is in beta. AI answers can be incomplete or wrong; a saved source is not a guarantee that a claim is correct.</p>
     </section>
-  );
-}
-
-function HomeTopBar({ isPublic }: { isPublic: boolean }) {
-  return (
-    <header className="flex flex-wrap items-center justify-between gap-4">
-      <Link href={isPublic ? '/' : '/app'} className="min-w-0">
-        <PraxisBrandChip compact />
-      </Link>
-      <nav className="flex flex-wrap items-center justify-end gap-3 text-sm font-semibold text-slate-500" aria-label="Home links">
-        {PUBLIC_TOP_LINKS.map((link) => (
-          <Link key={link.href} href={link.href} className={`${link.href === '/pricing' ? '' : 'hidden sm:inline-flex '}rounded-[var(--radius-full)] px-3 py-1.5 hover:bg-white hover:text-slate-950`}>
-            {link.label}
-          </Link>
-        ))}
-        {isPublic ? (
-          <Link
-            href="/login"
-            data-testid="public-sign-in-affordance"
-            className="rounded-[var(--radius-md)] border border-slate-200 bg-white px-3 py-2 text-slate-800 shadow-[var(--shadow-card)] hover:bg-slate-50"
-          >
-            Sign in
-          </Link>
-        ) : null}
-      </nav>
-    </header>
   );
 }
 
@@ -437,9 +402,9 @@ function HomeSidebar({ isPublic, pathname }: { isPublic: boolean; pathname: stri
         target="_blank"
         rel="noreferrer"
         className="mt-3 hidden items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1.5 font-mono text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 transition hover:text-emerald-700 lg:flex"
-        aria-label="TACITUS verified context infrastructure"
+        aria-label="TACITUS reviewable context infrastructure"
       >
-        TACITUS <span aria-hidden className="text-emerald-600">◳</span> verified context
+        TACITUS <span aria-hidden className="text-emerald-600">◳</span> reviewable context
       </a>
     </aside>
   );
@@ -471,8 +436,8 @@ function ContextDrawer({
     primary: boolean;
     version: number | null;
   }>;
-  onActivateCapsule: (capsuleId: string) => void;
-  onAttachReferenceCapsule: (capsuleId: string) => void;
+  onActivateCapsule: (capsuleId: string, capsule?: PraxisCapsule) => void;
+  onAttachReferenceCapsule: (capsuleId: string, capsule?: PraxisCapsule) => void;
   onDetachCapsule: (capsuleId: string) => void;
   onMakePrimaryCapsule: (capsuleId: string) => void;
 }) {
@@ -656,134 +621,7 @@ function formatRecentTimestamp(value: string | undefined): string {
 }
 
 function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext: () => void }) {
-  const [actionsOpen, setActionsOpen] = useState(false);
-
-  return (
-    <div
-      data-testid="ask-context-bar"
-      className="rounded-[var(--radius-lg)] border border-[var(--color-app-border)] bg-white/90 p-2 text-slate-950 shadow-[var(--shadow-card)]"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-3 p-2">
-        <div className="max-w-sm">
-          <p className="text-sm font-semibold">Give the analysis a foundation.</p>
-          <p className="mt-1 text-xs leading-5 text-slate-600">A capsule keeps sources, actors, timelines and methods together for reuse and review.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository" className="inline-flex min-h-11 items-center rounded-md border border-slate-200 px-3 text-xs font-semibold text-emerald-800">Explore capsules</Link>
-          <Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%2Fbuilder" className="inline-flex min-h-11 items-center rounded-md border border-slate-200 px-3 text-xs font-semibold text-slate-700">Build your own</Link>
-        </div>
-      </div>
-      <details className="p-2">
-        <summary className="cursor-pointer text-xs font-semibold text-slate-600">How saved context guides the analysis</summary>
-      <div data-testid="capsule-dock" aria-label="Capsule Dock" className="flex flex-col gap-1.5">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <span
-            title="Capsule Dock - direct ask"
-            data-testid="capsule-dock-stack"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius-md)] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-            Capsule Dock
-            <span className="sr-only">Capsule Dock. Direct ask mode. Sign in to fill the four capsule slots.</span>
-          </span>
-
-          <div className="hidden sm:flex shrink-0 flex-wrap items-center gap-1.5">
-            <button
-              type="button"
-              disabled
-              title="Sign in to attach saved context"
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 opacity-60"
-            >
-              <Boxes className="h-3.5 w-3.5" />
-              Attach context
-            </button>
-            <Link
-              href="/login?mode=signup&redirect=%2Fapp"
-              data-testid="public-context-sign-in-affordance"
-              className="text-xs font-semibold text-emerald-700 underline-offset-2 hover:underline"
-            >
-              Sign in to save context
-            </Link>
-            <button
-              type="button"
-              onClick={onOpenAdvancedContext}
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-              title="Show context details"
-            >
-              <ChevronDown className="h-3.5 w-3.5" />
-              <span className="sr-only">Context details</span>
-            </button>
-          </div>
-
-          <div className="relative shrink-0 sm:hidden" data-testid="capsule-dock-mobile-actions">
-            <button
-              type="button"
-              aria-label="Capsule Dock actions"
-              aria-haspopup="menu"
-              aria-expanded={actionsOpen}
-              onClick={() => setActionsOpen((value) => !value)}
-              className="inline-flex min-h-8 items-center gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </button>
-            {actionsOpen ? (
-              <div
-                role="menu"
-                data-testid="capsule-dock-action-menu"
-                className="absolute right-0 top-[calc(100%+0.5rem)] z-50 grid w-[min(18rem,calc(100vw-2rem))] gap-1 rounded-[var(--radius-md)] border border-slate-200 bg-white p-2 shadow-[var(--shadow-float)]"
-              >
-                <button
-                  type="button"
-                  role="menuitem"
-                  disabled
-                  title="Sign in to attach saved context"
-                  className="inline-flex min-h-8 w-full items-center justify-start gap-1.5 rounded-[var(--radius-md)] border border-slate-200 px-2.5 text-xs font-semibold text-slate-600 opacity-60"
-                >
-                  <Boxes className="h-3.5 w-3.5" />
-                  Attach context
-                </button>
-                <Link
-                  href="/login?mode=signup&redirect=%2Fapp"
-                  role="menuitem"
-                  data-testid="public-context-sign-in-affordance"
-                  className="px-2.5 py-1 text-xs font-semibold text-emerald-700 underline-offset-2 hover:underline"
-                >
-                  Sign in to save context
-                </Link>
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-1.5 lg:grid-cols-4" data-testid="capsule-dock-slots">
-          {([
-            ['user', 'Who is asking — perspective, mandate, and voice'],
-            ['situation', 'The case — actors, claims, sources, and graph context'],
-            ['tools', 'How to think — methods, frameworks, and agent permissions'],
-            ['output', 'What to produce — memo, brief, or handover contract'],
-          ] as const satisfies ReadonlyArray<readonly [CapsuleCategoryId, string]>).map(([category, hint]) => {
-            const palette = getCapsuleCategoryPalette(category);
-            return (
-              <span
-                key={category}
-                data-testid="capsule-dock-chip"
-                title={`Sign in to attach a ${palette.label} capsule. ${hint}.`}
-                className="flex min-h-12 min-w-0 items-center gap-2 rounded-[var(--radius-md)] border border-dashed px-2 py-1.5 opacity-80"
-                style={{ backgroundColor: palette.bg, borderColor: palette.border } as CSSProperties}
-              >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: palette.accent }} aria-hidden />
-                <span className="min-w-0">
-                  <span className="block text-[9px] font-bold uppercase tracking-[0.14em]" style={{ color: palette.text }}>{palette.label}</span>
-                  <span className="block text-xs font-semibold text-slate-500">Sign in to add</span>
-                </span>
-              </span>
-            );
-          })}
-        </div>
-      </div>
-      </details>
-    </div>
-  );
+  return <div data-testid="ask-context-bar" className="praxis-context-bar"><div data-testid="capsule-dock" className="flex flex-wrap items-center gap-2"><Link href="/login?mode=signup&redirect=%2Fapp" className="praxis-header-control border border-[var(--color-app-border)] text-xs"><Boxes className="h-4 w-4" />Attach context</Link><Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%2Fbuilder" className="praxis-header-control text-xs"><PlusCircle className="h-4 w-4" />New capsule</Link><button type="button" onClick={onOpenAdvancedContext} className="praxis-header-control text-xs">How context works</button></div><p className="px-1 pt-2 text-xs leading-5 text-[var(--color-app-text-secondary)]">Start with a question. A capsule adds reusable sources, background and review notes.</p></div>;
 }
 
 function ContextBarLoadingSkeleton() {

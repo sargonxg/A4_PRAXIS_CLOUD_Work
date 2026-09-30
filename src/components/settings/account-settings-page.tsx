@@ -23,7 +23,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { DangerZone } from '@/components/settings/danger-zone';
-import { LivingContextRail } from '@/components/ui/instrument';
 import { useAuth } from '@/lib/auth/auth-context';
 import { MODEL_PREFERENCE_VALUES } from '@/lib/ai/model-preferences';
 import { buildAppDiagnosticSummary, type AppDiagnosticStatus } from '@/lib/diagnostics/app-red-flags';
@@ -204,11 +203,6 @@ const DEFAULT_AI_SETTINGS: AiSettings = {
 
 const DEFAULT_USAGE: MonthlyUsage = { allowance: 31_000, used: 0, remaining: 31_000, conversationStarts: 0 };
 
-const PLAN_SIGNUP_HREFS = {
-  analyst: '/login?mode=signup&plan=analyst',
-  team: '/login?mode=signup&plan=team',
-} as const;
-
 const MEMORY_ENDPOINTS = {
   health: '/api/memory/health',
   candidates: '/api/memory/candidates',
@@ -246,12 +240,12 @@ const AUTHENTICATED_TEST_LANES = [
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: LucideIcon; detail: string }> = [
   { id: 'profile', label: 'Profile', icon: UserRound, detail: 'Analyst profile and account basics' },
-  { id: 'billing', label: 'Billing', icon: CreditCard, detail: 'Plan, checkout, portal' },
+  { id: 'billing', label: 'Access', icon: CreditCard, detail: 'Free experimental access and proposed plans' },
   { id: 'usage', label: 'Usage', icon: BarChart3, detail: 'Credits and monthly allowance' },
   { id: 'security', label: 'Security', icon: ShieldCheck, detail: 'Password, sign out, data controls' },
   { id: 'connectors', label: 'Connectors', icon: KeyRound, detail: 'API keys and provider status' },
-  { id: 'workspace', label: 'Workspace', icon: SlidersHorizontal, detail: 'Output defaults and preferences' },
-  { id: 'system', label: 'System', icon: Wrench, detail: 'AI runtime and health' },
+  { id: 'workspace', label: 'Writing preferences', icon: SlidersHorizontal, detail: 'Language, citations and output defaults' },
+  { id: 'system', label: 'Advanced AI settings', icon: Wrench, detail: 'Model preferences and runtime health' },
 ];
 
 function tabFrom(value: string | null): SettingsTab {
@@ -277,7 +271,6 @@ export function AccountSettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState('');
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [settingsSearch, setSettingsSearch] = useState('');
-  const checkoutPlan = searchParams.get('checkoutPlan');
   const checkoutStatus = searchParams.get('checkout');
 
   const activeMeta = useMemo(() => TABS.find((tab) => tab.id === activeTab) ?? TABS[0], [activeTab]);
@@ -409,29 +402,6 @@ export function AccountSettingsPage() {
     else setStatus(result.ok ? 'Billing portal is not available.' : result.error);
   }
 
-  async function startCheckout(plan: 'analyst' | 'team') {
-    setBusyAction(`checkout-${plan}`);
-    const result = await fetchJson<{ url?: string; fallbackHref?: string; mode?: string }>('/api/billing/checkout', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ plan }),
-    });
-    setBusyAction(null);
-    if (result.ok && result.data.url) {
-      window.location.href = result.data.url;
-      return;
-    }
-    if (result.data?.fallbackHref) router.push(result.data.fallbackHref);
-    else setStatus(result.ok ? 'Billing is not configured.' : result.error);
-  }
-
-  useEffect(() => {
-    if ((checkoutPlan === 'analyst' || checkoutPlan === 'team') && !busyAction && !loading) {
-      void startCheckout(checkoutPlan);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkoutPlan, loading]);
-
   async function saveConnector(provider: ProviderSpec) {
     setBusyAction(`connector-${provider.id}`);
     const payload = connectorDrafts[provider.id] ?? {};
@@ -494,53 +464,15 @@ export function AccountSettingsPage() {
   const plan = account?.subscription ?? user?.subscription ?? 'free';
   const credits = typeof account?.credits === 'number' ? account.credits : user?.credits ?? 0;
   const totalCreditsUsed = typeof account?.totalCreditsUsed === 'number' ? account.totalCreditsUsed : 0;
-  const settingsRailCells = [
-    {
-      id: 'profile',
-      label: 'Profile',
-      value: account?.displayName ?? user?.name ?? 'Analyst',
-      detail: accountDraft.role || 'Role pending',
-      state: 'ready' as const,
-    },
-    {
-      id: 'context',
-      label: 'Workspace',
-      value: accountDraft.orgName || user?.orgName || 'Private workspace',
-      detail: profile?.domain?.label ?? 'Context preferences',
-      state: profile ? 'active' as const : 'review' as const,
-    },
-    {
-      id: 'source',
-      label: 'Connectors',
-      value: `${Object.values(providers.statuses).filter((provider) => provider.effective).length} effective`,
-      detail: 'Keys stay in Settings',
-      state: Object.values(providers.statuses).some((provider) => provider.effective) ? 'ready' as const : 'quiet' as const,
-    },
-    {
-      id: 'output',
-      label: 'Output',
-      value: preferences.defaultReportLength ?? 'Standard',
-      detail: preferences.citationStyle ?? 'Citations configurable',
-      state: 'quiet' as const,
-    },
-    {
-      id: 'readiness',
-      label: 'Readiness',
-      value: activeMeta.label,
-      detail: loading ? 'Loading settings' : 'Settings available',
-      state: loading ? 'review' as const : 'active' as const,
-    },
-  ];
 
   return (
-    <section className="od-praxis-surface praxis-checker-constellation min-h-screen px-4 py-6 text-[#1f1f1f] md:px-8 lg:px-10" data-testid="account-settings-page">
+    <section className="text-[var(--color-deep-ink)]" data-testid="account-settings-page">
       <div className="mx-auto w-full max-w-6xl">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-black/10 pb-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#ca4a25]">Settings</p>
-            <h1 className="mt-2 text-2xl font-semibold text-slate-950">Account and workspace settings</h1>
+            <h1 className="praxis-page-heading font-serif text-3xl font-semibold">Settings</h1>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500">
-              Manage profile, billing, usage, security, connectors, workspace preferences, and runtime diagnostics.
+              Your account, writing preferences and data controls.
             </p>
           </div>
           <div className="od-praxis-control rounded-md px-3 py-2 text-sm text-slate-700">
@@ -555,23 +487,16 @@ export function AccountSettingsPage() {
             <input
               value={settingsSearch}
               onChange={(event) => setSettingsSearch(event.target.value)}
-              placeholder="Search settings"
-              className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              type="search" aria-label="Search settings" placeholder="Find a setting"
+              className="min-h-11 min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-500"
             />
           </label>
           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <span className="rounded-md border border-black/10 bg-white/75 px-2 py-1 font-semibold text-slate-700">{plan} plan</span>
+            <span className="rounded-md border border-black/10 bg-white/75 px-2 py-1 font-semibold text-slate-700">{plan === 'free' ? 'Free experimental access' : `${plan} account record`}</span>
             {loading ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : null}
           </div>
         </div>
 
-        <LivingContextRail
-          cells={settingsRailCells}
-          actionHref="/app"
-          actionLabel="Back to cockpit"
-          compact
-          className="mt-4"
-        />
 
         {status ? (
           <p role="status" className="mt-4 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800">
@@ -580,7 +505,7 @@ export function AccountSettingsPage() {
         ) : null}
 
         <nav className="mt-4 flex flex-wrap gap-2" aria-label="Account settings sections" data-testid="settings-section-tabs">
-            {visibleTabs.map((tab) => {
+            {visibleTabs.filter((tab) => settingsSearch.trim() || !['connectors', 'system'].includes(tab.id)).map((tab) => {
               const Icon = tab.icon;
               const active = tab.id === activeTab;
               return (
@@ -589,7 +514,7 @@ export function AccountSettingsPage() {
                   type="button"
                   onClick={() => selectTab(tab.id)}
                   className={cn(
-                    'inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition',
+                    'inline-flex min-h-11 items-center gap-2 rounded-md border px-3 py-2 text-sm font-semibold transition',
                     active ? 'border-sky-300 bg-sky-50 text-sky-800' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50',
                   )}
                 >
@@ -599,8 +524,12 @@ export function AccountSettingsPage() {
               );
             })}
           </nav>
+        {!settingsSearch.trim() ? <details open={activeTab === 'connectors' || activeTab === 'system'} className="mt-3">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-medium underline underline-offset-4">Advanced settings</summary>
+          <div className="flex flex-wrap gap-2">{visibleTabs.filter((tab) => ['connectors', 'system'].includes(tab.id)).map((tab) => <button key={tab.id} type="button" onClick={() => selectTab(tab.id)} aria-current={tab.id === activeTab ? 'page' : undefined} className="min-h-11 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold">{tab.label}</button>)}</div>
+        </details> : null}
 
-        <main className="od-praxis-card mt-5 min-w-0 rounded-lg p-5">
+        <section className="od-praxis-card mt-5 min-w-0 rounded-lg p-5" aria-label={activeMeta.label}>
           <div className="mb-5 flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-4">
             <div>
               <h2 className="text-lg font-semibold text-slate-950">{activeMeta.label}</h2>
@@ -633,7 +562,6 @@ export function AccountSettingsPage() {
               totalCreditsUsed={totalCreditsUsed}
               busyAction={busyAction}
               onPortal={openBillingPortal}
-              onCheckout={startCheckout}
             />
           ) : null}
 
@@ -669,7 +597,7 @@ export function AccountSettingsPage() {
           {activeTab === 'system' ? (
             <SystemTab aiSettings={aiSettings} setAiSettings={setAiSettings} busy={busyAction === 'ai'} onSave={saveAiSettings} />
           ) : null}
-        </main>
+        </section>
       </div>
     </section>
   );
@@ -702,7 +630,7 @@ function ProfileTab({
         <TextField label="Display name" value={accountDraft.displayName} onChange={(value) => setAccountDraft((draft) => ({ ...draft, displayName: value }))} />
         <TextField label="Role" value={accountDraft.role} onChange={(value) => setAccountDraft((draft) => ({ ...draft, role: value }))} />
         <TextField label="Organization" value={accountDraft.orgName} onChange={(value) => setAccountDraft((draft) => ({ ...draft, orgName: value }))} />
-        <TextField label="Organization ID" value={accountDraft.orgId} onChange={(value) => setAccountDraft((draft) => ({ ...draft, orgId: value }))} />
+        <details className="md:col-span-2"><summary className="inline-flex min-h-11 cursor-pointer items-center text-sm text-slate-600 underline">Advanced organization details</summary><TextField label="Organization ID" value={accountDraft.orgId} onChange={(value) => setAccountDraft((draft) => ({ ...draft, orgId: value }))} /></details>
       </div>
       <label className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-navy-700">
         <input
@@ -831,7 +759,6 @@ function BillingTab({
   totalCreditsUsed,
   busyAction,
   onPortal,
-  onCheckout,
 }: {
   plan: string;
   subscriptionStatus?: string;
@@ -843,43 +770,31 @@ function BillingTab({
   totalCreditsUsed: number;
   busyAction: string | null;
   onPortal: () => void;
-  onCheckout: (plan: 'analyst' | 'team') => void;
 }) {
+  const hasPriorSubscription = plan !== 'free' && Boolean(subscriptionProvider) && subscriptionStatus === 'active';
   return (
     <div className="space-y-5">
-      {checkoutStatus === 'success' ? (
-        <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-800">
-          Checkout completed. The Polar webhook will update this plan as soon as the subscription event arrives.
-        </p>
-      ) : null}
-      {checkoutStatus === 'cancelled' ? (
-        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-          Checkout was cancelled. Your current plan is unchanged.
-        </p>
-      ) : null}
-      <div className="grid gap-3 md:grid-cols-3">
-        <Metric label="Current plan" value={plan} />
-        <Metric label="Subscription status" value={subscriptionStatus ?? 'not active'} />
-        <Metric label="Billing provider" value={subscriptionProvider ?? 'none'} />
+      <div className="rounded-lg border border-[var(--color-praxis-emerald-300)] bg-[var(--color-praxis-emerald-50)] p-4">
+        <h3 className="text-base font-semibold">Free experimental access</h3>
+        <p className="mt-2 text-sm leading-6">Current access has no paid upgrade. Use chat, create private capsules and review your work within the available allowance. Availability and limits may change.</p>
       </div>
-      <div className="grid gap-3 md:grid-cols-3">
-        <Metric label="Plan id" value={subscriptionPlanId ?? plan} />
-        <Metric label="Period end" value={subscriptionExpiresAt ? new Date(subscriptionExpiresAt).toLocaleDateString() : 'not set'} />
-        <Metric label="Credits remaining" value={credits} />
-        <Metric label="Credits used" value={totalCreditsUsed} />
+      {checkoutStatus ? <p role="status" className="text-sm text-slate-600">A previous checkout link was opened. Paid upgrades are currently unavailable; this page does not start a transaction.</p> : null}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Metric label="Account record" value={plan} />
+        <Metric label="Available PRAXIS credits" value={credits} />
       </div>
-      <div className="flex flex-wrap gap-2">
-        <ActionButton icon={CreditCard} label={busyAction === 'billing-portal' ? 'Opening...' : 'Manage billing'} onClick={onPortal} disabled={busyAction !== null} />
-        <ActionButton icon={CheckCircle2} label={busyAction === 'checkout-analyst' ? 'Starting...' : 'Start Analyst checkout'} onClick={() => onCheckout('analyst')} disabled={busyAction !== null} />
-        <ActionButton icon={CheckCircle2} label={busyAction === 'checkout-team' ? 'Starting...' : 'Start Team checkout'} onClick={() => onCheckout('team')} disabled={busyAction !== null} />
+      <div className="flex flex-wrap gap-3">
+        <Link href="/pricing" className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 px-3 text-sm font-semibold">Access and proposed plans</Link>
+        <a href="https://tacitus.me/contact" className="inline-flex min-h-11 items-center rounded-lg bg-[var(--color-praxis-emerald-700)] px-4 text-sm font-semibold text-white">Ask about an experimental pilot</a>
       </div>
-      <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-        If Polar billing is in sandbox test mode, hosted checkout and the customer portal are test transactions. If billing is unconfigured, PRAXIS sends users to the public pricing page instead of failing silently.
-      </p>
-      <div className="flex flex-wrap gap-2 text-sm">
-        <Link href={PLAN_SIGNUP_HREFS.analyst} className="font-semibold text-diplomatic-blue hover:underline">Practitioner signup</Link>
-        <Link href={PLAN_SIGNUP_HREFS.team} className="font-semibold text-diplomatic-blue hover:underline">Team signup</Link>
-      </div>
+      <details className="rounded-lg border border-slate-200 p-3">
+        <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">Stored usage and subscription details</summary>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <Metric label="Credits used" value={totalCreditsUsed} /><Metric label="Subscription record" value={subscriptionStatus ?? 'none'} />
+          <Metric label="Plan identifier" value={subscriptionPlanId ?? plan} /><Metric label="Recorded period end" value={subscriptionExpiresAt ? new Date(subscriptionExpiresAt).toLocaleDateString() : 'not set'} />
+        </div>
+        {hasPriorSubscription ? <div className="mt-3"><ActionButton icon={CreditCard} label={busyAction === 'billing-portal' ? 'Opening…' : 'Manage existing subscription'} onClick={onPortal} disabled={busyAction !== null} /></div> : null}
+      </details>
     </div>
   );
 }
@@ -1487,10 +1402,11 @@ function TextField({
       <span className="text-xs font-semibold uppercase tracking-[0.14em] text-navy-500">{label}</span>
       <input
         type={type}
+        autoComplete={label === 'Display name' ? 'nickname' : label === 'Organization' ? 'organization' : 'off'}
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-diplomatic-blue"
+        className="mt-2 min-h-11 w-full rounded-lg border border-[var(--color-mineral)] bg-white px-3 py-2 text-base outline-none focus-visible:outline-2 focus-visible:outline-[var(--color-praxis-emerald-600)]"
       />
     </label>
   );
@@ -1515,7 +1431,7 @@ function SelectField<T extends readonly string[]>({
       <select
         value={value}
         onChange={(event) => onChange(event.target.value as T[number])}
-        className="mt-2 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-diplomatic-blue"
+        className="mt-2 min-h-11 w-full rounded-lg border border-[var(--color-mineral)] bg-white px-3 py-2 text-base outline-none focus-visible:outline-2 focus-visible:outline-[var(--color-praxis-emerald-600)]"
       >
         {options.map((option) => (
           <option key={option} value={option}>
@@ -1564,9 +1480,9 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
+        'inline-flex min-h-11 items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50',
         variant === 'primary'
-          ? 'bg-diplomatic-blue text-white hover:bg-navy-900'
+          ? 'bg-[var(--color-praxis-emerald-700)] text-white hover:bg-[var(--color-praxis-emerald-800)]'
           : 'border border-slate-200 text-navy-700 hover:bg-slate-50',
       )}
     >

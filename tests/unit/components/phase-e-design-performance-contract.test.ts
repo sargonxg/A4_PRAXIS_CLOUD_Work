@@ -9,15 +9,14 @@ function read(path: string): string {
 }
 
 describe('Phase E design, mobile, onboarding, and performance contract', () => {
-  it('collapses the capsule dock actions into a mobile menu below sm width', () => {
+  it('keeps attach and named context visible while disclosing the typed composition tools', () => {
     const source = read('src/components/app/ask-context-bar.tsx');
 
-    expect(source).toContain('MoreHorizontal');
-    expect(source).toContain('data-testid="capsule-dock-mobile-actions"');
-    expect(source).toContain('data-testid="capsule-dock-action-menu"');
+    expect(source).toContain('triggerLabel="Attach context"');
+    expect(source).toContain('data-testid="attached-context-chips"');
+    expect(source).toContain('aria-controls="ask-context-details"');
     expect(source).toContain('data-testid="capsule-dock-slots"');
-    expect(source).toContain('sm:hidden');
-    expect(source).toContain('hidden sm:flex');
+    expect(source).toContain('detailsOpen ? <section');
     expect(source).toContain('Build context');
     expect(source).toContain('Pick capsule');
     expect(source).toContain('/app/capsules?lane=repository');

@@ -50,7 +50,7 @@ describe('federated app search', () => {
 
     expect(results[0]).toMatchObject({ group: 'Ask', label: 'Ask PRAXIS with current context' });
     expect(results.some((result) => result.href === '/app/repository')).toBe(false);
-    expect(results.some((result) => result.href === '/app/capsules?lane=repository')).toBe(true);
+    expect(results.some((result) => result.href === '/app/capsules?lane=sources')).toBe(true);
   });
 
   it('returns degraded rows when network-backed groups fail', async () => {

@@ -47,8 +47,8 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(marketingHome).toContain('mode="public"');
     expect(chatShell).toContain('data-testid="praxis-chat-first-shell"');
     expect(chatShell).toContain('PraxisChat');
-    expect(praxisChat).toContain('Write trusted knowledge products.');
-    expect(praxisChat).toContain('Capsules keep the context clear.');
+    expect(praxisChat).toContain('What are we working on?');
+    expect(praxisChat).toContain('Start with a question. Bring your context when it helps.');
     expect(praxisChat).toContain('Ask first.');
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
@@ -72,11 +72,11 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
   it('keeps the public homepage as a simple chat surface without feature-preview clutter', () => {
     expect(chatShell).toContain('HOME_SIDEBAR_DESTINATIONS');
     expect(primaryNav).toContain('HOME_SIDEBAR_DESTINATIONS');
-    expect(primaryNav).toContain("label: 'Home'");
+    expect(primaryNav).toContain("label: 'Chat'");
     expect(primaryNav).toContain("label: 'Capsules'");
-    expect(primaryNav).toContain("label: 'Recent work'");
+    expect(primaryNav).toContain("label: 'Saved work'");
     expect(primaryNav).toContain("label: 'Boardroom'");
-    expect(primaryNav).toContain("label: 'Drafts'");
+    expect(primaryNav).toContain("label: 'More'");
     expect(praxisChat).toContain('data-testid="simple-home-chat"');
     expect(praxisChat).toContain('data-testid="marketing-hero-prompt"');
     expect(praxisChat).toContain('data-testid="marketing-primary-cta"');

@@ -3,6 +3,7 @@ import { withAuth, type AuthenticatedUser } from './with-auth';
 import { checkAndDeductCreditsForUid } from './with-credits';
 import { checkCapsuleForTool } from './capsule-gate';
 import { buildCalibratedContext, type ContextBlock } from '@/lib/context/profile-context';
+import { CapsuleVersionConflictError } from '@/lib/context/capsule-version-resolution';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
 import { isOnboardingComplete } from '@/lib/auth/onboarding-status';
 import { isProfileComplete } from '@/types/analyst-profile';
@@ -304,16 +305,21 @@ export function withCalibration(
       // Build calibration context (analyst profile + situation + SKC retrieval)
       const retrievalQuery = opts.retrievalQuery?.(req, body);
       const allowWorkspaceRetrieval = opts.allowWorkspaceRetrieval?.(req, body);
-      const calibration = await buildCalibratedContext({
-        uid: user.uid,
-        situationId,
-        toolId,
-        retrievalQuery,
-        allowWorkspaceRetrieval,
-        pathId,
-        capsuleId,
-        activeContextStack,
-      });
+      let calibration: ContextBlock;
+      try {
+        calibration = await buildCalibratedContext({
+          uid: user.uid, situationId, toolId, retrievalQuery,
+          allowWorkspaceRetrieval, pathId, capsuleId, activeContextStack,
+        });
+      } catch (error) {
+        if (error instanceof CapsuleVersionConflictError) {
+          return jsonError(409, error.code, error.message, {
+            capsuleId: error.capsuleId, requestedVersion: error.requestedVersion,
+            recoverable: true, action: 'reattach_capsule',
+          });
+        }
+        throw error;
+      }
       // Credit gate (non-demo). Path Core may apply a multiplier for heavier
       // prompt voice, drafting posture, or source mix requirements.
       if (!user.isDemo) {

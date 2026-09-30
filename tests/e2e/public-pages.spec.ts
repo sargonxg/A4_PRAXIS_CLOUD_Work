@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 const pages = [
   { path: '/', label: 'Home', heading: 'Policy analysis you can inspect.' },
-  { path: '/pricing', label: 'Pricing', heading: 'Plans for people who need sourced policy work.' },
+  { path: '/pricing', label: 'Pricing', heading: 'Start with one question.' },
   { path: '/learn', label: 'Learn', heading: 'How PRAXIS works' },
   { path: '/guide', label: 'Guide', heading: 'Ask the question. Check the evidence. Save the work.' },
   { path: '/release-notes', label: 'Release notes', heading: 'Release notes' },

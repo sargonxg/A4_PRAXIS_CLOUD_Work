@@ -49,27 +49,35 @@ describe('Session 5 public surface and billing contract', () => {
     expect(builder).toContain("from '@/lib/product/context-capsule-pending'");
   });
 
-  it('wires pricing CTAs to checkout instead of static login plan URLs', () => {
+  it('offers free entry and keeps future paid plans unavailable in pricing and settings', () => {
     const pricingPage = read('src/app/pricing/page.tsx');
     const checkoutButton = read('src/components/billing/pricing-checkout-button.tsx');
     const settings = read('src/components/settings/account-settings-page.tsx');
+    const checkoutRoute = read('src/app/api/billing/checkout/route.ts');
 
-    expect(pricingPage).toContain('PricingCheckoutButton');
+    expect(pricingPage).toContain('<PricingCheckoutButton plan="free" label="Start free"');
+    expect(pricingPage).toContain('Future plan proposals');
+    expect(pricingPage).toContain('not offers or enabled entitlements');
     expect(pricingPage).not.toContain('&plan=${tier.id}');
     expect(checkoutButton).toContain('/api/billing/checkout');
     expect(checkoutButton).toContain('/api/auth/session');
-    expect(checkoutButton).toContain('checkoutPlan=');
-    expect(settings).toContain('Manage billing');
+    expect(settings).toContain('Free experimental access');
+    expect(settings).toContain('Current access has no paid upgrade');
+    expect(settings).not.toContain("fetchJson('/api/billing/checkout'");
+    expect(checkoutRoute).toContain("process.env.PRAXIS_ENABLE_PAID_CHECKOUT !== 'true'");
+    expect(checkoutRoute).toContain('available: false');
   });
 
-  it('removes pending legal-review banners while keeping current posture language', () => {
+  it('states experimental operator and processing boundaries without implying a signed agreement', () => {
     const legalPages = read('src/lib/legal/pages.ts');
     const legalRoute = read('src/app/legal/[slug]/page.tsx');
 
-    expect(legalPages).not.toContain('pendingLegalReview: true');
     expect(legalPages).toContain('United States infrastructure');
     expect(legalPages).toContain('Polar');
-    expect(legalPages).toContain('beta software service');
+    expect(legalPages).toContain('No TACITUS legal entity has been incorporated');
+    expect(legalPages).toContain('Data Processing Overview');
+    expect(legalPages).toContain('not an executed data-processing agreement');
+    expect(legalRoute).toContain('Giulio Catanzariti');
     expect(legalRoute).not.toContain('pending formal legal review');
   });
 

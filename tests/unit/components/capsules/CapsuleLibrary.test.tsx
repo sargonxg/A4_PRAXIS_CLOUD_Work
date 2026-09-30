@@ -180,15 +180,15 @@ describe('CapsuleLibrary', () => {
     { owner: true, authLoading: false, hydrated: true, disabled: false },
     { owner: false, authLoading: false, hydrated: false, disabled: false },
     { owner: false, authLoading: true, hydrated: false, disabled: true },
-  ])('gates spotlight and grid attachment by account context readiness: %j', (state) => {
+  ])('gates library attachment by account context readiness: %j', (state) => {
     runtime.user = state.owner ? { id: 'owner' } : null;
     runtime.authLoading = state.authLoading;
     runtime.hydrated = state.hydrated;
     const method = CAPSULE_LIBRARY_ENTRIES.find((entry) => entry.id === 'starter-tool-institutional-logic-lens')!;
     const html = renderToStaticMarkup(<CapsuleLibraryWithTry entries={[method]} />);
     const attachmentButtons = (html.match(/<button\b[^>]*>[\s\S]*?<\/button>/g) ?? [])
-      .filter((button) => /Add (?:method|format|context|to )/.test(button));
-    expect(attachmentButtons.length).toBeGreaterThanOrEqual(2);
+      .filter((button) => /Use in chat/.test(button));
+    expect(attachmentButtons).toHaveLength(1);
     expect(attachmentButtons.every((button) => button.includes('disabled=""') === state.disabled)).toBe(true);
     expect(html).toContain('Inspect capsule');
     expect(runtime.saveStack).not.toHaveBeenCalled();
@@ -265,19 +265,21 @@ describe('CapsuleLibrary', () => {
     );
 
     expect(html).toContain('data-testid="capsule-library"');
-    expect(html).toContain('Capsule Repository');
+    expect(html).toContain('Your context library');
     expect(html).toContain('Search capsules');
     expect(html).toContain('Filter by capsule type');
     expect(html).toContain('Filter by capsule domain');
     expect(html).toContain('Filter by policy team');
-    expect(html).toContain('Add to');
+    expect(html).toContain('Use in chat');
     expect(html).toContain('Inspect');
     expect(html).toContain('Your capsule');
     expect(html).toContain('Starter library');
     expect(html).toContain('Owned mediation workspace');
-    expect(html).toContain('Sources');
-    expect(html).toContain('Claims');
-    expect(html).toContain('Graph');
+    expect(html).toContain('source refs');
+    expect(html).toContain('claims');
+    expect(html).toContain('recorded graph nodes');
+    expect(html).not.toContain('capsule-repository-v2-scoreboard');
+    expect(html).toContain('<details');
     expect(html).toContain(encodeURIComponent(CAPSULE_LIBRARY_ENTRIES[0].id));
   });
 

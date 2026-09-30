@@ -504,18 +504,18 @@ export function CapsuleBuilderWizard() {
   if (draftOwnerId !== user.id) return <p role="status" className="p-4 text-sm text-slate-600">Loading your working draft…</p>;
 
   return (
-    <section className="grid min-w-0 gap-6 lg:grid-cols-[220px_minmax(0,1fr)]">
-      <nav aria-label="Capsule builder steps" className="flex min-w-0 gap-2 overflow-x-auto pb-2 lg:sticky lg:top-6 lg:block lg:self-start lg:space-y-2">
+    <section className="grid min-w-0 gap-5">
+      <nav aria-label="Capsule builder steps" className="flex min-w-0 flex-wrap gap-2">
         {visibleSteps.map((step, index) => (
           <button
             key={step.id}
             type="button"
             onClick={() => setActiveStep(step.id)}
             aria-current={step.id === activeStep ? 'step' : undefined}
-            className={`shrink-0 rounded-xl border px-3 py-3 text-left transition lg:w-full ${
+            className={`min-h-11 flex-1 rounded-lg border px-3 py-2 text-left transition ${
               step.id === activeStep
-                ? 'border-[#24211b] bg-[#24211b] text-white'
-                : 'border-[#d8d1c5] bg-transparent text-[#4f483f] hover:border-[#9d9486]'
+                ? 'border-[var(--color-deep-ink)] bg-[var(--color-deep-ink)] text-white'
+                : 'border-[var(--color-mineral)] bg-transparent text-[var(--color-graphite)] hover:border-[#9d9486]'
             }`}
           >
             <span className="flex items-center gap-3">
@@ -524,34 +524,34 @@ export function CapsuleBuilderWizard() {
               </span>
               <span>
                 <span className="block text-sm font-semibold">{step.label}</span>
-                <span className={`mt-1 hidden text-xs leading-5 lg:block ${step.id === activeStep ? 'text-[#ddd6c9]' : 'text-[#786f62]'}`}>
+                <span className={`sr-only ${step.id === activeStep ? 'text-[#ddd6c9]' : 'text-[var(--color-graphite)]'}`}>
                   {step.helper}
                 </span>
               </span>
             </span>
           </button>
         ))}
-        <button type="button" aria-expanded={showSettings} onClick={() => { setShowSettings((value) => !value); setActiveStep('job'); }} className="min-h-10 shrink-0 px-3 text-sm font-semibold text-[#4f483f] underline lg:w-full lg:text-left">{showSettings ? 'Hide advanced settings' : 'Advanced settings'}</button>
+        <button type="button" aria-expanded={showSettings} onClick={() => { setShowSettings((value) => !value); setAdvanced(false); setActiveStep('job'); }} className="min-h-11 shrink-0 px-3 text-sm font-semibold text-[var(--color-graphite)] underline">{showSettings ? 'Hide advanced settings' : 'Advanced settings'}</button>
       </nav>
 
       <div className="min-w-0 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#d8d1c5] bg-[#fffdf8] p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--color-mineral)] bg-[var(--color-archive-paper-strong)] p-4">
           <div>
-            <p className="text-sm font-semibold text-[#24211b]">
+            <p className="text-sm font-semibold text-[var(--color-deep-ink)]">
               Step {activeIndex + 1} of {visibleSteps.length} · {visibleSteps[activeIndex]?.label}
             </p>
-            <p className="text-sm text-[#6f675c]">
+            <p className="text-sm text-[var(--color-graphite)]">
               {visibleSteps[activeIndex]?.helper}
             </p>
           </div>
-          <button
+          {showSettings ? <button
             type="button"
             onClick={() => setAdvanced((value) => !value)}
-            className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium text-[#24211b] hover:bg-[#24211b] hover:text-white"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium text-[var(--color-deep-ink)] hover:bg-[var(--color-deep-ink)] hover:text-white"
           >
             {advanced ? <FileJson className="h-4 w-4" /> : <Code2 className="h-4 w-4" />}
             {advanced ? 'Guided wizard' : 'Advanced JSON'}
-          </button>
+          </button> : null}
         </div>
 
         <fieldset disabled={saveState === 'saving' || saveState === 'publishing'} className="min-w-0 border-0 p-0">
@@ -561,7 +561,7 @@ export function CapsuleBuilderWizard() {
             <CapsuleLivePreview json={capsuleJson} />
           </div>
         ) : (
-          <div className="rounded-2xl border border-[#d8d1c5] bg-[#fffdf8] p-4 sm:p-6">
+          <div className="rounded-lg border border-[var(--color-mineral)] bg-[var(--color-archive-paper-strong)] p-4 sm:p-6">
             {activeStep === 'job' && (
               <div className="space-y-4">
                 <label className="block text-sm font-medium">
@@ -573,7 +573,7 @@ export function CapsuleBuilderWizard() {
                       setJob(event.target.value);
                       patchCapsule({ persona: { systemFrame: event.target.value } });
                     }}
-                    className="mt-2 min-h-28 w-full rounded-lg border border-[#cfc6b8] bg-white p-3 text-base leading-7 focus:outline-emerald-700"
+                    className="mt-2 min-h-28 w-full rounded-lg border border-[var(--color-mineral)] bg-white p-3 text-base leading-7 focus:outline-[var(--color-praxis-emerald-700)]"
                   />
                 </label>
                 <div className="grid gap-4 md:grid-cols-2">
@@ -582,12 +582,14 @@ export function CapsuleBuilderWizard() {
                     <select
                       value={capsule.persona.domain}
                       onChange={(event) => setDomainBinding(event.target.value)}
-                      className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                      className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                     >
-                      {DOMAIN_OPTIONS.map((domain) => <option key={domain}>{domain}</option>)}
+                      {DOMAIN_OPTIONS.map((domain) => <option key={domain} value={domain}>{humanizeId(domain)}</option>)}
                     </select>
                   </label>
-                  <label className="block text-sm font-medium">
+                  <details>
+                    <summary className="flex min-h-11 cursor-pointer items-center text-sm font-medium underline underline-offset-4">Analytical frameworks</summary>
+                    <label className="block text-sm font-medium">
                     Frameworks
                     <input
                       value={frameworks}
@@ -595,27 +597,29 @@ export function CapsuleBuilderWizard() {
                         setFrameworks(event.target.value);
                         patchCapsule({ persona: { frameworks: csv(event.target.value), systemFrame: capsule.persona.systemFrame } });
                       }}
-                      className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                      className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                     />
-                  </label>
+                    </label>
+                    <p className="mt-2 text-xs leading-5 text-[var(--color-graphite)]">Methods guide the analysis; they do not verify the sources.</p>
+                  </details>
                 </div>
-                <button type="button" onClick={() => runAssist('persona')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
+                <button type="button" onClick={() => runAssist('persona')} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium">
                   <Sparkles className="h-4 w-4" /> Refine purpose
                 </button>
-                <button type="button" onClick={() => setActiveStep('material')} className="ml-3 min-h-10 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white">Continue to material</button>
+                <button type="button" onClick={() => setActiveStep('material')} className="ml-0 min-h-11 sm:ml-3 rounded-md bg-[var(--color-praxis-emerald-700)] px-4 text-sm font-semibold text-white">Continue to material</button>
               </div>
             )}
             {activeStep === 'material' && (
               <div className="space-y-4">
-                <section className="rounded-md border border-[#d8d1c5] bg-white p-4">
+                <section className="rounded-md border border-[var(--color-mineral)] bg-white p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-[#24211b]">Your source material</p>
-                      <p className="mt-1 text-xs text-[#6f675c]">Documents, ideas and conversations</p>
-                      <p className="mt-1 text-xs text-[#6f675c]">Without a selected case, adding documents creates a private evidence workspace for this capsule.</p>
-                      <p className="mt-2 max-w-xl text-xs leading-5 text-[#6f675c]">Build reviewable source assertions, dated events and ontology proposals. Explicit “Actor:”, “Party:” or “Stakeholder:” fields become actor candidates. Missing identities, dates and causal links stay unknown; check coverage before relying on the graph.</p>
+                      <p className="text-sm font-semibold text-[var(--color-deep-ink)]">Your source material</p>
+                      <p className="mt-1 text-xs text-[var(--color-graphite)]">Documents, ideas and conversations</p>
+                      <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-graphite)]">Add material you are allowed to use. PRAXIS keeps it private and prepares proposals for your review.</p>
+                      <details className="mt-2 text-xs leading-5 text-[var(--color-graphite)]"><summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold underline">How source proposals work</summary><p>Adding documents creates a private evidence workspace when needed. Explicit “Actor:”, “Party:” or “Stakeholder:” fields become candidates. Missing identities, dates and causal links stay unknown. Check source coverage before relying on the graph.</p></details>
                     </div>
-                    <label className="inline-flex cursor-pointer items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium text-[#24211b] hover:bg-[#24211b] hover:text-white">
+                    <label className="inline-flex cursor-pointer items-center gap-2 border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium text-[var(--color-deep-ink)] hover:bg-[var(--color-deep-ink)] hover:text-white">
                       <UploadCloud className="h-4 w-4" />
                       Add documents
                           <input
@@ -642,7 +646,7 @@ export function CapsuleBuilderWizard() {
                       />
                     </label>
                   </div>
-                  <div className="mt-4 block text-sm font-medium text-[#24211b]">
+                  <div className="mt-4 block text-sm font-medium text-[var(--color-deep-ink)]">
                     <label htmlFor="capsule-source-notes">
                     Ideas, notes or conversation
                     </label>
@@ -654,12 +658,12 @@ export function CapsuleBuilderWizard() {
                       disabled={architectBusy || intakeBusy}
                       onChange={(event) => setSourceNotes(event.target.value)}
                       placeholder="Describe your idea, paste notes, or bring a conversation from Ask PRAXIS."
-                      className="mt-2 min-h-36 w-full rounded-lg border border-[#cfc6b8] bg-white p-3 text-sm leading-6 focus:outline-emerald-700"
+                      className="mt-2 min-h-36 w-full rounded-lg border border-[var(--color-mineral)] bg-white p-3 text-sm leading-6 focus:outline-[var(--color-praxis-emerald-700)]"
                     />
-                    <span id="capsule-source-notes-help" className="mt-1 block text-xs font-normal text-[#6f675c]">{sourceNotes.length.toLocaleString()} / 12,000 characters. User statements remain supplied context; assistant suggestions are not independent evidence. Building saves a private source and creates review-only proposals. Nothing is automatically approved or published.</span>
+                    <span id="capsule-source-notes-help" className="mt-2 block text-xs font-normal text-[var(--color-graphite)]">{sourceNotes.length.toLocaleString()} / 12,000 characters. Generated suggestions are not independent evidence. Nothing is automatically approved or published.</span>
                   </div>
                   {architectDocuments.length ? (
-                    <ul className="mt-3 grid gap-2 text-xs text-[#4f483f] sm:grid-cols-2">
+                    <ul className="mt-3 grid gap-2 text-xs text-[var(--color-graphite)] sm:grid-cols-2">
                       {architectDocuments.map((document) => (
                         <li key={document.documentId} className="border border-[#ebe4d8] px-2 py-1.5">
                           {document.title} · {document.text.length.toLocaleString()} characters ready
@@ -668,16 +672,16 @@ export function CapsuleBuilderWizard() {
                     </ul>
                   ) : null}
                   <div className="mt-3 flex flex-wrap items-center gap-3">
-                    <button type="button" disabled={intakeBusy || architectBusy || (!architectDocuments.length && !sourceNotes.trim())} onClick={() => void runArchitect()} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium disabled:opacity-50">
+                    <button type="button" disabled={intakeBusy || architectBusy || (!architectDocuments.length && !sourceNotes.trim())} onClick={() => void runArchitect()} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium disabled:opacity-50">
                       <Sparkles className="h-4 w-4" /> {intakeBusy ? 'Reading documents…' : architectBusy ? 'Building proposals…' : 'Build evidence proposals'}
                     </button>
-                    {architectReviewCount ? <span className="text-xs text-[#6f675c]">{architectReviewCount} review cards ready</span> : null}
+                    {architectReviewCount ? <span className="text-xs text-[var(--color-graphite)]">{architectReviewCount} review cards ready</span> : null}
                   </div>
                   {intakeWarnings.length > 0 && <ul role="status" className="mt-3 space-y-1 text-xs text-amber-800">{intakeWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}
-                  {architectCapsuleId && <Link href={`/app/capsules?starter=${encodeURIComponent(architectCapsuleId)}&lane=inspect`} className="mt-3 inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-3 text-sm font-semibold text-white">Inspect and review your capsule</Link>}
-                  <p className="mt-2 text-xs leading-5 text-[#6f675c]">Actors, claims, events and graph links are evidence proposals. Review them before reuse; repeated extraction does not make a claim true.</p>
+                  {architectCapsuleId && <Link href={`/app/capsules?starter=${encodeURIComponent(architectCapsuleId)}&lane=inspect`} className="mt-3 inline-flex min-h-11 items-center rounded-md bg-[var(--color-praxis-emerald-700)] px-3 text-sm font-semibold text-white">Inspect and review your capsule</Link>}
+                  <p className="mt-2 text-xs leading-5 text-[var(--color-graphite)]">Actors, claims, events and graph links are evidence proposals. Review them before reuse; repeated extraction does not make a claim true.</p>
                 </section>
-                <button type="button" onClick={() => setActiveStep('eval')} className="min-h-10 rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white">Continue to review and save</button>
+                <button type="button" onClick={() => setActiveStep('eval')} className="min-h-11 rounded-md bg-[var(--color-praxis-emerald-700)] px-4 text-sm font-semibold text-white">Continue to review and save</button>
               </div>
             )}
 
@@ -693,7 +697,7 @@ export function CapsuleBuilderWizard() {
                         sourcing: { mode: event.target.value as ContextCapsule['sourcing']['mode'] },
                         retrieval: { mode: event.target.value as ContextCapsule['retrieval']['mode'] },
                       })}
-                      className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                      className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                     >
                       {['live-search', 'corpus', 'skc', 'hybrid'].map((mode) => <option key={mode}>{mode}</option>)}
                     </select>
@@ -706,7 +710,7 @@ export function CapsuleBuilderWizard() {
                       max={10}
                       value={capsule.sourcing.minSourcesPerClaim}
                       onChange={(event) => patchCapsule({ sourcing: { minSourcesPerClaim: Number(event.target.value) } })}
-                      className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                      className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                     />
                   </label>
                   <label className="block text-sm font-medium">
@@ -717,7 +721,7 @@ export function CapsuleBuilderWizard() {
                       max={3650}
                       value={capsule.sourcing.recencyWindowDays ?? 90}
                       onChange={(event) => patchCapsule({ sourcing: { recencyWindowDays: Number(event.target.value) } })}
-                      className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                      className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                     />
                   </label>
                 </div>
@@ -729,7 +733,7 @@ export function CapsuleBuilderWizard() {
                       setAllowedDomains(event.target.value);
                       patchCapsule({ sourcing: { allowedDomains: csv(event.target.value) } });
                     }}
-                    className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                    className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                   />
                 </label>
                 <label className="block text-sm font-medium">
@@ -740,10 +744,10 @@ export function CapsuleBuilderWizard() {
                       setBlockedDomains(event.target.value);
                       patchCapsule({ sourcing: { blockedDomains: csv(event.target.value) } });
                     }}
-                    className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                    className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                   />
                 </label>
-                <button type="button" onClick={() => runAssist('sources')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
+                <button type="button" onClick={() => runAssist('sources')} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium">
                   <Sparkles className="h-4 w-4" /> Suggest sources
                 </button>
               </div>
@@ -753,35 +757,35 @@ export function CapsuleBuilderWizard() {
               <div className="space-y-5">
                 <p role="note" className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">Package-only advisory settings. Timeline, causal, ontology and graph fields below are not saved as private capsule facts by Save draft. To add factual context, use Material and review its evidence proposals. Package publication is a separate advanced workflow.</p>
                 <div className="grid gap-4 lg:grid-cols-3">
-                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
-                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#24211b]">
+                  <section className="rounded-md border border-[var(--color-mineral)] bg-white p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-deep-ink)]">
                       <CalendarClock className="h-4 w-4" />
                       Timeline anchors
                     </div>
-                    <label className="block text-xs font-semibold text-[#6f675c]">
+                    <label className="block text-xs font-semibold text-[var(--color-graphite)]">
                       Anchor label
                       <input
                         value={capsule.temporality.timelineAnchors[0]?.label ?? ''}
                         onChange={(event) => patchTimelineAnchor({ label: event.target.value })}
-                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        className="mt-1 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                       />
                     </label>
                     <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                      <label className="block text-xs font-semibold text-[#6f675c]">
+                      <label className="block text-xs font-semibold text-[var(--color-graphite)]">
                         Date
                         <input
                           type="date"
                           value={capsule.temporality.timelineAnchors[0]?.date ?? ''}
                           onChange={(event) => patchTimelineAnchor({ date: event.target.value })}
-                          className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                          className="mt-1 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                         />
                       </label>
-                      <label className="block text-xs font-semibold text-[#6f675c]">
+                      <label className="block text-xs font-semibold text-[var(--color-graphite)]">
                         Kind
                         <select
                           value={capsule.temporality.timelineAnchors[0]?.kind ?? 'review'}
                           onChange={(event) => patchTimelineAnchor({ kind: event.target.value as ContextCapsule['temporality']['timelineAnchors'][number]['kind'] })}
-                          className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                          className="mt-1 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                         >
                           {['as-of', 'event', 'deadline', 'review', 'validity-start', 'validity-end'].map((kind) => <option key={kind}>{kind}</option>)}
                         </select>
@@ -789,71 +793,71 @@ export function CapsuleBuilderWizard() {
                     </div>
                   </section>
 
-                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
-                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#24211b]">
+                  <section className="rounded-md border border-[var(--color-mineral)] bg-white p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-deep-ink)]">
                       <GitBranch className="h-4 w-4" />
                       Causal link
                     </div>
-                    <label className="block text-xs font-semibold text-[#6f675c]">
+                    <label className="block text-xs font-semibold text-[var(--color-graphite)]">
                       Cause
                       <input
                         value={capsule.causality.causalLinks[0]?.cause ?? ''}
                         onChange={(event) => patchCausalLink({ cause: event.target.value })}
-                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        className="mt-1 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                       />
                     </label>
-                    <label className="mt-3 block text-xs font-semibold text-[#6f675c]">
+                    <label className="mt-3 block text-xs font-semibold text-[var(--color-graphite)]">
                       Effect
                       <input
                         value={capsule.causality.causalLinks[0]?.effect ?? ''}
                         onChange={(event) => patchCausalLink({ effect: event.target.value })}
-                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        className="mt-1 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                       />
                     </label>
-                    <label className="mt-3 block text-xs font-semibold text-[#6f675c]">
+                    <label className="mt-3 block text-xs font-semibold text-[var(--color-graphite)]">
                       Relation
                       <select
                         value={capsule.causality.causalLinks[0]?.relation ?? 'causes'}
                         onChange={(event) => patchCausalLink({ relation: event.target.value as ContextCapsule['causality']['causalLinks'][number]['relation'] })}
-                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        className="mt-1 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                       >
                         {['causes', 'enables', 'blocks', 'escalates', 'de-escalates', 'correlates'].map((relation) => <option key={relation}>{relation}</option>)}
                       </select>
                     </label>
                   </section>
 
-                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
-                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#24211b]">
+                  <section className="rounded-md border border-[var(--color-mineral)] bg-white p-3">
+                    <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-deep-ink)]">
                       <Network className="h-4 w-4" />
                       Domain taxonomy
                     </div>
-                    <label className="block text-xs font-semibold text-[#6f675c]">
+                    <label className="block text-xs font-semibold text-[var(--color-graphite)]">
                       Capsule domain
                       <select
                         value={capsule.ontologyBinding.domainId}
                         onChange={(event) => setDomainBinding(event.target.value)}
-                        className="mt-1 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        className="mt-1 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                       >
                         {DOMAIN_OPTIONS.map((domain) => <option key={domain}>{domain}</option>)}
                       </select>
                     </label>
-                    <label className="mt-3 block text-xs font-semibold text-[#6f675c]">
+                    <label className="mt-3 block text-xs font-semibold text-[var(--color-graphite)]">
                       Binding rationale
                       <textarea
                         value={capsule.ontologyBinding.bindingRationale}
                         onChange={(event) => patchCapsule({ ontologyBinding: { bindingRationale: event.target.value } })}
-                        className="mt-1 min-h-24 w-full border border-[#cfc6b8] bg-white p-2 text-sm text-[#24211b]"
+                        className="mt-1 min-h-24 w-full border border-[var(--color-mineral)] bg-white p-2 text-sm text-[var(--color-deep-ink)]"
                       />
                     </label>
                   </section>
                 </div>
 
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
-                    <p className="mb-3 text-sm font-semibold text-[#24211b]">Ontology bindings</p>
+                  <section className="rounded-md border border-[var(--color-mineral)] bg-white p-3">
+                    <p className="mb-3 text-sm font-semibold text-[var(--color-deep-ink)]">Ontology bindings</p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {ONTOLOGY_IDS.map((ontologyId) => (
-                        <label key={ontologyId} className="flex items-center gap-2 border border-[#ebe4d8] px-2 py-1.5 text-xs text-[#4f483f]">
+                        <label key={ontologyId} className="flex items-center gap-2 border border-[#ebe4d8] px-2 py-1.5 text-xs text-[var(--color-graphite)]">
                           <input
                             type="checkbox"
                             checked={capsule.ontologyBinding.ontologyIds.includes(ontologyId)}
@@ -865,11 +869,11 @@ export function CapsuleBuilderWizard() {
                     </div>
                   </section>
 
-                  <section className="rounded-md border border-[#d8d1c5] bg-white p-3">
-                    <p className="mb-3 text-sm font-semibold text-[#24211b]">ACO primitives</p>
+                  <section className="rounded-md border border-[var(--color-mineral)] bg-white p-3">
+                    <p className="mb-3 text-sm font-semibold text-[var(--color-deep-ink)]">ACO primitives</p>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {TACITUS_CORE_PRIMITIVES.map((primitive) => (
-                        <label key={primitive} className="flex items-center gap-2 border border-[#ebe4d8] px-2 py-1.5 text-xs text-[#4f483f]">
+                        <label key={primitive} className="flex items-center gap-2 border border-[#ebe4d8] px-2 py-1.5 text-xs text-[var(--color-graphite)]">
                           <input
                             type="checkbox"
                             checked={capsule.ontologyBinding.acoPrimitives.includes(primitive)}
@@ -882,8 +886,8 @@ export function CapsuleBuilderWizard() {
                   </section>
                 </div>
 
-                <div className="rounded-md border border-[#d8d1c5] bg-[#f8f3e8] p-3 text-sm text-[#4f483f]">
-                  <p className="font-semibold text-[#24211b]">embeddedGraph: GraphLite advisory projection</p>
+                <div className="rounded-md border border-[var(--color-mineral)] bg-[#f8f3e8] p-3 text-sm text-[var(--color-graphite)]">
+                  <p className="font-semibold text-[var(--color-deep-ink)]">embeddedGraph: GraphLite advisory projection</p>
                   <p className="mt-1">
                     {capsule.embeddedGraph.projectionId} writes a derived graph view only; Firestore ContextCapsules remain canonical until a human review card promotes graph changes.
                   </p>
@@ -898,12 +902,12 @@ export function CapsuleBuilderWizard() {
                   <select
                     value={capsule.output.format}
                     onChange={(event) => patchCapsule({ output: outputFor(event.target.value as ContextCapsule['output']['format']) })}
-                    className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                    className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                   >
                     {['brief', 'markdown', 'report', 'json'].map((format) => <option key={format}>{format}</option>)}
                   </select>
                 </label>
-                <button type="button" onClick={() => runAssist('output-schema')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
+                <button type="button" onClick={() => runAssist('output-schema')} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium">
                   <Sparkles className="h-4 w-4" /> Tighten output schema
                 </button>
               </div>
@@ -914,7 +918,7 @@ export function CapsuleBuilderWizard() {
                 <p className="rounded-md bg-emerald-50 p-3 text-sm text-emerald-900">Saved tool preferences are suggestions. Automatic policy does not grant permission to run research or publish; actual run approvals and the current question control execution.</p>
                 <div className="grid gap-3 md:grid-cols-2">
                   {TOOL_OPTIONS.map((tool) => (
-                    <label key={tool} className="flex items-center gap-3 border border-[#d8d1c5] p-3 text-sm">
+                    <label key={tool} className="flex items-center gap-3 border border-[var(--color-mineral)] p-3 text-sm">
                       <input
                         type="checkbox"
                         checked={selectedTools.includes(tool)}
@@ -935,7 +939,7 @@ export function CapsuleBuilderWizard() {
                   <select
                     value={capsule.tools.policy}
                     onChange={(event) => patchCapsule({ tools: { policy: event.target.value as ContextCapsule['tools']['policy'] } })}
-                    className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                    className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                   >
                     {['suggest', 'manual', 'auto'].map((policy) => <option key={policy}>{policy}</option>)}
                   </select>
@@ -945,38 +949,42 @@ export function CapsuleBuilderWizard() {
 
             {activeStep === 'eval' && (
               <div className="space-y-4">
-                <div className="rounded-md border border-[#d8d1c5] bg-white p-4 text-sm text-[#4f483f]">
-                  <p className="font-semibold text-[#24211b]">{job || 'Add a purpose before saving.'}</p>
+                <div className="rounded-md border border-[var(--color-mineral)] bg-white p-4 text-sm text-[var(--color-graphite)]">
+                  <p className="font-semibold text-[var(--color-deep-ink)]">{job || 'Add a purpose before saving.'}</p>
                   <p className="mt-2">{architectDocuments.length} uploaded source{architectDocuments.length === 1 ? '' : 's'}{sourceNotes.trim() ? ' and working notes' : ''}. {architectReviewCount} proposal{architectReviewCount === 1 ? '' : 's'} prepared.</p>
                   <p className="mt-2">Save keeps your purpose, output, source and tool preferences, and supplied document references privately. Sources and generated proposals still need review.</p>
                 </div>
                 <label className="block text-sm font-medium">Preferred written product
-                  <select value={capsule.output.format} onChange={(event) => patchCapsule({ output: outputFor(event.target.value as ContextCapsule['output']['format']) })} className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm">
+                  <select value={capsule.output.format} onChange={(event) => patchCapsule({ output: outputFor(event.target.value as ContextCapsule['output']['format']) })} className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm">
                     <option value="brief">Decision brief</option><option value="report">Analytical report</option><option value="markdown">Working document</option><option value="json">Structured data</option>
                   </select>
                 </label>
-                <label className="block text-sm font-medium">
+                <details className="rounded-lg border border-[var(--color-mineral)] p-3">
+                  <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">Example questions and structure checks</summary>
+                  <label className="mt-3 block text-sm font-medium">
                   Sample questions
                   <textarea
                     value={sampleQuestions}
                     onChange={(event) => setSampleQuestions(event.target.value)}
-                    className="mt-2 min-h-32 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                    className="mt-2 min-h-32 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                   />
                 </label>
                 <div className="flex flex-wrap gap-3">
                   <button
                     type="button"
                     onClick={runStructuralCheck}
-                    className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium"
                   >
                     <Check className="h-4 w-4" /> Check draft structure
                   </button>
-                  <button type="button" onClick={() => runAssist('few-shot')} className="inline-flex items-center gap-2 border border-[#24211b] px-3 py-2 text-sm font-medium">
+                  <button type="button" onClick={() => runAssist('few-shot')} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-3 py-2 text-sm font-medium">
                     <Sparkles className="h-4 w-4" /> Generate few-shot examples
                   </button>
                 </div>
-                {evalSummary ? <p className="text-sm text-[#6f675c]">{evalSummary}</p> : null}
-                <Link href="/app" className="inline-flex min-h-10 items-center text-sm font-semibold underline">Test questions in Ask PRAXIS</Link>
+                {evalSummary ? <p className="text-sm text-[var(--color-graphite)]">{evalSummary}</p> : null}
+                  <Link href="/app" className="inline-flex min-h-11 items-center text-sm font-semibold underline">Test questions in Ask PRAXIS</Link>
+                </details>
+                {architectCapsuleId ? <Link href={`/app/capsules?starter=${encodeURIComponent(architectCapsuleId)}&lane=inspect`} className="inline-flex min-h-11 items-center text-sm font-semibold underline">Inspect sources and review proposals</Link> : null}
               </div>
             )}
 
@@ -988,7 +996,7 @@ export function CapsuleBuilderWizard() {
                     <select
                       value={capsule.market.visibility}
                       onChange={(event) => patchCapsule({ market: { visibility: event.target.value as ContextCapsule['market']['visibility'] } })}
-                      className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                      className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                     >
                       {['private', 'org', 'unlisted', 'public'].map((visibility) => <option key={visibility}>{visibility}</option>)}
                     </select>
@@ -998,38 +1006,39 @@ export function CapsuleBuilderWizard() {
                     <select
                       value={capsule.market.pricing}
                       onChange={(event) => patchCapsule({ market: { pricing: event.target.value as ContextCapsule['market']['pricing'] } })}
-                      className="mt-2 w-full border border-[#cfc6b8] bg-white p-3 text-sm"
+                      className="mt-2 w-full border border-[var(--color-mineral)] bg-white p-3 text-sm"
                     >
                       {['free', 'credits', 'subscription'].map((pricing) => <option key={pricing}>{pricing}</option>)}
                     </select>
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <button type="button" disabled={saveState === 'saving' || saveState === 'publishing'} onClick={() => void publish()} className="inline-flex items-center gap-2 bg-[#24211b] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                  <button type="button" disabled={saveState === 'saving' || saveState === 'publishing'} onClick={() => void publish()} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[var(--color-deep-ink)] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
                     <Rocket className="h-4 w-4" /> Publish capsule
                   </button>
                 </div>
-                <p className="text-xs text-[#6f675c]">Publishing creates a separate immutable package after its server-side evaluation gate passes. Save your private working capsule below to reuse it in Ask.</p>
+                <p className="text-xs text-[var(--color-graphite)]">Publishing creates a separate immutable package after its server-side evaluation gate passes. Save your private working capsule below to reuse it in Ask.</p>
               </div>
             )}
           </div>
         )}
         </fieldset>
 
-        <div className="flex flex-wrap items-center gap-3 border-t border-[#d8d1c5] pt-4">
-          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing' || !job.trim()} onClick={() => void saveDraft()} className="inline-flex items-center gap-2 border border-[#24211b] px-4 py-2 text-sm font-semibold disabled:opacity-50">
+        <div className="flex flex-wrap items-center gap-3 border-t border-[var(--color-mineral)] pt-4">
+          {activeIndex > 0 && !advanced ? <button type="button" onClick={() => setActiveStep(visibleSteps[activeIndex - 1].id)} className="inline-flex min-h-11 items-center rounded-lg border border-[var(--color-mineral)] px-4 text-sm font-medium">Back</button> : null}
+          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing' || !job.trim()} onClick={() => void saveDraft()} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-[var(--color-deep-ink)] px-4 py-2 text-sm font-semibold disabled:opacity-50">
             <FileJson className="h-4 w-4" /> {saveState === 'saving' ? 'Saving...' : 'Save draft'}
           </button>
-          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing' || !job.trim()} onClick={() => void saveAndUse()} className="inline-flex min-h-10 items-center rounded-md bg-emerald-700 px-4 text-sm font-semibold text-white disabled:opacity-50">{savedCapsuleId && !hasUnsavedChanges ? 'Use in Ask' : 'Save and use in Ask'}</button>
+          <button type="button" disabled={intakeBusy || architectBusy || saveState === 'saving' || saveState === 'publishing' || !job.trim()} onClick={() => void saveAndUse()} className="inline-flex min-h-11 items-center rounded-md bg-[var(--color-praxis-emerald-700)] px-4 text-sm font-semibold text-white disabled:opacity-50">{savedCapsuleId && !hasUnsavedChanges ? 'Use in chat' : 'Save and use in chat'}</button>
           {savedCapsuleId ? <>
             <Link href={`/app/capsules?starter=${encodeURIComponent(savedCapsuleId)}&lane=inspect`} className="text-sm underline">View saved capsule</Link>
-          </> : <p className="text-xs text-[#6f675c]">Save privately to keep your purpose, output preferences and supplied sources together.</p>}
-          {hasUnsavedChanges ? <p role="status" className="text-sm font-semibold text-amber-800">Unsaved changes. Use in Ask will save the current draft first.</p> : savedCapsuleId ? <p role="status" className="text-xs text-emerald-800">Private snapshot saved.</p> : null}
+          </> : <p className="text-xs text-[var(--color-graphite)]">Save privately to keep your purpose, output preferences and supplied sources together.</p>}
+          {hasUnsavedChanges ? <p role="status" className="text-sm font-semibold text-amber-800">Unsaved changes. Use in chat will save the current draft first.</p> : savedCapsuleId ? <p role="status" className="text-xs text-emerald-800">Private snapshot saved.</p> : null}
         </div>
 
         {message && (
           <p role="status" className={`border px-4 py-3 text-sm ${
-            saveState === 'error' ? 'border-[#b65d45] bg-[#fff4ef] text-[#8a3d2c]' : 'border-[#d8d1c5] bg-[#fffdf8] text-[#4f483f]'
+            saveState === 'error' ? 'border-[#b65d45] bg-[#fff4ef] text-[#8a3d2c]' : 'border-[var(--color-mineral)] bg-[var(--color-archive-paper-strong)] text-[var(--color-graphite)]'
           }`}>
             {message}
           </p>

@@ -217,28 +217,29 @@ function OnboardingWizard() {
 
   return (
     <div className="app-light praxis-app-surface min-h-screen px-4 py-6 text-[color:var(--color-app-text)] sm:px-6 lg:px-8">
-    <div className="mx-auto max-w-7xl space-y-5 pb-10">
+    <div className="mx-auto max-w-3xl space-y-5 pb-10">
       {resumeMode && (
         <Link
-          href="/app"
-          className="inline-flex items-center gap-1 text-xs font-medium text-navy-500 hover:text-navy-900"
+          href="/app/settings?tab=profile"
+          className="inline-flex min-h-11 items-center gap-1 text-sm font-medium text-[var(--color-graphite)] underline"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to profile settings
         </Link>
       )}
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+      <div className="grid gap-5">
         <div>
           <Header step={step} onSkip={skipForLater} resumeMode={resumeMode} busy={!profileReady || saving || terminalPending} />
           <div className="praxis-shell-card mt-5 p-5 sm:p-6">
+            <h2 className="sr-only">{['About you', 'Your work', 'Writing style', 'Ready'][step - 1]}</h2>
             {!profileReady ? <div aria-live="polite">
-              {initialization.scope === scopeRef.current && initialization.error ? <><p role="alert" className="text-sm text-red-700">{initialization.error}</p><button type="button" disabled={authLoading || !ownerId} onClick={() => setLoadAttempt(attempt => attempt + 1)} className="mt-3 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold">Retry loading profile</button></>
+              {initialization.scope === scopeRef.current && initialization.error ? <><p role="alert" className="text-sm text-red-700">{initialization.error}</p><button type="button" disabled={authLoading || !ownerId} onClick={() => setLoadAttempt(attempt => attempt + 1)} className="mt-3 min-h-11 rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold">Retry loading profile</button></>
                 : <p role="status" className="text-sm text-slate-600">{!authLoading && !ownerId ? <>Sign in to set up your analyst profile. <Link href={`/login?redirect=${encodeURIComponent(returnTarget)}`} className="underline">Sign in</Link></> : 'Preparing your analyst profile…'}</p>}
             </div> : <fieldset disabled={terminalPending} className="min-w-0 border-0 p-0">
             {saveError && (
               <div role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
                 {saveError}
-                {failedPatch.current ? <button type="button" disabled={saving || terminalPending} onClick={() => { if (failedPatch.current) void savePatch(failedPatch.current); }} className="ml-2 font-semibold underline disabled:opacity-50">Retry saving changes</button> : null}
+                {failedPatch.current ? <button type="button" disabled={saving || terminalPending} onClick={() => { if (failedPatch.current) void savePatch(failedPatch.current); }} className="ml-2 min-h-11 font-semibold underline disabled:opacity-50">Retry saving changes</button> : null}
               </div>
             )}
             {step === 1 && (
@@ -283,9 +284,10 @@ function OnboardingWizard() {
             </fieldset>}
           </div>
         </div>
-        <aside>
-          {profileReady ? <LivePreview profile={profile} /> : null}
-        </aside>
+        {profileReady ? <details className="rounded-lg border border-[var(--color-mineral)] bg-white p-4">
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold">Preview the context your profile adds</summary>
+          <div className="mt-3"><LivePreview profile={profile} /></div>
+        </details> : null}
       </div>
     </div>
     </div>
@@ -293,7 +295,7 @@ function OnboardingWizard() {
 }
 
 function Header({ step, onSkip, resumeMode, busy }: { step: Step; onSkip: () => void; resumeMode: boolean; busy: boolean }) {
-  const steps = ['Identity', 'Perspective', 'Working Style', 'Done'];
+  const steps = ['About you', 'Your work', 'Writing style', 'Ready'];
   return (
     <div className="flex items-start justify-between gap-4">
       <div>
@@ -305,11 +307,11 @@ function Header({ step, onSkip, resumeMode, busy }: { step: Step; onSkip: () => 
             </span>
           )}
         </div>
-        <h2 className="praxis-text-title mt-1">
-          {resumeMode ? 'Review your analyst profile' : 'Set up your analyst profile'}
-        </h2>
+        <h1 className="praxis-page-heading mt-1 font-serif text-3xl font-semibold">
+          {resumeMode ? 'Your working preferences' : 'Make PRAXIS yours'}
+        </h1>
         <p className="mt-1 max-w-2xl text-sm text-navy-500">
-          First sign-in may ask for analyst calibration. Finish later opens the workspace now and keeps profile reminders visible.
+          Tell PRAXIS who you write for and what matters. You can start chatting now and finish this later.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-medium uppercase tracking-wider">
           {steps.map((s, i) => (
@@ -323,7 +325,7 @@ function Header({ step, onSkip, resumeMode, busy }: { step: Step; onSkip: () => 
         <button
           disabled={busy}
           onClick={onSkip}
-          className="rounded-[var(--radius-md)] text-xs text-navy-500 hover:text-navy-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-diplomatic-blue/40 focus-visible:ring-offset-2"
+          type="button" className="min-h-11 shrink-0 rounded-lg border border-[var(--color-mineral)] bg-white px-3 text-sm font-semibold text-[var(--color-deep-ink)] focus-visible:ring-2 focus-visible:ring-[var(--color-praxis-emerald-600)]"
         >
           Finish later
         </button>

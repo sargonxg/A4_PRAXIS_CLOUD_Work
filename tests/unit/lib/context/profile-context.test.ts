@@ -11,7 +11,24 @@ vi.mock('@/lib/knowledge/profile-weighted-retrieval', () => ({
 }));
 vi.mock('@/lib/context/capsule-service', () => ({
   getCapsule: vi.fn(),
+  sanitizeCapsule: (input: unknown) => input,
 }));
+
+const versionStore = vi.hoisted(() => ({ documents: new Map<string, unknown>() }));
+vi.mock('@/lib/firebase/admin', () => ({
+  adminDb: null,
+  getAdminDbOrThrow: () => ({
+    collection: (name: string) => scopedRef(name),
+  }),
+}));
+
+function scopedRef(path: string): unknown {
+  return {
+    doc: (id: string) => scopedRef(`${path}/${id}`),
+    collection: (name: string) => scopedRef(`${path}/${name}`),
+    get: async () => ({ exists: versionStore.documents.has(path), data: () => versionStore.documents.get(path) }),
+  };
+}
 
 import { buildCalibratedContext } from '@/lib/context/profile-context';
 import { getAnalystProfile } from '@/lib/firebase/analyst-profile-admin';
@@ -21,7 +38,31 @@ import { getCapsule } from '@/lib/context/capsule-service';
 import { DEFAULT_ANALYST_PROFILE } from '@/types/analyst-profile';
 
 describe('buildCalibratedContext', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => { vi.clearAllMocks(); vi.mocked(getCapsule).mockReset(); versionStore.documents.clear(); });
+
+  it('uses the exact pinned capsule contents after a newer version is saved', async () => {
+    const historical = { ...makeCapsule('pinned', 'Pinned capsule', ['Saved version two claim.']), version: 2 };
+    const latest = makeCapsule('pinned', 'Pinned capsule', ['New version three claim.']);
+    versionStore.documents.set('users/u1/capsules/pinned', latest);
+    versionStore.documents.set('users/u1/capsules/pinned/versions/v2', historical);
+    vi.mocked(getCapsule).mockResolvedValueOnce(latest as never);
+
+    const ctx = await buildCalibratedContext({ uid: 'u1', toolId: 'chat', capsuleId: 'pinned', activeContextStack: {
+      capsuleRefs: [{ capsuleId: 'pinned', role: 'primary', version: 2 }],
+    } });
+    expect(ctx.systemPromptBlock).toContain('Saved version two claim.');
+    expect(ctx.systemPromptBlock).not.toContain('New version three claim.');
+    expect(ctx.toolContext.capsules?.[0].version).toBe(2);
+  });
+
+  it('refuses a missing pin instead of omitting it from an otherwise usable context', async () => {
+    const latest = makeCapsule('missing-pin', 'Missing version', ['New version three claim.']);
+    versionStore.documents.set('users/u1/capsules/missing-pin', latest);
+    vi.mocked(getCapsule).mockResolvedValueOnce(latest as never);
+    await expect(buildCalibratedContext({ uid: 'u1', toolId: 'chat', activeContextStack: {
+      capsuleRefs: [{ capsuleId: 'missing-pin', role: 'reference', version: 2 }],
+    } })).rejects.toMatchObject({ name: 'CapsuleVersionConflictError', code: 'capsule_version_unavailable' });
+  });
 
   it('returns neutral context when profile missing and situation missing', async () => {
     (getAnalystProfile as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(null);

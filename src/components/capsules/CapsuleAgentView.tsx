@@ -113,7 +113,7 @@ export function CapsuleAgentViewContent({ data }: { data: CapsuleAgentPacketResp
           <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-slate-500">What the agent sees</p>
           <h3 className="mt-1 text-sm font-semibold text-slate-950">Packet v1, grounding, omissions, and risk</h3>
         </div>
-        <StatePill state={data.riskFlags.length ? 'advisory' : 'reviewed'} label={data.riskFlags.length ? `${data.riskFlags.length} flags` : 'No risk flags'} />
+        <StatePill state="advisory" label={data.riskFlags.length ? `${data.riskFlags.length} flags` : 'No risk flags reported'} />
       </div>
 
       <div className="grid gap-3 p-3">
@@ -206,7 +206,7 @@ export function CapsuleAgentViewContent({ data }: { data: CapsuleAgentPacketResp
               ))}
             </ul>
           ) : (
-            <p className="rounded-md border border-dashed border-slate-200 px-2 py-1.5 text-xs text-slate-500">No risk flags.</p>
+            <p className="rounded-md border border-dashed border-slate-200 px-2 py-1.5 text-xs text-slate-500">No risk flags were reported. This is not a review or factual approval.</p>
           )}
         </Panel>
       </div>

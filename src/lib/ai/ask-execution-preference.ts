@@ -75,8 +75,10 @@ export function resolveAskExecutionPreference(prompt: string): AskExecutionPrefe
     if (/^(?:please\s+)?(?:(?:just\s+)?(?:answer|respond)\s+(?:directly|here|in (?:this|our|the) conversation)\b|(?:for|in) (?:this|our) direct conversation\b|(?:direct answer only|conversation[- ]only)\b)/.test(clause)) {
       preferDirectAnswer = true;
     }
-    if (/^(?:supplied|provided|attached) (?:context|sources?|documents?|notes) only\b/.test(clause)
-      || /^(?:please\s+)?(?:use|using|answer|write|draft|research|summari[sz]e|restate)\b.*\b(?:only (?:the )?(?:supplied|provided|attached|saved) (?:context|contextcapsule|capsule|sources?|documents?|notes)|(?:supplied|provided|attached|saved) (?:context|contextcapsule|capsule|sources?|documents?|notes) only|(?:this|the|our) capsule and (?:the )?(?:earlier|previous) exchange only)\b/.test(clause)) {
+    // "Attached saved capsule" still means selected material only; its saved
+    // modifier must not silently permit broader workspace or web retrieval.
+    if (/^(?:supplied|provided|attached)(?: saved)? (?:context|sources?|documents?|notes) only\b/.test(clause)
+      || /^(?:please\s+)?(?:use|using|answer|write|draft|research|summari[sz]e|restate)\b.*\b(?:only (?:the )?(?:(?:supplied|provided|attached)(?: saved)?|saved) (?:context|contextcapsule|capsule|sources?|documents?|notes)|(?:(?:supplied|provided|attached)(?: saved)?|saved) (?:context|contextcapsule|capsule|sources?|documents?|notes) only|(?:this|the|our) capsule and (?:the )?(?:earlier|previous) exchange only)\b/.test(clause)) {
       suppliedContextOnly = true;
       allowExternalSources = false;
     }

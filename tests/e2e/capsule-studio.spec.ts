@@ -5,14 +5,16 @@ import { authenticateFirebaseCanary, hasFirebaseCanaryCredentials } from './help
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('Capsule Studio', () => {
-  test('uploads a source, builds reviewable proposals and attaches spotlight context', async ({ page }) => {
-    test.setTimeout(300_000);
+  test('uploads original sources, reviews proposals and attaches the saved capsule to chat', async ({ page }) => {
+    test.setTimeout(process.env.PRAXIS_LIVE_AI_SMOKE === '1' ? 420_000 : 300_000);
     test.skip(!hasFirebaseCanaryCredentials(), 'requires disposable Firebase credentials');
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
-    await page.goto(`${BASE}/app/capsules?lane=repository`);
-    const spotlights = page.getByRole('region', { name: 'Policy capsule spotlights' });
-    await expect(spotlights.locator('article')).toHaveCount(12, { timeout: 30_000 });
-    await spotlights.getByRole('button', { name: 'Add method', exact: true }).first().click();
+    await expect(page.getByTestId('capsule-library')).toBeVisible({ timeout: 30_000 });
+    await page.getByRole('button', { name: 'Starter templates', exact: true }).click();
+    await page.getByRole('searchbox', { name: 'Search capsules', exact: true }).fill('Institutional logic');
+    const starter = page.getByTestId('capsule-card-starter-tool-institutional-logic-lens');
+    await expect(starter).toBeVisible({ timeout: 30_000 });
+    await starter.getByRole('button', { name: 'Use in chat', exact: true }).click();
     await page.waitForURL(/\/app$/, { timeout: 60_000 });
     await expect(page.getByTestId('capsule-dock')).toContainText(/Institutional/i, { timeout: 30_000 });
 
@@ -54,11 +56,11 @@ test.describe('Capsule Studio', () => {
     const capsuleId = payload.capsule.capsuleId as string;
     test.info().annotations.push({ type: 'capsuleId', description: capsuleId });
     await page.getByRole('link', { name: 'Inspect and review your capsule' }).click();
-    await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible({ timeout: 30_000 });
-    const drawer = page.getByTestId('capsule-workbench-panel').getByTestId('capsule-advanced-drawer');
-    const toggle = drawer.getByRole('button', { name: /Ontologies, graph, reasoning, receipts/ });
-    if (await toggle.getAttribute('aria-expanded') === 'false') await toggle.click();
-    await drawer.getByRole('tab', { name: 'Review', exact: true }).click();
+    const inspector = page.getByTestId('capsule-inspector-sheet');
+    await expect(inspector).toBeVisible({ timeout: 30_000 });
+    await expect(inspector).toHaveAttribute('open', '');
+    await inspector.getByRole('tablist', { name: 'Capsule inspection' }).getByRole('tab', { name: /^Review/ }).click();
+    const drawer = inspector.getByRole('tabpanel');
     await expect(drawer.getByText('Reason for your next decision')).toBeVisible({ timeout: 30_000 });
     await drawer.getByLabel('Reason for your next decision').fill('QA: inspected the explicitly synthetic source; rejecting this proposal to verify the human decision boundary.');
     await drawer.getByRole('button', { name: 'reject', exact: true }).first().click();
@@ -74,16 +76,60 @@ test.describe('Capsule Studio', () => {
     const approved = await approvedResponse.json();
     expect(approved.reviewCards.some((card: { state: string }) => card.state === 'applied')).toBe(true);
     expect(approved.capsule.version).toBeGreaterThan(payload.capsule.version);
+    expect(approved.capsule.coreRefs.documentCoreIds).toEqual(expect.arrayContaining(payload.capsule.coreRefs.documentCoreIds));
+    const approvedVersion = approved.capsule.version as number;
+    const approvedLabel = approved.capsule.label as string;
 
-    // Explicit opt-in: use real model quota and prove saved answer continuity.
+    // Reopen from storage before attaching: in-memory review feedback is not
+    // evidence that the new capsule version survived a fresh page load.
+    await page.reload();
+    await expect(inspector).toBeVisible({ timeout: 30_000 });
+    await expect(inspector.getByRole('heading', { name: approvedLabel, exact: true, level: 2 })).toBeVisible();
+    await expect(inspector.getByText(`Context Capsule · v${approvedVersion}`, { exact: true })).toBeVisible();
+    await inspector.getByRole('button', { name: 'Use in chat', exact: true }).click();
+    await expect(page).toHaveURL(/\/app(?:\?|$)/);
+    const attachedCapsule = page.getByTestId('capsule-dock-chip').filter({
+      has: page.locator(`a[href*="starter=${encodeURIComponent(capsuleId)}"]`),
+    });
+    await expect(attachedCapsule).toContainText(approvedLabel, { timeout: 30_000 });
+    await expect(attachedCapsule.getByText(`v${approvedVersion}`, { exact: true })).toBeVisible();
+    await expect.poll(async () => {
+      const response = await page.request.get(`${BASE}/api/workspace/context-stack`);
+      if (!response.ok()) return false;
+      const body = await response.json();
+      return body.stack?.capsuleId === capsuleId
+        && body.stack.capsuleRefs.some((ref: { capsuleId: string; version: number }) => ref.capsuleId === capsuleId && ref.version === approvedVersion);
+    }, { timeout: 30_000 }).toBe(true);
+
+    // Explicit opt-in: one real model request through the new chat composer.
+    // The question omits the expected actor/date so uploaded text must supply
+    // those details, rather than the answer repeating the question.
     if (process.env.PRAXIS_LIVE_AI_SMOKE === '1') {
       const threadId = `qa-history-${Date.now()}`;
-      const prompt = 'This is a synthetic QA fixture, not real-world evidence. Summarize the attached Example Council fixture in two sentences, including the review deadline and what remains unconfirmed. Do not browse the web.';
-      const answer = await page.request.post(`${BASE}/api/ai/ask-praxis`, {
-        timeout: 120_000,
-        data: { messages: [{ role: 'user', content: prompt }], capsuleId, threadId, currentPath: '/app' },
-      });
+      const prompt = 'This is a synthetic QA fixture, not real-world evidence. Using only the attached saved capsule and its original uploaded source text, identify the named decision-making actor, the stated review deadline, and what remains unconfirmed about funding. Quote a short source passage for each recorded point and distinguish reviewed proposals from source text. Do not browse or invent missing details.';
+      // Select a fresh thread while retaining the capsule attached by the UI.
+      // Do not supply capsuleId in the URL or bypass chat with a direct POST.
+      await page.goto(`${BASE}/app?${new URLSearchParams({ thread: threadId })}`);
+      await expect(attachedCapsule.getByText(`v${approvedVersion}`, { exact: true })).toBeVisible({ timeout: 30_000 });
+      const chat = page.getByTestId('simple-home-chat');
+      const composer = chat.getByTestId('marketing-hero-prompt');
+      const submit = chat.getByRole('button', { name: 'Ask PRAXIS', exact: true });
+      await composer.fill(prompt);
+      await expect(submit).toBeEnabled();
+      const answerResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/ai/chat' && response.request().method() === 'POST', { timeout: 120_000 });
+      await submit.click();
+      const answer = await answerResponse;
       expect(answer.status()).toBe(200);
+      const askBody = answer.request().postDataJSON();
+      expect(askBody).toMatchObject({
+        capsuleId, threadId,
+        messages: [{ role: 'user', content: prompt }],
+        activeContextStack: {
+          capsuleId,
+          capsuleRefs: expect.arrayContaining([expect.objectContaining({ capsuleId, version: approvedVersion })]),
+          documentIds: expect.arrayContaining(payload.capsule.coreRefs.documentCoreIds),
+        },
+      });
       const stream = await answer.text();
       expect(stream).not.toMatch(/^3:/m);
       const answerText = stream.split('\n').flatMap((line) => {
@@ -94,12 +140,49 @@ test.describe('Capsule Studio', () => {
       expect(answerText).toMatch(/Council/i);
       expect(answerText).toMatch(/2026-10-01|October\s+1|1\s+October/i);
       expect(answerText).toMatch(/funding/i);
+      expect(answerText).toMatch(/unconfirmed|unverified|not\s+(?:yet\s+)?confirmed|uncertain|unclear/i);
+      const visibleAnswer = chat.locator('article .prose').last();
+      await expect(visibleAnswer).toBeVisible();
+      await expect(visibleAnswer).toContainText(/Council/i);
+      await expect(visibleAnswer).toContainText(/2026-10-01|October\s+1|1\s+October/i);
+      await expect(visibleAnswer).toContainText(/funding/i);
+      await expect(submit).toBeEnabled();
       await expect.poll(async () => {
         const history = await page.request.get(`${BASE}/api/ai/chat?${new URLSearchParams({ capsuleId, threadId })}`);
         if (!history.ok()) return false;
         const body = await history.json();
-        return body.turns.some((turn: { prompt: string; output: string }) => turn.prompt === prompt && turn.output === answerText);
+        return body.turns.some((turn: { prompt: string; output: string; capsuleId: string; capsuleVersion: number | null }) =>
+          turn.prompt === prompt && turn.output === answerText
+          && turn.capsuleId === capsuleId && turn.capsuleVersion === approvedVersion);
       }, { timeout: 30_000 }).toBe(true);
+
+      // Remove only this synthetic thread's display cache so reload proves the
+      // saved conversation hydrates from the authenticated history endpoint.
+      await page.evaluate(({ capsuleId: id, threadId: thread }) => {
+        for (const key of Object.keys(localStorage)) {
+          if (!key.startsWith('praxis-chat:v2:')) continue;
+          try {
+            const scope: unknown = JSON.parse(key.slice('praxis-chat:v2:'.length));
+            if (Array.isArray(scope) && scope[3] === id && scope[4] === thread) localStorage.removeItem(key);
+          } catch { /* Preserve unrelated browser state. */ }
+        }
+      }, { capsuleId, threadId });
+      const resumedResponse = page.waitForResponse((response) => {
+        const url = new URL(response.url());
+        return response.request().method() === 'GET' && url.pathname === '/api/ai/chat'
+          && url.searchParams.get('capsuleId') === capsuleId && url.searchParams.get('threadId') === threadId;
+      }, { timeout: 30_000 });
+      await page.reload();
+      const resumedHistory = await resumedResponse;
+      expect(resumedHistory.ok()).toBe(true);
+      expect((await resumedHistory.json()).turns).toEqual(expect.arrayContaining([
+        expect.objectContaining({ prompt, output: answerText, capsuleId, capsuleVersion: approvedVersion }),
+      ]));
+      await expect(attachedCapsule.getByText(`v${approvedVersion}`, { exact: true })).toBeVisible({ timeout: 30_000 });
+      await expect(chat.getByText(prompt, { exact: true })).toBeVisible();
+      await expect(visibleAnswer).toContainText(/Council/i);
+      await expect(visibleAnswer).toContainText(/2026-10-01|October\s+1|1\s+October/i);
+      await expect(visibleAnswer).toContainText(/funding/i);
     }
     await page.screenshot({ path: 'output/playwright/capsule-review-journey.png', fullPage: true });
   });
@@ -110,24 +193,30 @@ test.describe('Capsule Studio', () => {
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
 
     await page.goto(`${BASE}/app/capsules`);
-    await expect(page.getByTestId('capsule-studio-header')).toBeVisible();
-    await expect(page.getByTestId('capsule-studio-command-band')).toBeVisible();
-    await expect(page.getByTestId('capsule-library-stats')).toContainText(/221/);
-    await expect(page.getByTestId('capsule-library-stats')).toContainText(/GRAPH/i);
-
-    const visibleStarterCard = page.locator('[data-testid^="capsule-card-"]').filter({ has: page.getByTestId('capsule-mini-graph') }).first();
+    await expect(page.getByTestId('capsule-library-route')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Your context library', level: 1 })).toBeVisible();
+    await expect(page.getByTestId('tasklet-praxis-workbench')).toHaveCount(0);
+    await page.getByRole('button', { name: 'Starter templates', exact: true }).click();
+    const visibleStarterCard = page.locator('[data-testid^="capsule-card-"]').first();
     await expect(visibleStarterCard).toBeVisible();
-    await expect(visibleStarterCard.getByTestId('capsule-mini-graph')).toBeVisible();
+    await expect(visibleStarterCard).toContainText(/recorded graph nodes/);
     await Promise.all([
       page.waitForURL(/lane=inspect/, { timeout: 30_000 }),
-      visibleStarterCard.getByRole('link', { name: /Inspect/i }).click(),
+      visibleStarterCard.getByRole('link', { name: 'Inspect', exact: true }).click(),
     ]);
 
     const inspectorSheet = page.getByTestId('capsule-inspector-sheet');
-    const ontologyGraph = inspectorSheet.getByTestId('capsule-knowledge-graph').first();
     await expect(inspectorSheet).toBeVisible();
-    await expect(page.getByTestId('capsule-workbench-panel')).toBeVisible();
-    await expect(inspectorSheet).toContainText(/Ontology/i);
-    await expect(ontologyGraph).toBeVisible();
+    await expect(inspectorSheet).toHaveAttribute('open', '');
+    await expect(inspectorSheet.getByRole('tab', { name: 'Overview', exact: true })).toHaveAttribute('aria-selected', 'true');
+    await expect(inspectorSheet.getByRole('region', { name: 'Evidence map', exact: true })).toBeVisible();
+    await expect(inspectorSheet.getByTestId('capsule-graph-keyboard-list')).toBeVisible();
+    await expect(inspectorSheet.getByTestId('capsule-studio-graph-search')).toBeVisible();
+    await inspectorSheet.getByRole('tab', { name: 'Evidence', exact: true }).click();
+    await expect(inspectorSheet.getByRole('tabpanel')).toContainText('captured source text');
+    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(/\/app\/capsules$/);
+    await expect(page.getByTestId('capsule-library')).toBeVisible();
+
   });
 });

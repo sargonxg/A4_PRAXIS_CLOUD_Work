@@ -140,6 +140,7 @@
   --color-praxis-emerald-500: #10B981;
   --color-praxis-emerald-600: #059669;
   --color-praxis-emerald-700: #047857;
+  --color-praxis-emerald-800: #065F46;
   --color-praxis-emerald-900: #064E3B;
 
   /* Animation durations */
@@ -1980,4 +1981,115 @@ hr {
   .specimen-card:hover {
     transform: none !important;
   }
+}
+
+
+/* Chat-first workspace: paper, a quiet dossier spine, and one clear composer. */
+.praxis-workspace {
+  background: var(--color-archive-paper-strong);
+  color: var(--color-deep-ink);
+}
+.praxis-workspace-nav {
+  border-right: 1px solid var(--color-mineral-soft);
+  background: var(--color-archive-paper);
+  color: var(--color-deep-ink);
+}
+.praxis-workspace .praxis-app-header {
+  border: 0;
+  border-bottom: 1px solid var(--color-mineral-soft);
+  background: var(--color-archive-paper-strong);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.praxis-workspace .praxis-focus-surface { background: transparent; }
+.praxis-workspace-main { overscroll-behavior-y: contain; scrollbar-gutter: stable; }
+.praxis-nav-link, .praxis-header-control {
+  display: inline-flex;
+  min-height: 44px;
+  min-width: 44px;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-app-text-secondary);
+  transition: background-color 150ms, color 150ms;
+}
+.praxis-nav-link { display: flex; }
+.praxis-nav-link:hover, .praxis-header-control:hover { background: color-mix(in srgb, white 75%, var(--color-archive-paper)); color: var(--color-deep-ink); }
+.praxis-nav-link[aria-current='page'] {
+  background: var(--color-praxis-emerald-100);
+  color: var(--color-praxis-emerald-900);
+  font-weight: 600;
+}
+.praxis-conversation-link {
+  display: block;
+  min-height: 44px;
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  color: var(--color-app-text-secondary);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+}
+.praxis-conversation-link:hover, .praxis-conversation-link[aria-current='page'] { background: white; color: var(--color-deep-ink); }
+.praxis-page-heading {
+  font-family: var(--font-heading);
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: var(--color-deep-ink);
+}
+.praxis-chat-composer {
+  border: 1px solid var(--color-mineral-soft);
+  border-radius: var(--radius-xl);
+  background: white;
+  box-shadow: 0 2px 3px rgb(17 24 22 / 0.02), 0 12px 32px rgb(17 24 22 / 0.05);
+}
+.praxis-chat-composer:focus-within { border-color: var(--color-praxis-emerald-600); }
+.praxis-context-bar { color: var(--color-deep-ink); }
+.praxis-context-bar-dark { border-color: var(--color-lab-line); background: var(--color-lab-ink); color: white; }
+.praxis-context-chip {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  border: 1px solid var(--color-mineral-soft);
+  border-radius: var(--radius-md);
+  background: var(--color-praxis-emerald-50);
+  color: var(--color-praxis-emerald-900);
+  font-size: 0.8125rem;
+}
+.praxis-context-chip > a { min-width: 0; min-height: 44px; }
+.praxis-prompt-suggestion {
+  border: 1px solid var(--color-mineral-soft);
+  background: color-mix(in srgb, white 60%, var(--color-archive-paper));
+  color: var(--color-deep-ink);
+}
+.praxis-prompt-suggestion:hover { border-color: var(--color-praxis-emerald-600); background: white; }
+.praxis-mobile-navigation { border-top: 1px solid var(--color-mineral-soft); background: var(--color-archive-paper-strong); }
+.praxis-mobile-nav-link {
+  display: flex;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-app-text-secondary);
+}
+.praxis-mobile-nav-link[aria-current='page'], .praxis-mobile-nav-link[aria-expanded='true'] { background: var(--color-praxis-emerald-100); color: var(--color-praxis-emerald-900); }
+.praxis-workspace :is(button, a, summary, input, textarea):focus-visible {
+  outline: 2px solid var(--color-praxis-emerald-700);
+  outline-offset: 3px;
+}
+@media (max-width: 767px) {
+  .praxis-context-chip > a > span:first-of-type { max-width: min(15rem, 48vw); }
+  .praxis-workspace-main { scrollbar-gutter: auto; }
+  [data-testid='praxis-help-agent'] { bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .praxis-workspace *, .praxis-workspace *::before, .praxis-workspace *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }

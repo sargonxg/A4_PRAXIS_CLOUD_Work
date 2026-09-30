@@ -13,6 +13,9 @@ const rules = readFileSync(join(root, 'firestore.rules'), 'utf8');
 const runtimeAudit = readFileSync(join(root, 'src/lib/audits/runtime-data-plane.ts'), 'utf8');
 const packageJson = readFileSync(join(root, 'package.json'), 'utf8');
 const workbench = readFileSync(join(root, 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const inspection = readFileSync(join(root, 'src/components/capsules/CapsuleInspectionExperience.tsx'), 'utf8');
+const advanced = readFileSync(join(root, 'src/components/capsules/workbench/CapsuleAdvancedDrawer.tsx'), 'utf8');
+const research = readFileSync(join(root, 'src/components/capsules/workbench/CapsuleResearchSection.tsx'), 'utf8');
 
 const checks: Check[] = [
   contains('merge-only-dossier-write', service, "collection('researchDossiers').doc('starter-dossier')", 'research dossier detail record is seeded'),
@@ -30,7 +33,10 @@ const checks: Check[] = [
   contains('runtime-audit-refresh', runtimeAudit, 'sourceRefreshDockets/starter-refresh', 'runtime data-plane audit samples starter refresh dockets'),
   contains('runtime-audit-graphlite', runtimeAudit, 'graphProjections/graphlite-starter-projection', 'runtime data-plane audit samples GraphLite projection records'),
   contains('script-registered', packageJson, 'backfill:capsule-research-dossiers', 'diagnostic backfill script is registered'),
-  contains('ui-dossier-panel', workbench, 'capsule-research-dossier-panel', 'workbench inspector surfaces research dossier proof'),
+  contains('ui-dossier-entry', workbench, '<CapsuleInspectionExperience capsule={capsule}', 'workbench opens shared capsule inspection'),
+  contains('ui-dossier-depth', inspection, '<CapsuleAdvancedDrawer model={model}', 'inspection exposes progressive research depth'),
+  contains('ui-dossier-panel', advanced, '<CapsuleResearchSection research={model.research}', 'advanced inspection renders the actual research model'),
+  contains('ui-dossier-signals', research, 'research.sourceSpine.slice', 'research inspection renders source spine records'),
   contains('ui-vnext-proof', workbench, 'Updated to catalog vNext', 'capsule cards show catalog vNext proof'),
 ];
 

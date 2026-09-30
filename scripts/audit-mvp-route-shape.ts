@@ -1,5 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { NAV_GROUPS, PRIMARY_NAV, primaryNavForPath, WORKSPACE_ROUTES } from '../src/lib/navigation/primary-nav';
+import { COMMAND_SEARCH_ACTIONS } from '../src/lib/app-search/static-actions';
 
 const root = process.cwd();
 const failures: string[] = [];
@@ -19,12 +21,29 @@ function expectMissing(rel: string): void {
 
 const primaryNav = read('src/lib/navigation/primary-nav.ts');
 for (const marker of [
-  "label: 'Home'",
+  "label: 'Chat'",
   "label: 'Capsules'",
   "href: '/app'",
   "href: '/app/capsules'",
 ]) {
   if (!primaryNav.includes(marker)) failures.push(`PRIMARY_NAV missing canonical marker: ${marker}`);
+}
+const workspaceItems = NAV_GROUPS.find((group) => group.id === 'workspace')?.items ?? [];
+if (workspaceItems.length !== 2 || workspaceItems[0]?.href !== '/app' || workspaceItems[1]?.href !== '/app/capsules') {
+  failures.push('Workspace primary navigation must contain Chat and Capsules only, in that order');
+}
+for (const [path, expected] of [
+  ['/app', 'home'],
+  ['/app/conversations/route-audit', 'home'],
+  ['/app/capsules', 'capsules'],
+  ['/app/capsules/builder', 'capsules'],
+  ['/app/settings', 'settings'],
+  ['/app/boardroom', 'boardroom'],
+] as const) {
+  if (primaryNavForPath(path)?.id !== expected) failures.push(`${path} must resolve to ${expected} navigation`);
+}
+if (PRIMARY_NAV.length !== NAV_GROUPS.reduce((total, group) => total + group.items.length, 0)) {
+  failures.push('Flattened navigation must include secondary destinations for shortcuts and path matching');
 }
 for (const removedPrimary of ["label: 'Repository'", "href: '/app/repository'"]) {
   if (primaryNav.includes(removedPrimary)) failures.push(`PRIMARY_NAV still exposes repository as a separate primary item: ${removedPrimary}`);
@@ -48,10 +67,30 @@ for (const forbidden of ['Manage cores', 'Manage Cores', '/app/draft', '/app/met
 }
 
 const header = read('src/components/app/header.tsx');
-for (const marker of ['Command or ask PRAXIS', 'PRAXIS_CANONICAL_TOOLS', 'PRIMARY_NAV']) {
-  if (!header.includes(marker)) failures.push(`header missing unified command marker: ${marker}`);
+for (const marker of ['breadcrumbsForPath', 'onOpenSearch?.()', 'Search workspace', 'AccountProfileButton']) {
+  if (!header.includes(marker)) failures.push(`shared header missing workspace control: ${marker}`);
 }
 if (header.includes('routeLabels')) failures.push('header still uses a hand-maintained route label map');
+const globalSearch = read('src/components/shared/global-search.tsx');
+for (const marker of ['role="dialog"', 'aria-modal="true"', 'COMMAND_SEARCH_ACTIONS.map', 'buildFederatedSearchResults', 'fetchFederatedSearchData', 'commands: COMMANDS', "result.run === 'ask'", 'askPraxis(query)', 'router.push(result.href)', 'initialQuery']) {
+  if (!globalSearch.includes(marker)) failures.push(`shared command palette missing behavior: ${marker}`);
+}
+for (const [id, href] of [['create-capsule', WORKSPACE_ROUTES.newCapsule], ['attach-source', WORKSPACE_ROUTES.sources], ['fork-demo', WORKSPACE_ROUTES.starters]]) {
+  if (COMMAND_SEARCH_ACTIONS.find((action) => action.id === id)?.href !== href) failures.push(`workspace command ${id} must route to its actual task destination`);
+}
+for (const id of ['find-gaps', 'improve-capsule']) {
+  const href = COMMAND_SEARCH_ACTIONS.find((action) => action.id === id)?.href;
+  const url = href ? new URL(href, 'https://praxis.tacitus.me') : null;
+  if (url?.pathname !== WORKSPACE_ROUTES.chat || !url.searchParams.get('prompt')?.trim()) failures.push(`workspace command ${id} must carry an actionable Ask prompt`);
+}
+const federatedSearch = read('src/lib/search/federated-app-search.ts');
+for (const marker of ['buildFederatedSearchResults', 'fetchFederatedSearchData', '/api/app/search?q=', 'encodeURIComponent(query.trim())']) {
+  if (!federatedSearch.includes(marker)) failures.push(`federated workspace search missing owner-scoped API integration: ${marker}`);
+}
+const appSearchRoute = read('src/app/api/app/search/route.ts');
+for (const marker of ['withAuth', 'normalizeAppSearchQuery', 'searchApp({', 'uid: user.uid']) {
+  if (!appSearchRoute.includes(marker)) failures.push(`workspace search API missing authenticated owner/query boundary: ${marker}`);
+}
 
 const proxy = read('src/proxy.ts');
 for (const marker of [
@@ -105,10 +144,13 @@ for (const rel of [
 const appShell = read('src/components/app/app-shell.tsx');
 if (appShell.includes('<DebugPanel')) failures.push('DebugPanel should not render from AppShell');
 if (!appShell.includes('data-testid="praxis-one-page-app-shell"')) {
-  failures.push('AppShell must special-case only /app as the one-page cockpit shell');
+  failures.push('AppShell must provide the consistent chat-first workspace shell');
 }
 if (!appShell.includes('GlobalSearch') || !appShell.includes('initialQuery')) {
   failures.push('AppShell must own the shared command/search overlay state');
+}
+for (const marker of ['useAuth', '<Header', 'onOpenSearch={openSearch}', '<AppSidebar', '<MobileBottomNav']) {
+  if (!appShell.includes(marker)) failures.push(`authenticated workspace shell missing shared boundary: ${marker}`);
 }
 
 if (failures.length) {

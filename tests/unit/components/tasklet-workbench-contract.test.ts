@@ -13,9 +13,14 @@ const askQueuedAgentRunPanelPath = join(process.cwd(), 'src/components/ask/AskQu
 const askQueuedAgentRunPanelSource = existsSync(askQueuedAgentRunPanelPath)
   ? readFileSync(askQueuedAgentRunPanelPath, 'utf8')
   : '';
-const source = `${workbenchSource}\n${capsuleLibraryCardSource}\n${workbenchHelpersSource}\n${conversationHelperSource}`;
+const inspectionSource = readFileSync(join(process.cwd(), 'src/components/capsules/CapsuleInspectionExperience.tsx'), 'utf8');
+const whyPanelSource = readFileSync(join(process.cwd(), 'src/components/capsules/viewers/CapsuleGraphWhyPanel.tsx'), 'utf8');
+const advancedSource = readFileSync(join(process.cwd(), 'src/components/capsules/workbench/CapsuleAdvancedDrawer.tsx'), 'utf8');
+const researchSource = readFileSync(join(process.cwd(), 'src/components/capsules/workbench/CapsuleResearchSection.tsx'), 'utf8');
+const methodSource = readFileSync(join(process.cwd(), 'src/components/capsules/CapsuleMethodInspection.tsx'), 'utf8');
+const source = `${workbenchSource}\n${capsuleLibraryCardSource}\n${workbenchHelpersSource}\n${conversationHelperSource}\n${inspectionSource}\n${whyPanelSource}\n${advancedSource}\n${methodSource}`;
 const instrumentSource = readFileSync(join(process.cwd(), 'src/components/ui/instrument.tsx'), 'utf8');
-const visualSource = `${workbenchSource}\n${capsuleLibraryCardSource}\n${instrumentSource}`;
+const visualSource = `${workbenchSource}\n${capsuleLibraryCardSource}\n${instrumentSource}\n${inspectionSource}`;
 const sidebarSource = readFileSync(join(process.cwd(), 'src/components/app/app-sidebar.tsx'), 'utf8');
 const primaryNavSource = readFileSync(join(process.cwd(), 'src/lib/navigation/primary-nav.ts'), 'utf8');
 const repositoryPageSource = readFileSync(join(process.cwd(), 'src/app/app/repository/page.tsx'), 'utf8');
@@ -31,7 +36,7 @@ function extractSourceBlock(start: string, end: string, input = workbenchSource)
 
 const suggestionWidgetSource = extractSourceBlock('function CapsuleSuggestionWidget', 'function AssistantMarkdown');
 const repositoryGridSource = extractSourceBlock('function CapsuleRepositoryGrid', 'function CapsuleRepositoryModal');
-const inspectorSheetSource = extractSourceBlock('function CapsuleInspectorSheet', 'function PraxisGuideChat');
+const inspectorSheetSource = `${extractSourceBlock('function CapsuleInspectorSheet', 'function _CapsuleQualityReceiptPanel')}\n${inspectionSource}\n${advancedSource}\n${researchSource}`;
 const contextBarSource = extractSourceBlock('data-testid="capsule-context-bar"', 'data-testid="ask-capsule-workflow-preview"');
 const humanGatedExampleSource = extractSourceBlock('function HumanGatedPolicyFamilyPanel', 'function PublicFullLibraryCta');
 const activeContextStackHelperSource = extractSourceBlock('function buildActiveContextBlocks', 'function selectedCoreIdsFromContextStack', workbenchHelpersSource);
@@ -173,7 +178,13 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Ask PRAXIS conversation');
     expect(source).toContain('openMemoArtifactFromCreatedWork');
     expect(source).toContain('openMemoArtifactById');
-    expect(source).toContain('/api/memos/${encodeURIComponent(memoId)}');
+    expect(source).toContain('/api/memos/${encodeURIComponent(cleanMemoId)}');
+    expect(source).toContain('savedMemoArtifactContext(payload)');
+    expect(source).toContain('capsuleId: memoArtifact.capsuleId,');
+    expect(source).toContain('...memoArtifactContextSaveFields(memoArtifact)');
+    expect(source).toContain('contextBinding: savedContext.binding');
+    expect(source).toContain('Use no capsule for this memo');
+    expect(source).not.toContain('capsuleId: memoArtifact.capsuleId ?? currentCapsuleId');
     expect(source).toContain('memoArtifactFromAskPack');
     expect(source).toContain('setMemoArtifact');
     expect(source).not.toContain('if (memoId) router.push(`/app/write?memoId=${encodeURIComponent(memoId)}`)');
@@ -290,16 +301,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     }
   });
 
-  it('keeps Builder + Intake inside the capsule inspector sheet with receipts, artifacts, and repair actions', () => {
-    expect(inspectorSheetSource).toContain('CapsuleQualityReceiptPanel');
-    expect(inspectorSheetSource).toContain('ContextPackLanePanel');
-    expect(inspectorSheetSource).toContain('CapsuleArtifactIndexPanel');
-    for (const expected of ['Build', 'Inspect', 'Receipts', 'Artifacts', 'Repair Actions']) {
+  it('keeps evidence, source intake, repair and deep inspection in one capsule dialog', () => {
+    for (const expected of ['CapsuleInspectionDialog', 'CapsuleClaimReceiptsSection', 'CapsuleAdvancedDrawer', 'CapsuleResearchSection', 'Add sources', 'Suggest improvements']) {
       expect(inspectorSheetSource).toContain(expected);
     }
-    expect(inspectorSheetSource).toContain('Firestore canonical');
-    expect(inspectorSheetSource).toContain('Cognee advisory');
-    expect(inspectorSheetSource).toContain('review-gated graph proposal');
+    expect(inspectorSheetSource).toContain('Technical capsule contract');
+    expect(inspectorSheetSource).toContain('Review proposed changes before they become saved context.');
     expect(source).not.toContain('/app/context-studio');
   });
 
@@ -416,14 +423,10 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Source pack');
     expect(source).toContain('Starter excerpts');
     expect(source).toContain('AI use guidance');
-    expect(source).toContain('Suggested next actions');
-    expect(source).toContain('data-testid="capsule-rich-profile"');
-    expect(source).toContain('Purpose');
-    expect(source).toContain('Decision Use');
-    expect(source).toContain('Improvement Ideas');
-    expect(source).toContain('Gaps/Risks');
-    expect(source).toContain('Run Recipe');
-    expect(source).toContain('Compatible Capsules');
+    expect(source).toContain('What still needs attention');
+    expect(inspectionSource).toContain('currentCapsule.purpose || currentCapsule.summary');
+    expect(inspectionSource).toContain('model.evidence.gaps');
+    expect(inspectionSource).toContain('CapsuleMethodInspection');
     expect(source).toContain('Next: {bestNextAction}');
     expect(source).toContain('const purposeLine = richProfile?.purpose');
     expect(source).not.toContain('data-testid="capsule-tool-output-lanes"');
@@ -527,7 +530,12 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="capsule-inspector-sheet"');
     expect(source).toContain('data-testid="capsule-inspector-chat-panel"');
     expect(source).toContain('{inspectorOpen && selectedCapsule ? (');
-    expect(source).toContain('if (!capsule) return null;');
+    expect(source).toContain('if (!capsule || !model) return null;');
+    expect(inspectionSource).toContain('dialog?.showModal()');
+    expect(inspectionSource).toContain("document.body.style.overflow = 'hidden'");
+    expect(inspectionSource).toContain('returnTarget.focus');
+    const openInspector = extractSourceBlock('function openCapsuleInspector', 'function openRepositoryCapsuleInspector');
+    expect(openInspector).not.toContain('selectCapsuleCard');
     expect(source).not.toContain('Select a capsule.');
     expect(source).toContain('onSelect={openCapsuleInspector}');
     expect(source).toContain('onSelect={() => openCapsuleInspector(capsule)}');
@@ -537,7 +545,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('onInspect={() => openGuideChatForCapsule(capsule)}');
   });
 
-  it('surfaces v2 governance badges and inspector sections without adding a new capsule page', () => {
+  it('preserves governance and ontology inspection behind expandable details', () => {
     expect(source).toContain('function capsuleGovernanceBadges');
     expect(source).toContain('data-testid="capsule-governance-badges"');
     expect(source).toContain('Gate');
@@ -547,36 +555,22 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('GraphLite projection');
     expect(source).toContain('graphLiteProjection');
     expect(source).toContain('Review card');
-    expect(source).toContain('data-testid="capsule-v2-inspector-tabs"');
-    expect(source).toContain('Graph model');
-    expect(source).toContain('Ontology coverage');
-    expect(source).toContain('Sources and gaps');
-    expect(source).toContain('projection pending or derived from sources and claims');
-    expect(source).toContain('CapsuleOntologyWorkbench');
-    expect(source).toContain('CapsuleAdvancedDrawer');
-    expect(source).toContain('CapsuleGraphSection');
-    expect(source).toContain('ontologyOverlay');
+    expect(inspectionSource).toContain('Technical capsule contract');
+    expect(inspectionSource).toContain('currentCapsule.governance');
+    expect(inspectionSource).toContain('currentCapsule.ontologyBinding');
+    expect(inspectionSource).toContain('CapsuleAdvancedDrawer');
+    expect(inspectionSource).toContain('compact editable={false}');
     expect(source).not.toContain('/app/ontology');
     expect(source).not.toContain('/app/community-review');
   });
 
-  it('surfaces ContextCapsule v3 shelves, trust badges, agent contracts, memory posture, and marketplace gates in the existing inspector', () => {
+  it('keeps actual context boundaries, agent permissions and memory available in the inspector', () => {
     expect(source).toContain('normalizeContextCapsuleV3');
-    expect(source).toContain('deriveCapsuleV3QualityAudit');
-    expect(source).toContain('CAPSULE_V3_AGENT_ROLES');
-    expect(source).toContain('CONTEXT_CAPSULE_V3_PRODUCT_SECTIONS');
-    expect(source).toContain('CONTEXT_CAPSULE_V3_SHELVES');
-    expect(source).toContain('CONTEXT_CAPSULE_V3_TRUST_BADGES');
-    expect(source).toContain('data-testid="capsule-v3-human-gated-context"');
-    expect(source).toContain('A Wikipedia for agents');
-    expect(source).toContain('Human tacit knowledge');
-    expect(source).toContain('Agent operating contract');
-    expect(source).toContain('Memory posture');
-    expect(source).toContain('Marketplace readiness');
-    expect(source).toContain('Review-card-only agents');
-    expect(source).toContain('agentsMayMutateCanonical');
-    expect(source).toContain('reviewCardOnlyAgentIds');
-    expect(source).toContain('review-card-only');
+    for (const field of ['agentOperatingContract', 'agentPermissions', 'contextCaptureProfile', 'memoryPosture', 'outputContracts']) expect(inspectionSource).toContain(`currentCapsule.${field}`);
+    expect(advancedSource).toContain('CapsuleTacitKnowledgeSection');
+    expect(inspectionSource).toContain('What travels to the agent?');
+    expect(inspectionSource).toContain('authenticated && owned');
+    expect(inspectionSource).toContain('reviewEnabled={owned && authenticated}');
     expect(source).not.toContain('/app/capsule-marketplace');
   });
 
@@ -709,7 +703,6 @@ describe('Tasklet PRAXIS workbench contract', () => {
 
   it('uses one canonical ContextChain builder without noisy readiness chrome inside blocks', () => {
     expect(source).toContain('function ContextChainBlockLane');
-    expect(source).toContain('function ContextChainProvenanceMap');
     expect(contextBarSource).toContain('data-testid="desktop-context-chain-canvas"');
     expect(source).toContain('data-testid={`context-chain-block-${block.id}`}');
     expect(contextChainLaneSource).not.toContain('Primary + references');
@@ -831,7 +824,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('onView');
     expect(source).toContain('Read more</button>');
     expect(source).toContain('data-testid="capsule-inspector-chat-panel"');
-    expect(source).toContain('data-testid="capsule-inspector-chat-button"');
+    expect(inspectionSource).toContain('Ask about this capsule');
+    expect(inspectionSource).toContain('onAsk(question.trim())');
     expect(source).toContain('data-testid="praxis-guide-chat"');
     expect(source).toContain('data-testid="praxis-guide-chat-submit"');
     expect(source).toContain('onAskCapsule');
@@ -856,7 +850,9 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(primaryNavSource).toContain("id: 'capsules'");
     expect(primaryNavSource).toContain("label: 'Capsules'");
     expect(primaryNavSource).toContain("href: '/app/capsules'");
-    expect(sidebarSource).toContain('item.hint');
+    expect(sidebarSource).toContain('NAV_GROUPS');
+    expect(sidebarSource).toContain('primaryNavForPath');
+    expect(sidebarSource).toContain("aria-current={active?.id === item.id ? 'page' : undefined}");
   });
 
   it('renders app capsules as a first-class dense repository surface', () => {
@@ -895,7 +891,7 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('Add sources');
     expect(source).toContain('Source-to-claim inspection');
     expect(source).not.toContain('Capsule graph');
-    expect(source).not.toContain("id: 'graph'");
+    expect(workbenchSource).not.toContain("id: 'graph'");
     expect(source).not.toContain('DIALECTICA lane');
     expect(source).not.toContain('KAIROS lane');
     expect(source).not.toContain('AGON lane');
@@ -1076,14 +1072,13 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('setBuilderOpen(true)');
     expect(source).toContain('Expert pick');
     expect(source).toContain('Source posture');
-    expect(source).toContain('Reasoning style');
+    expect(source).toContain('Inspect the analytical method');
     expect(source).toContain('Intellectual Devices');
     expect(source).toContain('deviceProfile');
     expect(source).toContain('domainAccent');
     expect(source).toContain('Human review gate');
     expect(source).toContain('capsule-human-reviewed-badge');
-    expect(source).toContain('capsule-inspector-human-reviewed-badge');
-    expect(source).toContain('humanReview.tooltip');
+    expect(source).toContain('humanReview');
     expect(source).toContain('Best next action');
     expect(source).toContain('readiness signals');
   });
@@ -1111,8 +1106,8 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain('data-testid="capsule-inspector-sheet"');
     expect(source).toContain('data-testid="capsule-inspector-chat-panel"');
     expect(source).toContain('Ask PRAXIS');
-    expect(source).toContain('Improve safely');
-    expect(source).toContain('Add to Ask');
+    expect(inspectionSource).toContain('Suggest improvements');
+    expect(inspectionSource).toContain('Use in chat');
     expect(source).toContain('isCapsuleRepositoryPage && !isRepositoryLane');
     expect(source).toContain('isRepositoryLane ? (');
     expect(source).not.toContain('onOpen={(capsule) => openRepositoryCapsuleModal(capsule)}');
@@ -1127,34 +1122,21 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).not.toContain('/app/readiness');
   });
 
-  it('keeps repository inspection extensive inside the capsule inspector sheet', () => {
+  it('makes purpose and evidence simple while keeping deep inspection expandable', () => {
     for (const expected of [
-      'Purpose',
-      'Source pack',
-      'Starter excerpts',
-      'Research dossier',
-      'Claim ledger',
-      'Evidence gaps',
-      'Next human actions',
-      'Source refresh docket',
-      'Core refs',
-      'Tools/Thinking Devices',
-      'Recommended tools',
-      'Output targets',
-      'Review Gates',
-      'AI use guidance',
-      'Workflow',
-      'Reasoning scaffold',
-      'Cognee memory benefit',
-      'Generation contract',
-      'Compatible Capsules',
-      'capsule-inspector-usefulness-rating',
-      'Ask PRAXIS',
-      'Improve capsule',
-      'Add to Ask',
+      "['Overview', 'Evidence', 'Timeline', 'Review']",
+      'CapsuleClaimReceiptsSection', 'CapsuleTimelineSection', 'CapsuleReviewQueueSection',
+      'CapsuleAdvancedDrawer', 'Technical capsule contract', 'What travels to the agent?',
+      'Use in chat', 'Suggest improvements', 'Create private copy',
+      'Research dossier', 'Evidence gaps', 'CapsuleTacitKnowledgeSection', 'CapsuleOutputsSection',
     ]) {
       expect(inspectorSheetSource).toContain(expected);
     }
+    expect(inspectionSource).toContain('setSelectedClaimId(claimId)');
+    expect(inspectionSource).toContain('selectedClaimId={selectedClaimId}');
+    expect(inspectionSource).toContain('modelInput');
+    expect(inspectionSource).toContain('Visibility:');
+    expect(inspectionSource).not.toContain("currentCapsule.access?.visibility || currentCapsule.scope");
   });
 
   it('surfaces starter dossier, graph counts, freshness, and vNext proof without new navigation', () => {
@@ -1166,16 +1148,11 @@ describe('Tasklet PRAXIS workbench contract', () => {
       'Updated to catalog vNext',
       'Dossier',
       'Graph seed',
-      'starter-refresh',
       'sourceSpine',
       'knownEvidenceGaps',
       'nextHumanActions',
       'graphNodeCount',
       'graphEdgeCount',
-      'Promotion status',
-      'Source grounding',
-      'Sample nodes',
-      'Sample edges',
     ]) {
       expect(source).toContain(expected);
     }

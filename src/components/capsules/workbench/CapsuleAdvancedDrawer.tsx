@@ -45,6 +45,7 @@ export function CapsuleAdvancedDrawer({
   agentRuns,
   inspectionCategory,
   onReviewed,
+  reviewEnabled = true,
 }: {
   model: CapsuleWorkbenchViewModel;
   compact: boolean;
@@ -53,6 +54,7 @@ export function CapsuleAdvancedDrawer({
   agentRuns: CapsuleWorkbenchAgentRunInput[];
   inspectionCategory?: CapsuleCategoryId | null;
   onReviewed?: (capsule: CapsuleWorkbenchCapsuleInput) => void;
+  reviewEnabled?: boolean;
 }) {
   const [open, setOpen] = useState(Boolean(inspectionCategory));
   const [activeTab, setActiveTab] = useState<AdvancedTabId>(
@@ -98,7 +100,7 @@ export function CapsuleAdvancedDrawer({
             ))}
           </div>
           <div className="pt-2" role="tabpanel">
-            {renderTab(active.id, { model, compact, sparse, graphSection, agentRuns, onReviewed })}
+            {renderTab(active.id, { model, compact, sparse, graphSection, agentRuns, onReviewed, reviewEnabled })}
           </div>
         </div>
       ) : null}
@@ -138,6 +140,7 @@ function renderTab(
     graphSection: ReactNode;
     agentRuns: CapsuleWorkbenchAgentRunInput[];
     onReviewed?: (capsule: CapsuleWorkbenchCapsuleInput) => void;
+    reviewEnabled: boolean;
   },
 ) {
   const { model, compact, sparse, graphSection, agentRuns } = input;
@@ -197,5 +200,5 @@ function renderTab(
   if (id === 'memory') return <CapsuleTacitKnowledgeSection tacitKnowledge={model.tacitKnowledge} />;
   if (id === 'agents') return <CapsuleAgentWorkflowSection agents={model.agents} />;
   if (id === 'outputs') return <CapsuleOutputsSection outputs={model.outputs} />;
-  return <CapsuleReviewQueueSection key={model.capsuleId} capsuleId={model.capsuleId} reviewQueue={model.reviewQueue} onReviewed={input.onReviewed} />;
+  return <CapsuleReviewQueueSection key={model.capsuleId} capsuleId={input.reviewEnabled ? model.capsuleId : undefined} reviewQueue={model.reviewQueue} onReviewed={input.onReviewed} />;
 }

@@ -1,87 +1,35 @@
 'use client';
 
-import type { ComponentType } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { FolderKanban, Home, LibraryBig, Sparkles } from 'lucide-react';
+import { FolderKanban, MessageSquareText, MoreHorizontal } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils/cn';
-import { NAV_GROUPS, type PrimaryNavIcon } from '@/lib/navigation/primary-nav';
-
-// Mobile mirrors the six-room product contract while keeping labels short.
-const ICONS: Partial<Record<PrimaryNavIcon, ComponentType<{ className?: string }>>> = {
-  Home,
-  Sparkles,
-  FolderKanban,
-  LibraryBig,
-};
+import { NAV_GROUPS } from '@/lib/navigation/primary-nav';
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const workspace = NAV_GROUPS.find((g) => g.id === 'workspace');
-  const items = workspace?.items ?? [];
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLElement>(null);
+  const moreRef = useRef<HTMLButtonElement>(null);
+  const secondary = NAV_GROUPS.find((group) => group.id === 'advanced')?.items ?? [];
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => { if (event.target instanceof Node && !rootRef.current?.contains(event.target)) setOpen(false); };
+    const escape = (event: KeyboardEvent) => { if (event.key === 'Escape') { setOpen(false); moreRef.current?.focus(); } };
+    document.addEventListener('pointerdown', close);
+    document.addEventListener('keydown', escape);
+    return () => { document.removeEventListener('pointerdown', close); document.removeEventListener('keydown', escape); };
+  }, [open]);
 
   return (
-    <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-navy-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-lg shadow-navy-950/10 backdrop-blur md:hidden"
-      aria-label="Primary mobile navigation"
-      data-testid="mobile-bottom-nav"
-    >
-      <div
-        className="mx-auto grid max-w-lg gap-1"
-        style={{ gridTemplateColumns: `repeat(${Math.max(items.length, 1)}, minmax(0, 1fr))` }}
-      >
-        {items.map((item) => {
-          const Icon = ICONS[item.icon] ?? Sparkles;
-          if (item.id === 'ask') {
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent('open-praxis-chat'))}
-                className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold text-[color:var(--color-praxis-emerald-700)] hover:bg-[color:var(--color-praxis-emerald-50)]"
-              >
-                <Icon className="h-5 w-5" />
-                {item.label}
-              </button>
-            );
-          }
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-          return (
-            <MobileLink
-              key={item.id}
-              href={item.href}
-              label={item.label}
-              active={active}
-              icon={Icon}
-            />
-          );
-        })}
+    <nav ref={rootRef} className="praxis-mobile-navigation fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 md:hidden" aria-label="Primary mobile navigation" data-testid="mobile-bottom-nav">
+      {open ? <div id="mobile-more-destinations" className="absolute bottom-full right-3 mb-2 grid w-[min(18rem,calc(100vw-1.5rem))] gap-1 rounded-xl border border-[var(--color-app-border)] bg-white p-2 shadow-[var(--shadow-float)]" aria-label="More workspace tools">{secondary.map((item) => <Link key={item.id} href={item.href} className="praxis-nav-link" onClick={() => setOpen(false)}>{item.label}</Link>)}<Link href="/guide" className="praxis-nav-link" onClick={() => setOpen(false)}>Quick start</Link></div> : null}
+      <div className="mx-auto grid max-w-lg grid-cols-3 gap-1">
+        <Link href="/app" aria-current={pathname === '/app' || pathname.startsWith('/app/conversations/') ? 'page' : undefined} className="praxis-mobile-nav-link" onClick={() => setOpen(false)}><MessageSquareText className="h-5 w-5" />Chat</Link>
+        <Link href="/app/capsules" aria-current={pathname.startsWith('/app/capsules') ? 'page' : undefined} className="praxis-mobile-nav-link" onClick={() => setOpen(false)}><FolderKanban className="h-5 w-5" />Capsules</Link>
+        <button ref={moreRef} type="button" className="praxis-mobile-nav-link" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="mobile-more-destinations"><MoreHorizontal className="h-5 w-5" />More</button>
       </div>
     </nav>
-  );
-}
-
-function MobileLink({
-  href,
-  label,
-  active,
-  icon: Icon,
-}: {
-  href: string;
-  label: string;
-  active: boolean;
-  icon: ComponentType<{ className?: string }>;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        'flex min-h-12 flex-col items-center justify-center gap-1 rounded-md text-xs font-semibold transition',
-        active ? 'bg-navy-50 text-navy-950' : 'text-slate-700 hover:bg-slate-50 hover:text-navy-900',
-      )}
-    >
-      <Icon className="h-5 w-5" />
-      {label}
-    </Link>
   );
 }

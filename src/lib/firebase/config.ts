@@ -1,7 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
+import type { Analytics } from 'firebase/analytics';
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
@@ -105,14 +105,8 @@ if (typeof window !== 'undefined' && appCheckEnabled) {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-let analytics: ReturnType<typeof getAnalytics> | null = null;
-if (typeof window !== 'undefined') {
-  isSupported().then((supported) => {
-    if (supported) {
-      analytics = getAnalytics(app);
-    }
-  });
-}
-export { analytics };
+// App initialization and sign-in must not initialize optional visit analytics.
+// Keep this export compatible for callers; a future consent flow may opt in.
+export const analytics: Analytics | null = null;
 
 export default app;

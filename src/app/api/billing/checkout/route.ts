@@ -10,6 +10,13 @@ const CheckoutSchema = z.object({
 });
 
 export const POST = withAuth(async (request, user) => {
+  if (process.env.PRAXIS_ENABLE_PAID_CHECKOUT !== 'true') {
+    return NextResponse.json({
+      error: 'Paid upgrades are unavailable for this experimental project.',
+      available: false,
+      fallbackHref: '/pricing',
+    }, { status: 503, headers: { 'Cache-Control': 'no-store' } });
+  }
   const raw = await request.json().catch(() => ({}));
   const parsed = CheckoutSchema.safeParse(raw);
   if (!parsed.success) {

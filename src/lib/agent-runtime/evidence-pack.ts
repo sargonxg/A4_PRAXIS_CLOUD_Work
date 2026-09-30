@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { getCapsule, type PraxisCapsule } from '@/lib/context/capsule-service';
+import { CapsuleVersionConflictError, getCapsuleAtVersion } from '@/lib/context/capsule-version-resolution';
 import { listCapsuleMemories, type CapsuleMemory } from '@/lib/context/capsule-details-service';
 import { getDocumentById, retrieveRelevantChunks, type DocumentChunk } from '@/lib/firebase/documents-service';
 import { listKnowledgeDocuments, type KnowledgeDocument } from '@/lib/knowledge/library-service';
@@ -28,6 +29,8 @@ export interface CapsuleEvidencePack {
   objective: string;
   builtAt: string;
   activeCapsule: PraxisCapsule;
+  /** Capsule references are pinned; referenced document bodies are not separately versioned. */
+  referenceScope?: 'resolved-capsule-version';
   knowledgeDocuments: KnowledgeDocument[];
   sourceReceiptIds: string[];
   sourcedParagraphs: SourcedParagraphRecord[];
@@ -61,10 +64,14 @@ export interface BuildCapsuleEvidencePackInput {
   capsuleId: string;
   objective: string;
   maxParagraphs?: number;
+  capsuleVersion?: number | null;
+  /** Internal callers may reuse the owner/version-validated capsule for this turn. */
+  resolvedCapsule?: PraxisCapsule;
 }
 
 export interface CapsuleEvidencePackDeps {
   getCapsule?: typeof getCapsule;
+  getCapsuleAtVersion?: typeof getCapsuleAtVersion;
   listKnowledgeDocuments?: typeof listKnowledgeDocuments;
   retrieveRelevantChunks?: typeof retrieveRelevantChunks;
   getDocumentById?: typeof getDocumentById;
@@ -77,41 +84,61 @@ export async function buildCapsuleEvidencePack(
   input: BuildCapsuleEvidencePackInput,
   deps: CapsuleEvidencePackDeps = {},
 ): Promise<CapsuleEvidencePack> {
-  const readCapsule = deps.getCapsule ?? getCapsule;
-  const capsule = await readCapsule(input.ownerUid, input.capsuleId);
+  const hasResolvedCapsule = input.resolvedCapsule !== undefined;
+  const requestedVersion = input.capsuleVersion ?? (hasResolvedCapsule ? input.resolvedCapsule?.version ?? null : null);
+  const versionScoped = hasResolvedCapsule || requestedVersion !== null;
+  if (versionScoped && (typeof requestedVersion !== 'number' || !Number.isSafeInteger(requestedVersion) || requestedVersion < 1)) {
+    throw new CapsuleVersionConflictError(input.capsuleId, requestedVersion);
+  }
+  let capsule: PraxisCapsule | null;
+  if (hasResolvedCapsule) capsule = input.resolvedCapsule ?? null;
+  else if (requestedVersion !== null) {
+    try { capsule = await (deps.getCapsuleAtVersion ?? getCapsuleAtVersion)(input.ownerUid, input.capsuleId, requestedVersion); }
+    catch { throw new CapsuleVersionConflictError(input.capsuleId, requestedVersion); }
+  } else capsule = await (deps.getCapsule ?? getCapsule)(input.ownerUid, input.capsuleId);
   if (!capsule || capsule.archivedAt || capsule.ownerUid !== input.ownerUid || capsule.capsuleId !== input.capsuleId) {
+    if (versionScoped) throw new CapsuleVersionConflictError(input.capsuleId, requestedVersion);
     throw new Error(`Active ContextCapsule not found: ${input.capsuleId}`);
   }
+  if (versionScoped && capsule.version !== requestedVersion) throw new CapsuleVersionConflictError(input.capsuleId, requestedVersion);
 
   const situationId = capsule.coreRefs.situationCoreId ?? capsule.activeForSituationIds[0] ?? capsule.capsuleId;
+  const documentIds = uniqueStrings(capsule.coreRefs.documentCoreIds);
   const [
-    knowledgeDocuments,
+    rawKnowledgeDocuments,
     rawChunks,
     outputHistory,
     memories,
   ] = await Promise.all([
-    (deps.listKnowledgeDocuments ?? listKnowledgeDocuments)(input.ownerUid, { capsuleId: capsule.capsuleId }).catch(() => []),
-    situationId
+    !versionScoped || documentIds.length
+      ? (deps.listKnowledgeDocuments ?? listKnowledgeDocuments)(input.ownerUid, { capsuleId: capsule.capsuleId }).catch(() => [])
+      : Promise.resolve([]),
+    situationId && (!versionScoped || documentIds.length > 0)
       ? (deps.retrieveRelevantChunks ?? retrieveRelevantChunks)(input.ownerUid, situationId, input.objective, {
           maxChunks: input.maxParagraphs ?? 8,
-          ...(capsule.coreRefs.documentCoreIds.length ? { documentIds: capsule.coreRefs.documentCoreIds } : {}),
+          ...(documentIds.length ? { documentIds } : {}),
         }).catch(() => [])
       : Promise.resolve([]),
-    (deps.listOutputCapsules ?? listOutputCapsules)(input.ownerUid, {
+    versionScoped ? Promise.resolve([]) : (deps.listOutputCapsules ?? listOutputCapsules)(input.ownerUid, {
       contextCapsuleId: capsule.capsuleId,
       limit: 10,
     }).catch(() => []),
-    (deps.listCapsuleMemories ?? listCapsuleMemories)(input.ownerUid, capsule.capsuleId).catch(() => []),
+    versionScoped ? Promise.resolve([]) : (deps.listCapsuleMemories ?? listCapsuleMemories)(input.ownerUid, capsule.capsuleId).catch(() => []),
   ]);
 
+  // Capsule-ID queries are live collections. An exact snapshot can select only
+  // its own document references; generated digests/history/memories have no
+  // version binding and cannot be added as evidence for that snapshot.
+  const knowledgeDocuments = versionScoped ? rawKnowledgeDocuments
+    .filter((doc) => doc.ownerUid === input.ownerUid && documentIds.includes(doc.documentId))
+    .map((doc) => ({ ...doc, digest: null })) : rawKnowledgeDocuments;
   const maxParagraphs = Math.max(1, Math.min(24, input.maxParagraphs ?? 8));
   const chunks = rawChunks.filter((chunk) => (
-    capsule.coreRefs.documentCoreIds.length === 0 ||
-    capsule.coreRefs.documentCoreIds.includes(chunk.documentId)
+    (!versionScoped && documentIds.length === 0) || documentIds.includes(chunk.documentId)
   ));
   // Uploads are immediately usable, even before optional chunk indexing completes.
   // Read only explicit capsule documents through the owner-scoped storage path.
-  const missingDocumentIds = capsule.coreRefs.documentCoreIds
+  const missingDocumentIds = documentIds
     .filter((id) => !chunks.some((chunk) => chunk.documentId === id))
     .slice(0, maxParagraphs);
   const storedDocuments = await Promise.all(missingDocumentIds.map((id) => (
@@ -143,12 +170,13 @@ export async function buildCapsuleEvidencePack(
   const builtAt = (deps.now?.() ?? new Date()).toISOString();
 
   return {
-    packId: stablePackId(input.ownerUid, capsule.capsuleId, input.objective, builtAt),
+    packId: stablePackId(input.ownerUid, capsule.capsuleId, capsule.version, input.objective, builtAt),
     ownerUid: input.ownerUid,
     capsuleId: capsule.capsuleId,
     objective: input.objective,
     builtAt,
     activeCapsule: capsule,
+    ...(versionScoped ? { referenceScope: 'resolved-capsule-version' as const } : {}),
     knowledgeDocuments,
     sourceReceiptIds,
     sourcedParagraphs,
@@ -171,6 +199,7 @@ export function formatEvidencePackPromptBlock(pack: CapsuleEvidencePack): string
     '## Capsule Evidence Pack',
     `pack_id: ${pack.packId}`,
     `capsule: ${pack.capsuleId} v${pack.activeCapsule.version}`,
+    ...(pack.referenceScope ? ['reference_scope: resolved capsule version; document bodies are current owner-scoped records, not immutable source snapshots. Unversioned digests, output history and memories are omitted.'] : []),
     `objective: ${pack.objective}`,
     `source_receipts: ${pack.sourceReceiptIds.length ? pack.sourceReceiptIds.join(', ') : 'none'}`,
     `open_gaps: ${pack.openGaps.length ? pack.openGaps.join(' | ') : 'none'}`,
@@ -234,8 +263,8 @@ function summarizeOutputs(outputs: OutputCapsuleRecord[]): CapsuleEvidencePack['
   }));
 }
 
-function stablePackId(ownerUid: string, capsuleId: string, objective: string, builtAt: string): string {
-  return `evidence:${stableId(`${ownerUid}:${capsuleId}:${objective}:${builtAt}`).slice(0, 16)}`;
+function stablePackId(ownerUid: string, capsuleId: string, capsuleVersion: number, objective: string, builtAt: string): string {
+  return `evidence:${stableId(`${ownerUid}:${capsuleId}:v${capsuleVersion}:${objective}:${builtAt}`).slice(0, 16)}`;
 }
 
 function stableId(value: string): string {

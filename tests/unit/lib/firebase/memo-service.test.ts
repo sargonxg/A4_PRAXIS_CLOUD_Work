@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { approveMemoBody, loadMemoById, memoDocumentId, saveMemoDraft } from '@/lib/firebase/memo-service';
 import { buildMemoOutputReview } from '@/lib/memo/output-review';
+import { readMemoContextSnapshot } from '@/lib/memo/context-snapshot';
 
 type MemoTestRef = {
   path: string;
@@ -12,6 +13,92 @@ type MemoTestRef = {
 };
 
 describe('memo service helpers', () => {
+  const contextDraft = { caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Memo', graphSnapshotId: 'graph-1',
+    blocks: [{ id: 'memo-body', type: 'paragraph' as const, content: 'A draft.', citations: [], metadata: {} }] };
+
+  it('records an explicit empty context for a first save without context', async () => {
+    const fixture = createMemoDb({});
+    const record = await saveMemoDraft('user-1', contextDraft, fixture.db as never);
+    const loaded = await loadMemoById('user-1', record.memo.id, fixture.db as never);
+    expect(loaded?.versions[0].contextSnapshot).toMatchObject({ schemaVersion: 1, binding: 'recorded',
+      capsuleId: null, capsuleVersion: null, sourceReceipts: [], sourceReceiptIds: [] });
+  });
+
+  it('detaches new context and stale source references while preserving the prior immutable version', async () => {
+    const fixture = createMemoDb({});
+    const source = { id: 'source-1', title: 'Original source' };
+    const first = await saveMemoDraft('user-1', { ...contextDraft, capsuleId: 'cap-1', capsuleVersion: 2,
+      sourceReceiptIds: ['source-1'], sourceReceipts: [source], unsupportedClaims: ['Unverified'],
+      claimChecks: [{ claim: 'Unverified' }], outputCapsuleId: 'output-cap' }, fixture.db as never);
+    source.title = 'Caller mutation';
+    await saveMemoDraft('user-1', { ...contextDraft, capsuleId: null, capsuleVersion: null }, fixture.db as never);
+    const loaded = await loadMemoById('user-1', first.memo.id, fixture.db as never);
+    expect(loaded?.memo).toMatchObject({ capsuleId: null, capsuleVersion: null, sourceReceipts: [], sourceReceiptIds: [],
+      unsupportedClaims: [], claimChecks: [], outputCapsuleId: null });
+    expect(loaded?.versions[0].contextSnapshot).toMatchObject({ binding: 'recorded', capsuleId: 'cap-1', capsuleVersion: 2,
+      sourceReceipts: [{ id: 'source-1', title: 'Original source' }], sourceReceiptIds: ['source-1'] });
+    expect(loaded?.versions[1].contextSnapshot).toMatchObject({ binding: 'recorded', capsuleId: null, capsuleVersion: null,
+      sourceReceipts: [], sourceReceiptIds: [] });
+  });
+
+  it('inherits only the prior recorded version when ordinary edits omit context, even if the envelope was mutated', async () => {
+    const fixture = createMemoDb({});
+    const first = await saveMemoDraft('user-1', { ...contextDraft, capsuleId: 'cap-1', capsuleVersion: 2,
+      sourceReceipts: [{ id: 'source-1' }], sourceReceiptIds: ['source-1'] }, fixture.db as never);
+    const path = `users/user-1/situations/case-1/memos/${first.memo.id}`;
+    fixture.records[path] = { ...fixture.records[path], capsuleId: 'new-cap', capsuleVersion: 99,
+      sourceReceipts: [{ id: 'mutable-source' }], sourceReceiptIds: ['mutable-source'],
+      contextSnapshot: { ...fixture.records[path].contextSnapshot as object, capsuleId: 'new-cap', capsuleVersion: 99 } };
+    await saveMemoDraft('user-1', { ...contextDraft, blocks: [{ ...contextDraft.blocks[0], content: 'An edited draft.' }] }, fixture.db as never);
+    const loaded = await loadMemoById('user-1', first.memo.id, fixture.db as never);
+    expect(loaded?.versions[1].contextSnapshot).toEqual(loaded?.versions[0].contextSnapshot);
+    expect(loaded?.memo).toMatchObject({ capsuleId: 'cap-1', capsuleVersion: 2, sourceReceiptIds: ['source-1'] });
+  });
+
+  it('preserves explicitly empty independent source lists instead of inheriting them', async () => {
+    const fixture = createMemoDb({});
+    const first = await saveMemoDraft('user-1', { ...contextDraft, capsuleId: 'cap-1', capsuleVersion: 2,
+      sourceReceipts: [{ id: 'source-1' }], sourceReceiptIds: ['source-1'] }, fixture.db as never);
+    await saveMemoDraft('user-1', { ...contextDraft, sourceReceiptIds: [], sourceReceipts: [] }, fixture.db as never);
+    const loaded = await loadMemoById('user-1', first.memo.id, fixture.db as never);
+    expect(loaded?.versions[1].contextSnapshot).toMatchObject({ capsuleId: 'cap-1', capsuleVersion: 2,
+      sourceReceiptIds: [], sourceReceipts: [] });
+    await saveMemoDraft('user-1', { ...contextDraft, capsuleId: null, capsuleVersion: null,
+      sourceReceiptIds: ['independent'], sourceReceipts: [{ id: 'independent' }] }, fixture.db as never);
+    const detached = await loadMemoById('user-1', first.memo.id, fixture.db as never);
+    expect(detached?.versions[2].contextSnapshot).toMatchObject({ capsuleId: null, capsuleVersion: null,
+      sourceReceiptIds: ['independent'], sourceReceipts: [{ id: 'independent' }] });
+  });
+
+  it.each([undefined, { schemaVersion: 1, binding: 'recorded', capsuleId: 'cap-1' }])(
+    'keeps legacy or malformed context unbound until an explicit selection or detach: %j', async (contextSnapshot) => {
+      const memoId = memoDocumentId('case-1', 'policy-memo');
+      const path = `users/user-1/situations/case-1/memos/${memoId}`;
+      const fixture = createMemoDb({ [path]: { id: memoId, caseId: 'case-1', templateId: 'policy-memo', ownerUid: 'user-1',
+        currentVersionId: 'v1', title: 'Legacy', capsuleId: 'cap-1', capsuleVersion: 2 },
+      [`${path}/versions/v1`]: { id: 'v1', memoId, versionNumber: 1, blocks: contextDraft.blocks,
+        ...(contextSnapshot ? { contextSnapshot } : {}) } });
+      await saveMemoDraft('user-1', contextDraft, fixture.db as never);
+      let loaded = await loadMemoById('user-1', memoId, fixture.db as never);
+      expect(loaded?.versions[1].contextSnapshot).toMatchObject({ binding: 'legacy-unbound', capsuleId: null,
+        capsuleVersion: null, sourceReceiptIds: [], sourceReceipts: [] });
+      await saveMemoDraft('user-1', { ...contextDraft, capsuleId: null, capsuleVersion: null }, fixture.db as never);
+      loaded = await loadMemoById('user-1', memoId, fixture.db as never);
+      expect(readMemoContextSnapshot(loaded?.versions[2].contextSnapshot)).toMatchObject({ binding: 'recorded', capsuleId: null });
+    });
+
+  it('refuses partial capsule pins and clears inherited sources when selecting a different exact version', async () => {
+    const fixture = createMemoDb({});
+    const first = await saveMemoDraft('user-1', { ...contextDraft, capsuleId: 'cap-1', capsuleVersion: 2,
+      sourceReceipts: [{ id: 'source-1' }], sourceReceiptIds: ['source-1'] }, fixture.db as never);
+    await expect(saveMemoDraft('user-1', { ...contextDraft, capsuleId: 'other-cap' }, fixture.db as never)).rejects.toThrow(/both its ID/i);
+    await saveMemoDraft('user-1', { ...contextDraft, capsuleId: 'cap-1', capsuleVersion: 3 }, fixture.db as never);
+    const loaded = await loadMemoById('user-1', first.memo.id, fixture.db as never);
+    expect(loaded?.versions).toHaveLength(2);
+    expect(loaded?.versions[1].contextSnapshot).toMatchObject({ binding: 'recorded', capsuleId: 'cap-1', capsuleVersion: 3,
+      sourceReceipts: [], sourceReceiptIds: [] });
+  });
+
   it('records approval only for the current saved body and invalidates it after an edit', async () => {
     const fixture = createMemoDb({});
     const input = { caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Memo', graphSnapshotId: 'graph-1',
@@ -191,6 +278,7 @@ function createMemoDb(
     },
   };
   return {
+    records,
     db: { collection: (name: string) => refFor(name), collectionGroup: vi.fn(() => query),
       runTransaction: async (work: (transaction: { get: (ref: MemoTestRef) => ReturnType<MemoTestRef['get']>; set: (ref: MemoTestRef, data: Record<string, unknown>, options?: { merge: boolean }) => void }) => Promise<void>) => {
         const writes: Array<() => Promise<void>> = [];

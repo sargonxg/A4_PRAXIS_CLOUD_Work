@@ -32,7 +32,7 @@ test.describe('golden path — app usability smoke', () => {
 
   test.setTimeout(120_000);
 
-  test('sign in → launchpad → capsules → boardroom → settings', async ({ page }) => {
+  test('sign in → chat → capsule library → boardroom → settings', async ({ page }) => {
     await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false, finishOnboardingLater: true });
     const session = await expectAuthenticatedSession(page);
     expect(session.userEmail).toContain('@');
@@ -40,10 +40,11 @@ test.describe('golden path — app usability smoke', () => {
     await expect(page.getByTestId('app-launchpad')).toBeVisible({ timeout: 30_000 });
     await expect(page.getByTestId('ask-context-bar')).toBeVisible();
     await expect(page.getByTestId('capsule-dock')).toBeVisible();
-    await expect(page.getByTestId('capsule-dock-chip').first()).toBeVisible();
+    await expect(page.getByTestId('marketing-hero-prompt')).toBeVisible();
+    await expect(page.getByTestId('ask-context-bar').getByRole('button', { name: 'Choose capsule' })).toBeVisible();
 
     const routes = [
-      { path: '/app/capsules', testId: 'capsule-studio-header', text: /Build capsule|Use in Ask/i },
+      { path: '/app/capsules', testId: 'capsule-library', text: /Your context library/i },
       { path: '/app/boardroom', testId: 'boardroom-home-surface', text: /Boardroom/i },
       { path: '/app/settings?tab=system', testId: 'account-settings-page', text: /PRAXIS runtime doctor/i },
     ];
@@ -153,7 +154,7 @@ test.describe('golden path — app usability smoke', () => {
 
     await authenticateFirebaseCanary(page, BASE, '/app', { expectComposer: false, finishOnboardingLater: true });
     await page.goto(`${BASE}/app/capsules/builder?capsulePrompt=${encodeURIComponent(mission)}`);
-    await expect(page.getByRole('heading', { name: 'Give your next answer better context.', exact: true })).toBeVisible({ timeout: 30_000 });
+    await expect(page.getByRole('heading', { name: 'Create a capsule', exact: true })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByLabel(/What should this capsule do/i)).toHaveValue(mission, { timeout: 30_000 });
 
     await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);

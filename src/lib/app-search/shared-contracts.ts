@@ -1,3 +1,4 @@
+import { capsuleInspectionHref, WORKSPACE_ROUTES } from '@/lib/navigation/primary-nav';
 import {
   CAPSULE_STARTER_DEFINITIONS,
   POLICY_TEAM_CATEGORIES,
@@ -58,21 +59,30 @@ export type AppSearchItemInput = Omit<AppSearchResult, 'score' | 'matchedFields'
 export const APP_SEARCH_COMMANDS: AppSearchItemInput[] = [
   {
     id: 'surface:home',
-    label: 'Open PRAXIS',
-    description: 'Ask from the active capsule and keep work in the main cockpit.',
+    label: 'Open chat',
+    description: 'Ask, draft and review with your attached context.',
     kind: 'Action',
-    href: '/app',
-    keywords: ['home', 'ask praxis', 'cockpit'],
-    fields: [{ name: 'action', text: 'open praxis home ask cockpit', weight: 260 }],
+    href: WORKSPACE_ROUTES.chat,
+    keywords: ['chat', 'home', 'ask praxis', 'cockpit'],
+    fields: [{ name: 'action', text: 'open chat praxis home ask cockpit', weight: 260 }],
   },
   {
     id: 'surface:capsules',
     label: 'Open Capsules',
     description: 'Manage, improve, source, import, export, and inspect ContextCapsules.',
     kind: 'Capsule',
-    href: '/app/capsules',
+    href: WORKSPACE_ROUTES.capsules,
     keywords: ['capsules', 'context capsules', 'capsule factory', 'repository'],
     fields: [{ name: 'title', text: 'capsules context capsules capsule factory repository', weight: 320 }],
+  },
+  {
+    id: 'action:create-capsule',
+    label: 'Create capsule',
+    description: 'Build a private capsule from documents, notes or a conversation.',
+    kind: 'Action',
+    href: WORKSPACE_ROUTES.newCapsule,
+    keywords: ['new', 'create', 'capsule', 'context', 'builder'],
+    fields: [{ name: 'action', text: 'new create capsule context builder documents notes conversation', weight: 300 }],
   },
   {
     id: 'surface:intellectual-devices',
@@ -115,7 +125,7 @@ export const APP_SEARCH_COMMANDS: AppSearchItemInput[] = [
     label: 'Agent runs',
     description: 'Inspect recent agent runs from the existing PRAXIS cockpit and run ledger.',
     kind: 'Diagnostic',
-    href: '/app',
+    href: WORKSPACE_ROUTES.savedWork,
     keywords: ['agent runs', 'run ledger', 'cloud tasks', 'worker'],
     fields: [{ name: 'diagnostic', text: 'agent runs run ledger cloud tasks worker', weight: 320 }],
   },
@@ -133,7 +143,7 @@ export const APP_SEARCH_COMMANDS: AppSearchItemInput[] = [
     label: '.praxis import/export',
     description: 'Use existing Capsules controls for portable Capsule+ packages.',
     kind: 'Action',
-    href: '/app/capsules',
+    href: WORKSPACE_ROUTES.capsules,
     keywords: ['.praxis', 'import', 'export', 'capsule plus', 'download'],
     fields: [{ name: 'action', text: '.praxis import export capsule plus download package', weight: 330 }],
   },
@@ -172,7 +182,7 @@ export function buildCapsuleSearchItem(starter: CapsuleStarterDefinition): AppSe
     label: starter.label,
     description: starter.summary,
     kind,
-    href: '/app/capsules',
+    href: capsuleInspectionHref(starter.starterId),
     keywords: [
       starter.starterId,
       starter.label,

@@ -54,7 +54,7 @@ const selected = vi.fn();
 const focus = vi.fn();
 function render(refreshKey = 0) {
   runtime.cursor = 0;
-  const tree = CapsuleListPicker({ activeCapsuleId: 'a', onSelect: selected, refreshKey });
+  const tree = CapsuleListPicker({ activeCapsuleId: 'a', onSelect: selected, refreshKey, allowQuickCreate: true });
   for (const node of elements(tree)) {
     if (typeof node.props.ref === 'function') (node.props.ref as (el: unknown) => void)({ focus });
     else if (node.props.ref && typeof node.props.ref === 'object') (node.props.ref as { current: unknown }).current = { focus, contains: () => false };
@@ -79,6 +79,32 @@ beforeEach(() => {
 });
 
 describe('capsule picker recovery and keyboard use', () => {
+  it('searches saved capsules without changing their recorded versions', async () => {
+    vi.mocked(fetch).mockResolvedValue(ok({ capsules }) as Response);
+    render(); effects(); await settle();
+    const tree = open();
+    const search = find(tree, (node) => node.props.type === 'search');
+    (search.props.onChange as (event: unknown) => void)({ target: { value: 'case b' } });
+    const filtered = render();
+    const options = elements(filtered).filter((node) => node.props.role === 'option');
+    expect(options).toHaveLength(1);
+    expect(textOf(options[0])).toContain('Case B');
+    click(options[0]);
+    expect(selected).toHaveBeenCalledExactlyOnceWith('b', capsules[1]);
+  });
+  it('loads an older page without dropping the original capsule or active version', async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(ok({ capsules: [capsules[0]], nextCursor: 'older-page' }) as Response)
+      .mockResolvedValueOnce(ok({ capsules: [capsules[1]], nextCursor: null }) as Response);
+    render(); effects(); await settle();
+    click(find(open(), (node) => node.type === 'button' && textOf(node).includes('Load older capsules')));
+    render(); effects(); await settle();
+    const tree = render();
+    expect(elements(tree).filter((node) => node.props.role === 'option')).toHaveLength(2);
+    expect(textOf(tree)).toContain('Case A');
+    expect(textOf(tree)).toContain('Case B');
+    expect(String(vi.mocked(fetch).mock.calls[1][0])).toContain('cursor=older-page');
+    expect(selected).not.toHaveBeenCalled();
+  });
   it('distinguishes loading from an empty saved library', async () => {
     let resolve!: (value: Response) => void;
     vi.mocked(fetch).mockImplementation(() => new Promise<Response>((done) => { resolve = done; }));
@@ -116,7 +142,7 @@ describe('capsule picker recovery and keyboard use', () => {
     const second = find(tree, (node) => node.props.role === 'option' && textOf(node).includes('Case B'));
     expect(second.props.tabIndex).toBe(0);
     key(second, 'Enter');
-    expect(selected).toHaveBeenCalledExactlyOnceWith('b');
+    expect(selected).toHaveBeenCalledExactlyOnceWith('b', capsules[1]);
     expect(find(render(), (node) => node.props['aria-haspopup'] === 'listbox').props['aria-expanded']).toBe(false);
     tree = open(); key(find(tree, (node) => node.props.role === 'option'), 'Escape');
     expect(find(render(), (node) => node.props['aria-haspopup'] === 'listbox').props['aria-expanded']).toBe(false);

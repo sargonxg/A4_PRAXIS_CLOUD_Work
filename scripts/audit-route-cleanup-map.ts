@@ -79,7 +79,9 @@ export function buildCleanupAudit(): CleanupAudit {
   const files = listProjectFiles();
   const fileTexts = new Map(files.map((file) => [file, safeRead(file)]));
   const inventory = buildApiRouteInventory();
-  const routeMap = inventory.map((route) => enrichRoute(route, fileTexts));
+  graphTextCache ??= loadGraphText();
+  const graphReferences = buildGraphReferenceCounts(inventory.map((route) => route.route), graphTextCache);
+  const routeMap = inventory.map((route) => enrichRoute(route, fileTexts, graphReferences));
   const visibleSurfaces = buildVisibleSurfaces(fileTexts);
   const obsoleteCandidates = buildObsoleteCandidates(fileTexts);
   const agenticRuntime = buildAgenticRuntimeReadiness(routeMap, fileTexts);
@@ -116,13 +118,13 @@ export function writeCleanupAudit(outDir = path.join(process.cwd(), 'docs', 'aud
   return audit;
 }
 
-function enrichRoute(route: ApiRouteInventoryEntry, fileTexts: Map<string, string>): DeepRouteMapEntry {
+function enrichRoute(route: ApiRouteInventoryEntry, fileTexts: Map<string, string>, graphCounts: Map<string, number>): DeepRouteMapEntry {
   const routeSource = safeRead(route.file);
   const callers = findRouteCallers(route.route, route.file, fileTexts);
   const tests = callers.filter((caller) => caller.startsWith('tests/'));
   const visibleCallers = callers.filter((caller) => caller.startsWith('src/components/') || caller.startsWith('src/app/'));
   const serverCallers = callers.filter((caller) => caller.startsWith('src/') && !caller.startsWith('src/components/'));
-  const graphReferences = graphReferenceCount(route.route);
+  const graphReferences = graphCounts.get(route.route) ?? 0;
   const dataStores = inferDataStores(route.route, routeSource);
   const disposition = dispositionForRoute(route, callers, graphReferences);
   return {
@@ -221,11 +223,12 @@ function surfacePathCandidates(surface: string): string[] {
 
 function buildObsoleteCandidates(fileTexts: Map<string, string>): ObsoleteCodeCandidate[] {
   const candidates: ObsoleteCodeCandidate[] = [];
+  const stemReferenceCounts = new Map<string, number>();
   for (const [file, text] of fileTexts) {
     if (!isCandidateFile(file, text)) continue;
     const markers = candidateMarkers(file, text);
     if (!markers.length) continue;
-    const references = referenceCount(file, fileTexts);
+    const references = countCandidateReferences(file, fileTexts, stemReferenceCounts);
     const kind = file.startsWith('src/components/') ? 'component' : file.startsWith('scripts/') ? 'script' : file.startsWith('docs/') ? 'doc' : 'library';
     const disposition = dispositionForObsoleteCandidate(file, references, markers);
     candidates.push({
@@ -261,14 +264,19 @@ function candidateMarkers(file: string, text: string): string[] {
   return [...markers];
 }
 
-function referenceCount(file: string, fileTexts: Map<string, string>): number {
+export function countCandidateReferences(file: string, fileTexts: Map<string, string>, stemReferenceCounts = new Map<string, number>()): number {
   const stem = path.basename(file).replace(/\.(tsx|ts|mjs|md)$/, '');
-  let count = 0;
-  for (const [otherFile, text] of fileTexts) {
-    if (otherFile === file) continue;
-    if (text.includes(file) || text.includes(stem)) count += 1;
+  let count = stemReferenceCounts.get(stem);
+  if (count === undefined) {
+    count = 0;
+    // Every full-file match also contains its stem. Count this literal once
+    // per source snapshot, including files that share the same basename.
+    for (const text of fileTexts.values()) {
+      if (text.includes(stem)) count += 1;
+    }
+    stemReferenceCounts.set(stem, count);
   }
-  return count;
+  return count - (fileTexts.get(file)?.includes(stem) ? 1 : 0);
 }
 
 function scoreCandidate(candidate: ObsoleteCodeCandidate): number {
@@ -317,20 +325,33 @@ function runtimeEntry(area: string, routes: string[], routeMap: DeepRouteMapEntr
   };
 }
 
-function graphReferenceCount(route: string): number {
-  graphTextCache ??= loadGraphText();
-  if (!graphTextCache) return 0;
-  return routeLiterals(route).reduce((count, literal) => count + occurrences(graphTextCache!, literal), 0);
+export function buildGraphReferenceCounts(routes: string[], graphText: string): Map<string, number> {
+  const literals = new Map<string, { count: number; nextStart: number }>();
+  for (const route of routes) {
+    for (const literal of routeLiterals(route)) {
+      if (!literals.has(literal)) literals.set(literal, { count: 0, nextStart: 0 });
+    }
+  }
+  // All route literals start with /api/. Visit those positions once rather
+  // than splitting the complete graph for every route and dynamic prefix.
+  let position = -1;
+  while ((position = graphText.indexOf('/api/', position + 1)) !== -1) {
+    for (const [literal, counter] of literals) {
+      if (position >= counter.nextStart && graphText.startsWith(literal, position)) {
+        counter.count += 1;
+        // String.split counted non-overlapping matches independently for
+        // each literal; preserve that behavior for nested /api/ segments.
+        counter.nextStart = position + literal.length;
+      }
+    }
+  }
+  return new Map(routes.map((route) => [route, routeLiterals(route)
+    .reduce((count, literal) => count + (literals.get(literal)?.count ?? 0), 0)]));
 }
 
 function loadGraphText(): string {
   const graphPath = path.join(process.cwd(), 'graphify-out', 'graph.json');
   return existsSync(graphPath) ? safeRead(graphPath) : '';
-}
-
-function occurrences(text: string, needle: string): number {
-  if (!needle) return 0;
-  return text.split(needle).length - 1;
 }
 
 function listProjectFiles(): string[] {

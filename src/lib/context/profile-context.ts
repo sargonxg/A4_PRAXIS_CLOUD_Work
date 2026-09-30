@@ -4,7 +4,8 @@ import { listEpisodes } from '@/lib/firebase/episodes';
 import { retrieveForProfile } from '@/lib/knowledge/profile-weighted-retrieval';
 import { getPreferences } from '@/lib/firebase/preferences-service';
 import { readRecentTurns } from '@/lib/firebase/advisor-history-service';
-import { getCapsule, type PraxisCapsule } from '@/lib/context/capsule-service';
+import { type PraxisCapsule } from '@/lib/context/capsule-service';
+import { CapsuleVersionConflictError, resolveCapsuleReference, validateCapsuleVersionPins } from './capsule-version-resolution';
 import { sanitizeActiveContextStack, type ActiveCapsuleRef } from '@/lib/context/active-context-stack';
 import { deriveInteractionFrame } from './interaction-frame';
 import { ADVISOR_IDS, type AdvisorId } from '@/types/advisor';
@@ -103,8 +104,8 @@ const NEUTRAL_CONSTRAINTS: OutputConstraints = {
 /**
  * Assembles a calibrated context block for a given user/situation/tool combination.
  *
- * NEVER throws. Every IO operation is individually wrapped in try/catch.
- * Missing profile / missing situation / failing retrieval → neutral fallback block.
+ * Optional profile/situation/retrieval reads may use neutral fallbacks. Explicit
+ * capsule pins must resolve exactly or throw a recoverable context conflict.
  *
  * @param opts.uid           Firebase user ID (required)
  * @param opts.situationId   Active situation ID (optional)
@@ -130,6 +131,7 @@ export async function buildCalibratedContext(opts: {
   capsuleId?: string | null;
   activeContextStack?: unknown;
 }): Promise<ContextBlock> {
+  validateCapsuleVersionPins(opts.activeContextStack);
   let profile: AnalystProfile | null = null;
   let situation: Situation | null = null;
   let retrievedChunks: RetrievedChunk[] = [];
@@ -138,7 +140,9 @@ export async function buildCalibratedContext(opts: {
   let interaction: InteractionFrame | null = null;
   let advisor: AdvisorFrame | null = null;
   let path: MergedPathConfig | null = null;
-  let attachedCapsules: AttachedCapsuleContext[] = [];
+  const attachedCapsules = await loadAttachedCapsules({
+    uid: opts.uid, capsuleId: opts.capsuleId, activeContextStack: opts.activeContextStack,
+  });
 
   // Each read wrapped individually — no single failure should abort the build
   try {
@@ -238,12 +242,6 @@ export async function buildCalibratedContext(opts: {
     }
   }
 
-  attachedCapsules = await loadAttachedCapsules({
-    uid: opts.uid,
-    capsuleId: opts.capsuleId,
-    activeContextStack: opts.activeContextStack,
-  });
-
   const baseSystemPromptBlock = renderSystemPromptBlock({
     profile,
     situation,
@@ -307,14 +305,15 @@ async function loadAttachedCapsules(input: {
   capsuleId?: string | null;
   activeContextStack?: unknown;
 }): Promise<AttachedCapsuleContext[]> {
-  const refs = capsuleRefsForCalibration(input.capsuleId, input.activeContextStack).slice(0, 6);
+  const refs = capsuleRefsForCalibration(input.capsuleId, input.activeContextStack);
   const capsules: AttachedCapsuleContext[] = [];
   for (const ref of refs) {
     try {
-      const capsule = await getCapsule(input.uid, ref.capsuleId);
-      if (!capsule || capsule.archivedAt) continue;
+      const capsule = await resolveCapsuleReference(input.uid, ref);
+      if (!capsule) continue;
       capsules.push({ ref, capsule });
     } catch (err) {
+      if (err instanceof CapsuleVersionConflictError) throw err;
       console.warn('[profile-context] getCapsule failed:', err);
     }
   }
@@ -359,7 +358,7 @@ function capsuleToPromptFrame(input: AttachedCapsuleContext): CapsulePromptFrame
     capsuleId: capsule.capsuleId,
     label: ref.label ?? capsule.label,
     role: ref.role,
-    version: ref.version ?? capsule.version ?? null,
+    version: capsule.version ?? null,
     order: ref.order,
     ontologyBinding: v3?.grounding?.ontologyBinding
       ? {

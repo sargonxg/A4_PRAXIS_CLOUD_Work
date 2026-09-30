@@ -15,6 +15,7 @@ import {
   saveContextStackCompat,
   stackToCoreRefs,
 } from '@/lib/context/capsule-service';
+import { CapsuleVersionConflictError, resolveCapsuleReference, stackWithResolvedGoverningCapsule, validateCapsuleVersionPins } from '@/lib/context/capsule-version-resolution';
 
 export const GET = withAuth(async (req, user) => {
   if (user.isDemo) {
@@ -35,21 +36,33 @@ export const GET = withAuth(async (req, user) => {
       persisted: true,
     });
   }
-  const activePointer = await getActiveStackPointer(user.uid);
+  let activePointer;
+  try {
+    activePointer = await getActiveStackPointer(user.uid, true);
+  } catch (error) {
+    if (error instanceof CapsuleVersionConflictError) return versionConflict(error);
+    throw error;
+  }
   const activeSnap = activePointer?.stack;
   if (activePointer?.cleared && activeSnap?.stackId === DEFAULT_CONTEXT_STACK_ID) {
     return NextResponse.json({ stack: activeSnap, capsule: null, migrated: false, persisted: true });
   }
   // The default capsule can govern a composed dock; restore its saved refs too.
   if (activeSnap && (activeSnap.stackId !== DEFAULT_CONTEXT_STACK_ID || activePointer?.explicitSelection)) {
-    const capsule = await getCapsule(user.uid, activeSnap.capsuleId ?? activeSnap.stackId);
+    let capsule;
+    try {
+      capsule = await resolveGoverningCapsule(user.uid, activeSnap);
+    } catch (error) {
+      if (error instanceof CapsuleVersionConflictError) return versionConflict(error);
+      throw error;
+    }
     if (capsule && !capsule.archivedAt) {
       return NextResponse.json({
-        stack: reconcileGoverningCapsuleRef({
+        stack: reconcileGoverningCapsuleRef(stackWithResolvedGoverningCapsule({
           ...capsuleToStack(capsule),
           ...activeSnap,
           capsuleId: capsule.capsuleId,
-        }, capsule),
+        }, capsule), capsule),
         capsule,
         migrated: false,
         persisted: true,
@@ -72,6 +85,10 @@ export const PUT = withAuth(async (req, user) => {
 
   const body = await req.json().catch(() => null);
   const incoming = body && typeof body === 'object' && !Array.isArray(body) ? body as Partial<ActiveContextStackState> : {};
+  try { validateCapsuleVersionPins(incoming); } catch (error) {
+    if (error instanceof CapsuleVersionConflictError) return versionConflict(error);
+    throw error;
+  }
   if ((!incoming.stackId || incoming.stackId === DEFAULT_CONTEXT_STACK_ID) && isExplicitClear(incoming)) {
     const stack = sanitizeNamedStack(incoming);
     // Detaching context changes only the active pointer, never a saved capsule.
@@ -80,8 +97,14 @@ export const PUT = withAuth(async (req, user) => {
   }
   if (incoming.stackId && (incoming.stackId !== DEFAULT_CONTEXT_STACK_ID || hasExplicitSelection(incoming))) {
     const requested = sanitizeNamedStack(incoming);
-    const existing = await getCapsule(user.uid, requested.stackId)
-      ?? (requested.stackId === DEFAULT_CONTEXT_STACK_ID ? (await getOrMigrateDefaultCapsule(user.uid)).capsule : null);
+    let existing;
+    try {
+      existing = await resolveGoverningCapsule(user.uid, requested)
+        ?? (requested.stackId === DEFAULT_CONTEXT_STACK_ID ? (await getOrMigrateDefaultCapsule(user.uid)).capsule : null);
+    } catch (error) {
+      if (error instanceof CapsuleVersionConflictError) return versionConflict(error);
+      throw error;
+    }
     if (existing?.archivedAt) {
       return NextResponse.json({ error: 'Context capsule is archived' }, { status: 409 });
     }
@@ -104,17 +127,31 @@ export const PUT = withAuth(async (req, user) => {
           activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],
           provenance: { source: 'api', createdBy: user.uid },
         });
-    const activeStack = reconcileGoverningCapsuleRef({
+    const activeStack = reconcileGoverningCapsuleRef(stackWithResolvedGoverningCapsule({
       ...stack,
       capsuleId: capsule.capsuleId,
       stackId: capsule.capsuleId,
-    }, capsule);
+    }, capsule), capsule);
     await saveActiveStackPointer(user.uid, activeStack);
     return NextResponse.json({ stack: activeStack, capsule, persisted: true });
   }
   const result = await saveContextStackCompat(user.uid, incoming);
   return NextResponse.json(result);
 });
+
+async function resolveGoverningCapsule(uid: string, stack: ActiveContextStackState) {
+  const id = stack.capsuleId ?? stack.stackId;
+  const ref = stack.capsuleRefs.find((item) => item.capsuleId === id);
+  return ref?.version !== null && ref?.version !== undefined
+    ? resolveCapsuleReference(uid, ref)
+    : getCapsule(uid, id);
+}
+
+function versionConflict(error: CapsuleVersionConflictError) {
+  return NextResponse.json({ error: error.code, message: error.message,
+    details: { capsuleId: error.capsuleId, requestedVersion: error.requestedVersion, recoverable: true, action: 'reattach_capsule' },
+  }, { status: 409, headers: { 'X-Praxis-Safeguard': error.code } });
+}
 
 function reconcileGoverningCapsuleRef(
   stack: ActiveContextStackState,
@@ -164,10 +201,16 @@ function hasExplicitSelection(input: Partial<ActiveContextStackState>): boolean 
     && sanitizeActiveContextStack({ capsuleRefs: input.capsuleRefs }).capsuleRefs.length > 0;
 }
 
-async function getActiveStackPointer(uid: string): Promise<{ stack: ActiveContextStackState; cleared: boolean; explicitSelection: boolean } | null> {
+async function getActiveStackPointer(uid: string, rejectInvalidPins = false): Promise<{ stack: ActiveContextStackState; cleared: boolean; explicitSelection: boolean } | null> {
   const snap = await getActiveStackRef(uid).get();
   if (!snap.exists) return null;
   const input = snap.data() as Partial<ActiveContextStackState>;
+  try { validateCapsuleVersionPins(input); } catch (error) {
+    // GET surfaces a recovery action. A valid PUT may replace corrupt prior
+    // pointer metadata rather than inheriting it or blocking its own repair.
+    if (rejectInvalidPins || !(error instanceof CapsuleVersionConflictError)) throw error;
+    return null;
+  }
   return { stack: sanitizeNamedStack(input), cleared: isExplicitClear(input), explicitSelection: hasExplicitSelection(input) };
 }
 

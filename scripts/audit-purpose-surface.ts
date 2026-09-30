@@ -34,7 +34,9 @@ const memoDesk = read('src/components/memo/memo-desk.tsx');
 for (const marker of ['Redaction aware', 'Manifest embedded', 'DOCX/PDF/Markdown']) {
   if (memoDesk.includes(marker)) failures.push(`Memo Studio still exposes decorative badge ${marker}`);
 }
-for (const marker of ['data-testid="memo-desk"', 'Saved from Memo Studio with active context capsule.', 'Write for Memo Studio as an editable document']) {
+for (const marker of ['data-testid="memo-desk"', 'Write for Memo Studio as an editable document',
+  "fetch('/api/memos'", "status: 'draft'", 'capsuleId: activeCapsule?.capsuleId ?? null',
+  'capsuleVersion: activeCapsule?.version ?? null', "originalPassageStatus: 'unavailable'", 'claimSupportVerified: false']) {
   if (!memoDesk.includes(marker)) failures.push(`Memo Studio missing canonical writing marker ${marker}`);
 }
 

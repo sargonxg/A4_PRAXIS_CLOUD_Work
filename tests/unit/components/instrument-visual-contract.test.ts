@@ -84,7 +84,7 @@ describe('Civic Atelier visual contract', () => {
     expect(button).toContain('"capsule-secondary"');
   });
 
-  it('uses the Living Context Rail on public/login/onboarding/settings while the app home embeds context in the composer', () => {
+  it('keeps context rails for real context previews while login and settings stay focused', () => {
     expect(instrument).toContain('data-testid="living-context-rail"');
     expect(workbench).toContain('data-testid="capsule-context-composer"');
     expect(workbench).toContain('Context Chain');
@@ -93,10 +93,11 @@ describe('Civic Atelier visual contract', () => {
     expect(workbench).not.toContain('livingRailCells');
     expect(workbench).toContain('SourcePostureChip');
     expect(workbench).toContain('WorkActionMenu');
-    expect(login).toContain('previewRailCells');
-    expect(login).toContain('<LivingContextRail');
-    expect(settings).toContain('settingsRailCells');
-    expect(settings).toContain('<LivingContextRail');
+    expect(login).not.toContain('previewRailCells');
+    expect(login).not.toContain('<LivingContextRail');
+    expect(login).toContain('Your question will be carried forward');
+    expect(settings).not.toContain('settingsRailCells');
+    expect(settings).not.toContain('<LivingContextRail');
     expect(onboardingPreview).toContain('previewRailCells');
     expect(onboardingPreview).toContain('<LivingContextRail');
     expect(globals).toContain('@keyframes praxis-vellum-drift');

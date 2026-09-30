@@ -12,6 +12,12 @@ describe('authoritative saved memo review state', () => {
     expect(savedMemoReviewState({ memo: { id: 'memo-a', currentVersionId: 'missing' }, versions: [{ id: 'v1', blocks: [{ id: 'memo-body', content: 'Fallback' }] }] }).savedBody).toBeNull();
     expect(savedMemoReviewState({})).toMatchObject({ currentVersionId: null, savedBody: null, humanApproval: null });
   });
+  it('opens the stored body only when the API identifies its current version', () => {
+    const versions = [{ id: 'v1', blocks: [{ id: 'live-memo-draft', content: 'The source records a commitment; implementation remains unverified.' }] }];
+    const memo = { id: 'saved-policy-options', title: 'Policy options' };
+    expect(savedMemoReviewState({ memo, versions })).toMatchObject({ currentVersionId: null, savedBody: null });
+    expect(savedMemoReviewState({ memo: { ...memo, currentVersionId: 'v1' }, versions })).toMatchObject({ currentVersionId: 'v1', savedBody: versions[0].blocks[0].content });
+  });
   it('uses primary content and excludes critique/audit/receipt blocks from the body hash boundary', () => {
     expect(savedMemoReviewState({ memo: { currentVersionId: 'v1' }, versions: [{ id: 'v1', blocks: [
       { id: 'opening', content: 'Opening' }, { id: 'receipt-card', content: 'Receipt' },

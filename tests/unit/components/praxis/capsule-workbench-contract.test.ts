@@ -27,6 +27,7 @@ const sectionSource = [
 ].map((path) => readFileSync(join(process.cwd(), path), 'utf8')).join('\n');
 const capsuleWorkbenchSource = `${componentSource}\n${sectionSource}`;
 const workbenchSource = readFileSync(join(process.cwd(), 'src/components/praxis/tasklet-praxis-workbench.tsx'), 'utf8');
+const inspectionSource = readFileSync(join(process.cwd(), 'src/components/capsules/CapsuleInspectionExperience.tsx'), 'utf8');
 
 describe('Capsule workbench UI contract', () => {
   it('renders the clicked-capsule workbench as one coherent surface', () => {
@@ -80,6 +81,10 @@ describe('Capsule workbench UI contract', () => {
     expect(workbenchSource).toContain("fetch(`/api/context/capsules/${encodeURIComponent(selectedCapsuleIdForMemories)}/memories`");
     expect(workbenchSource).toContain('tacitMemories={capsuleMemories}');
     expect(workbenchSource).toContain('data-testid="capsule-detail-panel"');
-    expect(workbenchSource).toContain('data-testid="capsule-inspector-sheet"');
+    expect(workbenchSource).toContain('<CapsuleInspectionDialog');
+    expect(workbenchSource).toContain('<CapsuleInspectionExperience');
+    expect(inspectionSource).toContain('data-testid="capsule-inspector-sheet"');
+    expect(inspectionSource).toContain('CapsuleAdvancedDrawer');
+    expect(inspectionSource).toContain('CapsuleReviewQueueSection');
   });
 });

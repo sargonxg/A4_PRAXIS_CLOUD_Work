@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { buildCapsuleReadReceiptFromEvidencePack } from '@/lib/agent-runtime/capsule-read-receipt';
 import { buildCapsuleEvidencePack, formatEvidencePackPromptBlock } from '@/lib/agent-runtime/evidence-pack';
 import { buildSourceabilityLedgerFromEvidencePack } from '@/lib/agent-runtime/sourceability-ledger';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import type { KnowledgeDocument } from '@/lib/knowledge/library-service';
 
 const capsule = {
   capsuleId: 'cap-1',
@@ -204,4 +205,121 @@ it('passes capsule document selection into retrieval before ranking', async () =
     },
   });
   expect(pack.sourcedParagraphs[0]).toMatchObject({ documentId: 'doc-1', chunkId: 'late', charStart: 40000 });
+});
+
+describe('version-scoped supplemental capsule evidence', () => {
+  const pinned = { ...capsule, version: 2, label: 'Historical capsule v2',
+    coreRefs: { ...capsule.coreRefs, situationCoreId: 'historical-situation', documentCoreIds: ['document-A'], sourceCoreIds: ['source-A'] } };
+  const latest = { ...capsule, version: 3, label: 'Current capsule v3',
+    coreRefs: { ...capsule.coreRefs, situationCoreId: 'current-situation', documentCoreIds: ['document-B'], sourceCoreIds: ['source-B'] } };
+  const chunk = (documentId: string) => ({ id: `${documentId}:chunk`, documentId, documentTitle: documentId,
+    text: `Evidence from ${documentId}.`, index: 0, charStart: 0, charEnd: 30 });
+  const knowledge = (documentId: string, ownerUid = 'user-1') => ({ id: documentId, documentId, ownerUid,
+    title: documentId, digest: { keyClaims: ['CURRENT-ONLY-DIGEST'], suggestedTags: ['receipt:source-B'] } }) as KnowledgeDocument;
+  function scopedDeps() {
+    return { getCapsule: vi.fn(async () => latest), getCapsuleAtVersion: vi.fn(async () => pinned),
+      listKnowledgeDocuments: vi.fn(async () => [knowledge('document-A'), knowledge('document-B'), knowledge('document-A', 'other-owner')]),
+      retrieveRelevantChunks: vi.fn(async () => [chunk('document-A'), chunk('document-B')]),
+      getDocumentById: vi.fn(async () => null),
+      listOutputCapsules: vi.fn(async () => [{ id: 'CURRENT-ONLY-OUTPUT', templateId: 'options-memo', status: 'draft',
+        quality: { blockers: [], sourceabilityStatus: 'weak' }, createdAt: '2026-09-30' } as never]),
+      listCapsuleMemories: vi.fn(async () => [{ id: 'CURRENT-ONLY-MEMORY', summary: 'Current-only source-B' } as never]),
+      now: () => new Date('2026-09-30T13:30:00.000Z') };
+  }
+
+  it('keeps attached v2 evidence A out of current v3 evidence B, receipt tags, generated digests, history and memory', async () => {
+    const deps = scopedDeps();
+    const pack = await buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 2,
+      resolvedCapsule: pinned, objective: 'Use attached evidence only.' }, deps);
+    expect(deps.getCapsule).not.toHaveBeenCalled(); expect(deps.getCapsuleAtVersion).not.toHaveBeenCalled();
+    expect(deps.retrieveRelevantChunks).toHaveBeenCalledWith('user-1', 'historical-situation', 'Use attached evidence only.',
+      { maxChunks: 8, documentIds: ['document-A'] });
+    expect(pack.activeCapsule).toBe(pinned);
+    expect(pack.knowledgeDocuments.map((doc) => [doc.ownerUid, doc.documentId])).toEqual([['user-1', 'document-A']]);
+    expect(pack.sourcedParagraphs.map((paragraph) => paragraph.documentId)).toEqual(['document-A']);
+    expect(pack.sourceReceiptIds).toEqual(['source-A', 'document:document-A']);
+    expect(pack.documentDigests).toEqual([]); expect(pack.outputHistory).toEqual([]); expect(pack.memories).toEqual([]);
+    expect(deps.listOutputCapsules).not.toHaveBeenCalled(); expect(deps.listCapsuleMemories).not.toHaveBeenCalled();
+    const serialized = JSON.stringify(pack);
+    for (const token of ['document-B', 'source-B', 'CURRENT-ONLY-DIGEST', 'CURRENT-ONLY-OUTPUT', 'CURRENT-ONLY-MEMORY']) {
+      expect(serialized).not.toContain(token); expect(formatEvidencePackPromptBlock(pack)).not.toContain(token);
+    }
+    expect(formatEvidencePackPromptBlock(pack)).toContain('not immutable source snapshots');
+    expect(buildCapsuleReadReceiptFromEvidencePack(pack)).toMatchObject({ capsuleVersion: 2, documentCount: 1,
+      selectedCoreRefs: { sourceCoreIds: ['source-A'], documentCoreIds: ['document-A'] }, outputHistoryCount: 0, memoryCount: 0 });
+    expect(JSON.stringify(buildSourceabilityLedgerFromEvidencePack(pack))).not.toContain('CURRENT-ONLY-DIGEST');
+  });
+
+  it('does not widen an empty saved document selection into situation retrieval or a live library query', async () => {
+    const deps = scopedDeps();
+    const empty = { ...pinned, coreRefs: { ...pinned.coreRefs, documentCoreIds: [] } };
+    const pack = await buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 2,
+      resolvedCapsule: empty, objective: 'Summarize the attached capsule.' }, deps);
+    expect(pack.sourcedParagraphs).toEqual([]); expect(pack.knowledgeDocuments).toEqual([]);
+    expect(pack.sourceReceiptIds).toEqual(['source-A']);
+    for (const read of [deps.getCapsule, deps.listKnowledgeDocuments, deps.retrieveRelevantChunks,
+      deps.getDocumentById, deps.listOutputCapsules, deps.listCapsuleMemories]) expect(read).not.toHaveBeenCalled();
+  });
+
+  it('reads only the pinned unindexed document A from its original situation without reading current document B', async () => {
+    const deps = scopedDeps(); deps.retrieveRelevantChunks.mockResolvedValue([]);
+    const getDocumentById = vi.fn(async (ownerUid: string, _situationId: string, id: string) => ({ id, ownerUid,
+      title: id, text: `Uploaded evidence from ${id}.`, fileType: 'txt', size: 31,
+      status: 'uploaded' as const, uploadedAt: '2026-09-30', entityCount: 0 }));
+    const pack = await buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 2,
+      resolvedCapsule: pinned, objective: 'Draft from attached material.' }, { ...deps, getDocumentById });
+    expect(getDocumentById).toHaveBeenCalledExactlyOnceWith('user-1', 'historical-situation', 'document-A');
+    expect(pack.sourcedParagraphs[0]).toMatchObject({ documentId: 'document-A', sourceReceiptId: 'document:document-A' });
+    expect(JSON.stringify(pack)).not.toContain('document-B');
+  });
+
+  it('resolves an explicit version through the exact resolver when no resolved snapshot is supplied', async () => {
+    const deps = scopedDeps();
+    const pack = await buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 2,
+      objective: 'Draft from the pinned version.' }, deps);
+    expect(deps.getCapsuleAtVersion).toHaveBeenCalledExactlyOnceWith('user-1', 'cap-1', 2);
+    expect(deps.getCapsule).not.toHaveBeenCalled();
+    expect(pack.activeCapsule.version).toBe(2); expect(pack.sourceReceiptIds).not.toContain('source-B');
+  });
+
+  it.each([{ ownerUid: 'other' }, { capsuleId: 'other' }, { version: 3 }, { version: undefined }, { archivedAt: '2026-09-30' }])(
+    'rejects a mismatched supplied snapshot before enrichment: %j', async (mismatch) => {
+      const deps = scopedDeps();
+      await expect(buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 2,
+        resolvedCapsule: { ...pinned, ...mismatch } as PraxisCapsule, objective: 'Draft.' }, deps))
+        .rejects.toMatchObject({ code: 'capsule_version_unavailable', requestedVersion: 2 });
+      for (const read of [deps.getCapsule, deps.getCapsuleAtVersion, deps.listKnowledgeDocuments,
+        deps.retrieveRelevantChunks, deps.listOutputCapsules, deps.listCapsuleMemories]) expect(read).not.toHaveBeenCalled();
+    });
+
+  it.each([0, -1, 1.5, NaN, Infinity])('rejects malformed numeric pin %s without resolving or retrieving evidence', async (capsuleVersion) => {
+    const deps = scopedDeps();
+    await expect(buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion, objective: 'Draft.' }, deps))
+      .rejects.toMatchObject({ code: 'capsule_version_unavailable' });
+    expect(deps.getCapsule).not.toHaveBeenCalled(); expect(deps.getCapsuleAtVersion).not.toHaveBeenCalled();
+    expect(deps.retrieveRelevantChunks).not.toHaveBeenCalled();
+  });
+
+  it.each(['missing', 'unreadable', 'wrong-version'])('does not substitute latest when the requested version is %s', async (failure) => {
+    const deps = scopedDeps();
+    const getCapsuleAtVersion = vi.fn(async () => {
+      if (failure === 'unreadable') throw new Error('Snapshot read unavailable');
+      return failure === 'missing' ? null : latest;
+    });
+    await expect(buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', capsuleVersion: 2,
+      objective: 'Draft.' }, { ...deps, getCapsuleAtVersion })).rejects.toMatchObject({ code: 'capsule_version_unavailable' });
+    expect(deps.getCapsule).not.toHaveBeenCalled(); expect(deps.listKnowledgeDocuments).not.toHaveBeenCalled();
+    expect(deps.retrieveRelevantChunks).not.toHaveBeenCalled();
+  });
+
+  it('retains enrichment and situation retrieval for generic unpinned callers', async () => {
+    const deps = scopedDeps(); deps.getCapsule.mockResolvedValue({ ...latest, coreRefs: { ...latest.coreRefs, documentCoreIds: [] } });
+    const pack = await buildCapsuleEvidencePack({ ownerUid: 'user-1', capsuleId: 'cap-1', objective: 'Research the workspace.' }, deps);
+    expect(deps.getCapsule).toHaveBeenCalledExactlyOnceWith('user-1', 'cap-1');
+    expect(deps.getCapsuleAtVersion).not.toHaveBeenCalled();
+    expect(deps.retrieveRelevantChunks).toHaveBeenCalledWith('user-1', 'current-situation', 'Research the workspace.', { maxChunks: 8 });
+    expect(deps.listOutputCapsules).toHaveBeenCalledOnce(); expect(deps.listCapsuleMemories).toHaveBeenCalledOnce();
+    expect(pack.documentDigests).toHaveLength(3); expect(pack.sourcedParagraphs).toHaveLength(2);
+    expect(pack.referenceScope).toBeUndefined(); expect(pack.activeCapsule.version).toBe(3);
+  });
 });

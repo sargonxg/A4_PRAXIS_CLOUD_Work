@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { memo, useCallback, useMemo, useRef, useState, type ForwardRefExoticComponent, type ReactNode, type RefAttributes } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ForwardRefExoticComponent, type ReactNode, type RefAttributes } from 'react';
 import { Maximize2, Plus, Search } from 'lucide-react';
 import {
   getACOBorderColor,
@@ -13,6 +13,7 @@ import {
 } from '@/lib/constants/aco-colors';
 import { cn } from '@/lib/utils/cn';
 import { formatConfidence } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+import type { CapsuleClaimDisplay } from '@/lib/context/capsule-workbench-view-model';
 import {
   CapsuleGraphWhyPanel,
   type CapsuleGraphWhyPanelContradiction,
@@ -109,6 +110,7 @@ export type CapsuleGraphViewerProps = {
   onOpenClaim?: (claimId: string) => void;
   editable?: boolean;
   height?: number;
+  compact?: boolean;
   canonicalNodeCount?: number;
   proposedNodeCount?: number;
   graphStats?: CapsuleGraphViewerStats;
@@ -116,11 +118,15 @@ export type CapsuleGraphViewerProps = {
   onBuildFromSources?: () => void;
   proposalForm?: ReactNode;
   reviewCards?: ReactNode;
+  claims?: CapsuleClaimDisplay[];
 };
 
 type ForceGraphNode = CapsuleGraphViewerNode & {
   x?: number;
   y?: number;
+  fx?: number;
+  fy?: number;
+  __labelPriority?: boolean;
   __cluster?: boolean;
   __count?: number;
   __opacity?: number;
@@ -158,6 +164,7 @@ type ForceGraphHandle = {
 type ForceGraphProps = {
   graphData: { nodes: ForceGraphNode[]; links: ForceGraphLink[] };
   height?: number;
+  width?: number;
   backgroundColor?: string;
   cooldownTicks?: number;
   nodeCanvasObject?: (node: ForceGraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => void;
@@ -168,6 +175,9 @@ type ForceGraphProps = {
   linkWidth?: (link: ForceGraphLink) => number;
   linkLabel?: (link: ForceGraphLink) => string;
   onNodeClick?: (node: ForceGraphNode) => void;
+  onNodeHover?: (node: ForceGraphNode | null) => void;
+  nodeLabel?: (node: ForceGraphNode) => string;
+  onEngineStop?: () => void;
   onNodeRightClick?: (node: ForceGraphNode, event: MouseEvent) => void;
   onLinkClick?: (link: ForceGraphLink) => void;
   onLinkHover?: (link: ForceGraphLink | null, previousLink?: ForceGraphLink | null) => void;
@@ -203,6 +213,8 @@ function CapsuleGraphViewerComponent({
   onBuildFromSources,
   proposalForm = null,
   reviewCards = null,
+  claims = [],
+  compact = false,
 }: CapsuleGraphViewerProps) {
   const graphRef = useRef<ForceGraphHandle | null>(null);
   const [query, setQuery] = useState('');
@@ -210,19 +222,53 @@ function CapsuleGraphViewerComponent({
     nodes[0] ? { kind: 'node', item: nodes[0] as ForceGraphNode } : null
   ));
   const [hoveredEdge, setHoveredEdge] = useState<ForceGraphLink | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const [activeCategories, setActiveCategories] = useState<Set<RelationshipCategory>>(() => new Set());
   const [showInvalidated, setShowInvalidated] = useState(false);
   const [temporalMode, setTemporalMode] = useState<TemporalMode>('transaction');
   const [scrubberValue, setScrubberValue] = useState<number | null>(null);
   const [referenceTimeMs] = useState(() => Date.now());
-
-  const graphData = useMemo(() => buildForceGraphData({ nodes, edges }, query), [nodes, edges, query]);
+  const [listKind, setListKind] = useState<'nodes' | 'edges'>('nodes');
+  const [listLimit, setListLimit] = useState(50);
+  const graphContainer = useRef<HTMLDivElement>(null);
+  const [graphWidth, setGraphWidth] = useState(600);
+  const measuredWidth = useRef<number | null>(null);
+  const engineInitialized = useRef(false);
+  const initialFitDone = useRef(false);
+  const fitInitialGraph = useCallback(() => {
+    if (initialFitDone.current || !engineInitialized.current || measuredWidth.current !== graphWidth || !graphRef.current?.zoomToFit) return;
+    initialFitDone.current = true;
+    graphRef.current.zoomToFit(0, 52);
+  }, [graphWidth]);
   const graphIsEmpty = nodes.length <= 1 && edges.length === 0;
+  useEffect(() => {
+    if (!graphContainer.current || typeof ResizeObserver === 'undefined') return;
+    let fitFrame: number | null = null;
+    const observer = new ResizeObserver(([entry]) => {
+      if (!entry || entry.contentRect.width <= 0) return;
+      const width = Math.round(entry.contentRect.width);
+      measuredWidth.current = width;
+      if (width !== graphWidth) engineInitialized.current = false;
+      setGraphWidth(width);
+      // Covers measurement arriving after the engine already stopped at the same width.
+      if (engineInitialized.current) fitFrame = requestAnimationFrame(fitInitialGraph);
+    });
+    observer.observe(graphContainer.current);
+    return () => { observer.disconnect(); if (fitFrame !== null) cancelAnimationFrame(fitFrame); };
+  }, [graphIsEmpty, graphWidth, fitInitialGraph]);
+
+  const graphData = useMemo(() => buildForceGraphData({ nodes, edges }, query, selectedElement, graphWidth, height), [nodes, edges, query, selectedElement, graphWidth, height]);
   const temporalBounds = useMemo(() => buildTemporalBounds(nodes, edges, referenceTimeMs), [edges, nodes, referenceTimeMs]);
   const nowPosition = positionForTime(referenceTimeMs, temporalBounds);
   const scrubberPosition = scrubberValue ?? nowPosition;
   const selectedTimeMs = timeForPosition(scrubberPosition, temporalBounds);
-  const selectedNode = selectedElement?.kind === 'node' ? selectedElement.item : null;
+  // Resolve against the current version rather than displaying a stale selected snapshot.
+  const currentSelection: GraphSelection = useMemo(() => selectedElement?.kind === 'node'
+    ? (() => { const node = nodes.find((item) => item.id === selectedElement.item.id) ?? graphData.nodes.find((item) => item.id === selectedElement.item.id); return node ? { kind: 'node', item: { ...selectedElement.item, ...node } } : null; })()
+    : selectedElement?.kind === 'edge'
+      ? (() => { const edge = edges.find((item) => item.id === selectedElement.item.id); return edge ? { kind: 'edge', item: { ...edge, __sourceId: edge.source, __targetId: edge.target } } : null; })()
+      : null, [selectedElement, nodes, edges, graphData.nodes]);
+  const selectedNode = currentSelection?.kind === 'node' ? currentSelection.item : null;
   const nodeLabelById = useMemo(() => buildNodeLabelMap(nodes, graphData.nodes), [nodes, graphData.nodes]);
 
   const styledGraphData = useMemo(() => applyGraphStyling({
@@ -231,17 +277,29 @@ function CapsuleGraphViewerComponent({
     temporalMode,
     selectedTimeMs,
     showInvalidated,
-    selectedElement,
-  }), [activeCategories, graphData, selectedElement, selectedTimeMs, showInvalidated, temporalMode]);
+    selectedElement: currentSelection,
+  }), [activeCategories, graphData, currentSelection, selectedTimeMs, showInvalidated, temporalMode]);
 
   const panelSelection = useMemo(
-    () => panelSelectionFrom(selectedElement, nodeLabelById),
-    [nodeLabelById, selectedElement],
+    () => panelSelectionFrom(currentSelection, nodeLabelById),
+    [nodeLabelById, currentSelection],
   );
   const contradictions = useMemo(
-    () => contradictionsForSelection(selectedElement, graphData.links, nodeLabelById),
-    [graphData.links, nodeLabelById, selectedElement],
+    () => contradictionsForSelection(currentSelection, graphData.links, nodeLabelById),
+    [graphData.links, nodeLabelById, currentSelection],
   );
+  const selectedReceipts = claims.filter((claim) => {
+    const ids = currentSelection?.item.derivedFrom ?? [];
+    return ids.includes(claim.claimId) || (currentSelection?.kind === 'node' && (currentSelection.item.linkedClaimIds?.includes(claim.claimId) || currentSelection.item.id === claim.claimId || currentSelection.item.id === `claim:${claim.claimId}`));
+  }).flatMap((claim) => claim.receipts);
+  const explicitReceiptIds = new Set(currentSelection?.item.sourceReceiptIds ?? []);
+  if (currentSelection?.kind === 'node' && (currentSelection.item.type === 'source' || currentSelection.item.type === 'document')) explicitReceiptIds.add(currentSelection.item.id.replace(/^(source|document):/, ''));
+  const receipts = [...selectedReceipts, ...claims.flatMap((claim) => claim.receipts).filter((receipt) => explicitReceiptIds.has(receipt.sourceId))]
+    .filter((receipt, index, all) => all.findIndex((other) => other.sourceId === receipt.sourceId && other.snippet === receipt.snippet && other.page === receipt.page && other.charOffset === receipt.charOffset) === index);
+  const listQuery = query.trim().toLowerCase();
+  const listNodes = nodes.filter((node) => `${node.label} ${node.detail ?? ''} ${node.id}`.toLowerCase().includes(listQuery));
+  const listEdges = edges.filter((edge) => `${edge.label} ${edge.relationshipType ?? ''} ${nodeLabelById.get(edge.source) ?? edge.source} ${nodeLabelById.get(edge.target) ?? edge.target}`.toLowerCase().includes(listQuery));
+  const listItems = listKind === 'nodes' ? listNodes : listEdges;
 
   const focusSearch = useCallback(() => {
     const term = query.trim().toLowerCase();
@@ -249,28 +307,29 @@ function CapsuleGraphViewerComponent({
     if (match) {
       setSelectedElement({ kind: 'node', item: match });
       onSelect?.(match);
-      graphRef.current?.centerAt?.(match.x ?? 0, match.y ?? 0, 500);
-      graphRef.current?.zoom?.(2.1, 500);
+      graphRef.current?.centerAt?.(match.x ?? 0, match.y ?? 0, graphAnimationDuration());
+      graphRef.current?.zoom?.(2.1, graphAnimationDuration());
     } else {
-      graphRef.current?.zoomToFit?.(500, 48);
+      graphRef.current?.zoomToFit?.(graphAnimationDuration(), 48);
     }
-  }, [graphData.nodes, onSelect, query]);
+  }, [graphData.nodes, onSelect, query, setSelectedElement]);
 
   const selectElementById = useCallback((elementId: string) => {
-    const node = graphData.nodes.find((candidate) => candidate.id === elementId);
+    const node: ForceGraphNode | undefined = graphData.nodes.find((candidate) => candidate.id === elementId) ?? nodes.find((candidate) => candidate.id === elementId);
     if (node) {
       setSelectedElement({ kind: 'node', item: node });
       onSelect?.(node);
-      graphRef.current?.centerAt?.(node.x ?? 0, node.y ?? 0, 500);
-      graphRef.current?.zoom?.(2.1, 500);
+      graphRef.current?.centerAt?.(node.x ?? 0, node.y ?? 0, graphAnimationDuration());
+      graphRef.current?.zoom?.(2.1, graphAnimationDuration());
       return;
     }
-    const link = graphData.links.find((candidate) => candidate.id === elementId);
+    const edge = edges.find((candidate) => candidate.id === elementId);
+    const link = graphData.links.find((candidate) => candidate.id === elementId) ?? (edge ? { ...edge, __sourceId: edge.source, __targetId: edge.target } : null);
     if (link) {
       setSelectedElement({ kind: 'edge', item: link });
       onSelect?.(null);
     }
-  }, [graphData.links, graphData.nodes, onSelect]);
+  }, [edges, graphData.links, graphData.nodes, nodes, onSelect, setSelectedElement]);
 
   const toggleCategory = useCallback((category: RelationshipCategory) => {
     setActiveCategories((current) => {
@@ -279,7 +338,7 @@ function CapsuleGraphViewerComponent({
       else next.add(category);
       return next;
     });
-  }, []);
+  }, [setActiveCategories]);
 
   return (
     <>
@@ -294,14 +353,15 @@ function CapsuleGraphViewerComponent({
               if (event.key === 'Enter') focusSearch();
             }}
             placeholder="Search graph nodes, claims, receipts"
-            className="h-9 w-full rounded-md border border-slate-200 bg-white pl-8 pr-2 text-xs text-slate-800 outline-none focus:border-slate-400"
+            aria-label="Search the evidence map"
+            className="min-h-11 w-full rounded-md border border-slate-200 bg-white pl-8 pr-2 text-sm text-slate-800 outline-none focus:border-[color:var(--color-praxis-emerald-700)]"
           />
         </label>
-        <button type="button" onClick={focusSearch} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700">
+        <button type="button" onClick={focusSearch} className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
           <Search className="h-3.5 w-3.5" />
           Focus
         </button>
-        <button type="button" onClick={() => graphRef.current?.zoomToFit?.(500, 48)} className="inline-flex h-9 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700">
+        <button type="button" onClick={() => graphRef.current?.zoomToFit?.(graphAnimationDuration(), 48)} className="inline-flex min-h-11 items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700">
           <Maximize2 className="h-3.5 w-3.5" />
           Fit
         </button>
@@ -313,7 +373,7 @@ function CapsuleGraphViewerComponent({
         ) : null}
       </div>
 
-      <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-2 py-2" data-testid="capsule-graph-lens-bar">
+      {!compact ? <div className="flex flex-wrap items-center gap-1.5 border-b border-slate-100 bg-slate-50 px-2 py-2" data-testid="capsule-graph-lens-bar">
         <span className="mr-1 font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">ACO lenses</span>
         <span className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600">Context / boundary</span>
         {RELATIONSHIP_LENS_OPTIONS.map(({ category, label }) => {
@@ -346,9 +406,9 @@ function CapsuleGraphViewerComponent({
         >
           Invalidated
         </button>
-      </div>
+      </div> : null}
 
-      {graphStats ? (
+      {graphStats && !compact ? (
         <div className="grid grid-cols-2 gap-px border-b border-slate-100 bg-slate-100 text-xs sm:grid-cols-4 lg:grid-cols-8" data-testid="capsule-graph-stats">
           {graphStatItems(graphStats).map((item) => (
             <div key={item.label} className="min-w-0 bg-white px-2.5 py-2">
@@ -362,20 +422,23 @@ function CapsuleGraphViewerComponent({
       {graphIsEmpty ? (
         <div className="flex h-[420px] flex-col items-center justify-center gap-3 p-6 text-center">
           <p className="text-sm font-semibold text-slate-800">No graph projection is attached yet.</p>
-          <button type="button" onClick={onBuildFromSources} className="rounded-md border border-slate-900 bg-slate-950 px-3 py-2 text-xs font-semibold text-white">
+          {onBuildFromSources ? <button type="button" onClick={onBuildFromSources} className="rounded-md border border-slate-900 bg-slate-950 px-3 py-2 text-xs font-semibold text-white">
             Build graph from sources
-          </button>
+          </button> : <p className="text-sm leading-6 text-slate-600">Add source material and review its proposals to build the evidence map.</p>}
         </div>
       ) : (
         <div className="grid gap-0 lg:grid-cols-[minmax(0,1fr)_19rem]">
-          <div className="min-w-0 bg-white">
+          <div ref={graphContainer} className="min-w-0 overflow-hidden bg-[#f6f9f7]" aria-label="Interactive projection of recorded context">
             <ForceGraph2D
               ref={graphRef}
               graphData={styledGraphData}
               height={height}
-              backgroundColor="#ffffff"
-              cooldownTicks={80}
-              nodeCanvasObject={paintGraphNode}
+              width={graphWidth}
+              backgroundColor="#f6f9f7"
+              cooldownTicks={1}
+              nodeCanvasObject={(node, ctx, scale) => paintGraphNode(node, ctx, scale, node.id === hoveredNodeId)}
+              nodeLabel={(node) => node.label}
+              onEngineStop={() => { engineInitialized.current = true; fitInitialGraph(); }}
               nodePointerAreaPaint={paintNodePointerArea}
               linkCanvasObject={paintGraphLink}
               linkCanvasObjectMode={() => 'replace'}
@@ -386,6 +449,7 @@ function CapsuleGraphViewerComponent({
                 setSelectedElement({ kind: 'node', item: node });
                 onSelect?.(node);
               }}
+              onNodeHover={(node) => setHoveredNodeId(node?.id ?? null)}
               onNodeRightClick={(node, event) => {
                 event.preventDefault();
                 setSelectedElement({ kind: 'node', item: node });
@@ -406,12 +470,31 @@ function CapsuleGraphViewerComponent({
               contradictions={contradictions}
               onOpenClaim={onOpenClaim}
               onSelectElement={selectElementById}
+              receipts={receipts}
             />
           </aside>
         </div>
       )}
 
-      <div className="border-t border-slate-100 bg-white px-3 py-2" data-testid="capsule-graph-temporal-scrubber">
+      <section className="border-t border-slate-200 bg-white p-3" aria-label="Evidence map list" data-testid="capsule-graph-keyboard-list">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-slate-900">Explore the map</h3>
+          <div className="flex gap-1" aria-label="Map items">
+            {(['nodes', 'edges'] as const).map((kind) => <button key={kind} type="button" aria-pressed={listKind === kind} onClick={() => { setListKind(kind); setListLimit(50); }} className={cn('min-h-11 rounded-md border px-3 text-sm font-semibold', listKind === kind ? 'border-[color:var(--color-praxis-emerald-700)] bg-[color:var(--color-praxis-emerald-50)] text-[color:var(--color-praxis-emerald-700)]' : 'border-slate-200 text-slate-700')}>{kind === 'nodes' ? `Items (${listNodes.length})` : `Relationships (${listEdges.length})`}</button>)}
+          </div>
+        </div>
+        <p className="mt-1 text-xs leading-5 text-slate-600">The list and map open the same evidence. Use Tab and Enter to inspect any item or relationship.</p>
+        <div className="mt-3 grid max-h-72 gap-1 overflow-y-auto sm:grid-cols-2">
+          {listItems.slice(0, listLimit).map((item) => <button key={item.id} type="button" aria-pressed={currentSelection?.item.id === item.id} onClick={() => selectElementById(item.id)} className={cn('min-h-11 min-w-0 rounded-md border px-3 py-2 text-left text-sm', currentSelection?.item.id === item.id ? 'border-[color:var(--color-praxis-emerald-500)] bg-[color:var(--color-praxis-emerald-50)]' : 'border-slate-200 hover:bg-slate-50')}>
+            <span className="block break-words font-semibold text-slate-900">{'source' in item ? `${nodeLabelById.get(item.source) ?? item.source} → ${item.label} → ${nodeLabelById.get(item.target) ?? item.target}` : item.label}</span>
+            <span className="mt-1 block text-xs text-slate-600">{'type' in item ? item.type : 'relationship'} · {item.reviewState} · {formatConfidence(item.confidence)}</span>
+          </button>)}
+        </div>
+        {!listItems.length ? <p className="mt-3 text-sm text-slate-600">No matching {listKind === 'nodes' ? 'items' : 'relationships'}.</p> : null}
+        {listItems.length > listLimit ? <button type="button" onClick={() => setListLimit((limit) => limit + 50)} className="mt-3 min-h-11 px-3 text-sm font-semibold text-[color:var(--color-praxis-emerald-700)] underline">Show more {listKind === 'nodes' ? 'items' : 'relationships'}</button> : null}
+      </section>
+
+      {!compact ? <div className="border-t border-slate-100 bg-white px-3 py-2" data-testid="capsule-graph-temporal-scrubber">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Bi-temporal</span>
           <span className="inline-flex rounded-md border border-slate-200 bg-slate-50 p-0.5">
@@ -441,7 +524,7 @@ function CapsuleGraphViewerComponent({
           />
           <span className="font-mono text-[10px] font-semibold text-slate-500">{new Date(selectedTimeMs).toISOString().slice(0, 10)}</span>
         </div>
-      </div>
+      </div> : null}
 
       {proposalForm}
       <div className="border-t border-slate-100 bg-white px-3 py-2">
@@ -450,9 +533,8 @@ function CapsuleGraphViewerComponent({
           <span>{proposedNodeCount} proposed/missing</span>
           {graphStats ? <span>{graphStats.boundaryNodes} Boundary</span> : null}
           {graphStats ? <span>{graphStats.provenanceCoveragePct}% provenance</span> : null}
-          <span>{nodes.length > graphData.nodes.length ? `${nodes.length - graphData.nodes.length} nodes collapsed by level of detail` : 'Full graph visible'}</span>
-          <span>GraphLite advisory projection</span>
-          <span>Firestore canonical</span>
+          <span>{nodes.length > graphData.nodes.length ? `${nodes.length - graphData.nodes.length} items grouped in the map; all are available in the list` : 'All recorded items visible'}</span>
+          <span>Recorded context projection</span>
           <span>Review before promotion</span>
         </div>
         {reviewCards}
@@ -477,15 +559,20 @@ function graphStatItems(stats: CapsuleGraphViewerStats): Array<{ label: string; 
   ];
 }
 
-function buildForceGraphData(graph: { nodes: CapsuleGraphViewerNode[]; edges: CapsuleGraphViewerEdge[] }, query: string): { nodes: ForceGraphNode[]; links: ForceGraphLink[] } {
+function graphAnimationDuration(): number {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 450;
+}
+
+function buildForceGraphData(graph: { nodes: CapsuleGraphViewerNode[]; edges: CapsuleGraphViewerEdge[] }, query: string, selection: GraphSelection, width: number, height: number): { nodes: ForceGraphNode[]; links: ForceGraphLink[] } {
   const term = query.trim().toLowerCase();
+  const pinnedIds = new Set(selection?.kind === 'node' ? [selection.item.id] : selection?.kind === 'edge' ? [selection.item.__sourceId, selection.item.__targetId] : []);
   let visibleIds = new Set(graph.nodes.map((node) => node.id));
   const remap = new Map<string, string>();
   const clusterCounts = new Map<string, number>();
 
   if (term) {
     const matches = graph.nodes.filter((node) => `${node.label} ${node.detail ?? ''} ${node.entityType ?? ''} ${node.provenance ?? ''}`.toLowerCase().includes(term));
-    visibleIds = new Set(matches.map((node) => node.id));
+    visibleIds = new Set([...matches.map((node) => node.id), ...pinnedIds]);
     for (const edge of graph.edges) {
       if (visibleIds.has(edge.source)) visibleIds.add(edge.target);
       if (visibleIds.has(edge.target)) visibleIds.add(edge.source);
@@ -493,7 +580,7 @@ function buildForceGraphData(graph: { nodes: CapsuleGraphViewerNode[]; edges: Ca
   } else if (graph.nodes.length > 150) {
     visibleIds = new Set();
     for (const [index, node] of graph.nodes.entries()) {
-      const keep = node.type === 'capsule'
+      const keep = pinnedIds.has(node.id) || node.type === 'capsule'
         || node.type === 'core'
         || node.type === 'ontology'
         || node.type === 'review'
@@ -536,10 +623,34 @@ function buildForceGraphData(graph: { nodes: CapsuleGraphViewerNode[]; edges: Ca
   });
   const uniqueLinks = new Map<string, ForceGraphLink>();
   for (const link of links) {
-    const key = `${String(link.source)}:${String(link.target)}:${link.relationshipType ?? link.label}`;
+    const key = selection?.kind === 'edge' && selection.item.id === link.id ? `selected:${link.id}` : `${String(link.source)}:${String(link.target)}:${link.relationshipType ?? link.label}`;
     if (!uniqueLinks.has(key)) uniqueLinks.set(key, link);
   }
-  return { nodes, links: [...uniqueLinks.values()] };
+  return { nodes: placeGraphNodes(nodes, width, height), links: [...uniqueLinks.values()] };
+}
+
+/** Recorded types determine visual grouping; stable positions are ready before simulation. */
+function placeGraphNodes(nodes: ForceGraphNode[], width: number, height: number): ForceGraphNode[] {
+  if (!nodes.length) return nodes;
+  const center = nodes.find((node) => node.type === 'capsule') ?? nodes[0];
+  const sorted = nodes.filter((node) => node.id !== center.id).sort((a, b) => a.type.localeCompare(b.type) || a.id.localeCompare(b.id));
+  const primary = sorted.filter((node) => node.type === 'core' || node.__cluster);
+  const supporting = sorted.filter((node) => node.type !== 'core' && !node.__cluster);
+  const tracks: Array<{ members: ForceGraphNode[]; primary: boolean }> = [];
+  for (let start = 0; start < primary.length; start += 12) tracks.push({ members: primary.slice(start, start + 12), primary: true });
+  for (let start = 0; start < supporting.length; start += 18) tracks.push({ members: supporting.slice(start, start + 18), primary: false });
+  const positions = new Map<string, { x: number; y: number; __labelPriority: boolean }>([[center.id, { x: 0, y: 0, __labelPriority: true }]]);
+  const radiusX = Math.max(80, width / 2 - 60);
+  const radiusY = Math.max(72, height / 2 - 55);
+  tracks.forEach((track, ring) => {
+    const fraction = (ring + 1) / tracks.length;
+    track.members.forEach((node, index) => {
+      const angle = -Math.PI / 2 + (index / track.members.length) * 2 * Math.PI + (ring % 2 ? Math.PI / track.members.length : 0);
+      positions.set(node.id, { x: Math.cos(angle) * radiusX * fraction, y: Math.sin(angle) * radiusY * fraction,
+        __labelPriority: track.primary && index % Math.ceil(track.members.length / 6) === 0 });
+    });
+  });
+  return nodes.map((node) => { const position = positions.get(node.id)!; return { ...node, ...position, fx: position.x, fy: position.y }; });
 }
 
 function applyGraphStyling({
@@ -609,9 +720,7 @@ function applyGraphStyling({
   return { nodes, links };
 }
 
-function paintGraphNode(node: ForceGraphNode, ctx: CanvasRenderingContext2D, globalScale: number) {
-  const rawLabel = node.__cluster ? node.label : node.label.slice(0, 42);
-  const label = node.__visibleInvalidated ? `~~ ${rawLabel}` : rawLabel;
+function paintGraphNode(node: ForceGraphNode, ctx: CanvasRenderingContext2D, globalScale: number, hovered: boolean) {
   const entityType = node.entityType ?? node.type;
   const fill = node.reviewState === 'missing' ? '#fee2e2' : getACOColor(entityType);
   const stroke = node.reviewState === 'missing' ? '#dc2626' : getACOBorderColor(entityType);
@@ -651,13 +760,23 @@ function paintGraphNode(node: ForceGraphNode, ctx: CanvasRenderingContext2D, glo
     ctx.fillStyle = '#059669';
     ctx.fill();
   }
-  const fontSize = Math.max(9, 11 / globalScale);
+  if (!node.__selected && !hovered && !node.__labelPriority) { ctx.restore(); return; }
+  const emphasized = Boolean(node.__selected || hovered);
+  const labelLimit = emphasized ? 46 : 18;
+  const rawLabel = node.label.length > labelLimit ? `${node.label.slice(0, labelLimit - 1).trimEnd()}…` : node.label;
+  const label = node.__visibleInvalidated ? `~~ ${rawLabel}` : rawLabel;
+  const fontSize = 11 / Math.max(globalScale, 0.25);
   const labelY = y + radius + 4;
   ctx.font = `600 ${fontSize}px Inter, ui-sans-serif, system-ui, sans-serif`;
-  ctx.fillStyle = '#334155';
+  const splitAt = label.lastIndexOf(' ', 24) >= 10 ? label.lastIndexOf(' ', 24) : 24;
+  const lines = emphasized && label.length > 24 ? [label.slice(0, splitAt).trimEnd(), label.slice(splitAt).trimStart()] : [label];
+  const labelWidth = Math.max(...lines.map((line) => ctx.measureText(line).width));
+  ctx.fillStyle = '#f6f9f7';
+  ctx.fillRect(x - labelWidth / 2 - 3 / globalScale, labelY - 2 / globalScale, labelWidth + 6 / globalScale, fontSize * 1.35 * lines.length);
+  ctx.fillStyle = emphasized ? '#0f172a' : '#475569';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillText(label, x, labelY);
+  lines.forEach((line, index) => ctx.fillText(line, x, labelY + index * fontSize * 1.3));
   if (node.__visibleInvalidated) {
     const width = ctx.measureText(label).width;
     ctx.beginPath();
@@ -716,6 +835,14 @@ function panelSelectionFrom(selection: GraphSelection, nodeLabelById: Map<string
       confidence: node.confidence,
       confidenceKind: node.confidenceKind,
       rationale: node.rationale,
+      detail: node.detail,
+      provenance: node.provenance,
+      sourceReceiptIds: node.sourceReceiptIds,
+      version: node.version,
+      validFrom: node.validFrom,
+      validUntil: node.validUntil,
+      asOf: node.asOf,
+      recordedAt: node.recordedAt,
       derivedFrom: node.derivedFrom,
       generatedBy: node.generatedBy,
       invalidatedAt: node.invalidatedAt,
@@ -733,6 +860,12 @@ function panelSelectionFrom(selection: GraphSelection, nodeLabelById: Map<string
     confidence: edge.confidence,
     confidenceKind: edge.confidenceKind,
     rationale: edge.rationale,
+    provenance: edge.provenance,
+    sourceReceiptIds: edge.sourceReceiptIds,
+    validFrom: edge.validFrom,
+    validUntil: edge.validUntil,
+    asOf: edge.asOf,
+    recordedAt: edge.recordedAt,
     derivedFrom: edge.derivedFrom,
     generatedBy: edge.generatedBy,
     invalidatedAt: edge.invalidatedAt,
