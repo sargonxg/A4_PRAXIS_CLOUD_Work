@@ -70,7 +70,7 @@ export default function GuidePage() {
         ))}
       </ol>
 
-      <nav aria-label="Capsule tools" className="my-6 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-[var(--color-praxis-emerald-700)]">
+      <nav aria-label="Capsule tools" className="my-6 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-[var(--color-praxis-emerald-800)]">
         <Link href="/app/capsules" className="inline-flex min-h-11 items-center underline underline-offset-4">Browse capsules</Link>
         <Link href="/app/capsules/builder" className="inline-flex min-h-11 items-center underline underline-offset-4">Create a capsule</Link>
         <Link href="/learn" className="inline-flex min-h-11 items-center underline underline-offset-4">How saved context works</Link>
