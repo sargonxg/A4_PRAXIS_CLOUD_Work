@@ -8,6 +8,7 @@ import {
   toAgentRunOutput,
 } from '@/lib/agent-runtime/schema';
 import { getCapsule, getOrMigrateDefaultCapsule } from '@/lib/context/capsule-service';
+import { CapsuleVersionConflictError, getCapsuleAtVersion } from '@/lib/context/capsule-version-resolution';
 import type { SelectedCoreIds } from '@/lib/agent-runtime/types';
 
 export const dynamic = 'force-dynamic';
@@ -73,13 +74,23 @@ export const POST = withAuth(async (request, user) => {
   }
 
   try {
+    if (parsed.data.capsuleId && normalizePointer(parsed.data.capsuleId, 'default') !== capsule.capsuleId) {
+      throw new CapsuleVersionConflictError(parsed.data.capsuleId, null);
+    }
+    const capturedVersion = requestedManualVersion(parsed.data.metadata, capsule.capsuleId, capsule.version);
+    const capturedCapsule = await getCapsuleAtVersion(user.uid, capsule.capsuleId, capturedVersion);
+    if (!capturedCapsule || capturedCapsule.ownerUid !== user.uid
+      || capturedCapsule.capsuleId !== capsule.capsuleId || capturedCapsule.version !== capturedVersion
+      || capturedCapsule.archivedAt) {
+      throw new CapsuleVersionConflictError(capsule.capsuleId, capturedVersion);
+    }
     const run = await createAgentRun({
       ownerUid: user.uid,
       capsuleId: capsule.capsuleId,
       contextStackId: parsed.data.contextStackId ?? capsule.capsuleId,
       contextPackageId: parsed.data.contextPackageId ?? null,
       selectedCoreIds: {
-        ...capsule.coreRefs,
+        ...capturedCapsule.coreRefs,
         ...(parsed.data.selectedCoreIds as Partial<SelectedCoreIds> | undefined),
       },
       agentSpecId: parsed.data.agentSpecId ?? null,
@@ -93,6 +104,9 @@ export const POST = withAuth(async (request, user) => {
       internalEstimatedCostCents: parsed.data.internalEstimatedCostCents ?? null,
       metadata: {
         ...(parsed.data.metadata ?? {}),
+        // Capture the selected version now; worker execution must never choose
+        // a newer capsule later or trust caller-supplied snapshot assertions.
+        capsuleAgentExecutionContext: { version: 1, capsuleId: capturedCapsule.capsuleId, capsuleVersion: capturedVersion },
         ...(parsed.data.policyAgentId ? { policyAgentId: parsed.data.policyAgentId } : {}),
         ...(parsed.data.outputDestination ? { outputDestination: parsed.data.outputDestination } : {}),
         executionMode: 'queued-only',
@@ -103,9 +117,41 @@ export const POST = withAuth(async (request, user) => {
     }
     return NextResponse.json(toAgentRunOutput(run), { status: 201 });
   } catch (err) {
+    if (err instanceof CapsuleVersionConflictError) {
+      return NextResponse.json({ error: err.code, code: err.code, message: err.message,
+        details: { recoverable: true, action: 'reattach_capsule' } }, {
+        status: 409, headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
     return ledgerError(err);
   }
 });
+
+function requestedManualVersion(metadata: Record<string, unknown> | undefined, capsuleId: string, currentVersion: number): number {
+  const versions: number[] = [];
+  const record = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === 'object' && !Array.isArray(value));
+  const conflict = () => new CapsuleVersionConflictError(capsuleId, null);
+  const addVersion = (value: unknown) => {
+    if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 1) throw conflict();
+    versions.push(value);
+  };
+  const supplied = metadata?.capsuleAgentExecutionContext;
+  if (supplied !== undefined) {
+    if (!record(supplied) || supplied.version !== 1 || supplied.capsuleId !== capsuleId) throw conflict();
+    addVersion(supplied.capsuleVersion);
+  }
+  const stack = metadata?.activeContextStack;
+  if (record(stack) && Array.isArray(stack.capsuleRefs)) {
+    for (const reference of stack.capsuleRefs) {
+      // Legacy manual workbench references are unpinned (null/absent).
+      // Capture that selection now, while preserving every explicit pin.
+      if (record(reference) && reference.capsuleId === capsuleId && reference.version != null) addVersion(reference.version);
+    }
+  }
+  if (!versions.length) addVersion(currentVersion);
+  if (versions.some((version) => version !== versions[0])) throw conflict();
+  return versions[0];
+}
 
 async function resolveCapsule(uid: string, capsuleId?: string) {
   if (capsuleId) return getCapsule(uid, normalizePointer(capsuleId, 'default'));

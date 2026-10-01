@@ -123,6 +123,47 @@ describe('memo service helpers', () => {
   const contextDraft = { caseId: 'case-1', templateId: 'policy-memo' as const, title: 'Memo', graphSnapshotId: 'graph-1',
     blocks: [{ id: 'memo-body', type: 'paragraph' as const, content: 'A draft.', citations: [], metadata: {} }] };
 
+  it('omits absent change notes and nested optional fields at the Firestore save boundary', async () => {
+    const fixture = createMemoDb({});
+    const record = await saveMemoDraft('user-1', { ...contextDraft, blocks: [{ ...contextDraft.blocks[0],
+      title: undefined, items: undefined, metadata: { optional: undefined,
+        nested: { absent: undefined, retained: null }, steps: ['first', undefined, 'last'],
+        enabled: false, count: 0, empty: '' },
+    }] }, fixture.db as never);
+    const loaded = await loadMemoById('user-1', record.memo.id, fixture.db as never);
+    const expectedMetadata = { nested: { retained: null }, steps: ['first', null, 'last'], enabled: false, count: 0, empty: '' };
+    for (const version of [record.versions[0], loaded?.versions[0]]) {
+      expect(version).not.toHaveProperty('changeNote');
+      expect(version?.blocks[0]).not.toHaveProperty('title');
+      expect(version?.blocks[0]).not.toHaveProperty('items');
+      expect(version?.blocks[0].metadata).toEqual(expectedMetadata);
+    }
+    expect(loaded?.memo).toMatchObject(record.memo);
+  });
+
+  it('models Firestore rejection of undefined values rather than hiding them during JSON cloning', async () => {
+    const fixture = createMemoDb({});
+    const ref = fixture.db.collection('users').doc('user-1');
+    await expect(ref.set({ changeNote: undefined })).rejects.toThrow('document.changeNote');
+    await expect(fixture.db.runTransaction(async (transaction) => {
+      transaction.set(ref, { metadata: { values: ['first', undefined] } });
+    })).rejects.toThrow('document.metadata.values[1]');
+    expect(fixture.records['users/user-1']).toEqual({ uid: 'user-1' });
+  });
+
+  it('preserves an explicit change note with the exact version-owned context snapshot', async () => {
+    const fixture = createMemoDb({});
+    const record = await saveMemoDraft('user-1', { ...contextDraft, changeNote: 'Reviewed the supplied source.',
+      capsuleId: 'cap-1', capsuleVersion: 2, sourceReceiptIds: ['source-1'], sourceReceipts: [{ id: 'source-1' }] }, fixture.db as never);
+    const loaded = await loadMemoById('user-1', record.memo.id, fixture.db as never);
+    expect(loaded?.versions[0]).toMatchObject({ changeNote: 'Reviewed the supplied source.', contextSnapshot: {
+      capsuleId: 'cap-1', capsuleVersion: 2, sourceReceiptIds: ['source-1'], sourceReceipts: [{ id: 'source-1' }],
+    } });
+    const savedVersion = fixture.records[`users/user-1/situations/case-1/memos/${record.memo.id}/versions/${record.versions[0].id}`];
+    expect(readMemoContextSnapshot(savedVersion.contextSnapshot)).toMatchObject({ binding: 'recorded', capsuleId: 'cap-1', capsuleVersion: 2 });
+    expect(loaded?.versions[0].contextSnapshot).toEqual(savedVersion.contextSnapshot);
+  });
+
   it('records an explicit empty context for a first save without context', async () => {
     const fixture = createMemoDb({});
     const record = await saveMemoDraft('user-1', contextDraft, fixture.db as never);
@@ -405,7 +446,7 @@ function createMemoDb(
 }
 
 /** Match Firestore's write-time rejection; JSON cloning used to hide this defect. */
-function assertFirestoreWritable(value: unknown, path = 'root'): void {
+function assertFirestoreWritable(value: unknown, path = 'document'): void {
   if (value === undefined) throw new Error(`Firestore rejects undefined at ${path}`);
   if (Array.isArray(value)) {
     Array.from(value).forEach((entry, index) => assertFirestoreWritable(entry, `${path}[${index}]`));

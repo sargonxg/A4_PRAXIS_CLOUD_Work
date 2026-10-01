@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   listBoardroomAgentRuns: vi.fn(),
   enqueueAgentRunDispatch: vi.fn(),
   getCapsule: vi.fn(),
+  getCapsuleAtVersion: vi.fn(),
   getOrMigrateDefaultCapsule: vi.fn(),
   getStoredContextStack: vi.fn(),
   resolveInjectableContext: vi.fn(),
@@ -25,34 +26,47 @@ vi.mock('@/lib/agent-runtime/cloud-tasks', () => ({
   enqueueAgentRunDispatch: mocks.enqueueAgentRunDispatch,
 }));
 
-vi.mock('@/lib/context/capsule-service', () => ({
+vi.mock('@/lib/context/capsule-service', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/context/capsule-service')>(),
   getCapsule: mocks.getCapsule,
   getOrMigrateDefaultCapsule: mocks.getOrMigrateDefaultCapsule,
   getStoredContextStack: mocks.getStoredContextStack,
 }));
 
+vi.mock('@/lib/context/capsule-version-resolution', () => ({
+  getCapsuleAtVersion: mocks.getCapsuleAtVersion,
+}));
+
 vi.mock('@/lib/context/context-injection', () => ({
   resolveInjectableContext: mocks.resolveInjectableContext,
-  buildProtectedContextPromptBlock: vi.fn((promptBlock: string) => ({
+  buildProtectedContextPromptBlock: (promptBlock: string) => ({
     promptBlock,
     dockTrimmed: false,
     contextTrimmed: false,
-  })),
+  }),
 }));
 
 describe('/api/boardroom/runs route', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    mocks.getCapsule.mockResolvedValue({
+    vi.resetAllMocks();
+    const capsule = {
       capsuleId: 'cap-1',
+      ownerUid: 'user-1',
+      label: 'Operating posture',
+      version: 1,
       archivedAt: null,
       coreRefs: {
         userCoreId: 'user-core',
         situationCoreId: 'situation-core',
         sourceCoreIds: ['source-core'],
         documentCoreIds: [],
+        outputCoreIds: [],
+        toolCoreIds: [],
       },
-    });
+    };
+    mocks.getCapsule.mockResolvedValue(capsule);
+    mocks.getCapsuleAtVersion.mockImplementation(async (_owner, _id, version) => ({ ...capsule, version }));
+    mocks.getOrMigrateDefaultCapsule.mockResolvedValue({ capsule });
     mocks.createAgentRun.mockResolvedValue({
       id: 'run-boardroom-1',
       status: 'queued',
@@ -80,6 +94,7 @@ describe('/api/boardroom/runs route', () => {
     });
     mocks.getStoredContextStack.mockResolvedValue({ stackId: 'default', capsuleRefs: [] });
     mocks.resolveInjectableContext.mockResolvedValue({
+      capsule,
       promptBlock: '<praxis-context-capsule>\n[capsule_dock]\nsituation_capsule: cap-1 (v1, health 80)\n</praxis-context-capsule>',
       dockCapsules: [
         { role: 'situation', capsule: { capsuleId: 'cap-1' } },
@@ -147,6 +162,7 @@ describe('/api/boardroom/runs route', () => {
         documentCoreIds: ['doc-1'],
       }),
       metadata: expect.objectContaining({
+        capsuleAgentExecutionContext: { version: 1, capsuleId: 'cap-1', capsuleVersion: 1 },
         policyAgentId: 'boardroom-discussion',
         outputDestination: 'library',
         sourceReceiptIds: ['receipt-doc-1'],
@@ -182,6 +198,7 @@ describe('/api/boardroom/runs route', () => {
       capsuleRefs: [{ capsuleId: 'wrong-situation', role: 'situation', label: 'Wrong situation', primary: true, order: 0, version: 1 }],
     });
     mocks.resolveInjectableContext.mockResolvedValue({
+      capsule: { ...await mocks.getCapsule('user-1', 'cap-1'), version: 2 },
       promptBlock: '<praxis-context-capsule>\n[capsule_dock]\nuser_capsule: cap-user\nsituation_capsule: cap-1\n</praxis-context-capsule>',
       dockCapsules: [
         { role: 'user', capsule: { capsuleId: 'cap-user' } },
@@ -239,6 +256,152 @@ describe('/api/boardroom/runs route', () => {
     expect(storedMetadata.contextInjectionPromptBlock).not.toContain('wrong-situation');
   });
 
+  it('captures explicit situation v2 while current is v3, including historical evidence and prompt inputs', async () => {
+    const current = { ...await mocks.getCapsule('user-1', 'cap-1'), version: 3 };
+    const historical = {
+      ...current,
+      version: 2,
+      coreRefs: { ...current.coreRefs, situationCoreId: 'situation-v2', sourceCoreIds: ['source-v2'], documentCoreIds: ['doc-v2'] },
+    };
+    mocks.getCapsule.mockResolvedValue(current);
+    mocks.getCapsuleAtVersion.mockResolvedValue(historical);
+    mocks.resolveInjectableContext.mockResolvedValue({
+      capsule: historical,
+      promptBlock: 'Saved version 2 context',
+      dockCapsules: [{ role: 'situation', capsule: historical }],
+      missingDockCapsuleIds: [],
+    });
+    mocks.getStoredContextStack.mockResolvedValue({
+      stackId: 'default', capsuleId: 'cap-1', sourceIds: ['source-v3'], documentIds: ['doc-v3'],
+      capsuleRefs: [{ capsuleId: 'cap-1', role: 'situation', primary: true, version: 3 }],
+    });
+    const response = await postRun({ capsuleDockPayload: { slots: [{ role: 'situation', capsuleId: 'cap-1', version: 2 }] } });
+
+    expect(response.status).toBe(201);
+    expect(mocks.getCapsuleAtVersion).toHaveBeenCalledWith('user-1', 'cap-1', 2);
+    expect(mocks.resolveInjectableContext).toHaveBeenCalledWith(expect.objectContaining({
+      capsuleId: 'cap-1',
+      activeContextStack: expect.objectContaining({
+        sourceIds: ['source-v2'], documentIds: ['doc-v2'], situationId: 'situation-v2',
+        capsuleRefs: expect.arrayContaining([expect.objectContaining({ capsuleId: 'cap-1', version: 2, primary: true })]),
+      }),
+    }));
+    expect(mocks.createAgentRun).toHaveBeenCalledWith(expect.objectContaining({
+      contextPackageId: 'capsule:cap-1:v2',
+      selectedCoreIds: expect.objectContaining({ situationCoreId: 'situation-v2', sourceCoreIds: ['source-v2'], documentCoreIds: ['doc-v2'] }),
+      metadata: expect.objectContaining({
+        capsuleAgentExecutionContext: { version: 1, capsuleId: 'cap-1', capsuleVersion: 2 },
+        contextInjectionPromptBlock: 'Saved version 2 context',
+      }),
+    }));
+  });
+
+  it.each([0, -1, 1.5, '2', Number.MAX_SAFE_INTEGER + 1])('rejects malformed explicit version %s before queueing', async (version) => {
+    const response = await postRun({ capsuleDockPayload: { slots: [{ role: 'situation', capsuleId: 'cap-1', version }] } });
+    expect(response.status).toBe(400);
+    expect(mocks.getCapsuleAtVersion).not.toHaveBeenCalled();
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.enqueueAgentRunDispatch).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['missing', null],
+    ['foreign owner', { ownerUid: 'other-owner', version: 2 }],
+    ['wrong id', { capsuleId: 'other-cap', version: 2 }],
+    ['stale resolver result', { version: 3 }],
+    ['archived', { version: 2, archivedAt: '2026-09-30T00:00:00Z' }],
+  ])('rejects %s historical context without creating or dispatching a run', async (_reason, patch) => {
+    const capsule = await mocks.getCapsule('user-1', 'cap-1');
+    mocks.getCapsuleAtVersion.mockResolvedValue(patch ? { ...capsule, ...patch } : null);
+    const response = await postRun({ capsuleDockPayload: { slots: [{ role: 'situation', capsuleId: 'cap-1', version: 2 }] } });
+    expect(response.status).toBe(409);
+    expect(mocks.resolveInjectableContext).not.toHaveBeenCalled();
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.enqueueAgentRunDispatch).not.toHaveBeenCalled();
+  });
+
+  it('does not silently queue thin context when prompt compilation fails', async () => {
+    mocks.resolveInjectableContext.mockRejectedValue(new Error('Requested dock version is unavailable'));
+    const response = await postRun();
+    expect(response.status).toBe(409);
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.enqueueAgentRunDispatch).not.toHaveBeenCalled();
+  });
+
+  it('rejects a prompt resolver that widens the captured historical version', async () => {
+    const capsule = await mocks.getCapsule('user-1', 'cap-1');
+    mocks.getCapsuleAtVersion.mockResolvedValue({ ...capsule, version: 2 });
+    mocks.resolveInjectableContext.mockResolvedValue({ capsule: { ...capsule, version: 3 }, promptBlock: 'Newer context', dockCapsules: [] });
+    const response = await postRun({ capsuleDockPayload: { slots: [{ role: 'situation', capsuleId: 'cap-1', version: 2 }] } });
+    expect(response.status).toBe(409);
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.enqueueAgentRunDispatch).not.toHaveBeenCalled();
+  });
+
+  it('keeps an additional user-only dock while pinning the manually selected governing capsule', async () => {
+    mocks.getStoredContextStack.mockResolvedValue(null);
+    const response = await postRun({ capsuleDockPayload: { slots: [{ role: 'user', capsuleId: 'cap-user', version: 3 }] } });
+    expect(response.status).toBe(201);
+    expect(mocks.resolveInjectableContext).toHaveBeenCalledWith(expect.objectContaining({
+      activeContextStack: expect.objectContaining({ capsuleRefs: expect.arrayContaining([
+        expect.objectContaining({ capsuleId: 'cap-1', version: 1, primary: true }),
+        expect.objectContaining({ capsuleId: 'cap-user', version: 3, role: 'user', primary: false }),
+      ]) }),
+    }));
+  });
+
+  it('uses the explicit situation selection without requiring a separate capsule id', async () => {
+    const capsule = { ...await mocks.getCapsule('user-1', 'cap-1'), version: 2 };
+    mocks.getCapsuleAtVersion.mockResolvedValue(capsule);
+    mocks.resolveInjectableContext.mockResolvedValue({ capsule, promptBlock: 'Saved version 2', dockCapsules: [{ role: 'situation', capsule }] });
+    const response = await postRun({ capsuleId: undefined, capsuleDockPayload: { slots: [{ role: 'situation', capsuleId: 'cap-1', version: 2 }] } });
+    expect(response.status).toBe(201);
+    expect(mocks.getCapsuleAtVersion).toHaveBeenCalledWith('user-1', 'cap-1', 2);
+    expect(mocks.getOrMigrateDefaultCapsule).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { version: 0 }, { version: undefined }, { ownerUid: 'other-owner' }, { archivedAt: '2026-09-30T00:00:00Z' },
+  ])('rejects invalid current selection %j before queueing', async (patch) => {
+    mocks.getCapsule.mockResolvedValue({ ...await mocks.getCapsule('user-1', 'cap-1'), ...patch });
+    const response = await postRun();
+    expect([404, 409]).toContain(response.status);
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.enqueueAgentRunDispatch).not.toHaveBeenCalled();
+  });
+
+  it('rejects a mismatched primary situation instead of choosing either capsule', async () => {
+    const response = await postRun({ capsuleDockPayload: { slots: [{ role: 'situation', capsuleId: 'different-cap', version: 2 }] } });
+    expect(response.status).toBe(400);
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.enqueueAgentRunDispatch).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { slots: [{ role: 'situation', capsuleId: 'cap-1', version: 2 }, { role: 'situation', capsuleId: 'cap-1', version: 3 }] },
+    { slots: [{ role: 'situation', capsuleId: null, version: 2 }] },
+  ])('rejects ambiguous or orphaned dock pins before normalization', async ({ slots }) => {
+    const response = await postRun({ capsuleDockPayload: { slots } });
+    expect(response.status).toBe(400);
+    expect(mocks.getCapsuleAtVersion).not.toHaveBeenCalled();
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.enqueueAgentRunDispatch).not.toHaveBeenCalled();
+  });
+
+  it('captures the current saved version when no explicit pin exists and ignores client execution metadata', async () => {
+    const current = { ...await mocks.getCapsule('user-1', 'cap-1'), version: 3 };
+    mocks.getCapsule.mockResolvedValue(current);
+    mocks.getCapsuleAtVersion.mockResolvedValue(current);
+    mocks.resolveInjectableContext.mockResolvedValue({ capsule: current, promptBlock: 'Saved version 3', dockCapsules: [{ role: 'situation', capsule: current }], missingDockCapsuleIds: [] });
+    const response = await postRun({ metadata: { capsuleAgentExecutionContext: { version: 1, capsuleId: 'foreign', capsuleVersion: 999 } } });
+    expect(response.status).toBe(201);
+    expect(mocks.getCapsuleAtVersion).toHaveBeenCalledWith('user-1', 'cap-1', 3);
+    expect(mocks.createAgentRun).toHaveBeenCalledWith(expect.objectContaining({
+      contextPackageId: 'capsule:cap-1:v3',
+      metadata: expect.objectContaining({ capsuleAgentExecutionContext: { version: 1, capsuleId: 'cap-1', capsuleVersion: 3 } }),
+    }));
+  });
+
   it('returns queued run metadata when dispatch is not configured locally', async () => {
     mocks.enqueueAgentRunDispatch.mockRejectedValue(new Error('Agent run dispatch is not configured: set AGENT_RUN_WORKER_BASE_URL or APP_URL for the worker route.'));
     const { POST } = await import('@/app/api/boardroom/runs/route');
@@ -280,6 +443,14 @@ describe('/api/boardroom/runs route', () => {
     });
   });
 });
+
+async function postRun(overrides: Record<string, unknown> = {}) {
+  const { POST } = await import('@/app/api/boardroom/runs/route');
+  return POST(new Request('https://praxis.local/api/boardroom/runs', {
+    method: 'POST',
+    body: JSON.stringify({ question: 'Should the board approve the operating posture?', capsuleId: 'cap-1', participantIds: ['legal', 'security'], ...overrides }),
+  }));
+}
 
 function makeHistoryRun(id: string, policyAgentId: string) {
   return {

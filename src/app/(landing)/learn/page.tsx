@@ -1,439 +1,87 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
-import { PraxisThinking } from "@/components/brand/praxis-thinking";
-import { LivingContextRail, PublicPageShell } from "@/components/ui/instrument";
+import { PublicPageShell } from "@/components/ui/instrument";
 
+const description = "How PRAXIS uses saved context, sources and human review.";
 export const metadata: Metadata = {
-  title: "Learn how PRAXIS works",
-  description:
-    "A plain-language guide to how PRAXIS turns policy questions, sources, saved context, and review into useful work.",
-  alternates: {
-    canonical: "/learn",
-  },
-  openGraph: {
-    title: "How PRAXIS works",
-    description:
-      "Learn how PRAXIS helps policy teams ask better questions, check sources, save context, and draft reviewable work.",
-    url: "/learn",
-    images: [{ url: "/opengraph-image", width: 1200, height: 630, alt: "How PRAXIS works" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "How PRAXIS works",
-    description:
-      "The public guide to asking, sourcing, saving, and reviewing policy work in PRAXIS.",
-    images: ["/opengraph-image"],
-  },
+  title: "How PRAXIS works", description,
+  alternates: { canonical: "/learn" },
+  openGraph: { title: "How PRAXIS works", description, url: "/learn", images: ["/opengraph-image"] },
+  twitter: { card: "summary_large_image", title: "How PRAXIS works", description, images: ["/opengraph-image"] },
 };
 
-const flowSteps = [
-  "Ask the question",
-  "Add sources or saved context",
-  "Check what supports the answer",
-  "Draft the brief",
-  "Save the work",
-];
-
 const currentCapabilityAnchors = [
-  {
-    id: "sourceability",
-    title: "Sourceability",
-    body: "Use PRAXIS to see which important claims have sources, which look weak, and which still need evidence before a brief is ready to share.",
-  },
-  {
-    id: "claim-source-alignment",
-    title: "Claim-source alignment",
-    body: "PRAXIS keeps source previews, gaps, and claim posture close to the answer so teams can separate cited facts from model judgment or user assumptions.",
-  },
-  {
-    id: "role-capsules",
-    title: "Role-aware context",
-    body: "Context Capsules can carry role, institution, lens, constraints, and output goals so PRAXIS answers for a real policy job instead of a generic chat.",
-  },
-  {
-    id: "output-quality",
-    title: "Output quality",
-    body: "Brief, memo, source review, and handover workflows keep caveats, receipts, and next actions attached to the work product.",
-  },
-  {
-    id: "thinking-devices",
-    title: "Thinking devices",
-    body: "ACH, timeline, causal, human-friction, red-team, boardroom, and sourceability devices can sit behind the simple Ask surface when the work needs them.",
-  },
+  { id: "sourceability", title: "Sourceability", body: "Check which claims have support and which still need evidence." },
+  { id: "claim-source-alignment", title: "Claim-source alignment", body: "Read claims alongside source previews and recorded gaps." },
+  { id: "role-capsules", title: "Role-aware context", body: "Save a role, audience, constraints and analytical approach for reuse." },
+  { id: "output-quality", title: "Output quality", body: "Edit and review saved work before sharing. Structure checks do not measure factual accuracy." },
+  { id: "thinking-devices", title: "Thinking devices", body: "Choose a method when useful: compare hypotheses, build a timeline or challenge assumptions." },
 ];
 
-const capsuleCores = [
-  {
-    name: "User",
-    body: "The analyst posture, preferences, role, institution, and working assumptions that shape the answer.",
-  },
-  {
-    name: "Situation",
-    body: "The live policy problem, actors, geography, constraints, stakes, and decision context.",
-  },
-  {
-    name: "Source",
-    body: "The evidence posture: what is cited, what is missing, what looks weak, and what needs review.",
-  },
-  {
-    name: "Document",
-    body: "Uploaded files, notes, excerpts, and source packets that should travel with the work.",
-  },
-  {
-    name: "Graph",
-    body: "Actors, claims, relationships, contradictions, commitments, and typed links that make the work reusable.",
-  },
-  {
-    name: "Time",
-    body: "Sequence, deadlines, windows, episodes, commitments, and signals that change the answer over time.",
-  },
-  {
-    name: "Tool",
-    body: "The policy tools, checks, drafts, and specialist routines that can run against the capsule.",
-  },
-  {
-    name: "Objective",
-    body: "The job to be done: explain, compare, decide, prepare, brief, challenge, or hand over.",
-  },
-  {
-    name: "Output",
-    body: "The memo, brief, talking points, scenario table, source review, or handover artifact the user needs.",
-  },
-  {
-    name: "Memory",
-    body: "The durable parts that should survive beyond one chat: decisions, gaps, corrections, and team context.",
-  },
-];
-
-const ecosystemLinks = [
-  {
-    name: "TACITUS",
-    href: "https://www.tacitus.me/",
-    body: "The broader conflict-intelligence company and ontology stack behind PRAXIS.",
-  },
-  {
-    name: "PRAXIS",
-    href: "https://www.tacitus.me/product/praxis",
-    body: "The visible policy workbench that turns structured context into questions, tools, memos, and handovers.",
-  },
-  {
-    name: "DIALECTICA",
-    href: "https://www.tacitus.me/product/dialectica",
-    body: "The ontology-augmented generation layer for ingestion, typed graphs, provenance, and deterministic reasoning.",
-    secondaryLinks: [
-      { label: "App", href: "https://dialectica.tacitus.me/" },
-      { label: "GitHub", href: "https://github.com/sargonxg/A2_DIALECTICAbyTACITUS" },
-    ],
-  },
-  {
-    name: "AGON",
-    href: "https://github.com/sargonxg/AGON",
-    body: "An upstream perception and evidence engine, under development, for actors, claims, contradictions, commitments, friction, and quality gates.",
-  },
-  {
-    name: "KAIROS",
-    href: "https://github.com/sargonxg/KAIROS-temporal-vision-TACITUS",
-    body: "An upstream temporal engine, under development, for event sequence, Allen-style relations, commitments, episodes, and time-aware signals.",
-  },
-  {
-    name: "TACITUS Ontology",
-    href: "https://github.com/sargonxg/tacitus-ontology",
-    body: "The shared ontology work that helps keep products and research systems aligned around typed concepts.",
-  },
-];
-
-const contributionPaths = [
-  "Upload documents and source packets that make a situation easier to verify.",
-  "Correct missing capsule fields, weak source claims, or stale assumptions.",
-  "Review graph and source claims before they become reusable team context.",
-  "Create reusable capsules for recurring regions, actors, disputes, or institutional workflows.",
-  "Share product feedback from real policy, diplomacy, research, or briefing work.",
-  "Open issues or pull requests in the linked GitHub repositories when the contribution belongs upstream.",
+const capsuleParts = [
+  { title: "Purpose", body: "The question, audience and output you need." },
+  { title: "Evidence", body: "Source references, claims and supporting excerpts." },
+  { title: "Connections", body: "Recorded actors, relationships and events." },
+  { title: "Review", body: "Decisions, assumptions and unresolved gaps." },
 ];
 
 export default function LearnPage() {
-  const learnRailCells = [
-    { id: "profile", label: "Profile", value: "Policy user", detail: "Role-aware answers", state: "ready" as const },
-    { id: "context", label: "Context", value: "Saved work", detail: "Reusable when needed", state: "active" as const },
-    { id: "source", label: "Sources", value: "Receipts", detail: "Documents and proof", state: "ready" as const },
-    { id: "output", label: "Output", value: "Brief or handover", detail: "Reviewable work", state: "quiet" as const },
-    { id: "readiness", label: "Readiness", value: "Visible checks", detail: "Sources and gaps", state: "active" as const },
-  ];
-
   return (
-    <PublicPageShell>
-      <section className="mx-auto grid w-full max-w-6xl gap-10 px-5 pb-14 pt-10 sm:px-8 sm:pb-20 sm:pt-16 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
-        <div>
-          <div className="inline-flex items-center gap-3">
-            <PraxisGlyphChip size={30} />
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-600">PRAXIS by TACITUS</span>
-          </div>
-          <h1 className="mt-5 max-w-3xl font-serif text-4xl font-medium leading-tight text-slate-950 sm:text-6xl">
-            How PRAXIS works
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-7 text-slate-700 sm:text-lg">
-            PRAXIS is the visible workspace where users ask policy questions, attach sources, save context, draft briefs, and keep the evidence trail visible. The surface stays simple: one place to turn a situation, document, or hard question into reviewable work.
-          </p>
-          <LivingContextRail cells={learnRailCells} compact className="mt-7" />
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/login?mode=signup&redirect=%2Fapp"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white"
-            >
-              Start work
-            </Link>
-            <Link
-              href="/guide"
-              className="inline-flex h-11 items-center justify-center rounded-full border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-900"
-            >
-              Follow the quick start
-            </Link>
-          </div>
-        </div>
-
-        <aside className="rounded-[24px] border border-slate-200 bg-white/85 p-5 shadow-[0_22px_70px_rgba(15,23,42,0.10)] sm:p-6">
-          <div className="flex items-center justify-between gap-4 border-b border-slate-200 pb-4">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Work flow</span>
-            <PraxisThinking compact size={18} className="text-emerald-600" />
-          </div>
-          <ol className="mt-5 grid gap-3">
-            {flowSteps.map((step, index) => (
-              <li key={step} className="grid grid-cols-[2.5rem_1fr] items-center gap-3">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-emerald-200 bg-emerald-50 font-mono text-xs font-semibold text-emerald-800">
-                  {index + 1}
-                </span>
-                <span className="rounded-2xl border border-slate-200 bg-[color:var(--color-cream-50)] px-4 py-3 text-sm font-medium text-slate-800">
-                  {step}
-                </span>
-              </li>
-            ))}
-          </ol>
-        </aside>
-      </section>
-
-      <section aria-labelledby="learn-capsules" className="mx-auto mb-12 max-w-6xl rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 sm:p-8">
-        <h2 id="learn-capsules" className="font-serif text-3xl text-slate-950">What is a Context Capsule?</h2>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-700">A capsule is saved context you can attach to a conversation: the question you are working on, useful sources, actors, deadlines, assumptions and the kind of output you need. It saves you from explaining the same background every time. You can also ask PRAXIS without one.</p>
-        <div className="mt-5 grid gap-5 sm:grid-cols-2">
-          <div><h3 className="font-semibold text-slate-950">Start with a description or template</h3><p className="mt-2 text-sm leading-6 text-slate-700">Use Build context to describe the work, or choose a starter method in the capsule library. Inspect and adapt the context before attaching it.</p></div>
-          <div><h3 className="font-semibold text-slate-950">Start with documents</h3><p className="mt-2 text-sm leading-6 text-slate-700">The document builder accepts TXT, text-based PDF and Word files. It proposes facts for you to approve or reject. Proposed facts become reviewed context only after your decision.</p></div>
-        </div>
-        <p className="mt-5 text-sm leading-6 text-slate-600">An attached source can still be incomplete, outdated or wrong. Review the original evidence and the answer’s claims before using the work outside PRAXIS.</p>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
-        <div className="max-w-3xl">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">The app first</span>
-          <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-            From loose question to reviewable work
-          </h2>
-          <p className="mt-4 text-base leading-7 text-slate-700">
-            A user can begin with a prompt, a source packet, a draft question, or a document. PRAXIS keeps the sources, assumptions, gaps, and next actions near the answer, then produces a memo, brief, source review, or handover that still carries its evidence trail.
-          </p>
+    <PublicPageShell maxWidth="max-w-4xl">
+      <section className="py-10 sm:py-14">
+        <h1 className="font-serif text-4xl font-semibold leading-tight text-[var(--color-deep-ink)] sm:text-5xl">How PRAXIS works</h1>
+        <p className="mt-4 max-w-2xl text-lg leading-7 text-[var(--color-graphite)]">Ask a policy question, inspect its evidence, then save the background you want to reuse.</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <Link href="/login?mode=signup&redirect=%2Fapp" className="inline-flex min-h-11 items-center rounded-md bg-[var(--color-praxis-emerald-700)] px-5 text-sm font-semibold text-white">Ask PRAXIS</Link>
+          <Link href="/guide" className="inline-flex min-h-11 items-center px-4 text-sm font-semibold text-[var(--color-praxis-emerald-700)] underline underline-offset-4">Follow the quick start</Link>
         </div>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
-        <div className="grid gap-5 lg:grid-cols-[0.78fr_1.22fr]">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Use it today</span>
-            <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-              One workspace for the question, context and evidence.
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
-              The current app centers on Home, saved context, Ask PRAXIS, sources, memos, and receipts. Upstream TACITUS systems and deeper graph or temporal engines are described as integration layers or roadmap lanes when they are not the visible production surface.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {currentCapabilityAnchors.map((item) => (
-              <article id={item.id} key={item.id} className="scroll-mt-24 rounded-2xl border border-slate-200 bg-white/85 p-5">
-                <h3 className="font-serif text-xl font-medium text-slate-950">{item.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-slate-700">{item.body}</p>
-              </article>
-            ))}
-          </div>
-        </div>
+      <section aria-labelledby="learn-capsules" className="border-y border-[var(--color-mineral)] py-6">
+        <h2 id="learn-capsules" className="font-serif text-3xl text-[var(--color-deep-ink)]">What is a Context Capsule?</h2>
+        <p className="mt-3 max-w-3xl text-base leading-7 text-[var(--color-graphite)]">A capsule is saved context you can attach to chat. It holds background, sources and review notes, so you can reuse them without explaining everything again. You can also ask without one.</p>
+        <dl className="mt-6 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+          {capsuleParts.map((part) => <div key={part.title}><dt className="text-sm font-semibold text-[var(--color-deep-ink)]">{part.title}</dt><dd className="mt-1 text-sm leading-6 text-[var(--color-graphite)]">{part.body}</dd></div>)}
+        </dl>
+        <p className="mt-6 text-sm leading-6 text-[var(--color-graphite)]">Start from notes, a template or TXT, text-based PDF and Word files. Review the proposed facts, save the capsule, then choose Use in chat.</p>
+        <Link href="/app/capsules/builder" className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-[var(--color-praxis-emerald-700)] underline underline-offset-4">Create a capsule</Link>
       </section>
 
-      <details className="mx-auto mb-10 max-w-6xl rounded-2xl border border-slate-200 bg-white/60">
-        <summary className="cursor-pointer px-6 py-5 text-base font-semibold text-slate-800">Inside a capsule: technical background and roadmap</summary>
-      <section className="mx-auto grid w-full max-w-6xl gap-5 px-5 pb-16 pt-6 sm:px-8 lg:grid-cols-[0.85fr_1.15fr]">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">For technical readers</span>
-          <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-            A Wikipedia for Agentic Context
-          </h2>
-          <p className="mt-4 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
-            ContextCapsules are reusable context objects, not prompts. They preserve the parts of policy work that a capable analyst would normally carry in their head: sources, assumptions, tacit knowledge, reasoning devices, review gates, and allowed agent behavior.
-          </p>
-          <p className="mt-3 text-sm leading-6 text-slate-700 sm:text-base sm:leading-7">
-            Claims, sources, memories and limitations carry labels to help distinguish reviewed context from remembered, stale or disputed material. Those labels support review; they do not guarantee correctness or safe behavior on their own.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <h3 className="font-serif text-xl font-medium text-slate-950">Human review controls the saved record</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              AI can propose improvements and draft review cards. Human review decides which proposals enter the saved capsule. Optional memory integrations are advisory and depend on deployment configuration.
-            </p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <h3 className="font-serif text-xl font-medium text-slate-950">Community capsules stay inspectable</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              Marketplace and community capsules should be forkable and inspectable, with provenance and review state visible before a team relies on them.
-            </p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5 sm:col-span-2">
-            <h3 className="font-serif text-xl font-medium text-slate-950">What the capsule carries</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              The capsule carries source spines, claim ledgers, tacit constraints, output contracts, allowed tools, forbidden actions, review checkpoints, memory receipts, and stale or rejected inferences as labeled context.
-            </p>
-          </article>
-        </div>
+      <section className="py-8">
+        <h2 className="font-serif text-3xl text-[var(--color-deep-ink)]">One workspace for the question, context and evidence.</h2>
+        <p className="mt-3 text-sm leading-6 text-[var(--color-graphite)]">Use it today: Chat, Capsules and saved work. Sources can be incomplete or wrong; check important claims against the original material.</p>
+        <dl className="mt-5 divide-y divide-[var(--color-mineral)]">
+          {currentCapabilityAnchors.map((item) => <div id={item.id} key={item.id} className="grid scroll-mt-24 gap-2 py-4 sm:grid-cols-[12rem_minmax(0,1fr)]"><dt className="text-sm font-semibold">{item.title}</dt><dd className="text-sm leading-6 text-[var(--color-graphite)]">{item.body}</dd></div>)}
+        </dl>
       </section>
 
-      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8" id="praxis-augmented-generation">
-        <div className="max-w-3xl">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">How generation works</span>
-          <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950 sm:text-4xl">
-            PRAXIS-augmented generation: optional context in four slots
-          </h2>
-          <p className="mt-4 text-base leading-7 text-slate-700">
-            The Capsule Dock offers four optional slots alongside Ask. A <strong>User</strong> capsule describes who is asking, a <strong>Situation</strong> capsule carries the case, a <strong>Tool</strong> capsule supplies a method, and an <strong>Output</strong> capsule describes the intended format. Attach only what helps the question; empty slots do not prevent you from asking.
-          </p>
+      <details className="border-y border-[var(--color-mineral)] py-2">
+        <summary className="flex min-h-11 cursor-pointer items-center font-serif text-2xl text-[var(--color-deep-ink)]">Inside a capsule: technical background and roadmap</summary>
+        <div className="space-y-7 py-5 text-sm leading-6 text-[var(--color-graphite)]">
+          <section>
+            <h2 className="font-serif text-2xl text-[var(--color-deep-ink)]">What saved context carries</h2>
+            <p className="mt-3">ContextCapsules are reusable context objects, not prompts. They can hold sources, assumptions, tacit knowledge, reasoning devices, review gates, and allowed agent behavior.</p>
+            <p className="mt-3">Claims, sources, memories and limitations carry labels. These support review; they do not guarantee correctness or enforce every recorded preference.</p>
+            <p className="mt-3">AI can propose improvements and draft review cards. Human review decides which proposals enter the saved capsule. Review decisions do not independently verify a claim.</p>
+          </section>
+          <section id="praxis-augmented-generation" className="scroll-mt-24">
+            <h2 className="font-serif text-2xl text-[var(--color-deep-ink)]">What reaches the model</h2>
+            <p className="mt-3">An attachment records the capsule’s saved version. Sending a question resolves that version and its source references into context. Missing or archived versions require a new selection. Source document bodies and optional workspace or web research are separate dependencies, not immutable historical snapshots.</p>
+            <p className="mt-3">Context details offers optional User, Situation, Tool and Output roles. Ask to use only attached material when you want to limit research. Deep research adds a multi-step task with a run history to inspect.</p>
+            <p className="mt-3">A handover includes saved work, a bounded context projection and references. It does not transfer original-source permissions or guarantee that another tool can import it. Package hashes check integrity, not analytical validity.</p>
+          </section>
+          <section>
+            <h2 className="font-serif text-2xl text-[var(--color-deep-ink)]">Optional research</h2>
+            <p className="mt-3">Premium web is not enabled by default. Source discovery depends on configured providers and the selected workflow. GDELT and Wikidata research signals are advisory; candidates need review before entering the saved capsule.</p>
+          </section>
+          <section>
+            <h2 className="font-serif text-2xl text-[var(--color-deep-ink)]">Related projects and roadmap</h2>
+            <p className="mt-3"><a href="https://tacitus.me" className="underline underline-offset-4">TACITUS</a> is an independent experimental project by Giulio Catanzariti, not an incorporated legal entity. PRAXIS is its visible workbench. DIALECTICA develops the ingestion and context layer; AGON and KAIROS are upstream research references.</p>
+            <p className="mt-3">Shared community capsules and collaborative review are roadmap goals. Capsules should be forkable and inspectable, with provenance and review state visible. Upstream tools remain integration layers or roadmap lanes when they are not the visible production surface.</p>
+          </section>
         </div>
-        <div className="mt-6 grid gap-3 md:grid-cols-2">
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <h3 className="font-serif text-xl font-medium text-slate-950">1 · The resolver compiles the dock</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              When you send a question, PRAXIS resolves each docked capsule — its sources, claim ledger, graph references, ontology binding, and review state — into one layered context block. The layers stay separate on purpose: the Situation capsule governs facts, the User capsule governs voice, the Tool capsule governs method, and the Output capsule governs format. Conflicts are surfaced, never silently blended.
-            </p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <h3 className="font-serif text-xl font-medium text-slate-950">2 · Retrieval is governed, not generic</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              The capsule decides what the model is allowed to read: uploaded documents, source receipts, the typed knowledge graph of actors, claims, and commitments, vector search over the situation corpus, and grounded web search when the capsule permits it. Outside model knowledge is labeled as supplemental — never presented as capsule fact.
-            </p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <h3 className="font-serif text-xl font-medium text-slate-950">3 · Agents extract, research, and check</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              Deep questions queue a capsule-bound agent run with a durable ledger: a research agent plans searches and gathers receipts, an extraction step proposes graph updates, a sourceability reviewer checks that claims have support, and a red-team pass challenges the draft. Risky steps stop at human approval gates, and every tool call is recorded so you can audit the run afterwards.
-            </p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <h3 className="font-serif text-xl font-medium text-slate-950">4 · Truth stays layered and reviewable</h3>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              The answer separates capsule-grounded facts, retrieved evidence, model judgment, and your assumptions. Anything an agent learned — a new source, a graph claim, a corrected assumption — becomes a review card; only human approval makes it canonical in the capsule. That is why a docked capsule beats a plain LLM chat: delimited context in, receipts out, and the context itself improves with every reviewed run.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
-        <div className="grid gap-4 md:grid-cols-2">
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Premium web</span>
-            <h2 className="mt-3 font-serif text-2xl font-medium text-slate-950">Premium web is not enabled by default.</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              PRAXIS can expose a paid source-discovery lane only when the deployment has a configured provider and the user explicitly starts that paid workflow. Until then, public claims stay limited to the wired source receipts, uploaded documents, grounded-search routes, and review gates available in the app.
-            </p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Research graph</span>
-            <h2 className="mt-3 font-serif text-2xl font-medium text-slate-950">GDELT + Wikidata add advisory entity and media signals.</h2>
-            <p className="mt-3 text-sm leading-6 text-slate-700">
-              Research graph is free in v1 for signed-in users. It grounds entities with Wikidata labels, aliases, identifiers, and official links, then checks GDELT DOC/API for media pulse and relationship hints. It never mutates the canonical PRAXIS graph automatically; candidates stay review-gated.
-            </p>
-          </article>
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          {capsuleCores.map((core) => (
-            <article key={core.name} className="rounded-2xl border border-slate-200 bg-white/85 p-5">
-              <h2 className="font-serif text-2xl font-medium text-slate-950">{core.name}</h2>
-              <p className="mt-3 text-sm leading-6 text-slate-700">{core.body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
-
-      <section className="bg-slate-950 px-5 py-16 text-white sm:px-8">
-        <div className="mx-auto grid w-full max-w-6xl gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">TACITUS ecosystem</span>
-            <h2 className="mt-3 font-serif text-3xl font-medium sm:text-4xl">
-              PRAXIS is the workbench. The deeper systems organize what the workbench can use.
-            </h2>
-            <p className="mt-4 text-sm leading-6 text-slate-300">
-              DIALECTICA, AGON, and KAIROS should be understood as upstream or intended integration layers where appropriate. PRAXIS is the public policy workspace that turns their structure into user-facing analysis and artifacts.
-            </p>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            {ecosystemLinks.map((item) => (
-              <article key={item.name} className="rounded-2xl border border-white/10 bg-white/8 p-4">
-                <a
-                  href={item.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="praxis-link font-serif text-xl font-medium text-white underline-offset-4 hover:decoration-amber-200"
-                >
-                  {item.name}
-                </a>
-                <p className="mt-2 text-sm leading-6 text-slate-300">{item.body}</p>
-                {item.secondaryLinks ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {item.secondaryLinks.map((link) => (
-                      <a
-                        key={link.href}
-                        href={link.href}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full border border-white/15 px-3 py-1 text-xs font-semibold text-slate-100 hover:border-amber-200/60"
-                      >
-                        {link.label}
-                      </a>
-                    ))}
-                  </div>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto grid w-full max-w-6xl gap-4 px-5 py-16 sm:px-8 lg:grid-cols-[0.8fr_1.2fr]">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Community</span>
-          <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950">How users can contribute</h2>
-          <p className="mt-4 text-sm leading-6 text-slate-700">
-            The useful unit of contribution is not only code. Better sources, clearer capsule gaps, reviewed graph claims, and repeatable team context all make PRAXIS more useful.
-          </p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {contributionPaths.map((path) => (
-            <div key={path} className="rounded-2xl border border-slate-200 bg-white/85 p-4 text-sm leading-6 text-slate-700">
-              {path}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mx-auto w-full max-w-6xl px-5 pb-20 sm:px-8">
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50/70 p-5 sm:p-7">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-800">Aspirational</span>
-          <h2 className="mt-3 font-serif text-3xl font-medium text-slate-950">
-            What I&apos;d like PRAXIS to support next
-          </h2>
-          <p className="mt-4 text-sm leading-6 text-slate-800 sm:text-base sm:leading-7">
-            The next version should make source-to-capsule saving one click, let teams share and fork capsules, review DIALECTICA graph deltas inside PRAXIS, show AGON and KAIROS evidence cards inside Ask answers, score capsule health, and support collaborative memo review. These are product goals, not a claim that every integration is already fully wired in production.
-          </p>
-        </div>
-      </section>
       </details>
+      <p className="mt-6 text-xs leading-5 text-[var(--color-graphite)]">Independent experimental software. Use public or synthetic material while evaluating it. <Link href="/legal/privacy" className="underline underline-offset-4">Read the privacy notice.</Link></p>
     </PublicPageShell>
   );
 }

@@ -5,7 +5,7 @@ const source = readFileSync('src/app/(landing)/learn/page.tsx', 'utf8');
 
 describe('/learn ContextCapsule v3 contract', () => {
   it('explains human-gated capsules as reusable agentic context rather than prompts', () => {
-    expect(source).toContain('A Wikipedia for Agentic Context');
+    expect(source).toContain('What saved context carries');
     expect(source).toContain('reusable context objects, not prompts');
     expect(source).toContain('sources, assumptions, tacit knowledge, reasoning devices, review gates, and allowed agent behavior');
     expect(source).toContain('Claims, sources, memories and limitations carry labels');
@@ -30,6 +30,6 @@ describe('/learn ContextCapsule v3 contract', () => {
     expect(source).toContain('Use it today');
     expect(source).toContain('One workspace for the question, context and evidence.');
     expect(source).toContain('roadmap lanes when they are not the visible production surface');
-    expect(source).toContain('Home, saved context, Ask PRAXIS, sources, memos, and receipts');
+    expect(source).toContain('Chat, Capsules and saved work');
   });
 });

@@ -206,8 +206,8 @@ export function CapsuleLibraryCard({
         isDragging && 'opacity-70',
       )}
       style={{
-        borderTopColor: safeColor,
-        borderTopWidth: 4,
+        borderTopColor: simplified ? undefined : safeColor,
+        borderTopWidth: simplified ? undefined : 4,
         boxShadow: active && isCompact ? `0 16px 34px ${softColor(safeColor, 0.22)}` : undefined,
       }}
     >

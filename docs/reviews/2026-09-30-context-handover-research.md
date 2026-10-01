@@ -130,6 +130,24 @@ Additional persistence checks cover recorded no-context creation, capsule remova
 
 API storage/Firestore/auth fixtures are mocked. These tests do not establish live Firebase authorization, durable cloud storage, provider availability, deployment state or analytical correctness. Full integration typecheck/build and browser preview/download proof belong to the coordinating release gate.
 
+## Deterministic capsule preparation and persistence correction
+
+`POST /api/capsules/assist/:action` is explicitly classified as non-AI context preparation. The `architect` action compiles supplied document text into review-required proposals; `persona`, `output-schema`, `sources`, and `few-shot` use fixed templates and bounded extraction. None executes a model or independently verifies evidence. They use `withAuth`, the existing shared minute limiter, schema validation, and current account checks. They do not reserve or deduct funded AI allowance. Actual provider-backed routes retain their calibrated/funded controls.
+
+This corrects the live evidence-proposal request that returned `ai_usage_limit` after the account allowance check, despite not making any provider call. It does not remove or replenish the allowance required by a later Ask request.
+
+The JSON reader enforces actual streamed bytes (750,000), aggregate text characters (250,000), and nesting depth (32), without trusting `Content-Length`. Malformed JSON/schema and limit failures occur before private preparation. Missing/deleting/deleted accounts fail with 409; an unreadable account marker fails with 503.
+
+The architect workflow forces commit-time account guards for scaffold creation, exact version snapshots, review-card writes, patch-rejection audits and an active-context mirror. Each write transaction reads the owner marker, so concurrent erasure invalidates that transaction and the retry checks account state again. A version bump also checks the current capsule version before overwriting. This is protection for the architect preparation path; other capsule workflows keep their existing behavior. It does not make all preparation steps one transaction, so partial proposals committed before erasure begins can still exist until the account cleanup removes them.
+
+The assist tool-output receipt opts into the same owner guard and atomically writes its canonical envelope, version and compatibility receipt. Account/persistence failures propagate to the handler. Other callers retain the existing best-effort receipt behavior. Architect receipts contain the capsule ID/exact version, review-card IDs, counts and summary. They do not duplicate original passages, full graphs or proposal patches already persisted in the owner-scoped review cards; the API still returns the complete proposal for inspection. This avoids valid bounded input expanding into an oversized Firestore receipt.
+
+Guarded tool envelopes and memo save boundaries recursively omit undefined object properties, preserving explicit null/false/zero/empty strings and native Firestore values. Undefined array positions become null rather than moving later entries. This fixes real optional architect date fields and omitted memo `changeNote` fields; the strict regression fixtures reject nested undefined before serialization rather than silently dropping it during JSON cloning.
+
+Focused tests cover zero-allowance deterministic preparation, no provider/credit execution, malformed and over-limit input, owner-state failure, commit-time deletion/conflict retries, preserved human review requirements, real 20-document expanded proposals with compact receipts, and exact memo context/version records. Final integrated validation and renewed live upload/review/attachment/Ask and handover-download acceptance remain coordinating release checks.
+
+Correction verification on September 30: one combined run of the assist route, memo service, architect service, capsule service, entity extraction, tool-output receipt, funded-credit wrapper, auth wrapper and two memo API suites passed **194 tests / 10 suites**. Scoped ESLint and affected-file whitespace checks passed. Independent review separately passed 75 overlapping tests / 5 suites and approved the source/doc correction; those counts are not added to the combined total. The coordinating agent owns integrated typecheck/build, Graphify refresh, deployment and renewed real-service acceptance.
+
 ## Explicit remaining work
 
 - Live authenticated preview → confirmation → package-download journey with final deployed source.

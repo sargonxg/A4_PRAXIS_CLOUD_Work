@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { saveToolOutput } from '@/lib/api/save-tool-output';
-import { withCalibration, type CalibrationCtx } from '@/lib/api/with-calibration';
+import { withAuth } from '@/lib/api/with-auth';
+import { AI_REQUEST_LIMITS } from '@/lib/api/ai-request-limits';
+import { BoundedJsonError, readBoundedJson } from '@/lib/api/bounded-json';
+import { handleRouteError } from '@/lib/api/standard-error';
+import { assertDocumentOwnerWritable, DocumentOwnerUnavailableError } from '@/lib/documents/owner-write';
 import { createCapsuleArchitectReviewCards } from '@/lib/context/capsule-service';
 
 export const dynamic = 'force-dynamic';
@@ -47,36 +51,60 @@ const AssistRequestSchema = z.object({
   normalizedAt: z.string().max(80).optional(),
 });
 
-export const POST = withCalibration('capsule-builder-assist', 'ai_analysis', {
-  blockOnThinContext: false,
-})(async (request: Request, ctx: CalibrationCtx) => {
-  const action = new URL(request.url).pathname.split('/').filter(Boolean).pop() ?? '';
-  if (!isAssistAction(action)) {
-    return NextResponse.json({ error: 'Unknown capsule assist action' }, { status: 404 });
+// These actions compile supplied material and fixed templates without a model.
+// Authentication, owner state, minute throttling and payload limits still apply;
+// funded AI calibration belongs only to actual provider-backed analysis routes.
+export const POST = withAuth(async (request, user) => {
+  try {
+    if (user.isDemo) return NextResponse.json({ error: 'Sign in to prepare private capsule proposals.' }, { status: 403 });
+    const action = new URL(request.url).pathname.split('/').filter(Boolean).pop() ?? '';
+    if (!isAssistAction(action)) {
+      return NextResponse.json({ error: 'Unknown capsule assist action' }, { status: 404 });
+    }
+
+    const parsed = AssistRequestSchema.safeParse(await readBoundedJson(request, AI_REQUEST_LIMITS));
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid capsule assist request', details: parsed.error.flatten() }, { status: 400 });
+    }
+
+    await assertDocumentOwnerWritable(user.uid);
+    const result = action === 'architect'
+      ? await buildArchitectResult(user.uid, parsed.data)
+      : buildAssistPatch(action, parsed.data);
+    await saveToolOutput({
+      uid: user.uid,
+      situationId: parsed.data.situationId,
+      toolId: `capsule-builder-${action}`,
+      profileVersion: 0,
+      // Architect proposals already live in the canonical review-card store.
+      // A receipt must not duplicate passages/graphs or expand past 1 MiB.
+      output: 'capsule' in result ? {
+        summary: result.summary,
+        reviewRequired: result.reviewRequired,
+        capsuleId: result.capsule.capsuleId,
+        capsuleVersion: result.capsule.version,
+        reviewCardIds: result.cards.map((card) => card.reviewCardId),
+        counts: { documents: parsed.data.documents?.length ?? 0, reviewCards: result.cards.length },
+      } : result,
+      metadata: {
+        capsuleAssistAction: action,
+        capsuleBuilder: true,
+        executionKind: 'deterministic-context-preparation',
+        modelExecution: false,
+      },
+      toolRunId: null,
+      requireWritableOwner: true,
+    });
+
+    return NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } });
+  } catch (error) {
+    if (error instanceof BoundedJsonError || error instanceof DocumentOwnerUnavailableError) {
+      return NextResponse.json({ error: error.message, code: error.code }, {
+        status: error.status, headers: { 'Cache-Control': 'private, no-store' },
+      });
+    }
+    return handleRouteError(error, 'capsules/assist');
   }
-
-  const parsed = AssistRequestSchema.safeParse(await request.json().catch(() => ({})));
-  if (!parsed.success) {
-    return NextResponse.json({ error: 'Invalid capsule assist request', details: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const result = action === 'architect'
-    ? await buildArchitectResult(ctx.uid, parsed.data)
-    : buildAssistPatch(action, parsed.data);
-  await saveToolOutput({
-    uid: ctx.uid,
-    situationId: parsed.data.situationId,
-    toolId: `capsule-builder-${action}`,
-    profileVersion: ctx.calibration.provenance.profileVersion ?? 0,
-    output: result,
-    metadata: {
-      capsuleAssistAction: action,
-      capsuleBuilder: true,
-    },
-    toolRunId: ctx.toolRunId,
-  }).catch((err) => console.warn('[capsule-builder-assist] saveToolOutput failed:', err));
-
-  return NextResponse.json(result);
 });
 
 function isAssistAction(value: string): value is AssistAction {

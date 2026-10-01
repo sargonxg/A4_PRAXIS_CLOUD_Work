@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   createAgentRun: vi.fn(),
   getCapsule: vi.fn(),
   getOrMigrateDefaultCapsule: vi.fn(),
+  getCapsuleAtVersion: vi.fn(),
 }));
 
 vi.mock('@/lib/api/with-auth', () => ({
@@ -23,17 +24,116 @@ vi.mock('@/lib/context/capsule-service', () => ({
   getOrMigrateDefaultCapsule: mocks.getOrMigrateDefaultCapsule,
 }));
 
+vi.mock('@/lib/context/capsule-version-resolution', async (importOriginal) => ({
+  ...await importOriginal<typeof import('@/lib/context/capsule-version-resolution')>(),
+  getCapsuleAtVersion: mocks.getCapsuleAtVersion,
+}));
+
 describe('/api/agents/runs route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.getCapsule.mockResolvedValue({
       capsuleId: 'cap-1',
+      ownerUid: 'user-1',
+      version: 3,
       archivedAt: null,
       coreRefs: {
         userCoreId: 'user-core',
         situationCoreId: 'situation-core',
       },
     });
+    mocks.getCapsuleAtVersion.mockImplementation(async (uid: string, capsuleId: string, version: number) => ({
+      ownerUid: uid, capsuleId, version, archivedAt: null,
+      coreRefs: { userCoreId: 'pinned-user-core', situationCoreId: 'pinned-situation-core' },
+    }));
+    mocks.createAgentRun.mockResolvedValue({
+      id: 'run-1', ownerUid: 'user-1', status: 'queued', capsuleId: 'cap-1',
+      createdAt: '2026-09-30T23:00:00.000Z', updatedAt: '2026-09-30T23:00:00.000Z',
+      objective: 'Review this saved capsule.', metadata: {},
+    });
+  });
+
+  it('captures the manual selection at enqueue without relying on caller snapshot metadata', async () => {
+    const { POST } = await import('@/app/api/agents/runs/route');
+    const response = await POST(new Request('https://praxis.tacitus.me/api/agents/runs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capsuleId: 'cap-1', objective: 'Review this saved capsule.' }),
+    }));
+    expect(response.status).toBe(201);
+    expect(mocks.getCapsuleAtVersion).toHaveBeenCalledWith('user-1', 'cap-1', 3);
+    expect(mocks.createAgentRun).toHaveBeenCalledWith(expect.objectContaining({
+      selectedCoreIds: expect.objectContaining({ userCoreId: 'pinned-user-core' }),
+      metadata: expect.objectContaining({ capsuleAgentExecutionContext: { version: 1, capsuleId: 'cap-1', capsuleVersion: 3 } }),
+    }));
+  });
+
+  it('preserves an explicit version 2 attachment when the current capsule is version 3', async () => {
+    const { POST } = await import('@/app/api/agents/runs/route');
+    const response = await POST(new Request('https://praxis.tacitus.me/api/agents/runs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capsuleId: 'cap-1', objective: 'Review only the attached version.', metadata: {
+        activeContextStack: { capsuleRefs: [{ capsuleId: 'cap-1', version: 2 }] },
+      } }),
+    }));
+    expect(response.status).toBe(201);
+    expect(mocks.getCapsuleAtVersion).toHaveBeenCalledWith('user-1', 'cap-1', 2);
+    expect(mocks.createAgentRun).toHaveBeenCalledWith(expect.objectContaining({
+      metadata: expect.objectContaining({ capsuleAgentExecutionContext: { version: 1, capsuleId: 'cap-1', capsuleVersion: 2 } }),
+    }));
+  });
+
+  it.each([null, undefined])('captures an originally unpinned manual workbench selection (%j)', async (version) => {
+    const { POST } = await import('@/app/api/agents/runs/route');
+    const response = await POST(new Request('https://praxis.tacitus.me/api/agents/runs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capsuleId: 'cap-1', objective: 'Review this saved capsule.', metadata: {
+        activeContextStack: { capsuleRefs: [{ capsuleId: 'cap-1', version }] },
+      } }),
+    }));
+    expect(response.status).toBe(201);
+    expect(mocks.getCapsuleAtVersion).toHaveBeenCalledWith('user-1', 'cap-1', 3);
+  });
+
+  it('does not redirect a corrupt capsule record to another owned capsule', async () => {
+    mocks.getCapsule.mockResolvedValue({ ownerUid: 'user-1', capsuleId: 'cap-2', version: 3, coreRefs: {}, archivedAt: null });
+    const { POST } = await import('@/app/api/agents/runs/route');
+    const response = await POST(new Request('https://praxis.tacitus.me/api/agents/runs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capsuleId: 'cap-1', objective: 'Review this saved capsule.' }),
+    }));
+    expect(response.status).toBe(409);
+    expect(mocks.getCapsuleAtVersion).not.toHaveBeenCalled();
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { capsuleAgentExecutionContext: { version: 1, capsuleId: 'foreign-cap', capsuleVersion: 2 } },
+    { activeContextStack: { capsuleRefs: [{ capsuleId: 'cap-1', version: '2' }] } },
+    { activeContextStack: { capsuleRefs: [{ capsuleId: 'cap-1', version: 2 }, { capsuleId: 'cap-1', version: 3 }] } },
+  ])('refuses malformed or conflicting explicit pins before queue persistence (%j)', async (metadata) => {
+    const { POST } = await import('@/app/api/agents/runs/route');
+    const response = await POST(new Request('https://praxis.tacitus.me/api/agents/runs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capsuleId: 'cap-1', objective: 'Review this saved capsule.', metadata }),
+    }));
+    expect(response.status).toBe(409);
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
+    expect(mocks.getCapsuleAtVersion).not.toHaveBeenCalled();
+  });
+
+  it.each([null, { ownerUid: 'foreign-owner', capsuleId: 'cap-1', version: 3 },
+    { ownerUid: 'user-1', capsuleId: 'cap-other', version: 3 },
+    { ownerUid: 'user-1', capsuleId: 'cap-1', version: 2 },
+    { ownerUid: 'user-1', capsuleId: 'cap-1', version: 3, archivedAt: '2026-09-30' },
+  ])('does not enqueue when the requested snapshot is unavailable or unowned (%j)', async (snapshot) => {
+    mocks.getCapsuleAtVersion.mockResolvedValue(snapshot);
+    const { POST } = await import('@/app/api/agents/runs/route');
+    const response = await POST(new Request('https://praxis.tacitus.me/api/agents/runs', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ capsuleId: 'cap-1', objective: 'Review this saved capsule.' }),
+    }));
+    expect(response.status).toBe(409);
+    expect(mocks.createAgentRun).not.toHaveBeenCalled();
   });
 
   it('returns a sanitized degraded ledger response for Cloud SQL private-IP connection timeouts', async () => {

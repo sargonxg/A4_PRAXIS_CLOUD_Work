@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, X, CheckCheck, AlertCircle, AlertTriangle, Info, CheckCircle, Settings, Users, UserRound } from 'lucide-react';
+import { Bell, X, CheckCheck, AlertCircle, AlertTriangle, Info, CheckCircle, Users, UserRound } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { type NotificationType } from '@/stores/notification-store';
 import { useLiveNotifications, type LiveNotification } from '@/hooks/use-live-notifications';
@@ -40,7 +40,19 @@ const categoryConfig: Record<NonNullable<LiveNotification['category']>, Notifica
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  const bellRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false);
+        bellRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [open]);
   // Switched 2026-04-26 round 5 (Brick #52) from useNotificationStore (demo
   // Zustand only) to useLiveNotifications which reads users/{uid}/notifications
   // from Firestore for authenticated users and keeps demo behaviour for the
@@ -59,8 +71,13 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <button
+        ref={bellRef}
+        type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative rounded-lg p-2 text-navy-400 transition-colors hover:bg-[var(--color-app-surface-alt)] hover:text-navy-600"
+        aria-label={unreadCount ? `Notifications, ${unreadCount} unread` : 'Notifications'}
+        aria-expanded={open}
+        aria-controls="notification-menu"
+        className="praxis-header-control relative text-[var(--color-app-text-secondary)]"
       >
         <Bell className="h-4 w-4" />
         {unreadCount > 0 && (
@@ -73,7 +90,7 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-30" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-40 mt-2 w-96 overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-app-border)] bg-white shadow-[var(--shadow-float)]">
+          <section id="notification-menu" aria-label="Notifications" className="absolute right-0 top-full z-40 mt-2 w-[min(24rem,calc(100vw-1.5rem))] overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-app-border)] bg-white shadow-[var(--shadow-float)]">
             <div className="flex items-center justify-between border-b border-[var(--color-app-border)] px-4 py-3">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-semibold text-navy-900">Notifications</h3>
@@ -83,17 +100,18 @@ export function NotificationBell() {
               </div>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <button onClick={markAllRead} className="flex items-center gap-1 text-[11px] text-navy-500 hover:text-navy-700 transition-colors">
+                  <button type="button" onClick={markAllRead} className="flex min-h-11 items-center gap-1 text-[11px] text-navy-500 hover:text-navy-700 transition-colors">
                     <CheckCheck className="h-3.5 w-3.5" />
                     Mark all read
                   </button>
                 )}
                 <button
-                  onClick={() => { router.push('/app'); setOpen(false); }}
-                  className="rounded-md p-1 text-navy-500 transition-colors hover:bg-[var(--color-app-surface-alt)] hover:text-navy-800"
-                  aria-label="Notification settings"
+                  type="button"
+                  onClick={() => { setOpen(false); bellRef.current?.focus(); }}
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-navy-500 transition-colors hover:bg-[var(--color-app-surface-alt)] hover:text-navy-800"
+                  aria-label="Close notifications"
                 >
-                  <Settings className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -112,10 +130,9 @@ export function NotificationBell() {
                     <div
                       key={n.id}
                       className={cn(
-                        'group flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors hover:bg-[var(--color-app-surface-alt)]',
+                        'group flex items-start gap-3 px-4 py-3',
                         !n.read && 'bg-diplomatic-blue/3'
                       )}
-                      onClick={() => handleClick(n.id, n.href)}
                     >
                       <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg mt-0.5', cfg.bg)}>
                         <Icon className={cn('h-3.5 w-3.5', cfg.color)} />
@@ -126,10 +143,12 @@ export function NotificationBell() {
                             {n.title}
                           </p>
                           <div className="flex items-center gap-1 shrink-0">
-                            <span className="text-[10px] text-navy-400">{formatRelative(n.timestamp)}</span>
+                            <span className="text-xs text-[var(--color-graphite)]">{formatRelative(n.timestamp)}</span>
                             <button
+                              type="button"
+                              aria-label={`Dismiss notification: ${n.title}`}
                               onClick={(e) => { e.stopPropagation(); dismiss(n.id); }}
-                              className="opacity-0 group-hover:opacity-100 text-navy-300 hover:text-navy-500 transition-all"
+                              className="inline-flex min-h-11 min-w-11 items-center justify-center text-[var(--color-app-text-secondary)] hover:text-[var(--color-deep-ink)]"
                             >
                               <X className="h-3 w-3" />
                             </button>
@@ -144,12 +163,14 @@ export function NotificationBell() {
                           )}
                         </div>
                         <p className="mt-0.5 text-[11px] text-navy-500 leading-relaxed line-clamp-2">{n.body}</p>
-                        {n.href && (
+                        {(n.href || !n.read) && (
                           <button
+                            type="button"
+                            aria-label={n.href ? `Open notification: ${n.title}` : `Mark as read: ${n.title}`}
                             onClick={(e) => { e.stopPropagation(); handleClick(n.id, n.href); }}
-                            className="mt-2 rounded-md border border-[var(--color-app-border)] px-2 py-1 text-[11px] font-semibold text-navy-700 transition-colors hover:border-diplomatic-blue/40 hover:text-diplomatic-blue"
+                            className="mt-2 min-h-11 rounded-md border border-[var(--color-app-border)] px-3 py-1 text-xs font-semibold text-navy-700 transition-colors hover:border-diplomatic-blue/40 hover:text-diplomatic-blue"
                           >
-                            {n.actionVerb ?? 'Open'}
+                            {n.href ? n.actionVerb ?? 'Open' : 'Mark as read'}
                           </button>
                         )}
                       </div>
@@ -161,7 +182,7 @@ export function NotificationBell() {
                 })
               )}
             </div>
-          </div>
+          </section>
         </>
       )}
     </div>

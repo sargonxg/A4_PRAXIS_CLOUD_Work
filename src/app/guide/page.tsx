@@ -3,115 +3,93 @@ import type { Metadata } from 'next';
 import { PublicPageShell } from '@/components/ui/instrument';
 import { WorkedPolicyExample } from '@/components/marketing/worked-policy-example';
 
+const description = 'Ask PRAXIS, attach saved context, check sources and save your work.';
 export const metadata: Metadata = {
-  title: 'Guide',
-  description: 'A practical guide to asking PRAXIS, adding sources or saved context, checking evidence, and saving reviewable policy work.',
-  alternates: {
-    canonical: '/guide',
-  },
-  openGraph: {
-    title: 'PRAXIS Guide',
-    description: 'How to use PRAXIS for sourced policy questions, reviewable answers, briefs, and handovers.',
-    url: '/guide',
-    images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'PRAXIS guide' }],
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'PRAXIS Guide',
-    description: 'A practical guide for using PRAXIS with sources, saved context, and reviewable policy outputs.',
-    images: ['/opengraph-image'],
-  },
+  title: 'Guide', description,
+  alternates: { canonical: '/guide' },
+  openGraph: { title: 'PRAXIS Guide', description, url: '/guide', images: [{ url: '/opengraph-image', width: 1200, height: 630, alt: 'PRAXIS guide' }] },
+  twitter: { card: 'summary_large_image', title: 'PRAXIS Guide', description, images: ['/opengraph-image'] },
 };
 
 const steps = [
   {
-    title: 'Start with a policy question',
-    body: 'Sign in, open Chat and send your question. A capsule is optional. Your conversations are saved so you can return to them.',
+    title: 'Ask a question',
+    body: 'Sign in and open Chat. Name the decision, audience and output you need. Conversations are saved.',
+    detail: 'A capsule is optional. Use follow-ups to narrow the question or change the audience and length. The Guide assistant answers product questions; Ask PRAXIS helps with analysis and writing.',
   },
   {
-    title: 'Add sources or saved context',
-    body: 'Choose Attach context or find a capsule in Capsules and select Use in chat. Check its name and saved version. Ask for supplied evidence only if you want to exclude outside sources.',
+    title: 'Attach saved context',
+    body: 'Choose Attach context, or select Use in chat in Capsules. Check the attached name and version.',
+    detail: 'Context details contains optional roles and settings. Ask to use only the attached material when you want to exclude wider research; otherwise PRAXIS may use workspace or web sources.',
   },
   {
     title: 'Check the evidence',
-    body: 'Open sources and claim checks. Check original passages, publishers and dates. Web summaries are not quotations; missing evidence is not proof that nothing happened.',
+    body: 'Read the answer’s sources and claim checks. Open the original passage for important claims.',
+    detail: 'Check the publisher and date. A generated web summary is not an original quotation. Missing evidence remains unknown; it does not show that nothing happened.',
   },
   {
-    title: 'Create context worth reusing',
-    body: 'Choose New capsule. Add notes or TXT, text-based PDF or Word files. Review proposed claims, then choose Save and use in chat. Saving context does not approve its claims. Open Overview, Evidence, Timeline or Review to inspect it.',
+    title: 'Create reusable context',
+    body: 'Choose New capsule: Purpose, Material, Review and save. Add notes or documents, then review the proposed facts.',
+    detail: 'Saving context does not approve its claims. TXT, text-based PDF and Word files are supported. Apply or reject proposals with a reason. Save and use in chat attaches the saved version. The inspector offers Overview, Evidence, Timeline and Review, with technical details below.',
   },
   {
-    title: 'Save the output',
-    body: 'Open an answer in the editor, revise it and save. Feedback changes the draft only after you apply it. Review applies to the saved version; edits make earlier approval outdated. Preview a handover before downloading. Recipients may need access to its original sources.',
+    title: 'Save and hand over',
+    body: 'Open an answer in the editor, correct it and save. Preview the handover package before downloading.',
+    detail: 'Unapplied feedback has not changed the draft. Human review applies to the exact saved body and version; later edits make it outdated. The package includes saved work and context references. Recipients may still need access to original sources. A temporary download link does not delete the stored package when it expires.',
   },
+];
+
+const requestExamples = [
+  { title: 'Decision brief', body: 'Name the audience, decision and date. Ask for options, tradeoffs, legal authority and resources. Separate commitments from evidence of implementation.' },
+  { title: 'Assessment', body: 'Compare supporting and conflicting passages. Separate facts, actor claims and analyst inference. State what evidence would change the assessment.' },
+  { title: 'Narrative analysis', body: 'Preserve wording, speaker, date and source. Separate observed framing from inferred intent. Note translation limits and missing voices; a small document set does not measure public opinion.' },
 ];
 
 export default function GuidePage() {
   return (
-    <PublicPageShell maxWidth="max-w-6xl">
-      <section className="py-12 sm:py-16">
-        <p className="text-sm font-semibold text-slate-600">PRAXIS quick start</p>
-        <h1 className="mt-3 max-w-4xl font-serif text-4xl font-semibold leading-tight text-[color:var(--color-diplomatic-blue)] sm:text-5xl">
-          Ask the question. Check the evidence. Save the work.
-        </h1>
-        <p className="mt-5 max-w-3xl text-lg leading-8 text-[color:var(--color-ink)]/70">
-          Start without a capsule, or build reusable context from your own material.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/login?mode=signup&redirect=%2Fapp" className="inline-flex min-h-11 items-center justify-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white">
-            Open PRAXIS
-          </Link>
-          <Link href="/app/capsules/builder" className="inline-flex min-h-11 items-center justify-center rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-900">
-            Build from documents
-          </Link>
-        </div>
+    <PublicPageShell maxWidth="max-w-4xl">
+      <section className="py-10 sm:py-14">
+        <h1 className="max-w-3xl font-serif text-4xl font-semibold leading-tight text-[var(--color-deep-ink)] sm:text-5xl">Ask the question. Check the evidence. Save the work.</h1>
+        <p className="mt-4 max-w-2xl text-lg leading-7 text-[var(--color-graphite)]">Start in Chat. Add a capsule when you want to reuse sources and background.</p>
+        <Link href="/login?mode=signup&redirect=%2Fapp" className="mt-6 inline-flex min-h-11 items-center rounded-md bg-[var(--color-praxis-emerald-700)] px-5 text-sm font-semibold text-white">Open PRAXIS</Link>
       </section>
 
-      <section aria-labelledby="guide-workflow" className="pb-12">
-        <h2 id="guide-workflow" className="font-serif text-2xl text-slate-950">From question to written work</h2>
-        <ol className="mt-5 divide-y divide-slate-200">
-          {steps.map((step, index) => (
-            <li key={step.title} className="grid grid-cols-[1.5rem_1fr] gap-3 py-4 sm:gap-5">
-              <span className="pt-0.5 font-mono text-sm font-semibold text-emerald-800" aria-hidden="true">
-                {index + 1}
-              </span>
-              <span>
-                <strong className="block text-sm font-semibold text-slate-950">{step.title}</strong>
-                <span className="mt-1 block text-sm leading-6 text-slate-600">{step.body}</span>
-              </span>
-            </li>
-          ))}
-        </ol>
-      </section>
+      <ol className="divide-y divide-[var(--color-mineral)] border-y border-[var(--color-mineral)]">
+        {steps.map((step, index) => (
+          <li key={step.title} className="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-3 py-5 sm:gap-5">
+            <span aria-hidden="true" className="pt-1 font-mono text-sm text-[var(--color-praxis-emerald-700)]">{index + 1}</span>
+            <div>
+              <h2 className="font-serif text-2xl text-[var(--color-deep-ink)]">{step.title}</h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--color-graphite)]">{step.body}</p>
+              <details className="mt-1 text-sm leading-6 text-[var(--color-graphite)]">
+                <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold underline underline-offset-4">Details</summary>
+                <p className="pb-2">{step.detail}</p>
+              </details>
+            </div>
+          </li>
+        ))}
+      </ol>
 
-      <div className="pb-14">
-        <WorkedPolicyExample compact />
-      </div>
+      <nav aria-label="Capsule tools" className="my-6 flex flex-wrap gap-x-6 gap-y-2 text-sm font-semibold text-[var(--color-praxis-emerald-700)]">
+        <Link href="/app/capsules" className="inline-flex min-h-11 items-center underline underline-offset-4">Browse capsules</Link>
+        <Link href="/app/capsules/builder" className="inline-flex min-h-11 items-center underline underline-offset-4">Create a capsule</Link>
+        <Link href="/learn" className="inline-flex min-h-11 items-center underline underline-offset-4">How saved context works</Link>
+      </nav>
 
-      <section aria-labelledby="guide-policy-jobs" className="pb-14">
-        <h2 id="guide-policy-jobs" className="font-serif text-3xl font-semibold text-[color:var(--color-diplomatic-blue)]">Make the request fit your job</h2>
-        <div className="mt-5 divide-y divide-slate-200">
-          <article className="grid gap-2 py-4 sm:grid-cols-[11rem_1fr] sm:gap-6">
-            <h3 className="text-base font-semibold text-slate-950">For a decision brief</h3>
-            <p className="text-sm leading-6 text-slate-700">Name the audience, decision and date. Compare options, authority, resources and constraints. A commitment is not evidence of implementation.</p>
-          </article>
-          <article className="grid gap-2 py-4 sm:grid-cols-[11rem_1fr] sm:gap-6">
-            <h3 className="text-base font-semibold text-slate-950">For an assessment</h3>
-            <p className="text-sm leading-6 text-slate-700">Compare supporting and conflicting passages. Separate facts, actor claims and inference. State what evidence could change your assessment.</p>
-          </article>
-          <article className="grid gap-2 py-4 sm:grid-cols-[11rem_1fr] sm:gap-6">
-            <h3 className="text-base font-semibold text-slate-950">For narrative analysis</h3>
-            <p className="text-sm leading-6 text-slate-700">Keep exact wording, speaker, date and source. Separate framing from inferred intent. Flag translation and missing voices; a small document set is not public opinion.</p>
-          </article>
-        </div>
-      </section>
+      <WorkedPolicyExample compact />
 
-      <details className="border-t border-slate-200 py-5 text-sm leading-6 text-slate-700">
-        <summary className="flex min-h-11 cursor-pointer items-center font-semibold text-slate-950">Help with uploads and product questions</summary>
-        <p className="mt-3">For an unreadable file, try a text-based PDF or TXT copy. Scanned PDFs and long documents have separate limits. After a failed upload or save, check what persisted before retrying.</p>
-        <p className="mt-3">The Guide assistant explains the app. Use Ask PRAXIS for analysis and writing. Report problems with the time and action; leave confidential material out of the report.</p>
-        <Link href="/app/capsules?lane=repository" className="mt-3 inline-flex min-h-11 items-center font-semibold text-emerald-800 underline underline-offset-4">Browse capsules and methods</Link>
+      <details className="mt-8 border-y border-[var(--color-mineral)] py-2">
+        <summary className="flex min-h-11 cursor-pointer items-center font-serif text-2xl text-[var(--color-deep-ink)]">What to ask for</summary>
+        <dl className="divide-y divide-[var(--color-mineral)]">
+          {requestExamples.map((example) => <div key={example.title} className="grid gap-2 py-4 sm:grid-cols-[10rem_minmax(0,1fr)]"><dt className="text-sm font-semibold">{example.title}</dt><dd className="text-sm leading-6 text-[var(--color-graphite)]">{example.body}</dd></div>)}
+        </dl>
       </details>
+
+      <details className="border-b border-[var(--color-mineral)] py-2">
+        <summary className="flex min-h-11 cursor-pointer items-center font-serif text-2xl text-[var(--color-deep-ink)]">Upload or save failed?</summary>
+        <p className="py-3 text-sm leading-6 text-[var(--color-graphite)]">If a file has no readable text, try a text-based PDF or TXT copy. Scanned PDFs and long documents have separate limits. Check what saved before retrying. Report the action and time to <a href="mailto:hello@tacitus.me" className="underline underline-offset-4">hello@tacitus.me</a>; leave confidential material out.</p>
+      </details>
+      <p className="mt-6 text-xs leading-5 text-[var(--color-graphite)]">PRAXIS is experimental. Saved context and human review do not independently verify a claim.</p>
     </PublicPageShell>
   );
 }

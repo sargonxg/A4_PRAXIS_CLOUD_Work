@@ -292,14 +292,14 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
 function PublicIntroduction() {
   return (
     <section aria-labelledby="public-workflow-title" className="mt-12 border-t border-slate-200 py-10">
-      <h2 id="public-workflow-title" className="max-w-3xl font-serif text-3xl text-slate-950 sm:text-4xl">Keep the context worth reusing.</h2>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600">For policy briefs, assessments and narrative analysis. Sign in to ask and save your conversation. A Context Capsule keeps sources, assumptions and methods together for your next question.</p>
+      <h2 id="public-workflow-title" className="max-w-3xl font-serif text-3xl text-[var(--color-deep-ink)] sm:text-4xl">Keep useful context for the next question.</h2>
+      <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--color-graphite)]">For policy briefs, assessments and narrative analysis. Sign in to ask and save your conversation. A Context Capsule keeps sources, assumptions and methods together for your next question.</p>
       <div className="mt-6 flex flex-wrap gap-3">
-        <Link href="/guide" className="inline-flex min-h-11 items-center rounded-md bg-slate-950 px-5 text-sm font-semibold text-white">Follow the quick start</Link>
+        <Link href="/guide" className="inline-flex min-h-11 items-center rounded-md bg-[var(--color-praxis-emerald-700)] px-5 text-sm font-semibold text-white">Follow the quick start</Link>
         <Link href="/learn" className="inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800">Read about Context Capsules</Link>
-        <Link href="/pricing" className="inline-flex min-h-11 items-center px-4 text-sm font-semibold text-emerald-800">Plans and availability</Link>
+        <Link href="/pricing" className="inline-flex min-h-11 items-center px-4 text-sm font-semibold text-[var(--color-praxis-emerald-700)]">Plans and availability</Link>
       </div>
-      <p className="mt-5 text-sm leading-6 text-slate-600">Free experimental access. Check AI answers against their sources; saving context does not verify it.</p>
+      <p className="mt-5 text-sm leading-6 text-[var(--color-graphite)]">Free experimental access. Check claims against original sources; saving context does not verify them.</p>
     </section>
   );
 }
@@ -605,7 +605,7 @@ function formatRecentTimestamp(value: string | undefined): string {
 }
 
 function PublicAskContextBar({ onOpenAdvancedContext }: { onOpenAdvancedContext: () => void }) {
-  return <div data-testid="ask-context-bar" className="praxis-context-bar"><div data-testid="capsule-dock" className="flex flex-wrap items-center gap-2"><Link href="/login?mode=signup&redirect=%2Fapp" className="praxis-header-control border border-[var(--color-app-border)] text-xs"><Boxes className="h-4 w-4" />Attach context</Link><Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%2Fbuilder" className="praxis-header-control text-xs"><PlusCircle className="h-4 w-4" />New capsule</Link><button type="button" onClick={onOpenAdvancedContext} className="praxis-header-control text-xs">How context works</button></div><p className="px-1 pt-2 text-xs leading-5 text-[var(--color-app-text-secondary)]">Start with a question. A capsule adds reusable sources, background and review notes.</p></div>;
+  return <div data-testid="ask-context-bar" className="praxis-context-bar"><div data-testid="capsule-dock" className="flex flex-wrap items-center gap-2"><Link href="/login?mode=signup&redirect=%2Fapp" className="praxis-header-control border border-[var(--color-app-border)] text-xs"><Boxes className="h-4 w-4" />Attach context</Link><Link href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%2Fbuilder" className="praxis-header-control text-xs"><PlusCircle className="h-4 w-4" />New capsule</Link><button type="button" onClick={onOpenAdvancedContext} className="praxis-header-control text-xs">How context works</button></div></div>;
 }
 
 function ContextBarLoadingSkeleton() {

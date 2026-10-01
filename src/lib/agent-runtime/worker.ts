@@ -1,4 +1,6 @@
 import { createHash } from 'crypto';
+import type { Firestore } from 'firebase-admin/firestore';
+import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { AgentExecutionLeaseError, withAgentRunExecutionLease } from '@/lib/agent-runtime/execution-lease';
 import { assertAgentOwnerWritable } from '@/lib/agent-runtime/owner-state';
 import { resolveAskExecutionPreference } from '@/lib/ai/ask-execution-preference';
@@ -20,7 +22,7 @@ import {
   updateAgentRunStatus,
 } from '@/lib/agent-runtime/postgres';
 import { isAskThreadSqlConfigured, persistAskThreadTurnSql } from '@/lib/agent-runtime/ask-thread-postgres';
-import { persistAskThreadTurn } from '@/lib/firebase/ask-thread-service';
+import { persistAskThreadTurn, type PersistAskThreadTurnInput } from '@/lib/firebase/ask-thread-service';
 import { saveMemoDraft, type SaveMemoDraftInput } from '@/lib/firebase/memo-service';
 import { buildMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import { searchWeb, type WebSearchResult } from '@/lib/ai/grounded-research';
@@ -59,6 +61,7 @@ import { runCapsuleFactoryDraft, type CapsuleFactoryDeps } from '@/lib/agent-run
 import type { AgentContextPacketResult } from '@/lib/context/agent-context-packet';
 import { shouldEnableAgentContextVerifier, verifyAgentContextGrounding, type AgentContextGroundingReport } from '@/lib/context/agent-context-verifier';
 import { createCapsuleReviewCard, getCapsule, type CreateCapsuleReviewCardInput, type CapsuleReviewCard } from '@/lib/context/capsule-service';
+import { getCapsuleAtVersion } from '@/lib/context/capsule-version-resolution';
 import {
   buildCapsuleQualityReviewAnalysis,
   capsuleQualityReviewCardInput,
@@ -143,6 +146,7 @@ type WorkerDeps = {
   saveOutputCapsule?: (uid: string, input: SaveOutputCapsuleInput) => Promise<{ id: string } | null>;
   buildEvidencePack?: typeof buildCapsuleEvidencePack;
   getCapsule?: typeof getCapsule;
+  getCapsuleAtVersion?: typeof getCapsuleAtVersion;
   runBoardroomDiscussion?: (input: LiveBoardroomRunnerInput) => Promise<BoardroomOutput>;
   appendToolCall?: typeof appendAgentToolCall;
   appendApproval?: typeof appendAgentApproval;
@@ -152,6 +156,7 @@ type WorkerDeps = {
   createReviewCard?: (uid: string, capsuleId: string, input: CreateCapsuleReviewCardInput) => Promise<CapsuleReviewCard>;
   emitNotification?: typeof emitNotification;
   persistAskThreadTurn?: typeof persistAskThreadTurn;
+  persistAskConversationReturn?: typeof persistAgentRunConversationReturn;
   persistAskThreadTurnSql?: typeof persistAskThreadTurnSql;
   isAskThreadSqlConfigured?: typeof isAskThreadSqlConfigured;
 } & AgentRuntimeMirrorDeps & CapsuleFactoryDeps;
@@ -240,6 +245,35 @@ type LiveMemoDraft = {
   degradedReason: string | null;
   generationReceipts?: AgentGenerationReceipt[];
 };
+
+/** Only the server-captured run context can bind a newly saved memo. */
+async function memoContextFromValidatedRun(run: AgentRun, deps: WorkerDeps): Promise<Pick<SaveMemoDraftInput, 'capsuleId' | 'capsuleVersion' | 'runId'>> {
+  const snapshot = run.metadata.capsuleAgentExecutionContext;
+  if (typeof snapshot !== 'object' || snapshot === null || Array.isArray(snapshot)) {
+    throw new Error('The original capsule execution context is missing; restart the run from chat.');
+  }
+  const context = snapshot as Record<string, unknown>;
+  if (context.version !== 1 || context.capsuleId !== run.capsuleId
+    || typeof context.capsuleVersion !== 'number' || !Number.isSafeInteger(context.capsuleVersion)
+    || context.capsuleVersion < 0) {
+    throw new Error('The original capsule execution context has no valid exact version; restart the run from chat.');
+  }
+  const capsuleVersion = context.capsuleVersion;
+  if (capsuleVersion > 0) {
+    // Manual-run metadata is caller-controlled, so revalidate the exact owner-scoped snapshot.
+    const capsule = await (deps.getCapsuleAtVersion ?? getCapsuleAtVersion)(run.ownerUid, run.capsuleId, capsuleVersion);
+    if (!capsule || capsule.archivedAt || capsule.ownerUid !== run.ownerUid
+      || capsule.capsuleId !== run.capsuleId || capsule.version !== capsuleVersion) {
+      throw new Error('The original saved capsule version is unavailable; restart the run from chat.');
+    }
+  }
+  // Instant/unsaved context (v0) is lineage, not a link to a saved capsule.
+  return {
+    capsuleId: capsuleVersion === 0 ? null : run.capsuleId,
+    capsuleVersion: capsuleVersion === 0 ? null : capsuleVersion,
+    runId: run.id,
+  };
+}
 
 export async function executeAgentRun(
   payload: ExecuteAgentRunPayload,
@@ -2107,6 +2141,11 @@ async function executeBoardroomAgentRun(
     }
 
     executionStage = 'context-resolved';
+    const memoContext = await memoContextFromValidatedRun(run, deps);
+    running = { ...running, metadata: { ...running.metadata,
+      capsuleAgentExecutionContext: run.metadata.capsuleAgentExecutionContext,
+      capsuleVersion: memoContext.capsuleVersion ?? 0,
+    } };
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'context_resolved',
@@ -2120,12 +2159,21 @@ async function executeBoardroomAgentRun(
     }, deps);
 
     executionStage = 'evidence-pack';
+    if (memoContext.capsuleVersion === null) {
+      throw new Error('Boardroom requires the original saved capsule version before evidence retrieval.');
+    }
     const evidencePack = await buildEvidencePack({
       ownerUid: running.ownerUid,
       capsuleId: running.capsuleId,
+      capsuleVersion: memoContext.capsuleVersion,
       objective: running.objective,
       maxParagraphs: 12,
     });
+    if (evidencePack.ownerUid !== run.ownerUid || evidencePack.capsuleId !== run.capsuleId
+      || evidencePack.activeCapsule.capsuleId !== run.capsuleId
+      || evidencePack.activeCapsule.version !== memoContext.capsuleVersion) {
+      throw new Error('Boardroom evidence does not match the original saved capsule version.');
+    }
 
     executionStage = 'workflow-proof';
     const outputTarget = outputDestinationFromMetadata(running.metadata);
@@ -2371,8 +2419,7 @@ async function executeBoardroomAgentRun(
       title: `Boardroom pack - ${running.objective.slice(0, 72)}`,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:boardroom`,
       changeNote: `Created by Boardroom Discussion run ${running.id}.`,
-      capsuleId: running.capsuleId,
-      runId: running.id,
+      ...memoContext,
       outputTarget: 'board_executive_pack',
       sourceReceiptIds: stringArray(running.metadata.sourceReceiptIds),
       blocks: buildBoardroomMemoBlocks(running, boardroom),
@@ -2539,6 +2586,11 @@ async function executeOutputFormatterAgentRun(
     }
 
     executionStage = 'context-resolved';
+    const memoContext = await memoContextFromValidatedRun(run, deps);
+    running = { ...running, metadata: { ...running.metadata,
+      capsuleAgentExecutionContext: run.metadata.capsuleAgentExecutionContext,
+      capsuleVersion: memoContext.capsuleVersion ?? 0,
+    } };
     const workerContext = buildCapsuleWorkerContext(running);
     const loop = buildOutputFormatterReasoningLoop(running);
     await mirrorWorkerEvent(running, {
@@ -2582,6 +2634,7 @@ async function executeOutputFormatterAgentRun(
       title,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:formatting`,
       changeNote: `Created by Output Formatter run ${running.id}.`,
+      ...memoContext,
       blocks: [
         {
           id: 'formatted-title',
@@ -2767,6 +2820,11 @@ async function executeReviewAgentRun(
     }
 
     executionStage = 'context-resolved';
+    const memoContext = await memoContextFromValidatedRun(run, deps);
+    running = { ...running, metadata: { ...running.metadata,
+      capsuleAgentExecutionContext: run.metadata.capsuleAgentExecutionContext,
+      capsuleVersion: memoContext.capsuleVersion ?? 0,
+    } };
     const toolId = reviewAgentToolId(executionMode);
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
@@ -2829,8 +2887,7 @@ async function executeReviewAgentRun(
       title: `${reviewAgentLabel(executionMode)} - ${running.objective.slice(0, 72)}`,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:${executionMode}`,
       changeNote: `Created by ${reviewAgentLabel(executionMode)} run ${running.id}.`,
-      capsuleId: running.capsuleId,
-      runId: running.id,
+      ...memoContext,
       outputTarget,
       sourceReceiptIds: uniqueStrings(sourceabilityLedger.claims.flatMap((claim) => claim.sourceReceiptIds)),
       unsupportedClaims: sourceabilityLedger.unsupportedClaims.map((claim) => claim.claim),
@@ -3372,6 +3429,7 @@ export async function postAgentRunThreadReturn(input: {
 
   const deps = input.deps ?? {};
   const persistFirestore = deps.persistAskThreadTurn ?? persistAskThreadTurn;
+  const persistConversation = deps.persistAskConversationReturn ?? persistAgentRunConversationReturn;
   const persistSql = deps.persistAskThreadTurnSql ?? persistAskThreadTurnSql;
   const sqlConfigured = deps.isAskThreadSqlConfigured ?? isAskThreadSqlConfigured;
   const appendEvent = deps.appendEvent ?? appendAgentRunEvent;
@@ -3399,6 +3457,8 @@ export async function postAgentRunThreadReturn(input: {
   };
 
   try {
+    // Main chat reloads canonical conversations before the legacy capsule thread.
+    await persistConversation(turnInput);
     await persistFirestore(turnInput);
     if (sqlConfigured()) {
       await persistSql(turnInput);
@@ -3441,6 +3501,48 @@ export async function postAgentRunThreadReturn(input: {
       traceId: input.run.traceId,
     })).catch((eventErr) => console.warn('[agent-runtime] thread_return_failed event append failed:', eventErr));
   }
+}
+
+/** Persist one assistant return where the main workbench reloads saved chat. */
+export async function persistAgentRunConversationReturn(input: PersistAskThreadTurnInput,
+  db: Firestore = getAdminDbOrThrow()): Promise<void> {
+  const uid = input.uid;
+  const threadId = input.threadId;
+  const turnId = input.turnId;
+  if (!uid || uid.includes('/') || !threadId || !/^[a-zA-Z0-9_-]{3,96}$/.test(threadId)
+    || !turnId || turnId.includes('/') || !input.capsuleId) {
+    throw new Error('The agent return has no valid originating conversation.');
+  }
+  const ownerRef = db.collection('users').doc(uid);
+  const conversationRef = ownerRef.collection('conversations').doc(threadId);
+  const turnRef = conversationRef.collection('turns').doc(turnId);
+  const now = input.now?.toISOString() ?? new Date().toISOString();
+  await db.runTransaction(async (tx) => {
+    const [owner, conversation, existingTurn] = await Promise.all([
+      tx.get(ownerRef), tx.get(conversationRef), tx.get(turnRef),
+    ]);
+    const ownerData = owner.data();
+    if (!owner.exists || ownerData?.accountDeletionStatus === 'deleting' || ownerData?.accountDeletionStatus === 'deleted') {
+      throw new AgentExecutionLeaseError('The run owner is unavailable or account cleanup has started.');
+    }
+    const existing = conversation.data();
+    const priorTurn = existingTurn.data();
+    if ((existing?.ownerUid && existing.ownerUid !== uid) || (priorTurn?.ownerUid && priorTurn.ownerUid !== uid)) {
+      throw new Error('The originating conversation is not owned by the run owner.');
+    }
+    tx.set(conversationRef, {
+      ownerUid: uid, conversationId: threadId, capsuleId: existing?.capsuleId ?? input.capsuleId,
+      title: existing?.title ?? 'PRAXIS conversation', status: existing?.status ?? 'active', visibility: 'private',
+      turnCount: (Number(existing?.turnCount) || 0) + (existingTurn.exists ? 0 : 1),
+      createdAt: existing?.createdAt ?? now, updatedAt: now,
+    }, { merge: true });
+    tx.set(turnRef, {
+      ownerUid: uid, turnId, capsuleId: input.capsuleId, conversationThreadId: threadId,
+      // This is an assistant result, so the saved-history parser emits no user prompt.
+      prompt: '', output: input.output, runtime: input.runtime ?? {},
+      createdAt: priorTurn?.createdAt ?? now,
+    }, { merge: true });
+  });
 }
 
 async function failAgentRunExecution(input: {

@@ -520,11 +520,7 @@ export function PraxisChat({
       <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col', compact ? 'h-full' : '')}>
         {variant === 'home' && showHomeHeading ? (
           <div className={cn('order-first mb-6 text-center', messages.length ? 'sr-only' : 'sm:pb-2')}>
-            <p className="inline-flex items-center gap-2 text-xs font-semibold tracking-wide text-[var(--color-praxis-emerald-700)]">
-              <Sparkles className="h-3.5 w-3.5" />
-              Ask PRAXIS
-            </p>
-            <h1 className="praxis-page-heading mt-3 text-balance">
+            <h1 className="praxis-page-heading text-balance">
               {isPublic ? 'Policy analysis you can inspect.' : 'What are we working on?'}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
@@ -542,8 +538,8 @@ export function PraxisChat({
             <div>
               <EmptyState
                 icon={ShieldCheck}
-                label={isPublic ? 'Ask first.' : 'Ready for the next serious question.'}
-                hint={isPublic ? 'Sign in to keep the brief.' : 'Pick a capsule when the answer needs saved sources, ontology, and output rules.'}
+                label="Ask a question"
+                hint={isPublic ? 'Sign in to save your work.' : 'Attach a capsule to reuse saved sources and background.'}
                 testId="praxis-chat-empty-state"
                 className={cn('border-emerald-100', variant === 'floating' ? 'min-h-48 bg-slate-900 text-white' : 'min-h-40')}
               />
@@ -591,10 +587,9 @@ export function PraxisChat({
                     if (isPublic) window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
                   }
                 }}
-                className="praxis-prompt-suggestion rounded-lg px-4 py-4 text-left text-sm transition"
+                className="praxis-prompt-suggestion min-h-11 rounded-lg px-3 py-3 text-left text-sm transition"
               >
                 <span className="block font-semibold text-slate-950">{mission.title}</span>
-                <span className="mt-1 block text-xs leading-5 text-slate-600">{mission.outcome}</span>
               </button>
             ))}
           </div>
@@ -664,7 +659,7 @@ export function PraxisChat({
                 data-testid="praxis-chat-deep-research-toggle"
                 aria-pressed={deepResearch}
                 onClick={() => setDeepResearch((value) => !value)}
-                title="Multi-step sourced research — runs as a reviewable agent run"
+                title="Multi-step research with sources and a run history"
                 className={cn(
                   'inline-flex min-h-11 items-center justify-center gap-2 rounded-[var(--radius-md)] border px-3 text-xs font-semibold transition',
                   deepResearch

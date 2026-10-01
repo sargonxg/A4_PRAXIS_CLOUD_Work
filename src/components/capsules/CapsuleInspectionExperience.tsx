@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ArrowRight, FileText, GitBranch, MessageSquareText, X } from 'lucide-react';
+import { ArrowRight, FileText, MessageSquareText, X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { buildCapsuleWorkbenchViewModel, type CapsuleWorkbenchCapsuleInput, type CapsuleWorkbenchViewModel, type CapsuleWorkbenchViewModelInput } from '@/lib/context/capsule-workbench-view-model';
 import { CapsuleClaimReceiptsSection } from '@/components/capsules/workbench/CapsuleClaimReceiptsSection';
@@ -110,7 +110,7 @@ export function CapsuleInspectionExperience({ capsule, model: initialModel, mode
         <p className="max-w-3xl whitespace-pre-wrap text-base leading-7">{summary || 'A reusable context package. Add your purpose and sources before relying on it.'}</p>
         <div className="flex flex-wrap gap-x-6 gap-y-2 border-y border-[color:var(--color-mineral)] py-3 text-sm" aria-label="Recorded contents"><span><strong>{model.evidence.sourceCount}</strong> source references</span><span><strong>{model.claims.length}</strong> claims</span><span><strong>{model.graph.edges.length}</strong> mapped relationships</span></div>
         <section className="overflow-hidden rounded-lg border border-[color:var(--color-mineral)] bg-white" aria-label="Evidence map">
-          <div className="flex items-center gap-2 border-b border-[color:var(--color-mineral)] p-4"><GitBranch className="h-5 w-5 text-[color:var(--color-praxis-emerald-700)]" /><div><h3 className="font-serif text-xl">See how the context connects.</h3><p className="mt-1 text-xs text-[color:var(--color-graphite)]">A projection of recorded context. Select an item to trace its evidence.</p></div></div>
+          <div className="border-b border-[color:var(--color-mineral)] p-4"><h3 className="font-serif text-xl">Context connections</h3><p className="mt-1 text-xs text-[color:var(--color-graphite)]">Select an item to trace its recorded evidence.</p></div>
           {graph}
         </section>
         <CapsuleMethodInspection snapshot={currentCapsule.starterSnapshot} />

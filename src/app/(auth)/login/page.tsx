@@ -247,7 +247,7 @@ function LoginForm() {
           </p>
           {capsulePromptParam?.trim() ? (
             <div className="mt-4 rounded-lg border border-[var(--color-praxis-emerald-300)] bg-[var(--color-praxis-emerald-50)] p-3">
-              <p className="text-xs font-semibold text-[var(--color-praxis-emerald-700)]">Your question will be carried forward</p>
+              <p className="text-xs font-semibold text-[var(--color-praxis-emerald-700)]">Your question is saved for sign-in</p>
               <p className="mt-1 line-clamp-3 break-words text-sm">{capsulePromptParam.trim()}</p>
             </div>
           ) : null}
@@ -298,8 +298,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="civic-atelier-shell flex min-h-screen items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+        <div role="status" className="civic-atelier-shell flex min-h-screen items-center justify-center gap-3">
+          <Loader2 className="h-6 w-6 animate-spin text-[var(--color-praxis-emerald-700)]" aria-hidden="true" />
+          <span className="text-sm text-[var(--color-graphite)]">Loading sign-in…</span>
         </div>
       }
     >
