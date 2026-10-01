@@ -511,13 +511,13 @@ export function PraxisChat({
   return (
     <section
       className={cn(
-        'mx-auto flex w-full flex-col',
+        'mx-auto flex min-w-0 w-full flex-col',
         compact ? 'h-full max-w-none' : 'max-w-3xl',
         className,
       )}
       data-testid="simple-home-chat"
     >
-      <div className={cn('flex min-h-0 flex-1 flex-col', compact ? 'h-full' : '')}>
+      <div className={cn('flex min-h-0 min-w-0 flex-1 flex-col', compact ? 'h-full' : '')}>
         {variant === 'home' && showHomeHeading ? (
           <div className={cn('order-first mb-6 text-center', messages.length ? 'sr-only' : 'sm:pb-2')}>
             <h1 className="praxis-page-heading text-balance">
@@ -530,7 +530,7 @@ export function PraxisChat({
         ) : null}
 
         <div className={cn(
-          'min-h-0 flex-1 overflow-y-auto',
+          'min-h-0 min-w-0 flex-1 overflow-y-auto',
           variant === 'home' && messages.length === 0 ? 'hidden' : '',
           variant === 'floating' ? 'px-3 py-3' : 'praxis-conversation-surface px-1 py-4 sm:px-3',
         )}>
@@ -557,7 +557,7 @@ export function PraxisChat({
               </div>
             </div>
           ) : (
-            <div className="grid gap-3">
+            <div className="grid min-w-0 grid-cols-1 gap-3">
               {messages.map((message) => (
                 <ChatBubble
                   key={message.id}
@@ -715,7 +715,7 @@ function ChatBubble({
   const isAssistant = message.role === 'assistant';
   return (
     <article className={cn(
-      'max-w-[92%] rounded-[var(--radius-lg)] px-4 py-3 text-sm leading-6',
+      'min-w-0 max-w-[92%] rounded-[var(--radius-lg)] px-4 py-3 text-sm leading-6 [overflow-wrap:anywhere]',
       isAssistant
         ? variant === 'floating'
           ? 'mr-auto bg-slate-900 text-slate-100'
@@ -725,7 +725,7 @@ function ChatBubble({
       {isAssistant ? (
         <>
           <AnswerAgentActivity envelope={message.answerEnvelope} isStreaming={isStreaming} variant={variant} />
-          <div className="prose prose-sm max-w-none prose-p:my-2 prose-ul:my-2 prose-li:my-1">
+          <div className="prose prose-sm min-w-0 max-w-none prose-p:my-2 prose-ul:my-2 prose-li:my-1">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {message.content || ' '}
             </ReactMarkdown>
@@ -984,25 +984,25 @@ function labelizeAgentId(value: string | null): string | null {
 
 function SourceCards({ sourceCards }: { sourceCards: SourcePreviewCard[] }) {
   return (
-    <div className="mt-3 grid gap-2" data-testid="praxis-chat-source-cards">
+    <div className="mt-3 grid min-w-0 grid-cols-1 gap-2" data-testid="praxis-chat-source-cards">
       {sourceCards.slice(0, 4).map((source) => (
         <a
           key={source.id}
           href={source.url ?? source.sourceReceiptHref ?? '#'}
           target={source.url || source.sourceReceiptHref ? '_blank' : undefined}
           rel={source.url || source.sourceReceiptHref ? 'noreferrer' : undefined}
-          className="rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 hover:bg-white"
+          className="min-w-0 rounded-[var(--radius-md)] border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-700 [overflow-wrap:anywhere] hover:bg-white"
         >
-          <span className="flex items-center justify-between gap-2 font-semibold text-slate-900">
-            <span className="truncate">{source.title || source.label}</span>
+          <span className="flex min-w-0 items-center justify-between gap-2 font-semibold text-slate-900">
+            <span className="min-w-0 truncate">{source.title || source.label}</span>
             <span className="flex shrink-0 items-center gap-1">
               <SourceTierBadge tier={source.reliabilityTier ?? null} date={source.date ?? null} stale={source.stale ?? null} size="xs" />
               <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
             </span>
           </span>
-          <span className="mt-1 line-clamp-2 block leading-5">{source.quotePreview}</span>
+          <span className="mt-1 line-clamp-2 block min-w-0 leading-5 [overflow-wrap:anywhere]">{source.quotePreview}</span>
           <span className="mt-1 block font-mono text-[10px] uppercase tracking-[0.12em] text-slate-500">
-            {source.sourceType} · {Math.round(source.confidence * 100)}%
+            {source.sourceType.replace(/-/g, ' ')}
           </span>
         </a>
       ))}

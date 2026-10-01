@@ -24,7 +24,8 @@ describe('Firebase auth web contract', () => {
 
   it('syncs redirect results into the PRAXIS session cookie and reports deploy-domain setup errors clearly', () => {
     expect(authContext).toContain('const redirectResult = await getRedirectResult(auth)');
-    expect(authContext).toContain('await syncTokenCookie(redirectResult.user)');
+    expect(authContext).toMatch(/await syncTokenCookie\(redirectResult\.user,\s*generation\)/);
+    expect(authContext).toContain('if (!isCurrentAuth(generation, redirectResult.user)) return;');
     expect(authContext).toContain('praxis.tacitus.me');
     expect(authContext).toContain('https://praxisbytacitus.firebaseapp.com/__/auth/handler');
     expect(authContext).toContain('auth/operation-not-allowed');

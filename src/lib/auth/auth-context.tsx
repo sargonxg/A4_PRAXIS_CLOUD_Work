@@ -204,13 +204,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ---------------------------------------------------------------------------
   const demoCheckDoneRef = useRef(false);
   const firebaseAuthDoneRef = useRef(false);
+  const authGenerationRef = useRef(0);
+  const activeUidRef = useRef<string | null>(auth.currentUser?.uid ?? null);
+  const logoutRequestedRef = useRef(false);
+  const serverSessionRecoveryRef = useRef(true);
+  const sessionRequestsRef = useRef(new Set<AbortController>());
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Firebase emits the new account before signup finishes saving its name.
+  // Both auth listeners must wait before publishing its token or app state.
+  const signupProfileReadyRef = useRef<{
+    uid: string | null;
+    ready: Promise<boolean>;
+    finish: (ready: boolean) => void;
+    cancelled: boolean;
+  } | null>(null);
+
+  const cancelPendingSignup = useCallback(() => {
+    const signup = signupProfileReadyRef.current;
+    if (signup) {
+      signup.cancelled = true;
+      signup.finish(false);
+      signupProfileReadyRef.current = null;
+    }
+  }, []);
+
+  const cancelAuthRequests = useCallback(() => {
+    for (const request of sessionRequestsRef.current) request.abort();
+    sessionRequestsRef.current.clear();
+    if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
+    refreshTimerRef.current = null;
+  }, []);
+
+  const observeAuthIdentity = useCallback((fbUser: FirebaseUser | null): number => {
+    const uid = fbUser?.uid ?? null;
+    if (activeUidRef.current !== uid) {
+      if (!uid) serverSessionRecoveryRef.current = false;
+      activeUidRef.current = uid;
+      authGenerationRef.current++;
+      firebaseAuthDoneRef.current = false;
+      cancelAuthRequests();
+      setUser(null);
+      setFirebaseUser(null);
+      setCredits(0);
+      setAnalystProfile(null);
+      setLoading(true);
+      if (signupProfileReadyRef.current?.uid && signupProfileReadyRef.current.uid !== uid) {
+        cancelPendingSignup();
+      }
+    }
+    return authGenerationRef.current;
+  }, [cancelAuthRequests, cancelPendingSignup]);
+
+  const isCurrentAuth = useCallback((generation: number, fbUser: FirebaseUser | null): boolean => (
+    generation === authGenerationRef.current
+    && (auth.currentUser?.uid ?? null) === (fbUser?.uid ?? null)
+    && (!fbUser || !logoutRequestedRef.current)
+  ), []);
 
   useEffect(() => {
     let cancelled = false;
+    const generation = authGenerationRef.current;
     fetch('/api/auth/session')
       .then((res) => res.json())
       .then((data) => {
-        if (cancelled) return;
+        if (cancelled || generation !== authGenerationRef.current) return;
         if (data?.user?.isDemo) {
           setUser(null);
           setCredits(0);
@@ -223,7 +280,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cancelled) return;
         demoCheckDoneRef.current = true;
         // If Firebase auth already resolved (no user), NOW set loading=false
-        if (firebaseAuthDoneRef.current) {
+        if (generation === authGenerationRef.current && firebaseAuthDoneRef.current) {
           setLoading(false);
         }
       });
@@ -232,31 +289,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Sync auth token to a cookie so the Next.js middleware can check it.
   // Returns true if the cookie was successfully set, false otherwise.
-  const syncTokenCookie = useCallback(async (fbUser: FirebaseUser | null): Promise<boolean> => {
+  const syncTokenCookie = useCallback(async (fbUser: FirebaseUser | null, generation = authGenerationRef.current): Promise<boolean> => {
+    const request = new AbortController();
+    sessionRequestsRef.current.add(request);
     try {
       if (fbUser) {
-        const result = await syncFirebaseSession(fbUser);
+        const signup = signupProfileReadyRef.current;
+        if (signup && (!signup.uid || signup.uid === fbUser.uid) && !await signup.ready) return false;
+        if (!isCurrentAuth(generation, fbUser)) return false;
+        const result = await syncFirebaseSession(fbUser, (input, init) => {
+          if (!isCurrentAuth(generation, fbUser)) throw new Error('Authentication changed');
+          return fetch(input, { ...init, signal: request.signal });
+        });
+        if (!isCurrentAuth(generation, fbUser)) return false;
         if (result === 'invalid') {
           setUser(null);
           setFirebaseUser(null);
           setCredits(0);
           setAnalystProfile(null);
           setAuthError('Your session is no longer valid. Please sign in again.');
-          await fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
-          await firebaseSignOut(auth).catch(() => {});
+          await fetch('/api/auth/session', { method: 'DELETE', signal: request.signal }).catch(() => {});
+          if (isCurrentAuth(generation, fbUser)) await firebaseSignOut(auth).catch(() => {});
         } else if (result === 'unavailable') {
           setAuthError('PRAXIS could not verify your session right now. Please try again.');
         }
         return result === 'ready';
-      } else if (!isDemoMode) {
-        await fetch('/api/auth/session', { method: 'DELETE' });
+      } else if (!isDemoMode && isCurrentAuth(generation, null)) {
+        await fetch('/api/auth/session', { method: 'DELETE', signal: request.signal });
       }
-      return true;
+      return isCurrentAuth(generation, fbUser);
     } catch (err) {
+      if (!isCurrentAuth(generation, fbUser)) return false;
       console.error('[auth] Cookie sync failed:', err);
       return false;
+    } finally {
+      sessionRequestsRef.current.delete(request);
     }
-  }, [isDemoMode]);
+  }, [isDemoMode, isCurrentAuth]);
 
   // Listen to Firebase auth state.
   // Use a ref for the legacy sample flag to avoid re-subscribing on session
@@ -266,14 +335,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      if ((auth.currentUser?.uid ?? null) !== (fbUser?.uid ?? null)) return;
+      const generation = observeAuthIdentity(fbUser);
       if (fbUser) {
-        const authUser = fbUserToAuthUser(fbUser);
+        if (logoutRequestedRef.current) {
+          if (auth.currentUser?.uid === fbUser.uid) await firebaseSignOut(auth).catch(() => {});
+          return;
+        }
         setIsDemoMode(false);
 
         // First: sync the session cookie required by middleware. If this fails,
         // do not expose an authenticated app state; otherwise /login can push
         // to /app while middleware immediately bounces back to /login.
-        const synced = await syncTokenCookie(fbUser);
+        const synced = await syncTokenCookie(fbUser, generation);
+        if (!isCurrentAuth(generation, fbUser)) return;
         if (!synced) {
           setAuthError((previous) => previous ?? 'Sign-in succeeded, but PRAXIS could not verify your secure session. Please try again, or contact TACITUS with the time of the attempt.');
           setUser(null);
@@ -288,6 +363,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // Session is ready: set the user immediately from Firebase Auth data
         // while Firestore profile hydration runs below.
+        const authUser = fbUserToAuthUser(fbUser);
         setAuthError(null);
         setUser(authUser);
         setCredits(0);
@@ -295,14 +371,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Hydrate the profile already initialized by the verified session API.
         try {
           const { ensureUserProfile } = await import('@/lib/firebase/firestore');
-          const profile = await loadProfileAfterAuthReady(fbUser, () =>
-            ensureUserProfile({
+          if (!isCurrentAuth(generation, fbUser)) return;
+          const profile = await loadProfileAfterAuthReady(fbUser, () => {
+            if (!isCurrentAuth(generation, fbUser)) throw new Error('Authentication changed');
+            return ensureUserProfile({
               uid: fbUser.uid,
               email: fbUser.email,
               displayName: fbUser.displayName,
               photoURL: fbUser.photoURL,
-            }),
-          );
+            });
+          });
+          if (!isCurrentAuth(generation, fbUser)) return;
           // Update with Firestore data (credits, role, org, plan tier)
           setUser({
             ...authUser,
@@ -315,12 +394,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setCredits(profile.credits);
 
         } catch (err) {
+          if (!isCurrentAuth(generation, fbUser)) return;
           // Firestore failed — that's OK, user is still logged in with defaults
           console.warn('[auth] Firestore profile load failed (using defaults):', err);
         }
-        setFirebaseUser(fbUser);
+        if (isCurrentAuth(generation, fbUser)) setFirebaseUser(fbUser);
       } else if (!isDemoModeRef.current) {
-        const sessionUser = await serverSessionToAuthUser();
+        if (!serverSessionRecoveryRef.current) await syncTokenCookie(null, generation);
+        if (!isCurrentAuth(generation, null)) return;
+        const sessionUser = serverSessionRecoveryRef.current && !logoutRequestedRef.current
+          ? await serverSessionToAuthUser()
+          : null;
+        if (!isCurrentAuth(generation, null)) return;
         if (sessionUser) {
           setUser(sessionUser);
           setFirebaseUser(null);
@@ -334,6 +419,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setFirebaseUser(null);
         setCredits(0);
       }
+      if (!isCurrentAuth(generation, fbUser)) return;
       firebaseAuthDoneRef.current = true;
       // If a Firebase user was found, we can set loading=false immediately.
       // If no Firebase user, only set loading=false after the demo check has
@@ -344,7 +430,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [syncTokenCookie]);
+  }, [syncTokenCookie, observeAuthIdentity, isCurrentAuth]);
 
   // ---------------------------------------------------------------------------
   // Handle Google redirect result on page load.
@@ -359,7 +445,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await setPersistence(auth, browserLocalPersistence);
         const redirectResult = await getRedirectResult(auth);
         if (cancelled || !redirectResult?.user) return;
-        const synced = await syncTokenCookie(redirectResult.user);
+        if (logoutRequestedRef.current || auth.currentUser?.uid !== redirectResult.user.uid) return;
+        const generation = observeAuthIdentity(redirectResult.user);
+        const synced = await syncTokenCookie(redirectResult.user, generation);
+        if (!isCurrentAuth(generation, redirectResult.user)) return;
         if (!synced) {
           setAuthError('Google sign-in finished, but PRAXIS could not initialize the secure app session. Please try again.');
         }
@@ -371,34 +460,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     })();
     return () => { cancelled = true; };
-  }, [syncTokenCookie]);
+  }, [syncTokenCookie, observeAuthIdentity, isCurrentAuth]);
 
   // ---------------------------------------------------------------------------
   // Token refresh: listen for token changes AND proactively refresh before expiry
   // Firebase ID tokens expire after 1 hour. This ensures the session cookie
   // always has a valid token, preventing 401s on long-lived sessions.
   // ---------------------------------------------------------------------------
-  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(() => {
     // onIdTokenChanged fires when:
     // 1. User signs in/out
     // 2. Token is refreshed (automatic or manual)
     // 3. Custom claims change
     const unsubscribe = onIdTokenChanged(auth, async (fbUser) => {
+      if ((auth.currentUser?.uid ?? null) !== (fbUser?.uid ?? null)) return;
+      const generation = observeAuthIdentity(fbUser);
       if (fbUser) {
         // Sync the fresh token to the session cookie
-        await syncTokenCookie(fbUser);
+        await syncTokenCookie(fbUser, generation);
+        if (!isCurrentAuth(generation, fbUser)) return;
 
         // Schedule a proactive refresh 5 minutes before expiry
         // Firebase tokens expire in 3600s. Refresh at 50 minutes.
         if (refreshTimerRef.current) clearTimeout(refreshTimerRef.current);
         refreshTimerRef.current = setTimeout(async () => {
+          if (!isCurrentAuth(generation, fbUser)) return;
           try {
             // Force-refresh the token — Firebase SDK handles the refresh call
             await fbUser.getIdToken(true);
             // onIdTokenChanged will fire again with the new token
           } catch (err) {
+            if (!isCurrentAuth(generation, fbUser)) return;
             console.warn('[auth] Proactive token refresh failed:', err);
           }
         }, 50 * 60 * 1000); // 50 minutes
@@ -418,7 +510,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         refreshTimerRef.current = null;
       }
     };
-  }, [syncTokenCookie]);
+  }, [syncTokenCookie, observeAuthIdentity, isCurrentAuth]);
 
   // ---------------------------------------------------------------------------
   // Real-time credit sync: listen for Firestore profile changes so credits
@@ -426,11 +518,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     if (!firebaseUser || isDemoMode) return;
+    const generation = authGenerationRef.current;
 
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     const unsubscribe = onSnapshot(
       userDocRef,
       (snapshot) => {
+        if (!isCurrentAuth(generation, firebaseUser)) return;
         if (snapshot.exists()) {
           const data = snapshot.data();
           const newCredits = typeof data.credits === 'number' ? data.credits : 0;
@@ -450,13 +544,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
       (err) => {
+        if (!isCurrentAuth(generation, firebaseUser)) return;
         // Non-fatal — user keeps working with last known credits
         console.warn('[auth] Firestore snapshot listener error:', err);
       },
     );
 
     return () => unsubscribe();
-  }, [firebaseUser, isDemoMode]);
+  }, [firebaseUser, isDemoMode, isCurrentAuth]);
 
   // ---------------------------------------------------------------------------
   // Analyst profile: live subscription so onboarding/settings edits reshape the
@@ -466,10 +561,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isDemoMode) { setAnalystProfile(null); return; }
     if (!firebaseUser?.uid) { setAnalystProfile(null); return; }
+    const generation = authGenerationRef.current;
     const profileRef = doc(db, 'users', firebaseUser.uid, 'profile', 'analyst');
     const unsubscribe = onSnapshot(
       profileRef,
       (snapshot) => {
+        if (!isCurrentAuth(generation, firebaseUser)) return;
         if (!snapshot.exists()) {
           setAnalystProfile(null);
           return;
@@ -478,12 +575,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAnalystProfile(parsed.success ? parsed.data : null);
       },
       (err) => {
+        if (!isCurrentAuth(generation, firebaseUser)) return;
         console.warn('[auth] Analyst profile listener error:', err);
         setAnalystProfile(null);
       },
     );
     return () => unsubscribe();
-  }, [firebaseUser?.uid, isDemoMode]);
+  }, [firebaseUser, isDemoMode, isCurrentAuth]);
 
   // Email/password sign in
   const signInWithEmail = useCallback(async (email: string, password: string) => {
@@ -491,11 +589,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // React hasn't yet re-rendered with the new user state from onAuthStateChanged.
     setLoading(true);
     setAuthError(null);
+    logoutRequestedRef.current = false;
+    cancelPendingSignup();
     try {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithEmailAndPassword(auth, email, password);
+      if (logoutRequestedRef.current || auth.currentUser?.uid !== cred.user.uid) return { success: false, error: 'Sign-in was cancelled.' };
+      const generation = observeAuthIdentity(cred.user);
       // Sync cookie before returning so middleware sees the token when router.push fires.
-      const synced = await syncTokenCookie(cred.user);
+      const synced = await syncTokenCookie(cred.user, generation);
+      if (!isCurrentAuth(generation, cred.user)) return { success: false, error: 'Sign-in was cancelled.' };
       if (!synced) {
         setLoading(false);
         return { success: false, error: 'Session initialization failed. Please try again.' };
@@ -529,28 +632,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[auth] signInWithEmail unhandled error:', code, err);
       return { success: false, error: `Sign-in failed (${code || 'unknown'}). Please try again or use Google sign-in.` };
     }
-  }, [syncTokenCookie]);
+  }, [syncTokenCookie, observeAuthIdentity, isCurrentAuth, cancelPendingSignup]);
 
   // Email/password sign up
   const signUpWithEmail = useCallback(async (email: string, password: string, name: string) => {
     setLoading(true);
     setAuthError(null);
+    logoutRequestedRef.current = false;
+    cancelPendingSignup();
+    let finishProfile!: (ready: boolean) => void;
+    const ready = new Promise<boolean>((resolve) => { finishProfile = resolve; });
+    const signup = { uid: null as string | null, ready, finish: finishProfile, cancelled: false };
+    signupProfileReadyRef.current = signup;
+    const cancelledResult = { success: false, error: 'Sign-up was cancelled.' };
     try {
       await setPersistence(auth, browserLocalPersistence);
+      if (signup.cancelled) return cancelledResult;
       const cred = await createUserWithEmailAndPassword(auth, email, password);
+      signup.uid = cred.user.uid;
+      if (signup.cancelled || logoutRequestedRef.current || auth.currentUser?.uid !== cred.user.uid) return cancelledResult;
+      const generation = observeAuthIdentity(cred.user);
       await updateProfile(cred.user, { displayName: name });
+      if (signup.cancelled || !isCurrentAuth(generation, cred.user)) return cancelledResult;
+      // Profile writes do not guarantee that the cached ID token has fresh claims.
+      await cred.user.getIdToken(true);
+      if (signup.cancelled || !isCurrentAuth(generation, cred.user)) return cancelledResult;
+      finishProfile(true);
       // Account creation succeeds even if email delivery is temporarily down.
       // Email verification is required separately for privileged operations.
       await sendEmailVerification(cred.user).catch(() => {
-        setAuthError('Your account was created, but the verification email could not be sent. You can still sign in.');
+        if (isCurrentAuth(generation, cred.user)) setAuthError('Your account was created, but the verification email could not be sent. You can still sign in.');
       });
-      const synced = await syncTokenCookie(cred.user);
+      if (signup.cancelled || !isCurrentAuth(generation, cred.user)) return cancelledResult;
+      const synced = await syncTokenCookie(cred.user, generation);
+      if (!isCurrentAuth(generation, cred.user)) return cancelledResult;
       if (!synced) {
         setLoading(false);
         return { success: false, error: 'Session initialization failed. Please try again.' };
       }
       return { success: true };
     } catch (err: unknown) {
+      if (signup.cancelled) return cancelledResult;
       setLoading(false);
       const code = (err as { code?: string }).code || '';
       if (code === 'auth/email-already-in-use') {
@@ -570,19 +692,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       console.error('[auth] signUpWithEmail unhandled error:', code, err);
       return { success: false, error: `Sign-up failed (${code || 'unknown'}). Please try again or use Google sign-in.` };
+    } finally {
+      finishProfile(false);
+      if (signupProfileReadyRef.current === signup) signupProfileReadyRef.current = null;
     }
-  }, [syncTokenCookie]);
+  }, [syncTokenCookie, observeAuthIdentity, isCurrentAuth, cancelPendingSignup]);
 
   // Google sign in: Firebase recommends popup or redirect. Popup keeps the user
   // on praxis.tacitus.me; redirect is retained as the browser-blocker fallback.
   const signInWithGoogle = useCallback(async () => {
     setLoading(true);
     setAuthError(null);
+    logoutRequestedRef.current = false;
+    cancelPendingSignup();
     const provider = googleProvider();
     try {
       await setPersistence(auth, browserLocalPersistence);
       const cred = await signInWithPopup(auth, provider);
-      const synced = await syncTokenCookie(cred.user);
+      if (logoutRequestedRef.current || auth.currentUser?.uid !== cred.user.uid) return { success: false, error: 'Sign-in was cancelled.' };
+      const generation = observeAuthIdentity(cred.user);
+      const synced = await syncTokenCookie(cred.user, generation);
+      if (!isCurrentAuth(generation, cred.user)) return { success: false, error: 'Sign-in was cancelled.' };
       if (!synced) {
         setLoading(false);
         return { success: false, error: 'Google sign-in succeeded, but PRAXIS could not initialize the secure app session. Please try again.' };
@@ -605,7 +735,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('[auth] Google sign-in error:', code, err);
       return { success: false, error: describeGoogleAuthError(code) };
     }
-  }, [syncTokenCookie]);
+  }, [syncTokenCookie, observeAuthIdentity, isCurrentAuth, cancelPendingSignup]);
 
   // Legacy sample entry point retained for UI compatibility; sample sessions are retired.
   const signInAsDemo = useCallback(async () => {
@@ -621,41 +751,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Logout
   const logout = useCallback(async () => {
+    logoutRequestedRef.current = true;
+    serverSessionRecoveryRef.current = false;
+    const generation = ++authGenerationRef.current;
+    activeUidRef.current = null;
+    cancelPendingSignup();
+    cancelAuthRequests();
+    setUser(null);
+    setFirebaseUser(null);
+    setCredits(0);
+    setAnalystProfile(null);
+    setLoading(false);
+    setIsDemoMode(false);
+    setAuthError(null);
+    const request = new AbortController();
+    sessionRequestsRef.current.add(request);
     try {
-      if (firebaseUser) {
+      if (auth.currentUser) {
         await firebaseSignOut(auth);
       }
-      setUser(null);
-      setFirebaseUser(null);
-      setCredits(0);
-      setIsDemoMode(false);
-      setAuthError(null);
-      await fetch('/api/auth/session', { method: 'DELETE' });
+      if (generation !== authGenerationRef.current || !logoutRequestedRef.current) return;
+      await fetch('/api/auth/session', { method: 'DELETE', signal: request.signal });
     } catch (err) {
+      if (generation !== authGenerationRef.current || !logoutRequestedRef.current) return;
       console.error('[auth] Logout error:', err);
-      // Force clear state even if signOut fails
-      setUser(null);
-      setFirebaseUser(null);
-      setCredits(0);
-      setIsDemoMode(false);
-      setAuthError(null);
+    } finally {
+      sessionRequestsRef.current.delete(request);
     }
-  }, [firebaseUser]);
+  }, [cancelPendingSignup, cancelAuthRequests]);
 
   // Refresh credits from Firestore
   const refreshCredits = useCallback(async () => {
     if (!firebaseUser) return;
+    const generation = authGenerationRef.current;
     try {
       const { getUserProfile } = await import('@/lib/firebase/firestore');
+      if (!isCurrentAuth(generation, firebaseUser)) return;
       const profile = await getUserProfile(firebaseUser.uid);
+      if (!isCurrentAuth(generation, firebaseUser)) return;
       if (profile) {
         setCredits(profile.credits);
         setUser((prev) => prev ? { ...prev, credits: profile.credits } : null);
       }
     } catch (err) {
+      if (!isCurrentAuth(generation, firebaseUser)) return;
       console.warn('[auth] Failed to refresh credits:', err);
     }
-  }, [firebaseUser]);
+  }, [firebaseUser, isCurrentAuth]);
 
   // Send password reset email
   const resetPassword = useCallback(async (email: string) => {
