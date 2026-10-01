@@ -17,7 +17,7 @@ const SOURCE_FILES = [
   'src/app/layout.tsx',
   'src/app/globals.css',
   'src/components/marketing/praxis-marketing-home.tsx',
-  'src/components/app/praxis-app-launchpad.tsx',
+  'src/components/app/praxis-chat-first-shell.tsx',
   'src/lib/product/policy-missions.ts',
   'src/app/pricing/page.tsx',
   'src/app/(landing)/learn/page.tsx',
@@ -32,15 +32,15 @@ const SOURCE_ASSERTIONS = [
   { name: 'specimen-card', pattern: /specimen-card/ },
   { name: 'receipt-slip', pattern: /receipt-slip/ },
   { name: 'context-chain', pattern: /context-chain/ },
-  { name: 'policy missions', pattern: /Sanctions impact memo[\s\S]*Treaty brief with citations[\s\S]*Stakeholder map & ACH/ },
-  { name: 'billing mode honesty', pattern: /sandbox test mode|checkout is not configured/ },
+  { name: 'policy missions', pattern: /Sanctions impact memo[\s\S]*Treaty brief with citations[\s\S]*Stakeholder map[\s\S]*analysis of competing hypotheses/ },
+  { name: 'billing mode honesty', pattern: /getCheckoutAvailability[\s\S]*Test checkout only; no live subscription is offered/ },
   { name: 'premium web honesty', pattern: /Premium web is not enabled by default/ },
 ];
 
 const LIVE_ASSERTIONS = [
   { name: 'PRAXIS brand mark', pattern: /PRAXIS/ },
   { name: 'Civic Atelier shell', pattern: /civic-atelier-shell/ },
-  { name: 'policy mission copy', pattern: /Sanctions impact memo|Treaty brief with citations|Stakeholder map & ACH/ },
+  { name: 'policy mission copy', pattern: /Sanctions impact memo|Treaty brief with citations|Stakeholder map/ },
 ];
 
 function sourceText() {

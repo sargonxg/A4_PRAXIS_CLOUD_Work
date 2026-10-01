@@ -12,7 +12,7 @@ function read(rel: string): string {
 const REQUIRED_MISSIONS = [
   'Sanctions impact memo',
   'Treaty brief with citations',
-  'Stakeholder map & ACH',
+  'Stakeholder map',
 ] as const;
 
 describe('Session 5 public surface and billing contract', () => {
@@ -26,6 +26,7 @@ describe('Session 5 public surface and billing contract', () => {
     for (const mission of REQUIRED_MISSIONS) {
       expect(missionSource).toContain(mission);
     }
+    expect(missionSource).toContain('analysis of competing hypotheses');
     expect(marketingHome).toContain('PraxisChatFirstShell');
     expect(appHome).toContain('PraxisChatFirstShell');
     expect(chatShell).toContain('PraxisChat');

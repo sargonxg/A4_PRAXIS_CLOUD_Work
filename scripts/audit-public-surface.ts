@@ -124,7 +124,8 @@ requireAll('signed-in launchpad', sharedHomeSurface, [
 requireAll('policy missions', policyMissions, [
   'Sanctions impact memo',
   'Treaty brief with citations',
-  'Stakeholder map & ACH',
+  'Stakeholder map',
+  'analysis of competing hypotheses',
 ]);
 forbidAll('signed-in launchpad', sharedHomeSurface, [
   'Diagnostics',
