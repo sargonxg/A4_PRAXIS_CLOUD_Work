@@ -6,9 +6,12 @@ Status: canonical documentation entrypoint
 Start here when orienting the repo. Historical documents remain useful, but the
 files below define the current product, runtime, validation, and ship posture.
 
-Current checkpoint: [user readiness](reviews/2026-09-29-praxis-user-readiness.md)
-records repairs and remaining work. The [production acceptance record](reviews/2026-09-29-praxis-production-acceptance.md)
-records the exact served release and real-service journey results.
+The [current release record](reviews/2026-09-30-praxis-live-release.md) identifies
+the served source, real user journeys and remaining limits. The
+[improvement analysis](reviews/2026-09-30-praxis-improvement-analysis.md) and
+[implementation ledger](reviews/2026-09-30-praxis-implementation-ledger.md) track
+all 80 recommendations; the [anti-slop review](reviews/2026-09-30-praxis-antislop-review.md)
+records content, design and browser evidence.
 
 ## Current Entrypoints
 

@@ -8,13 +8,12 @@ For using the product, start with the
 use the [September 30 implementation ledger](../reviews/2026-09-30-praxis-implementation-ledger.md),
 which maps all 80 improvement recommendations and the model-routing requirement
 to owners and acceptance criteria. The
-[production acceptance record](../reviews/2026-09-29-praxis-production-acceptance.md)
-identifies the previously verified live release. New local work does not become
-live evidence until a release and real-service journey prove it.
+[current release record](../reviews/2026-09-30-praxis-live-release.md)
+identifies the served source, verified user journeys and remaining limits.
 
-The [retained quality-evaluation runner and analyst rubric](../reviews/2026-09-30-praxis-quality-evaluation.md)
-compare matched synthetic supplied evidence. Local provider access was unavailable;
-analytical quality and measured user benefit remain unscored.
+The [quality-evaluation runner and analyst rubric](../reviews/2026-09-30-praxis-quality-evaluation.md)
+support matched comparisons using identical synthetic evidence. Retained live
+execution results do not establish analytical quality or measured user benefit.
 
 Current workflow: **Home** for questions and writing; **Capsules** for separately
 building and reusing context. Library, Drafts, source review and run inspection

@@ -6,10 +6,11 @@ Start in Home to ask or draft; use Capsules to create, inspect and review
 reusable context. Research, source receipts, memo editing and agent approvals
 stay inside the existing workbench.
 
-Current user readiness: [verified workflows and limits](docs/reviews/2026-09-29-praxis-user-readiness.md).
-The [production acceptance record](docs/reviews/2026-09-29-praxis-production-acceptance.md)
-tracks the served release, real login, Ask/writing and separate capsule build/reuse
-checks. Generated writing remains a review-required draft.
+The [current release record](docs/reviews/2026-09-30-praxis-live-release.md)
+tracks the served source, verified workflows and remaining limits. See the
+[80-item improvement analysis](docs/reviews/2026-09-30-praxis-improvement-analysis.md)
+and [anti-slop review](docs/reviews/2026-09-30-praxis-antislop-review.md).
+Generated writing still requires human review.
 
 Live app:
 
@@ -23,8 +24,9 @@ Business / funding snapshot:
 - Product: ContextCapsule-native policy workspace by TACITUS.
 - Buyers: individual policy practitioners, mediation teams, research desks,
   public-interest organizations, and institutions that need governed AI work.
-- Revenue: Free starter workspace, Practitioner at `$49/month`, Team at
-  `$199/month per seat`, and custom Institution deployments.
+- Plans: Free starter workspace; Practitioner is configured at `$49/month`,
+  with checkout currently disabled. Team (`$199/month per seat`) and
+  Institution plans are proposals.
 - Funding focus: finish the sourceable policy-workflow loop, harden trusted
   agent runs, expand institutional controls, and support responsible pilots.
 

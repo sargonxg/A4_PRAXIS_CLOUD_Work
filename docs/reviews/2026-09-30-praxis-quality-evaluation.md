@@ -1,6 +1,21 @@
 # Policy and narrative quality evaluation
 
-September 30, 2026. Packet W13: independent analyst assessment and measured benefit remain open. Retained production answers below belong to historical source `9e95085f`; the integrated merged-source gate passed 440 files/2,396 tests, while corrected deployed receipts and new live acceptance remain pending in the [release record](2026-09-30-praxis-live-release.md).
+September 30, 2026. Independent analyst assessment/measured benefit remain open. Retained provider answers and same-run corrected memo belong to `9e95085f`/`cf04`; the latter seven-phase workflow passed. Accepted CSS-only `01a95497` passed local/build/CI/preservation and 12 public cases without an authenticated rerun. Current separately served 52102/01099 is unaccepted by this packet and disables checkout/erasure. Execution receipts do not score analytical quality; the human rubric remains unscored. The [release record](2026-09-30-praxis-live-release.md) owns exact evidence and request errors.
+
+## Final-source answer fidelity
+
+`model-policy-live-1790815848620-bcb1ab63.json` retains the original three provider answers and verified server history on exact `cf04c6bb`. Its status is `EXECUTION_PASS_REVIEW_PENDING`; all human-rubric verdicts remain null. A separate coordinator-agent review records concrete findings in `coordinator-model-content-review-1790815848620-bcb1ab63.json`. These are different synthetic tasks, not a matched quality/cost experiment or measured capsule benefit.
+
+The supplied notes label the project synthetic, leave funding undecided, and prohibit public launch until an independent audit is complete. They establish no capital allocation/disbursement, completed audit or mandatory pilot.
+
+| Actual route / task | Original answer evidence | Assessment and required correction |
+| --- | --- | --- |
+| Fast `gemini-3.1-flash-lite`: extraction | “Currently undecided (Supplied synthetic constraint)” and “Public launch is prohibited until an independent audit is complete”. | This short answer preserves the supplied constraints and synthetic boundary. It does not establish general analytical accuracy. |
+| Standard `gemini-3.5-flash`: balanced assessment | “Project funding remains officially undecided”, “lower-cost small pilot”, “The optimal next step”. | The stored answer explicitly labels all parameters supplied synthetic constraints; that boundary is present. “Officially” lacks authority evidence, and cost/optimality need conditions or an assumption label. Distinguish a plausible recommendation from established fact. |
+| Deep `gemini-3.1-pro-preview`: trade-offs | “No capital has been secured, allocated, or expended.” | Undecided funding does not establish those negative facts. Keep the funding decision uncertain and mark the capital/allocation/expenditure position unknown. |
+| Same deep answer | “a small pilot becomes mandatory” for hypothetical severe audit findings. | The notes supply no such mandate. Present a conditional option subject to actual findings and decision authority. |
+
+The retained complex heading is intact: “Trade-Off Assessment: Small Policy Pilot vs. Staged Launch”. Apparent malformed prose in optimized tool output is absent from stored bytes and is not an app cleanup/formatting defect. Original provider answers remain unchanged. These findings support the existing analytical-fidelity and claim-attribution priorities; they are not retrospective human rubric scores. The generated worker memo requires separate primary-body review.
 
 The executable runner is [`scripts/evaluate-policy-narrative-quality.ts`](../../scripts/evaluate-policy-narrative-quality.ts).
 It retains generated outputs against the eight cases in the
@@ -9,7 +24,7 @@ Every case fact and institutional source capture is synthetic; these are not
 retrieved GAO/OECD quotations. Transport/source tests and successful generation
 do not establish analytical accuracy.
 
-Fresh production build after the final settings balance/copy passed with exit 0 at 2026-09-30T22:09:25.634Z (final-build-receipt.json). This is local release evidence; deployed answer quality and independent analyst assessment remain separate.
+Builds, tests and deployed operational receipts belong to the [release record](2026-09-30-praxis-live-release.md). The independent human rubric remains unscored; successful generation does not establish factual fidelity or improved analyst outcomes.
 
 ## Defined comparison and acceptance
 
@@ -221,3 +236,32 @@ The affected historical-turn and workbench label callers pass that evidence;
 their scoped ESLint and diff checks passed. The integrated gate subsequently passed build/typecheck and all 440 files/2,396 tests.
 Deployment and a fresh authenticated production receipt are separate acceptance
 steps recorded in the [live release record](2026-09-30-praxis-live-release.md).
+
+## Final-source worker memo review
+
+Actual run `26603946-3a18-4d5f-abf0-afa57652ca29` saved memo `EQmR6hElM0OwBluCh6ct__policy-memo` on `cf04c6bb`. Its original generated body and 23-finding review agree across run, memo, version, block and output; the checkpoint is `PENDING_REVIEW` with export blocked. Successful persistence closes the former undefined-publication-date failure on this journey; it does not validate the prose.
+
+`coordinator-worker-primary-body-review-26603946.json` retains these original-body findings:
+
+| Original quotation | Source-grounded correction |
+| --- | --- |
+| “a policy commitment establishes a responsibility to respect principles” | Canada’s original passage recommends a commitment to meet an existing human-rights responsibility; it does not say the commitment creates that responsibility. |
+| “Unconfirmed funding means authorization is absent” | Unknown approval is not proof of absent authorization, allocation or expenditure. |
+| “Therefore, operational implementation has not occurred” | A prohibition on public launch until an independent audit is complete establishes neither whether those events occurred nor whether internal activity occurred. |
+| “implementation requires verifiable evidence of operational logistics and expenditure” | Spending is not a necessary indicator for every policy; operational activity and results need context-appropriate evidence. |
+
+The coordinator-agent approved six bound primary-body corrections for persistence, hash `55a0c703cf5947df30e52a78ed622989e6a2c3f31a390ce45447771f041edade`. The 470-word revision restores the audit/launch condition, uses Canada/VP originals as scoped illustrations, labels OGP/PDF originals unavailable and retains whole-draft human review. Its initially omitted launch condition was repaired before approval. Root verified the actual persisted current-version body exactly matches that hash; save/reopen preserved citations and made the old review outdated. Same-run Close/logout/private-route 401 passed. Raw `deployed-agent-proof.json` has no status field; stdout/parent phase passed with `errors: []`. Original provider output remains retained. This is agent-assisted source review, not human approval, a numerical analyst score or final export acceptance.
+
+## Delivery self-evaluation
+
+This `agent-self-evaluation` assessment rates the engineering delivery and documentation. It is not a human analyst rubric, a model-quality score or a rating of the app’s factual accuracy. Current app acceptance remains bound to the named release receipts.
+
+| Axis | Score /5 | Evidence and remaining gap |
+| --- | --- | --- |
+| Accuracy | 4 | Source-bound receipts and stored-byte checks support reported behavior; original model/memo factual gaps are disclosed. Generated answers still require source review. |
+| Completeness | 3 | Prior cf04 core workflows are proved; current 52102 is unaccepted by this packet. Paid lifecycle, verification-email delivery, erasure, load/restore and representative analysts remain unproven. Complete those gates before broader readiness claims. |
+| Clarity | 4 | Shorter copy/labels improve scanning; the retained Guide contrast failure was repaired and passed exact 01a public QA. Opaque source IDs and mobile Quickstart overlap remain follow-ups. |
+| Actionability | 4 | Repository guides/review records and the 80-ID ledger provide a continuation path. Exact accepted checkpoints are separated from the current unaccepted successor; sandbox lifecycle and credential rotation remain dependencies. |
+| Conciseness | 4 | Public copy was shortened. The comprehensive audit intentionally retains detail, with links and status tables for scanning. |
+
+Average: **3.8/5**. Prioritize current-source journey acceptance, a signed subscription lifecycle when a sandbox is available, an independent source-fidelity benchmark, then mobile/source-label follow-ups. The completeness gap requires those real-service and representative-user checks; local tests cannot close it.

@@ -1,8 +1,8 @@
 # PRAXIS authentication, account cleanup, and billing readiness
 
-September 30, 2026. This ledger separates implemented contracts, earlier production proof and pending activation. The integrated merged-source gate and fresh production build passed; corrective deployment and fresh live acceptance remain pending in the [release record](2026-09-30-praxis-live-release.md).
+September 30, 2026. Final observed successor `52102b5c`/`01099-wpp` at 01:59:23 UTC has checkout false/erasure false and seven healthy checks; it is unaccepted by this packet. Accepted `01a95497` gate/build/CI/public-contrast/preservation proof and prior `cf04` signup/worker/hosted-checkout journeys remain dated. The seven journeys were not rerun on the CSS-only checkpoint. Verification-email delivery was intercepted; genuine paid lifecycle and complete erasure remain unproven. The [release record](2026-09-30-praxis-live-release.md) owns exact evidence and the unresolved historical static-chunk 500.
 
-Historical source `9e95085f` passed account/session and Rules guard journeys but failed queued memo persistence on an absent optional publication date. That local correction needs another deployed worker journey. Production Polar identity, active merchant, dedicated Practitioner product/webhook and secure runtime secret mounts are verified. Checkout remains disabled while the corrective release proceeds; the fresh build after final settings copy passed with exit 0 at 2026-09-30T22:09:25.634Z. No purchased lifecycle or complete account erasure is proven.
+Historical `9e95085f` passed account/session and Rules guards but failed queued memo persistence on a missing optional publication date. Production merchant, Practitioner product/webhook and scoped secret mounts are verified. Internal-origin checkout callbacks were corrected in deployed `43875e47`; real hosted start/return passed. Signed subscription delivery, paid lifecycle and complete erasure remain unproven.
 
 ## Implemented contracts
 
@@ -106,7 +106,7 @@ The earlier application builds failed reading Rules with missing `firebaserules.
 | Create immutable ruleset | `firebaserules.rulesets.create` |
 | Update existing release | `firebaserules.releases.update` |
 
-Read/test execution is proven. Create/update access is verified by IAM metadata and requires a successful publishing build for execution proof. The custom role excludes Rules deletion, new-release creation and executable permissions. Existing grants supply project/API access; exact project, target and hash restrictions come from the guarded publisher. The [trigger runbook](../../infrastructure/triggers/README.md) and [IAM runbook](../runbooks/IAM_ROLES.md) own the wider identities.
+Read/test execution is proven. Corrective build a6bb01b4-ad6b-4f8d-8fc6-697533db811c also executed Firestore create/update and exact-source readback successfully; `coordinator-release-9d6cea47-build-rules-receipt.json` records `deployed_readback_verified`. It published no Storage Rules and did not prove complete erasure. The custom role excludes Rules deletion, new-release creation and executable permissions. Existing grants supply project/API access; exact project, target and hash restrictions come from the guarded publisher. The [trigger runbook](../../infrastructure/triggers/README.md) and [IAM runbook](../runbooks/IAM_ROLES.md) own the wider identities.
 
 ### Publication and deployment contract
 
@@ -124,8 +124,8 @@ Cloud Run deployment uses `--update-env-vars` and `--update-secrets`, preserving
 | Token storage | Enabled Secret Manager version `projects/852128226674/secrets/polar-access-token/versions/1`; scoped secretAccessor grant to `praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com`. Secret values are never recorded. |
 | Product | Dedicated `c2716588-59a5-46dc-8e04-2a923db4f6b1`, PRAXIS Practitioner, managed/unarchived, USD 4,900 cents per month, interval count 1. Unrelated CONCORDIA and the other four preexisting products remain unchanged. |
 | Signing webhook | `be046682-216a-4c0a-8770-2ee37c94a160`: exact `https://praxis.tacitus.me/api/billing/webhook` URL, raw format, enabled, seven required subscription events. Genuine secret persisted directly as enabled `projects/852128226674/secrets/praxis-polar-webhook-secret/versions/1`; narrow runtime secretAccessor grant verified. |
-| Runtime mounts | `praxis-frontend-01086-kff`, 100% traffic: both version-1 secret references, `POLAR_PRODUCT_ANALYST` set to the dedicated product, `POLAR_SERVER=production`, `PRAXIS_ENABLE_PAID_CHECKOUT=false`. Preserved upstream source `7a56d338` and existing settings. Corrective source and checkout activation remain pending. |
-| Commercial proof | Hosted checkout creation/flow, portal, genuine signed delivery and entitlement lifecycle still need receipts. No purchase, cancellation or refund has been proven. |
+| Prior accepted runtime | `cf04c6bb`/`01097-5kw`, 100% ordinary traffic, checkout true/erasure false. Independent 01:11:20 and post-suite 01:15:21 UTC preservation PASS match the complete comparable approved configuration/IAM baseline. Final checkout and same-run worker continuation passed; dated failures retained in the release record. |
+| Commercial proof | Actual USD 49/month hosted checkout creation/public merchant return passed without charge or paid grant. Genuine signed delivery, purchase, paid portal/cancel/refund remain untested. User confirmed no sandbox token. Team provisioning/product/checkout remain unavailable. |
 | Team | Unavailable. Seat/member/shared-team provisioning is unimplemented; no Team product ID or checkout activation. |
 
 The historical 18:56 UTC inspection found the runtime token/webhook/product inputs absent. The provider setup and subsequent mount checkpoint supersede that absence; they do not prove hosted checkout or a paid subscription. Initial token persistence succeeded even though its helper rejected a project-number resource name; retain that failed assertion and the later verified metadata receipt rather than resubmitting the credential.
@@ -149,15 +149,25 @@ The signing callback persists only to `praxis-polar-webhook-secret` and returns 
 
 Offline SDK/schema and fake-client checks cover read-only defaults, the mandatory secret-persistence gate, redaction, reuse, rollback and recovery journals. They are not paid lifecycle evidence.
 
-Provider setup receipt `operator-polar-provider-setup-1790804201239.json` is timestamped 21:36:41.264 UTC. Read-only probe `operator-polar-stored-probe-1790804261349.json` at 21:37:41.349 UTC confirmed active merchant, six products and one correctly configured webhook. `polar-webhook-secret-runtime-access.json` records the narrow secret grant; `polar-runtime-mount-revision.txt` records the mount revision. Redacted read-only `polar-runtime-readback-1790804823411.json` at 21:47:03.409 UTC verifies upstream source `7a56d338`, revision `01086-kff` at 100%, both version-1 references, production mode, dedicated product, false checkout flag and absent Team product. Corrective final-source readback remains pending.
+Provider setup `operator-polar-provider-setup-1790804201239.json` and the stored probe verified the active merchant, dedicated product and enabled webhook; five other products were unchanged. Scoped secret access and mounts are recorded in `polar-webhook-secret-runtime-access.json` and `polar-runtime-mount-revision.txt`. Activation, callback-failure disablement and corrected readbacks are in the [release record](2026-09-30-praxis-live-release.md).
 
 The combined billing group passed 46 focused tests and scoped lint; independent review approved runtime plan-availability coupling. The first dedicated product request returned 422 because an organization token rejects a redundant `organization_id` body field. The retry removes only that field from OAT-scoped product/webhook creates; preflight and readback still require the exact organization. Failed attempts and create journals remain retained. The [official create contract](https://polar.sh/docs/api-reference/webhooks/endpoints/create) requires organization ID except for organization tokens, matching that live validation error.
 
 Genuine signed subscription delivery and purchased lifecycle remain unproven. [Polar sandbox documentation](https://polar.sh/docs/integrate/webhooks/endpoints) describes real sandbox purchases, subscriptions, cancellations and refunds triggering signed events; no callable test-event endpoint was found in SDK 0.46.7. A locally generated signature or simulated payment would not establish provider delivery. Sandbox identity/configuration is a separate operator input.
 
+### Current acceptance boundary
+
+Final supervisor `funded-live-suite-1790815615008-d46c3503.json` is `EXECUTION_PASS_REVIEW_PENDING` with seven phases PASS/exit0; root’s exact-source/10-receipt derivation is `SERIAL_WORKFLOW_ACCEPTED_WITH_EXPLICIT_LIMITS`. Real signup preserved the submitted name and server session, onboarding/relogin/reload and one-time starter allowance. Verification-email delivery was intercepted, not tested. Earlier callback, signup-name/mobile and navigation failures remain dated in the release record.
+
+### Callback correction and validation
+
+The historical `43875e47` callback correction uses one validated public origin for checkout, portal and availability. The first signup barrier was rejected for stale-identity resurrection; revised cancellation/generation handling is in `cf04c6bb`, with frozen gate and real submitted-name signup passed. The Guide contrast correction `01a95497` passed gate/build/CI/preservation and 12 public cases; the seven journeys remain dated to `cf04`. Separate current 52102 disables checkout and has no matching acceptance in this packet.
+
+`production-checkout-live-1790817132570-bb0abc47.json` is `PASS_CHECKOUT_START_AND_RETURN_ONLY` on final `01097`: real USD 49/month product, owner/public merchant return, same session and unchanged free entitlement/credits; Team 503/unsigned-webhook 401 guards passed. No payment or paid grant occurred. Signed subscription delivery, purchase/paid portal/cancellation/refund remain untested.
+
 ## Ask-to-memo context boundary
 
-The local boundary normalizes unsaved version-zero context to null capsule ID/version. Positive saved pins must resolve to the exact owner, capsule ID and version before writes. Twenty-six focused tests and scoped lint passed. The integrated gate then passed 440 files/2,396 tests; corrective deployed context persistence remains separate.
+The local boundary normalizes unsaved version-zero context to null capsule ID/version. Positive saved pins must resolve to the exact owner, capsule ID and version before writes. Twenty-six focused tests and scoped lint passed. The frozen `cf04c6bb` gate passed 443 files/2,564 tests; actual latest-version attachment/recall and same-run worker persistence passed within the stated scope.
 
 ## Account erasure gate
 
@@ -177,4 +187,4 @@ Optional Neo4j, Cognee and external Vertex indexes require a verified cleanup ad
 
 ## Review boundary
 
-Local regressions and metadata readback support the stated contracts. The integrated merged-source gate passed (440 files/2,396 tests; zero skips). Final settings balance/activity copy passed 17 focused tests and scoped lint; fresh production build passed with exit 0 at 2026-09-30T22:09:25.634Z (final-build-receipt.json). Publishing CI execution, corrective authenticated worker continuation, complete erasure and paid lifecycle remain separate acceptance checks. No token values are present in this document.
+Local regressions, Rules publication/configuration preservation and exact-source serial acceptance support the named contracts. Current 52102 disables checkout and is not accepted by this packet. Broader account recovery/erasure and genuine paid lifecycle remain open. Both logged billing 503s match expected Team guards; the original static-chunk GET 500 has no established cause, although its final recheck returned 200. No token values are retained here.

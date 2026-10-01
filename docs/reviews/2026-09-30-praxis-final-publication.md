@@ -2,6 +2,8 @@
 
 Published at [praxis.tacitus.me](https://praxis.tacitus.me). The chat-first experience and [anti-slop review](2026-09-30-anti-slop-review.md) are released. The user's final instruction was to publish the completed work and close; further deep live acceptance was deferred.
 
+The [integrated release record](2026-09-30-praxis-live-release.md) and [80-item improvement analysis](2026-09-30-praxis-improvement-analysis.md) record dated user journeys, public checks and remaining work.
+
 ## What changed
 
 Chat and Capsules are the primary routes. Google/email login leads to the same workbench; onboarding is optional. Capsule creation follows Purpose → Material → Review and save. Inspection combines Overview, Evidence, Timeline and Review with a real evidence map, accessible lists and source tracing. Secondary tools and technical detail open when needed.
