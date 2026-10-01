@@ -246,6 +246,13 @@ type LiveMemoDraft = {
   generationReceipts?: AgentGenerationReceipt[];
 };
 
+type MemoRevisionOutcome = {
+  text: string;
+  execution: 'generated' | 'retained-draft';
+  generationReceipt: AgentGenerationReceipt | null;
+  degradedReason: string | null;
+};
+
 /** Only the server-captured run context can bind a newly saved memo. */
 async function memoContextFromValidatedRun(run: AgentRun, deps: WorkerDeps): Promise<Pick<SaveMemoDraftInput, 'capsuleId' | 'capsuleVersion' | 'runId'>> {
   const snapshot = run.metadata.capsuleAgentExecutionContext;
@@ -1773,6 +1780,17 @@ async function executeMultiAgentSupervisorRun(
       running = { ...next, metadata: { ...run.metadata, ...next.metadata } };
     }
 
+    executionStage = 'context-resolved';
+    const memoContext = await memoContextFromValidatedRun(run, deps);
+    if (memoContext.capsuleVersion === null) {
+      throw new Error('Multi-agent review requires saved context; save the capsule and reattach it in chat before restarting the run.');
+    }
+    running = { ...running, metadata: {
+      ...running.metadata,
+      capsuleAgentExecutionContext: run.metadata.capsuleAgentExecutionContext,
+      capsuleVersion: memoContext.capsuleVersion,
+    } };
+
     executionStage = 'supervisor-approval';
     const approvalThreshold = approvalThresholdFromRun(running);
     if (requiresAgentApproval('medium', approvalThreshold)) {
@@ -1818,6 +1836,22 @@ async function executeMultiAgentSupervisorRun(
     }, deps);
     const initialWorkflowProof = await emitCapsuleReadAndWorkflowPlan(running, deps);
 
+    executionStage = 'research-agent';
+    const evidencePack = await getEvidencePack({
+      ownerUid: running.ownerUid,
+      capsuleId: running.capsuleId,
+      capsuleVersion: memoContext.capsuleVersion,
+      objective: running.objective,
+      maxParagraphs: 10,
+    });
+    if (evidencePack.ownerUid !== run.ownerUid || evidencePack.capsuleId !== run.capsuleId
+      || evidencePack.activeCapsule.ownerUid !== run.ownerUid
+      || evidencePack.activeCapsule.capsuleId !== run.capsuleId
+      || evidencePack.activeCapsule.version !== memoContext.capsuleVersion
+      || evidencePack.activeCapsule.archivedAt) {
+      throw new Error('Multi-agent evidence does not match the original saved capsule version.');
+    }
+
     executionStage = 'search-evidence';
     const liveSearchEvidence = await collectSearchEvidenceForRun(running, {
       appendToolCall: persistToolCall,
@@ -1825,13 +1859,6 @@ async function executeMultiAgentSupervisorRun(
       runGroundedSearch: deps.runGroundedSearch,
     });
 
-    executionStage = 'research-agent';
-    const evidencePack = await getEvidencePack({
-      ownerUid: running.ownerUid,
-      capsuleId: running.capsuleId,
-      objective: running.objective,
-      maxParagraphs: 10,
-    });
     await persistToolCall(makeAgentToolCall({
       runId: running.id,
       ownerUid: running.ownerUid,
@@ -1839,9 +1866,10 @@ async function executeMultiAgentSupervisorRun(
       toolId: 'capsule-evidence-pack',
       risk: getAgentToolDefinition('capsule-evidence-pack').risk,
       status: 'succeeded',
-      input: { objective: running.objective, supervisorAgentId: 'research-agent' },
+      input: { objective: running.objective, capsuleVersion: memoContext.capsuleVersion, supervisorAgentId: 'research-agent' },
       output: {
         packId: evidencePack.packId,
+        capsuleVersion: memoContext.capsuleVersion,
         sourceReceiptIds: uniqueStrings([...evidencePack.sourceReceiptIds, ...liveSearchEvidence.sourceReceiptIds]),
         paragraphCount: evidencePack.sourcedParagraphs.length,
       },
@@ -1877,6 +1905,7 @@ async function executeMultiAgentSupervisorRun(
       capsuleReadReceipt,
       groundingPosture: capsuleReadReceipt.groundingPosture,
     });
+    await emitCapsuleReadAndWorkflowPlan(running, deps, { readReceipt: capsuleReadReceipt, workflowPlan });
     await emitSourceCheckerStarted(running, deps, {
       workflowKind: workflowPlan.workflowKind,
       evidencePackId: evidencePack.packId,
@@ -1950,16 +1979,26 @@ async function executeMultiAgentSupervisorRun(
     }, deps);
 
     executionStage = 'revise-agent';
-    const finalMemoText = await reviseMemoWithRedTeamFindings(running, liveMemoDraft.finalText, redTeamFindings, deps);
+    const revision = await reviseMemoWithRedTeamFindings(running, liveMemoDraft.finalText, redTeamFindings, deps);
+    const finalMemoText = revision.text;
+    const revisionOutcome = {
+      execution: revision.execution,
+      generationReceipt: revision.generationReceipt,
+      degradedReason: revision.degradedReason,
+    };
+    const revisionGenerated = revision.execution === 'generated';
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
-      phase: 'supervisor.agent.revise.succeeded',
-      message: 'Revise agent consumed red-team findings and produced the final memo.',
+      phase: revisionGenerated ? 'supervisor.agent.revise.succeeded' : 'supervisor.agent.revise.retained_draft',
+      message: revisionGenerated
+        ? 'Revise agent produced a revised memo; findings remain visible for human review.'
+        : 'Revision did not complete; the original drafting output and findings were retained for human review.',
       data: {
         agentId: 'revise-agent',
         consumes: ['draftMemo', 'redTeamFindings'],
-        produces: ['finalMemo'],
-        addressedFindings: redTeamFindings,
+        produces: revisionGenerated ? ['finalMemo'] : [],
+        revisionOutcome,
+        reviewFindings: redTeamFindings,
         finalTextPreview: finalMemoText.slice(0, 500),
       },
     }, deps);
@@ -1973,7 +2012,8 @@ async function executeMultiAgentSupervisorRun(
           { from: 'drafting-agent', to: 'red-team-agent', artifact: 'draftMemo' },
           { from: 'red-team-agent', to: 'revise-agent', artifact: 'redTeamFindings' },
         ],
-        finalAgentId: 'revise-agent',
+        finalAgentId: revisionGenerated ? 'revise-agent' : 'drafting-agent',
+        revisionOutcome,
       },
     }, deps);
 
@@ -1990,9 +2030,7 @@ async function executeMultiAgentSupervisorRun(
       title: `Multi-agent review - ${running.objective.slice(0, 72)}`,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:multi-agent-review`,
       changeNote: `Created by multi-agent supervisor run ${running.id}.`,
-      capsuleId: running.capsuleId,
-      capsuleVersion: evidencePack.activeCapsule.version ?? null,
-      runId: running.id,
+      ...memoContext,
       outputTarget: 'policy-memo',
       sourceReceiptIds: combinedSourceReceiptIds,
       sourceReceipts: liveSearchEvidence.sourceReceipts,
@@ -2012,6 +2050,7 @@ async function executeMultiAgentSupervisorRun(
         liveMemoDraft,
         liveSearchEvidence,
         finalMemoText,
+        revisionOutcome,
         redTeamFindings,
         combinedSourceReceiptIds,
       }),
@@ -2027,13 +2066,16 @@ async function executeMultiAgentSupervisorRun(
     await mirrorWorkerEvent(running, {
       substrate: 'praxis',
       phase: 'artifact.finalized',
-      message: 'Multi-agent supervisor finalized the memo after red-team revision.',
+      message: revisionGenerated
+        ? 'Multi-agent supervisor saved the generated revision with findings for human review.'
+        : 'Multi-agent supervisor saved the original draft and findings; revision did not complete.',
       data: {
         memoId: memoRecord.memo.id,
         outputCapsuleId: outputCapsule?.id ?? null,
         outputHref,
         sourceReceiptIds: combinedSourceReceiptIds,
         redTeamFindings,
+        revisionOutcome,
         sourceabilityLedgerSummary: sourceabilityLedger.summary,
       },
     }, deps);
@@ -2044,7 +2086,9 @@ async function executeMultiAgentSupervisorRun(
       running,
       payload,
       executionMode: 'multi-agent-supervisor',
-      message: 'Multi-agent supervisor completed research, drafting, red-team, and revision.',
+      message: revisionGenerated
+        ? 'Multi-agent supervisor completed research, drafting, red-team, and revision; findings require human review.'
+        : 'Multi-agent supervisor completed research, drafting, and red-team review; revision did not complete and the draft was retained.',
       data: {
         dispatchId: payload.dispatchId,
         attempt: payload.attempt,
@@ -2058,6 +2102,14 @@ async function executeMultiAgentSupervisorRun(
         selectedTools: workflowPlan.selectedTools,
         groundingPosture: workflowPlan.groundingPosture,
         redTeamFindings,
+        revisionOutcome,
+      },
+      metadata: {
+        capsuleAgentExecutionContext: run.metadata.capsuleAgentExecutionContext,
+        capsuleVersion: memoContext.capsuleVersion,
+        capsuleReadReceipt,
+        workflowPlan,
+        revisionOutcome,
       },
       outputHref,
       deps,
@@ -3866,10 +3918,9 @@ async function reviseMemoWithRedTeamFindings(
   draftText: string,
   redTeamFindings: string[],
   deps: Pick<WorkerDeps, 'generateText' | 'updateStatus'>,
-): Promise<string> {
-  let revised: string;
+): Promise<MemoRevisionOutcome> {
   try {
-    revised = (await generateAgentText(deps, {
+    const revised = await generateAgentText(deps, {
       run: running, generationPhase: 'memo-revision',
       modelPurpose: 'pro',
       modelTaskKind: getPolicyAgent('research-memo')?.modelTaskKind,
@@ -3880,20 +3931,25 @@ async function reviseMemoWithRedTeamFindings(
         draftText,
         'Red-team findings to address:',
         redTeamFindings.map((finding, index) => `${index + 1}. ${finding}`).join('\n'),
-        'Return the revised memo. Include a short section naming the red-team findings addressed.',
+        'Return the revised memo. Describe changes and any findings that remain unresolved; do not claim every finding was resolved without supporting analysis.',
       ].join('\n\n'),
       temperature: 0.15,
-    })).text.trim();
+    });
+    return {
+      text: revised.text.trim(),
+      execution: 'generated',
+      generationReceipt: revised.generationReceipt,
+      degradedReason: null,
+    };
   } catch (error) {
     if (error instanceof AgentExecutionLeaseError) throw error;
-    revised = draftText;
+    return {
+      text: draftText,
+      execution: 'retained-draft',
+      generationReceipt: null,
+      degradedReason: error instanceof Error ? error.message : String(error),
+    };
   }
-  return [
-    revised,
-    '',
-    'Red-team findings addressed in revision:',
-    ...redTeamFindings.map((finding, index) => `${index + 1}. Addressed: ${finding}`),
-  ].join('\n').trim();
 }
 
 function redTeamFindingsFromText(text: string): string[] {
@@ -5203,6 +5259,7 @@ function buildMultiAgentReviewMemoBlocks(
     liveMemoDraft: LiveMemoDraft;
     liveSearchEvidence: LiveSearchEvidence;
     finalMemoText: string;
+    revisionOutcome: Omit<MemoRevisionOutcome, 'text'>;
     redTeamFindings: string[];
     combinedSourceReceiptIds: string[];
   },
@@ -5214,7 +5271,7 @@ function buildMultiAgentReviewMemoBlocks(
     {
       id: 'multi-agent-final',
       type: 'paragraph',
-      title: 'Final revised memo',
+      title: input.revisionOutcome.execution === 'generated' ? 'Revised memo for review' : 'Draft retained for review',
       content: input.finalMemoText,
       citations: paragraphCitation,
       metadata: {
@@ -5222,7 +5279,8 @@ function buildMultiAgentReviewMemoBlocks(
         capsuleId: running.capsuleId,
         workflowKind: 'multi_agent_review',
         consumedAgents: ['research-agent', 'drafting-agent', 'red-team-agent', 'revise-agent'],
-        addressedRedTeamFindings: input.redTeamFindings,
+        reviewFindings: input.redTeamFindings,
+        revisionOutcome: input.revisionOutcome,
         weakSourceHighlight: input.sourceabilityLedger.summary.weakClaims > 0 || input.sourceabilityLedger.summary.unsupportedClaims > 0,
       },
     },
@@ -5235,15 +5293,17 @@ function buildMultiAgentReviewMemoBlocks(
         'research-agent produced evidencePack and sourceReceipts.',
         'drafting-agent consumed research-agent output and produced draftMemo.',
         'red-team-agent consumed draftMemo and claimLedger and produced redTeamFindings.',
-        'revise-agent consumed draftMemo and redTeamFindings and produced finalMemo.',
+        input.revisionOutcome.execution === 'generated'
+          ? 'revise-agent consumed draftMemo and redTeamFindings and produced a revised memo for human review.'
+          : 'Revision did not complete; drafting-agent output was retained unchanged for human review.',
       ],
       citations: [],
-      metadata: { workflowKind: 'multi_agent_review' },
+      metadata: { workflowKind: 'multi_agent_review', revisionOutcome: input.revisionOutcome },
     },
     {
       id: 'red-team-findings',
       type: 'bullets',
-      title: 'Red-team findings addressed',
+      title: 'Red-team findings for review',
       content: '',
       items: input.redTeamFindings,
       citations: [],

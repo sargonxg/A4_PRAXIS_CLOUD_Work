@@ -1,5 +1,5 @@
 import JSZip from 'jszip';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { signMemoHumanApproval } from '@/lib/memo/human-review-server';
 import { sha256, verifyHandoverIntegrity, type HandoverIntegrityManifest } from '@/lib/memo/handover-package';
 import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
@@ -33,8 +33,10 @@ const context = { params: Promise.resolve({ id: 'memo-1' }) };
 type Handler = (request: Request, principal: typeof user, routeContext: typeof context) => Promise<Response>;
 const get = (principal = user, id = 'memo-1') => (GET as unknown as Handler)(new Request('https://praxis.test/api/memos/memo-1/handover-package'), principal,
   { params: Promise.resolve({ id }) });
-const post = (body?: unknown, headers: Record<string, string> = {}) => (POST as unknown as Handler)(new Request('https://praxis.test/api/memos/memo-1/handover-package', {
-  method: 'POST', ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { 'content-type': 'application/json', ...headers } }),
+const post = (body?: unknown, headers: Record<string, string> = {},
+  url = 'https://praxis.test/api/memos/memo-1/handover-package') => (POST as unknown as Handler)(new Request(url, {
+  method: 'POST', headers: { ...(body === undefined ? {} : { 'content-type': 'application/json' }), ...headers },
+  ...(body === undefined ? {} : { body: JSON.stringify(body) }),
 }), user, context);
 
 function loadedMemo() {
@@ -52,6 +54,8 @@ function loadedMemo() {
 describe('owner-scoped preview-confirmed memo handover', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://praxis.tacitus.me');
     mocks.load.mockResolvedValue(loadedMemo());
     mocks.capsule.mockResolvedValue({ ownerUid: 'owner', capsuleId: 'cap-1', version: 2, schemaVersion: 3,
       label: 'Pinned context', purpose: 'A decision', coreRefs: { documentCoreIds: ['document-1'] }, privateNotes: 'PRIVATE_CAPSULE_NOTE' });
@@ -60,6 +64,82 @@ describe('owner-scoped preview-confirmed memo handover', () => {
     mocks.filePath.mockReturnValue({ save: mocks.save, getSignedUrl: mocks.signedUrl, delete: mocks.deleteFile });
     mocks.deleteFile.mockResolvedValue(undefined);
     mocks.save.mockResolvedValue(undefined); mocks.signedUrl.mockResolvedValue(['https://storage.test/temporary-download']); mocks.set.mockResolvedValue(undefined);
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('accepts the configured public origin behind an internal deployment proxy without bypassing preview confirmation', async () => {
+    const response = await post({}, {
+      origin: 'https://praxis.tacitus.me',
+      host: 'spoofed.example.test',
+      'x-forwarded-host': 'spoofed.example.test',
+      'x-forwarded-proto': 'http',
+      forwarded: 'host=spoofed.example.test;proto=http',
+    }, 'http://0.0.0.0:8080/api/memos/memo-1/handover-package');
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ previewRequired: true });
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(mocks.load).toHaveBeenCalledOnce();
+    expect(mocks.filePath).not.toHaveBeenCalled(); expect(mocks.save).not.toHaveBeenCalled();
+    expect(mocks.signedUrl).not.toHaveBeenCalled(); expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it('creates a preview-confirmed package for the public origin behind an internal proxy', async () => {
+    const { preview } = await (await get()).json();
+    const response = await post({ previewHash: preview.previewHash }, { origin: 'https://praxis.tacitus.me' },
+      'http://0.0.0.0:8080/api/memos/memo-1/handover-package');
+    expect(response.status).toBe(200);
+    expect(mocks.save).toHaveBeenCalledOnce(); expect(mocks.set).toHaveBeenCalledOnce();
+  });
+
+  it('uses the canonical public origin when operator configuration is absent', async () => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', undefined);
+    const response = await post(undefined, { origin: 'https://praxis.tacitus.me' },
+      'http://0.0.0.0:8080/api/memos/memo-1/handover-package');
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ previewRequired: true });
+    expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it.each(['null', 'https://foreign.test', 'https://praxis.tacitus.me.evil.test',
+    'http://praxis.tacitus.me', 'http://0.0.0.0:8080'])('rejects untrusted Origin %s before reading private memo data', async (origin) => {
+    const response = await post({}, { origin, host: 'foreign.test', 'x-forwarded-host': 'foreign.test',
+      'x-forwarded-proto': 'https', forwarded: 'host=foreign.test;proto=https' },
+    'http://0.0.0.0:8080/api/memos/memo-1/handover-package');
+    expect(response.status).toBe(403);
+    expect(mocks.load).not.toHaveBeenCalled(); expect(mocks.capsule).not.toHaveBeenCalled();
+    expect(mocks.filePath).not.toHaveBeenCalled(); expect(mocks.save).not.toHaveBeenCalled();
+    expect(mocks.signedUrl).not.toHaveBeenCalled(); expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it('rejects a matching attacker-controlled request URL and Origin even with spoofed forwarding headers', async () => {
+    const response = await post({}, { origin: 'https://foreign.test', host: 'foreign.test',
+      'x-forwarded-host': 'foreign.test', 'x-forwarded-proto': 'https', forwarded: 'host=foreign.test;proto=https' },
+    'https://foreign.test/api/memos/memo-1/handover-package');
+    expect(response.status).toBe(403);
+    expect(mocks.load).not.toHaveBeenCalled(); expect(mocks.filePath).not.toHaveBeenCalled();
+    expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it('permits explicitly configured development loopback behind an internal proxy', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000');
+    const response = await post({}, { origin: 'http://localhost:3000' },
+      'http://0.0.0.0:8080/api/memos/memo-1/handover-package');
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ previewRequired: true });
+    expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.set).not.toHaveBeenCalled();
+  });
+
+  it.each(['', 'not a URL', 'http://localhost:3000', 'http://praxis.tacitus.me',
+    'https://praxis.tacitus.me/path'])('fails closed for invalid production operator origin %s even without an Origin header', async (configured) => {
+    vi.stubEnv('NEXT_PUBLIC_SITE_URL', configured);
+    const requestHeaders: Array<Record<string, string>> = [{}, { origin: 'https://praxis.tacitus.me' }];
+    for (const headers of requestHeaders) {
+      expect((await post({}, headers)).status).toBe(403);
+    }
+    expect(mocks.load).not.toHaveBeenCalled(); expect(mocks.filePath).not.toHaveBeenCalled();
+    expect(mocks.save).not.toHaveBeenCalled(); expect(mocks.signedUrl).not.toHaveBeenCalled();
+    expect(mocks.set).not.toHaveBeenCalled();
   });
 
   it('previews exact pinned context, limitations and dependencies without package writes', async () => {

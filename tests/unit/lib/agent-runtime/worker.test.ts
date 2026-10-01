@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
+import { AgentExecutionLeaseError } from '@/lib/agent-runtime/execution-lease';
 import type { SaveMemoDraftInput } from '@/lib/firebase/memo-service';
 import type { Firestore } from 'firebase-admin/firestore';
 import { savedConversationTurnsToMessages } from '@/components/praxis/tasklet-workbench-conversation';
@@ -557,16 +558,24 @@ describe('agent runtime no-op worker', () => {
         }],
         degradedReason: null,
       }),
-      generateText: async ({ system }) => {
-        if (system.includes('red-team')) return { text: '- Clarify unsupported implementation dependency.\n- Preserve source caveat in the recommendation.' };
-        if (system.includes('revise agent')) return { text: 'Revised memo with source caveat and explicit implementation dependency.' };
-        if (system.includes('self-critique')) return { text: 'Self-critique: caveat retained.' };
+      generateText: async ({ generationPhase }) => {
+        if (generationPhase === 'memo-red-team') return { text: '- Clarify unsupported implementation dependency.\n- Preserve source caveat in the recommendation.' };
+        if (generationPhase === 'memo-revision') return { text: 'Revised memo with source caveat and explicit implementation dependency.' };
+        if (generationPhase === 'memo-self-critique') return { text: 'Self-critique: caveat retained.' };
         return { text: 'Draft memo with inline receipt [web-supervisor-1].' };
       },
-      buildEvidencePack: async () => makeEvidencePack({ sourceReceiptIds: ['source-receipt-1'] }),
+      buildEvidencePack: async () => makeEvidencePack({ sourceReceiptIds: ['source-receipt-1'],
+        activeCapsule: { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: 1 } as never }),
       saveMemoDraft: async (_uid, input) => {
         savedBlocks.push(...input.blocks.map((block) => `${block.id}:${block.content ?? ''}`));
-        expect(input.blocks.find((block) => block.id === 'multi-agent-final')?.content).toContain('Red-team findings addressed in revision');
+        expect(input.blocks.find((block) => block.id === 'multi-agent-final')).toMatchObject({
+          content: 'Revised memo with source caveat and explicit implementation dependency.',
+          metadata: { revisionOutcome: { execution: 'generated', generationReceipt: { execution: 'injected-unverified' }, degradedReason: null } },
+        });
+        expect(input.blocks.find((block) => block.id === 'red-team-findings')).toMatchObject({
+          title: 'Red-team findings for review',
+          items: ['Clarify unsupported implementation dependency.', 'Preserve source caveat in the recommendation.'],
+        });
         return { memo: { id: 'memo-supervisor-1' } };
       },
       saveOutputCapsule: async () => ({ id: 'output-supervisor-1' }),
@@ -589,7 +598,11 @@ describe('agent runtime no-op worker', () => {
       consumes: ['draftMemo', 'claimLedger'],
       produces: ['redTeamFindings'],
     });
-    expect(savedBlocks.join('\n')).toContain('Addressed: Clarify unsupported implementation dependency.');
+    expect(savedBlocks.join('\n')).not.toContain('Addressed:');
+    expect(mirrored.find((event) => event.phase === 'supervisor.agent.revise.succeeded')?.data).toMatchObject({
+      revisionOutcome: { execution: 'generated' },
+      reviewFindings: ['Clarify unsupported implementation dependency.', 'Preserve source caveat in the recommendation.'],
+    });
   });
 
   it.each(['enabled', 'disabled'] as const)('persists one exact-body review receipt before all research-memo artifacts with verifier %s', async (verifier) => {
@@ -1947,5 +1960,269 @@ describe('agent memo exact capsule association', () => {
       saveMemoDraft: save,
     })).rejects.toBeInstanceOf(AgentWorkerError);
     expect(save).not.toHaveBeenCalled();
+  });
+});
+
+describe('supervisor exact execution context', () => {
+  const original = { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 2 };
+  const metadata = {
+    policyAgentId: 'red-team-analyst',
+    workflowPlan: { workflowKind: 'multi_agent_review' },
+    selectedToolIds: ['grounded-search', 'sourceability-reviewer', 'policy-memo', 'red-team-review'],
+    searchPlan: { queries: ['current treaty evidence'], sourceClasses: ['public_web'], freshnessNeed: 'current' },
+    capsuleAgentExecutionContext: original,
+    capsuleVersion: 2,
+  };
+  const evidence = (capsuleVersion = 2) => makeEvidencePack({
+    activeCapsule: { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: capsuleVersion } as never,
+  });
+  const search = () => vi.fn(async ({ query }: { query: string }) => ({ query, sourceReceipts: [], degradedReason: null }));
+  const generation = () => vi.fn(async () => ({ text: 'Reviewed policy memo with explicit evidence limits.' }));
+  const save = () => vi.fn(async (_uid: string, _input: SaveMemoDraftInput) => ({ memo: { id: 'memo-supervisor-pinned' } }));
+
+  it.each([3, 99])('keeps original v2 through approval and resume when latest and transition metadata say v%s', async (latestVersion) => {
+    const approvals: AgentApproval[] = [];
+    const receiptVersions: number[] = [];
+    let completion: Record<string, unknown> | undefined;
+    let status: AgentRun['status'] = 'queued';
+    const pinnedMetadata = { ...metadata, agentOperatingContract: { approvalThreshold: 'medium' } };
+    const providerSearch = search();
+    const providerGenerate = generation();
+    const getExactVersion = vi.fn(async (ownerUid: string, capsuleId: string, capsuleVersion: number | null) => (
+      makeQualityCapsule({ ownerUid, capsuleId, version: capsuleVersion })
+    ));
+    const buildEvidencePack = vi.fn(async (input: { capsuleVersion?: number | null }) => evidence(input.capsuleVersion ?? latestVersion));
+    const persist = save();
+    const deps = {
+      getRun: async () => makeRun(status, pinnedMetadata),
+      updateStatus: async (input: { toStatus: AgentRun['status']; data?: Record<string, unknown> }) => {
+        status = input.toStatus;
+        if (input.toStatus === 'succeeded') completion = input.data;
+        return makeRun(input.toStatus, { ...pinnedMetadata, capsuleVersion: latestVersion,
+          capsuleAgentExecutionContext: { ...original, capsuleVersion: latestVersion } });
+      },
+      getCapsuleAtVersion: getExactVersion,
+      listApprovals: async () => approvals,
+      appendApproval: async (approval: AgentApproval) => { approvals.push(approval); return approval; },
+      appendToolCall: async (call: AgentToolCall) => call,
+      appendEvent: async (event: AgentRunEvent) => {
+        if (event.data.phase === 'capsule.read_receipt_created') {
+          receiptVersions.push((event.data.capsuleReadReceipt as { capsuleVersion: number }).capsuleVersion);
+        }
+        return event;
+      },
+      buildEvidencePack,
+      runGroundedSearch: providerSearch,
+      generateText: providerGenerate,
+      saveMemoDraft: persist,
+      saveOutputCapsule: async () => null,
+    };
+    const paused = await executeAgentRun(payload, deps);
+    expect(paused).toMatchObject({ status: 'waiting_approval', executionMode: 'multi-agent-supervisor' });
+    expect(approvals).toHaveLength(1);
+    expect(buildEvidencePack).not.toHaveBeenCalled();
+    expect(providerSearch).not.toHaveBeenCalled();
+    expect(providerGenerate).not.toHaveBeenCalled();
+    expect(persist).not.toHaveBeenCalled();
+    approvals[0] = { ...approvals[0], status: 'approved', decidedAt: '2026-09-30T00:00:00Z', decidedByUid: payload.ownerUid };
+    status = 'running';
+    const resumed = await executeAgentRun(payload, deps);
+    expect(resumed).toMatchObject({ status: 'succeeded', executionMode: 'multi-agent-supervisor', memoId: 'memo-supervisor-pinned' });
+    expect(getExactVersion).toHaveBeenCalledWith(payload.ownerUid, payload.capsuleId, 2);
+    expect(buildEvidencePack).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, capsuleVersion: 2 }));
+    expect(providerSearch).toHaveBeenCalled();
+    expect(providerGenerate).toHaveBeenCalled();
+    expect(receiptVersions.length).toBeGreaterThan(0);
+    expect(receiptVersions.every((version) => version === 2)).toBe(true);
+    expect(completion?.capsuleReadReceipt).toMatchObject({ capsuleId: payload.capsuleId, capsuleVersion: 2 });
+    expect(persist).toHaveBeenCalledExactlyOnceWith(payload.ownerUid, expect.objectContaining({ capsuleId: payload.capsuleId, capsuleVersion: 2, runId: payload.runId }));
+    const persisted = persist.mock.calls[0][1];
+    expect(recordMemoContextSnapshot(persisted, undefined, false)).toMatchObject({ binding: 'recorded', capsuleId: payload.capsuleId, capsuleVersion: 2, runId: payload.runId });
+  });
+
+  it.each([
+    undefined,
+    { ...original, version: 2 },
+    { ...original, capsuleId: 'foreign-capsule' },
+    { ...original, capsuleVersion: null },
+    { ...original, capsuleVersion: -1 },
+    { ...original, capsuleVersion: 1.5 },
+    { ...original, capsuleVersion: Number.MAX_SAFE_INTEGER + 1 },
+  ])('rejects missing or malformed original pin %j before evidence, approval or providers', async (snapshot) => {
+    const buildEvidencePack = vi.fn(async () => evidence());
+    const providerSearch = search();
+    const providerGenerate = generation();
+    const persist = save();
+    const appendApproval = vi.fn(async (approval: AgentApproval) => approval);
+    const getExactVersion = vi.fn();
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { ...metadata, capsuleAgentExecutionContext: snapshot }),
+      updateStatus: async (input) => makeRun(input.toStatus, metadata),
+      getCapsuleAtVersion: getExactVersion,
+      appendApproval,
+      appendToolCall: async (call) => call,
+      appendEvent: async (event) => event,
+      buildEvidencePack, runGroundedSearch: providerSearch, generateText: providerGenerate,
+      saveMemoDraft: persist, saveOutputCapsule: async () => null,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'context-resolved' } });
+    expect(getExactVersion).not.toHaveBeenCalled();
+    expect(appendApproval).not.toHaveBeenCalled();
+    expect(buildEvidencePack).not.toHaveBeenCalled();
+    expect(providerSearch).not.toHaveBeenCalled();
+    expect(providerGenerate).not.toHaveBeenCalled();
+    expect(persist).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    null,
+    { ownerUid: 'foreign-owner', capsuleId: payload.capsuleId, version: 2 },
+    { ownerUid: payload.ownerUid, capsuleId: 'foreign-capsule', version: 2 },
+    { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: 3 },
+    { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: 2, archivedAt: '2026-09-30' },
+  ])('rejects unavailable or foreign original saved context %j before providers', async (capsule) => {
+    const providerSearch = search();
+    const providerGenerate = generation();
+    const buildEvidencePack = vi.fn(async () => evidence());
+    const persist = save();
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', metadata),
+      updateStatus: async (input) => makeRun(input.toStatus, metadata),
+      getCapsuleAtVersion: async () => capsule as never,
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => event,
+      buildEvidencePack, runGroundedSearch: providerSearch, generateText: providerGenerate,
+      saveMemoDraft: persist, saveOutputCapsule: async () => null,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'context-resolved' } });
+    expect(buildEvidencePack).not.toHaveBeenCalled();
+    expect(providerSearch).not.toHaveBeenCalled();
+    expect(providerGenerate).not.toHaveBeenCalled();
+    expect(persist).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { ownerUid: 'foreign-owner' },
+    { capsuleId: 'foreign-capsule' },
+    { activeCapsule: { ownerUid: 'foreign-owner', capsuleId: payload.capsuleId, version: 2 } },
+    { activeCapsule: { ownerUid: payload.ownerUid, capsuleId: 'foreign-capsule', version: 2 } },
+    { activeCapsule: { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: 3 } },
+    { activeCapsule: { ownerUid: payload.ownerUid, capsuleId: payload.capsuleId, version: 2, archivedAt: '2026-09-30' } },
+  ])('rejects evidence-pack tuple drift %j before providers or saves', async (patch) => {
+    const providerSearch = search();
+    const providerGenerate = generation();
+    const persist = save();
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', metadata),
+      updateStatus: async (input) => makeRun(input.toStatus, metadata),
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => event,
+      buildEvidencePack: async () => ({ ...evidence(), ...patch }) as never,
+      runGroundedSearch: providerSearch, generateText: providerGenerate,
+      saveMemoDraft: persist, saveOutputCapsule: async () => null,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'research-agent' } });
+    expect(providerSearch).not.toHaveBeenCalled();
+    expect(providerGenerate).not.toHaveBeenCalled();
+    expect(persist).not.toHaveBeenCalled();
+  });
+
+  it('fails v0 before evidence or providers with a save-and-reattach instruction', async () => {
+    const getExactVersion = vi.fn();
+    const buildEvidencePack = vi.fn(async () => evidence());
+    const providerSearch = search();
+    const providerGenerate = generation();
+    const persist = save();
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', { ...metadata, capsuleAgentExecutionContext: { ...original, capsuleVersion: 0 } }),
+      updateStatus: async (input) => makeRun(input.toStatus, metadata),
+      getCapsuleAtVersion: getExactVersion,
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => event,
+      buildEvidencePack, runGroundedSearch: providerSearch, generateText: providerGenerate,
+      saveMemoDraft: persist, saveOutputCapsule: async () => null,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'context-resolved', errorMessage: expect.stringMatching(/save.*reattach/i) } });
+    expect(getExactVersion).not.toHaveBeenCalled();
+    expect(buildEvidencePack).not.toHaveBeenCalled();
+    expect(providerSearch).not.toHaveBeenCalled();
+    expect(providerGenerate).not.toHaveBeenCalled();
+    expect(persist).not.toHaveBeenCalled();
+  });
+
+  it('retains the exact drafting output and findings when only revision generation fails', async () => {
+    const draft = 'Original draft with an unresolved implementation assumption.';
+    const critique = 'Human verification remains required.';
+    const expectedDraft = `${draft}\n\nSourceability self-critique:\n${critique}`;
+    const findings = ['Verify the implementation assumption.', 'Preserve the evidence caveat.'];
+    const events: AgentRunEvent[] = [];
+    const phases: string[] = [];
+    let completion: { message?: string; data?: Record<string, unknown>; metadata?: Record<string, unknown> } | undefined;
+    const persist = save();
+    const providerGenerate = vi.fn(async (input: { generationPhase?: string }) => {
+      if (input.generationPhase === 'memo-revision') throw new Error('Revision provider unavailable.');
+      if (input.generationPhase === 'memo-self-critique') return { text: critique };
+      if (input.generationPhase === 'memo-red-team') return { text: findings.join('\n') };
+      return { text: draft };
+    });
+    const result = await executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', metadata),
+      updateStatus: async (input) => {
+        if (typeof input.data?.phase === 'string') phases.push(input.data.phase);
+        if (input.toStatus === 'succeeded') completion = input;
+        return makeRun(input.toStatus, { ...metadata, ...input.metadata });
+      },
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => { events.push(event); return event; },
+      buildEvidencePack: async () => evidence(),
+      runGroundedSearch: search(), generateText: providerGenerate,
+      saveMemoDraft: persist, saveOutputCapsule: async () => null,
+    });
+    expect(result).toMatchObject({ status: 'succeeded', executionMode: 'multi-agent-supervisor' });
+    const memo = persist.mock.calls[0][1];
+    expect(memo).toMatchObject({ capsuleId: payload.capsuleId, capsuleVersion: 2, runId: payload.runId });
+    expect(memo.blocks.find((block) => block.id === 'multi-agent-final')).toMatchObject({
+      title: 'Draft retained for review', content: expectedDraft,
+      metadata: {
+        reviewFindings: findings,
+        revisionOutcome: { execution: 'retained-draft', generationReceipt: null, degradedReason: 'Revision provider unavailable.' },
+      },
+    });
+    expect(memo.blocks.find((block) => block.id === 'red-team-findings')).toMatchObject({ title: 'Red-team findings for review', items: findings });
+    expect(memo.blocks.find((block) => block.id === 'agent-graph-receipt')?.items).toContain('Revision did not complete; drafting-agent output was retained unchanged for human review.');
+    expect(memo.blocks.find((block) => block.id === 'multi-agent-final')?.metadata).not.toHaveProperty('addressedRedTeamFindings');
+    expect(JSON.stringify(memo)).not.toMatch(/Addressed:|Red-team findings addressed/);
+    expect(phases).toEqual(expect.arrayContaining(['memo-draft', 'memo-self-critique', 'memo-red-team']));
+    expect(phases).not.toContain('memo-revision');
+    const revisionEvent = events.find((event) => event.data.phase === 'supervisor.agent.revise.retained_draft');
+    expect(revisionEvent?.data).toMatchObject({
+      produces: [], reviewFindings: findings,
+      revisionOutcome: { execution: 'retained-draft', generationReceipt: null, degradedReason: 'Revision provider unavailable.' },
+    });
+    expect(events.some((event) => event.data.phase === 'supervisor.agent.revise.succeeded')).toBe(false);
+    expect(events.find((event) => event.data.phase === 'supervisor.graph.updated')?.data).toMatchObject({ finalAgentId: 'drafting-agent', revisionOutcome: { execution: 'retained-draft' } });
+    expect(events.find((event) => event.data.phase === 'artifact.finalized')?.message).toMatch(/revision did not complete/i);
+    expect(completion?.message).toMatch(/revision did not complete/i);
+    expect(completion?.data).toMatchObject({ revisionOutcome: { execution: 'retained-draft' }, redTeamFindings: findings });
+    expect(completion?.metadata).toMatchObject({ revisionOutcome: { execution: 'retained-draft' } });
+  });
+
+  it('does not retain or save a draft when the revision execution lease is lost', async () => {
+    const persist = save();
+    const providerGenerate = vi.fn(async (input: { generationPhase?: string }) => {
+      if (input.generationPhase === 'memo-revision') throw new AgentExecutionLeaseError('Revision execution ownership expired.');
+      return { text: 'Original memo or review finding.' };
+    });
+    await expect(executeAgentRun(payload, {
+      getRun: async () => makeRun('queued', metadata),
+      updateStatus: async (input) => makeRun(input.toStatus, { ...metadata, ...input.metadata }),
+      appendToolCall: async (call) => call,
+      appendApproval: async (approval) => approval,
+      appendEvent: async (event) => event,
+      buildEvidencePack: async () => evidence(),
+      runGroundedSearch: search(), generateText: providerGenerate,
+      saveMemoDraft: persist, saveOutputCapsule: async () => null,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'revise-agent', errorMessage: 'Revision execution ownership expired.' } });
+    expect(persist).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,7 @@ import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { jsPDF } from 'jspdf';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
+import { resolveBillingPublicOrigin } from '@/lib/billing/public-origin';
 import { getAdminDbOrThrow, getAdminStorage, getDefaultBucketName } from '@/lib/firebase/admin';
 import { loadMemoById, primaryMemoBody } from '@/lib/firebase/memo-service';
 import { assertDocumentOwnerWritable, DocumentOwnerUnavailableError, withDocumentOwnerWrite } from '@/lib/documents/owner-write';
@@ -35,7 +36,8 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
   try {
     if (user.isDemo) return json({ error: 'Save a private memo before preparing a handover.' }, 403);
     const origin = request.headers.get('origin');
-    if (origin && origin !== new URL(request.url).origin) return json({ error: 'Cross-origin handover requests are not allowed.' }, 403);
+    const publicOrigin = resolveBillingPublicOrigin();
+    if (!publicOrigin || (origin && origin !== publicOrigin)) return json({ error: 'Cross-origin handover requests are not allowed.' }, 403);
     const memoId = validId((await context.params).id);
     if (!memoId) return json({ error: 'Invalid memo id' }, 400);
     const confirmation = await readConfirmation(request);

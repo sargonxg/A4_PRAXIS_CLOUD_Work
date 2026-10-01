@@ -146,7 +146,12 @@ test.describe('Capsule Studio', () => {
       await expect(visibleAnswer).toContainText(/Council/i);
       await expect(visibleAnswer).toContainText(/2026-10-01|October\s+1|1\s+October/i);
       await expect(visibleAnswer).toContainText(/funding/i);
+      await expect(composer).toHaveValue('');
+      await expect(submit).toBeDisabled();
+      await composer.fill('Follow up on this saved context.');
       await expect(submit).toBeEnabled();
+      await composer.clear();
+      await expect(submit).toBeDisabled();
       await expect.poll(async () => {
         const history = await page.request.get(`${BASE}/api/ai/chat?${new URLSearchParams({ capsuleId, threadId })}`);
         if (!history.ok()) return false;

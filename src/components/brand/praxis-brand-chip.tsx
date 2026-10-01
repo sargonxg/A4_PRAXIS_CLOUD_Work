@@ -1,6 +1,6 @@
 "use client";
 
-import { PraxisGlyphChip } from "@/components/brand/praxis-mark";
+import { PraxisMark } from "@/components/brand/praxis-mark";
 import { cn } from "@/lib/utils/cn";
 
 export function PraxisBrandChip({
@@ -14,19 +14,18 @@ export function PraxisBrandChip({
 }) {
   return (
     <span className={cn("group inline-flex min-w-0 items-center gap-3", className)}>
-      <PraxisGlyphChip
-        size={compact ? 34 : 42}
-        rotateOnHover={false}
-        className={cn(
-          "shrink-0 rounded-xl border-slate-200 bg-white shadow-sm shadow-slate-200/70",
-          compact && "rounded-lg",
-        )}
-      />
+      <span
+        className="inline-flex shrink-0 items-center justify-center rounded-[var(--radius-md)] border border-[var(--color-mineral)] bg-[var(--color-archive-paper)]"
+        style={{ width: compact ? 34 : 42, height: compact ? 34 : 42 }}
+        aria-hidden
+      >
+        <PraxisMark size={compact ? 20 : 25} className="text-[var(--color-praxis-emerald-700)]" />
+      </span>
       <span className="min-w-0">
-        <span className={cn("block truncate font-semibold text-slate-950", compact ? "text-sm" : "text-sm")}>
+        <span className={cn("block truncate font-serif font-semibold text-[var(--color-deep-ink)]", compact ? "text-lg" : "text-xl")}>
           PRAXIS
         </span>
-        <span className="block truncate text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-600">
+        <span className="block truncate text-xs text-[var(--color-graphite)]">
           {subtitle}
         </span>
       </span>
