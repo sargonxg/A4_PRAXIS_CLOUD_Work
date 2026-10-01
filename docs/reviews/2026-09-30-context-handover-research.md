@@ -172,3 +172,8 @@ The agent-self-evaluation skill was applied to this owned implementation slice.
 | Conciseness | 4/5 | Allowlist projection and verification are centralized; the longer helper can become smaller typed projections when the portable schema stabilizes. |
 
 Overall: 4.0/5 for this implementation slice. Highest-value follow-ups are the real authenticated preview/download journey, recipient import/source access proof, and rich-document/font acceptance. The user should receive the simple working flow and its actual scope rather than an unsupported claim that every recipient/source/export format is solved.
+
+
+## Publication checkpoint
+
+See the [final publication receipt](2026-09-30-praxis-final-publication.md): source 52102b5c is published and health/configuration checks passed. Final-source handover, worker and rendered acceptance remain pending after the user's instruction to publish and close. Historical/local evidence above retains its original scope.

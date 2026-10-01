@@ -93,3 +93,8 @@ Applied `agent-self-evaluation` to this scoped work. Copy and UI improvements ar
 | Conciseness | 4/5 | Initial authored Guide text fell 76%; Learn fell 47%. The shared synthetic evidence specimen remains longer because its supporting evidence is useful. |
 
 Overall: 4.0/5. Highest-impact next checks: verify the updated authenticated pages with keyboard and axe; confirm one page h1 and readable graph captions at phone widths; verify the exact published source and repeat the affected capsule journey. The release workflow owns these checks. The user can judge the assessment from the rendered pages and the linked acceptance receipts.
+
+
+## Publication checkpoint
+
+See the [final publication receipt](2026-09-30-praxis-final-publication.md): source 52102b5c is published and health/configuration checks passed. Final-source handover, worker and rendered acceptance remain pending after the user's instruction to publish and close. Historical/local evidence above retains its original scope.

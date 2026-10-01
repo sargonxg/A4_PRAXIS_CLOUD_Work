@@ -1,6 +1,6 @@
 # PRAXIS chat-first experience plan — 2026-09-30
 
-Status: implementation and final local validation complete; authorized publication and real-service acceptance in progress. This plan is a reviewable contract and checklist, not production acceptance.
+Status: published. The [final publication receipt](2026-09-30-praxis-final-publication.md) records verified source/build/health, completed checks and the user-deferred deep acceptance. This plan records the implementation contract.
 
 ## Authorized outcome and preserved baseline
 
@@ -96,7 +96,7 @@ The current Capsule Studio suite performs real TXT/PDF/DOCX intake/review persis
 
 Publication uses root's clean release checkout. `deploy:frontend:main-safe` requires branch main and HEAD equal to origin/main but currently does not reject dirty source before Cloud Build submission. Verify a clean release tree explicitly; otherwise its HEAD label can misrepresent submitted content. Coordinate the existing main-push deployment trigger with manual submissions. Preserve mounted configuration and secrets, then bind the receipt to `/api/health/runtime`, the served commit and ready revision.
 
-## Open implementation checklist
+## Implementation checklist
 
 ### Integration evidence from the inventory/runtime lane
 
@@ -125,7 +125,7 @@ Self-review of this lane: accuracy 4/5 (targeted runtime/audit proof; integrated
 - [x] Root reconciles experimental/legal/privacy/paid-access controls and isolates auth/session security changes.
 - [x] Owners update only deliberately changed UX expectations in focused/E2E tests; root completes integrated mandatory gate.
 - [x] Root records responsive/keyboard/contrast screenshots and precise mocked-versus-real acceptance results, with real-service results pending publication in the separate release receipt.
-- [ ] Root creates clean coherent release, publishes, verifies served identity and reruns real persisted journeys.
-- [ ] Root records remaining operator/quality/capacity limitations in a separate release receipt and updates checklist with evidence links.
+- [x] Root publishes the coherent release and verifies served identity. Historical real journeys and user-deferred final deep acceptance are distinguished in the [publication receipt](2026-09-30-praxis-final-publication.md).
+- [x] Root records operator/quality/capacity limits and completed versus deferred acceptance in the [publication receipt](2026-09-30-praxis-final-publication.md).
 
 References: [session brief](../CODEX_SESSION_BRIEF.md), [current implementation ledger](2026-09-30-praxis-implementation-ledger.md), [canonical app structure](../product/PRAXIS_CANONICAL_APP_STRUCTURE.md), [context workflow guide](../product/CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md), [runtime architecture](../architecture/PRAXIS_AGENT_RUNTIME_ARCHITECTURE.md), and [design system](../../DESIGN.md).

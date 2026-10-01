@@ -1,43 +1,73 @@
-# PRAXIS final publication and acceptance, 30 September 2026
+# PRAXIS publication and acceptance
 
-Publication is authorized. This receipt records the chat-first release, the subsequent [anti-slop review](2026-09-30-anti-slop-review.md), and real-service acceptance. It supplements the [implementation receipt](2026-09-30-praxis-chat-first-release.md).
-
-## Release identity
-
-The first release was served from `7a56d33822c2e0aa28e25fec792bcb1750f524ac`, automatic Cloud Build `3239045f-58f9-4266-9a93-0e579a886572`, revision `praxis-frontend-01085-j5w`, 100% production traffic. Build and revision agreed on image `sha256:7b9204ea951d1e5368e9241d476e9e81059bb6b7b40c708d8ff4aec1d7353d55`. Public health/runtime returned 200; unauthenticated private capsule/run APIs returned 401.
-
-Final refinement identity and acceptance: pending the integrated gate and publication below.
+Published at [praxis.tacitus.me](https://praxis.tacitus.me). The chat-first experience and [anti-slop review](2026-09-30-anti-slop-review.md) are released. The user's final instruction was to publish the completed work and close; further deep live acceptance was deferred.
 
 ## What changed
 
-Chat and Capsules are the primary routes. Login and optional onboarding lead to the same workbench. Users can upload TXT, PDF and Word sources, review capsule proposals, inspect the evidence map, attach a numeric saved version, return to conversations, and preview a bounded context handover.
+Chat and Capsules are the primary routes. Google/email login leads to the same workbench; onboarding is optional. Capsule creation follows Purpose → Material → Review and save. Inspection combines Overview, Evidence, Timeline and Review with a real evidence map, accessible lists and source tracing. Secondary tools and technical detail open when needed.
 
-The anti-slop pass shortened default Guide copy from 657 to 159 words and Learn from 436 to 229. Necessary technical limits remain in native disclosures. It removed unsupported universal agent/onboarding promises, corrected the operator identity, simplified repeated page sections, and fixed notification names, keyboard actions, focus return, heading semantics and contrast.
+The requested [anti-slop guidance](https://github.com/miqdadbadjuber/anti-slop), snapshot `91f12ec67e9de6043cfd93b846404986ba73c3f4`, informed the review without a global installation/config change. Default Guide copy fell from 657 to 159 words; Learn from 436 to 229. Repeated badges/instructions and unsupported promises were removed. Branding, plain-language starter actions, notifications, keyboard focus, headings and contrast were refined.
 
-The same-minor gRPC patch changes the existing override and resolved lock entry from `1.14.4` to `1.14.5`. All 14 high dependency findings propagated from [GHSA-m9gg-hp2v-232j](https://github.com/advisories/GHSA-m9gg-hp2v-232j), published on 30 September 2026. The documented vulnerable inbound-server configuration was not found in PRAXIS; the production cloud/Firebase dependencies still warrant the patch. `npm ls --all` passed with all six consumer paths on the patched version. Fresh audit: zero high/critical, 44 moderate and three low remaining. No major upgrades or unrelated lock changes were made.
+PRAXIS remains experimental software operated by Giulio Catanzariti, without an incorporated TACITUS entity. Optional analytics initialization, paid checkout and automated account erasure remain disabled. The frontend deployment explicitly keeps checkout disabled while preserving other operator settings and secret mounts.
 
-## Failures found through real-service checks
+## Technical changes
 
-- The initial capsule canary stopped at proposal creation with 429 `ai_usage_limit`. All three document formats had uploaded and extracted successfully. Capsule assists compile supplied material and fixed templates without a provider; the final change removes inappropriate AI charging while preserving authenticated account, ownership, throttling and bounded-input checks. Model-backed analysis still reserves funded capacity.
-- The first handover acceptance stopped at memo save with 500. Cloud logs identified an undefined optional `changeNote` in the Firestore version. The final change sanitizes optional data at persistence and tests strict undefined rejection.
-- Signed-in rendered checks found an unnamed notification control, duplicate page heading, invalid graph-region ARIA and low-contrast labels. These findings were corrected before the final gate.
-- A funded retry proved uploaded-original retrieval, proposal rejection/application, persisted numeric versions and chat attachment. It then stopped at Ask because the initial synthetic allowance was below the actual Ask cost. The configured acceptance account received bounded nonmonetary test capacity, with an auditable transaction. No account, recovery message, credential or paid purchase was created. These failed attempts are not counted as passing end-to-end analysis.
+- Exact owner/capsule/version guards run before funded analysis. Deterministic capsule preparation uses supplied material and fixed templates without charging AI allowance.
+- Memo context is captured at save time. Handover requires exact body/version review and the current preview hash; stale or missing confirmation is refused. ZIP packages include Word, PDF, readable context/source references and an integrity manifest.
+- Handover origin validation uses the configured trusted public HTTPS origin across Cloud Run proxies, without trusting forwarded host headers.
+- Background supervisor reviews retain the original capsule version through approval and memo persistence. Failed revision retains the original draft/findings and reports the failure. Successful generation does not automatically mark findings resolved.
+- Failed/cancelled/expired retries create a fresh child/task, clearing parent dispatch, approvals, checkpoints and outcomes while keeping captured context, tools, governance and bounds. Strict elapsed deadlines work before the sweep updates the parent; malformed/future deadlines are refused. Genuine failed dispatch on a still-live run retains its recovery path.
 
-## Final checks
+Expired runs cannot acquire/renew/own an execution lease or persist a result. An already in-flight provider request is not cancelled at session expiry; separate attempt/phase timeouts remain. Initial API output does not expose raw captured metadata, so local reset/inheritance proof must be distinguished from later live context-read/memo proof.
 
-| Check | Result |
+## Served release
+
+| Item | Verified value |
 | --- | --- |
-| Mandatory integrated source gate | Refinement passed: typecheck, build, lint (zero errors/five existing warnings), repo shape, audit gate, architecture, GCP and AI route checks; 436 files/2,338 tests. Pre-push fetch found four newer main commits; combined-source gate pending. |
-| Deployed source/build/revision identity | Pending |
-| Real login and protected routes | Passed on the first release; final rerun pending |
-| Real TXT/PDF/DOCX to capsule, review, attachment, Ask and server-history reload | Pending final rerun |
-| Real reviewed handover, stale-preview refusal, temporary download and payload integrity | Pending |
-| Public/signed-in responsive and accessibility acceptance | Public first-release 30/30 passed; final rerun pending |
+| Source | `52102b5c4e775a0744a16af96c01e3a09e350123` |
+| Automatic Cloud Build | `ab92d5af-8c20-4a97-ae7d-4b501794a972`, SUCCESS; finished 2026-10-01T01:58:54Z |
+| Ready revision / traffic | `praxis-frontend-01099-wpp`, 100% |
+| Image digest | `sha256:2ba62252139929c26393507c51f30b145454c18d545da07008afa03222e94a09` |
+| Canonical health/runtime | HTTP 200 / ok, exact source/build/revision; root independently verified at 2026-10-01T02:00:49Z |
+| Source CI | [Verify Main 36802901865](https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/actions/runs/36802901865) and [Persona Smoke 36802901867](https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work/actions/runs/36802901867): SUCCESS |
+| Configuration preservation | Both immediate/original baseline comparisons passed all 21 checks; zero changed operator environment values or secret bindings; paid checkout false. |
+| Private unauthenticated APIs | AgentRuns and capsules returned 401. |
 
-Evidence is held under `C:\Users\giuli\output\praxis-chat-first-baseline`. Private account history, identifiers and signed download URLs are excluded from public source receipts.
+Upstream history is preserved through `01a954972892121764974538c863cbeccb094b4a`, including signup identity synchronization, mobile answer wrapping and guide-link contrast. The older upstream build completed before the final deployment. One main push triggered the release; no duplicate manual build was submitted. This receipt is a documentation-only follow-up and does not redeploy the frontend.
+
+## Checks and remaining acceptance
+
+| Check | Result and scope |
+| --- | --- |
+| Local release gate | All nine steps passed: typecheck, production build, lint (zero errors/five existing warnings), repo shape, integrated audit, architecture, GCP, AI routes and full unit suite. |
+| Source binding | Initial gate phases ran on `489b037d`; the sole later upstream change was guide emerald-700 → emerald-800. Scoped guide lint and the final unit suite ran on `52102b5c`; its exact Cloud Build preflights and production compile passed. |
+| Full unit suite | 443 files / 2,623 tests passed. |
+| Retry regression | RED reproduced 10 failures; GREEN passed 37 tests across four suites, scoped lint/diff checks and independent review. |
+| Dependency audit | Zero high/critical; 44 moderate and three low remain. Matching Next.js tooling and gRPC received scoped patches. |
+| Maintenance graph | Final `52102b5c` binding/hashes passed: 18,627 nodes, 40,920 edges, 888 communities; no dangling endpoints. Coverage excludes four SQL, six Terraform and 62 unclassified files. |
+| Prior real capsule/chat journey | TXT/PDF/DOCX intake, proposal rejection/application, saved v2, attachment and real Vertex Ask reached a persisted source-aware answer. A stale empty-composer test assertion failed afterward and was corrected. Read-only recovery passed on `18dd6e39`. This is historical journey evidence. |
+| Final live handover, worker and visual acceptance | Pending/deferred at the user's instruction. No final child retry/approval, provider generation, handover-download rerun or public/authenticated render run was started. |
+
+The first final-candidate gate stopped at incomplete worker-test types; those fixtures were repaired. A later gate stopped at the old “Stakeholder map & ACH” audit marker; verification now matches the clearer label and still requires the analysis-of-competing-hypotheses prompt. The design verifier also reads the current shell and checkout disclosure. Failed/older runs remain preserved and are not counted as passing final acceptance.
+
+Private evidence: `C:\Users\giuli\output\praxis-chat-first-baseline`, including `final-521-local-gate-binding.json`, `final-close-canonical-probes.json`, `antislop-graphify-final521-final.log` and `release-manager-52102b-*`. Credentials, account history, private identifiers and signed URLs are excluded from public receipts. Generated audits/graph artifacts, unrelated work, preservation stashes and the main checkout's ignored environment were kept outside release staging.
 
 ## Practical limits
 
-Capsule pinning fixes the capsule record and document references; referenced source bodies and optional current workspace/web dependencies are not immutable historical snapshots. Inspection opens the current saved capsule and labels that distinction. Handover exports a bounded context projection and references, not source originals, their permissions or universal import support. Hashes prove byte integrity, not sender identity or analytical approval. Link expiry does not delete the stored package, and failed compensation can require operational cleanup.
+Capsule pins freeze records/references, not original source bodies or current workspace/web research. Inspection opens the current saved capsule and labels that distinction. Handover does not transfer original files, source permissions or universal import support. Hashes prove byte integrity, not sender identity or analytical approval. Download-link expiry does not delete the stored package; failed cleanup can require operator intervention.
 
-PRAXIS remains experimental software operated by Giulio Catanzariti. Paid access and automated account erasure remain disabled. Software acceptance with synthetic material does not establish analytical accuracy, scanned OCR, large-document capacity, customer outcomes or production load capacity. Dependency findings and remaining operator decisions retain their recorded scope.
+Synthetic acceptance establishes the tested software paths, not analytical accuracy, scanned OCR, large-document/load capacity or customer outcomes. Retention decisions and moderate/low dependency findings remain explicit. Final handover download, one bounded saved-version worker run and current responsive/keyboard screenshots are the deferred acceptance checks.
+
+## Delivery self-evaluation
+
+Applied `agent-self-evaluation`: publication and the requested copy/design changes are delivered; deeper live checks have an explicit boundary.
+
+| Axis | Score | Evidence and remaining improvement |
+| --- | ---: | --- |
+| Accuracy | 4/5 | Exact source/build/digest/health and passing checks are recorded; final handover/worker behavior still lacks live proof. |
+| Completeness | 4/5 | Both sites are published and the main journeys redesigned. The user deferred the remaining deep acceptance, which stays visible above. |
+| Clarity | 4/5 | Guide/Learn reading burden fell 76%/47%; advanced provenance terms remain in optional detail. |
+| Actionability | 4/5 | The release is live with source-bound receipts; validate the deferred live paths before broader readiness claims. |
+| Conciseness | 4/5 | Repeated copy/cards were removed; necessary source, review and export limits retain some length. |
+
+Overall: 4.0/5. Highest-impact remaining improvements are final-source handover/worker acceptance and current keyboard/responsive screenshots. Self-check: the published pages and receipts make the score reviewable without presenting deferred acceptance as complete.
