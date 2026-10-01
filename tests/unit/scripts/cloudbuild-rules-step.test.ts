@@ -26,7 +26,7 @@ describe('Cloud Build separate Firestore proof lane', () => {
     expect(step.args.join('\n')).not.toContain('setIamPolicy');
     expect(config.steps.find(step => step.id === 'deploy-frontend')?.args.join('\n')).not.toContain('PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED=true');
   });
-  it('preserves existing operator environment and secret mounts while explicitly disabling unproven erasure', () => {
+  it('preserves operator settings while disabling experimental checkout and unproven erasure', () => {
     const args = config.steps.find(step => step.id === 'deploy-frontend')!.args;
     expect(args).toContain('--update-env-vars');
     expect(args).toContain('--update-secrets');
@@ -34,6 +34,7 @@ describe('Cloud Build separate Firestore proof lane', () => {
     expect(args).not.toContain('--set-secrets');
     const env = args[args.indexOf('--update-env-vars') + 1];
     expect(env.split('|')).toContain('PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED=false');
+    expect(env.split('|')).toContain('PRAXIS_ENABLE_PAID_CHECKOUT=false');
     const secrets = args[args.indexOf('--update-secrets') + 1];
     expect(secrets.split(',')).toContain('COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest');
     expect(secrets.split(',')).toContain('SESSION_SECRET=praxis-cookie-secret:latest');

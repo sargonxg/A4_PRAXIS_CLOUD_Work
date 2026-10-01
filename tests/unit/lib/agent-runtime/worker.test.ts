@@ -3,6 +3,7 @@ import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewRec
 import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
 import { AgentExecutionLeaseError } from '@/lib/agent-runtime/execution-lease';
 import type { SaveMemoDraftInput } from '@/lib/firebase/memo-service';
+import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import type { Firestore } from 'firebase-admin/firestore';
 import { savedConversationTurnsToMessages } from '@/components/praxis/tasklet-workbench-conversation';
 import {
@@ -18,7 +19,9 @@ import type { AgentApproval, AgentRun, AgentRunEvent, AgentToolCall } from '@/li
 // Mode tests inject persistence; execution ownership is exercised separately.
 vi.mock('@/lib/agent-runtime/owner-state', () => ({ assertAgentOwnerWritable: async () => undefined }));
 vi.mock('@/lib/context/capsule-version-resolution', () => ({
-  getCapsuleAtVersion: async (ownerUid: string, capsuleId: string, version: number) => ({ ownerUid, capsuleId, version }),
+  getCapsuleAtVersion: async (ownerUid: string, capsuleId: string, version: number | null) => (
+    makeSavedCapsule({ ownerUid, capsuleId, version: version ?? 1 })
+  ),
 }));
 vi.mock('@/lib/agent-runtime/execution-lease', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/lib/agent-runtime/execution-lease')>();
@@ -34,6 +37,44 @@ const payload: ExecuteAgentRunPayload = {
   attempt: 1,
   requestedAt: '2026-05-15T12:00:00.000Z',
 };
+
+function makeSavedCapsule(overrides: Partial<PraxisCapsule> = {}): PraxisCapsule {
+  return {
+    capsuleId: payload.capsuleId,
+    ownerUid: payload.ownerUid,
+    scope: 'situation',
+    parentCapsuleId: null,
+    forkedFromVersion: null,
+    associatedCapsuleIds: [],
+    coreRefs: {
+      userCoreId: null, teamCoreId: null, situationCoreId: 'sit-1',
+      sourceCoreIds: [], documentCoreIds: [], graphCoreId: null, outputCoreIds: [],
+    },
+    retrievalPolicy: { layers: [], limit: 10, checkFreshness: true },
+    health: { score: 0, signals: [], missingCores: [], warnings: [] },
+    activeForSituationIds: ['sit-1'],
+    lockedCoreKinds: [],
+    provenance: { source: 'created', createdBy: payload.ownerUid, parentCapsuleId: null, forkedFromVersion: null },
+    access: {
+      visibility: 'private', sharedWithUserIds: [], sharedWithOrgIds: [],
+      allowClone: false, allowDownload: false, allowCommunityRating: false,
+    },
+    community: {
+      favorite: false, userRating: null, averageRating: null, ratingCount: 0, tags: [],
+      listedInMarketplace: false, publishedAt: null, cloneCount: 0, downloadCount: 0,
+    },
+    trust: {
+      level: 'grey', score: 0, label: 'Awaiting review', summary: 'Test capsule requires review.',
+      blockers: [], recommendations: [], checkedAt: '2026-05-15T12:00:00.000Z',
+    },
+    createdAt: '2026-05-15T12:00:00.000Z',
+    updatedAt: '2026-05-15T12:00:00.000Z',
+    schemaVersion: 2,
+    version: 1,
+    label: 'Saved test capsule',
+    ...overrides,
+  };
+}
 
 function makeRun(status: AgentRun['status'], metadata: Record<string, unknown> = {}): AgentRun {
   const contract = typeof metadata.agentOperatingContract === 'object' && metadata.agentOperatingContract !== null && !Array.isArray(metadata.agentOperatingContract)
@@ -1849,7 +1890,7 @@ describe('agent memo exact capsule association', () => {
     const original = { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 2 };
     const receiptVersions: unknown[] = [];
     const getExactVersion = vi.fn(async (ownerUid: string, capsuleId: string, version: number | null) => (
-      { ownerUid, capsuleId, version } as never
+      makeSavedCapsule({ ownerUid, capsuleId, version: version ?? 1 })
     ));
     const save = vi.fn(async (_uid: string, input: SaveMemoDraftInput) => {
       const snapshot = recordMemoContextSnapshot(input, undefined, false);
@@ -1955,7 +1996,7 @@ describe('agent memo exact capsule association', () => {
       getRun: async () => makeRun('queued', { policyAgentId: 'output-formatter',
         capsuleAgentExecutionContext: { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 2 } }),
       updateStatus: async (input) => makeRun(input.toStatus),
-      getCapsuleAtVersion: async () => capsule as never,
+      getCapsuleAtVersion: async () => capsule === null ? null : makeSavedCapsule(capsule),
       appendEvent: async (event) => event,
       saveMemoDraft: save,
     })).rejects.toBeInstanceOf(AgentWorkerError);
@@ -1989,7 +2030,7 @@ describe('supervisor exact execution context', () => {
     const providerSearch = search();
     const providerGenerate = generation();
     const getExactVersion = vi.fn(async (ownerUid: string, capsuleId: string, capsuleVersion: number | null) => (
-      makeQualityCapsule({ ownerUid, capsuleId, version: capsuleVersion })
+      makeSavedCapsule({ ownerUid, capsuleId, version: capsuleVersion ?? 1 })
     ));
     const buildEvidencePack = vi.fn(async (input: { capsuleVersion?: number | null }) => evidence(input.capsuleVersion ?? latestVersion));
     const persist = save();
@@ -2087,7 +2128,7 @@ describe('supervisor exact execution context', () => {
     await expect(executeAgentRun(payload, {
       getRun: async () => makeRun('queued', metadata),
       updateStatus: async (input) => makeRun(input.toStatus, metadata),
-      getCapsuleAtVersion: async () => capsule as never,
+      getCapsuleAtVersion: async () => capsule === null ? null : makeSavedCapsule(capsule),
       appendToolCall: async (call) => call,
       appendApproval: async (approval) => approval,
       appendEvent: async (event) => event,
@@ -2156,7 +2197,7 @@ describe('supervisor exact execution context', () => {
     const findings = ['Verify the implementation assumption.', 'Preserve the evidence caveat.'];
     const events: AgentRunEvent[] = [];
     const phases: string[] = [];
-    let completion: { message?: string; data?: Record<string, unknown>; metadata?: Record<string, unknown> } | undefined;
+    let completion: { message?: string | null; data?: Record<string, unknown>; metadata?: Record<string, unknown> } | undefined;
     const persist = save();
     const providerGenerate = vi.fn(async (input: { generationPhase?: string }) => {
       if (input.generationPhase === 'memo-revision') throw new Error('Revision provider unavailable.');

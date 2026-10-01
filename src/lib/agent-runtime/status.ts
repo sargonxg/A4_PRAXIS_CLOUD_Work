@@ -8,7 +8,7 @@ export type AgentRunUiStatus =
   | 'warn';
 
 export const AGENT_RUN_TERMINAL_STATUSES = ['succeeded', 'failed', 'cancelled', 'expired'] as const;
-export const AGENT_RUN_RETRYABLE_STATUSES = ['dispatch_failed', 'failed', 'cancelled'] as const;
+export const AGENT_RUN_RETRYABLE_STATUSES = ['dispatch_failed', 'failed', 'cancelled', 'expired'] as const;
 export const AGENT_RUN_CANCELLABLE_STATUSES = ['queued', 'dispatch_enqueued', 'running', 'waiting_approval'] as const;
 
 export type AgentRunLifecycleStep = {

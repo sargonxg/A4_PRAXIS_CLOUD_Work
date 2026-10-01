@@ -14,15 +14,15 @@ import {
 describe('agent run status policy', () => {
   it('centralizes terminal, retryable, and cancellable statuses', () => {
     expect(AGENT_RUN_TERMINAL_STATUSES).toEqual(['succeeded', 'failed', 'cancelled', 'expired']);
-    expect(AGENT_RUN_RETRYABLE_STATUSES).toEqual(['dispatch_failed', 'failed', 'cancelled']);
+    expect(AGENT_RUN_RETRYABLE_STATUSES).toEqual(['dispatch_failed', 'failed', 'cancelled', 'expired']);
     expect(AGENT_RUN_CANCELLABLE_STATUSES).toEqual(['queued', 'dispatch_enqueued', 'running', 'waiting_approval']);
   });
 
-  it('only retries dispatch failures and terminal failed runs', () => {
-    for (const status of ['dispatch_failed', 'failed', 'cancelled']) {
+  it('only retries dispatch failures and unsuccessful terminal runs, including expiry', () => {
+    for (const status of ['dispatch_failed', 'failed', 'cancelled', 'expired']) {
       expect(canRetryAgentRunStatus(status)).toBe(true);
     }
-    for (const status of ['queued', 'dispatch_enqueued', 'running', 'waiting_approval', 'succeeded', 'expired', 'warn']) {
+    for (const status of ['queued', 'dispatch_enqueued', 'running', 'waiting_approval', 'succeeded', 'warn']) {
       expect(canRetryAgentRunStatus(status)).toBe(false);
     }
   });
