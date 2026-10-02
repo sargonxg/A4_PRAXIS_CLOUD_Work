@@ -1,0 +1,137 @@
+steps:
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -ceu
+      - >-
+        [[ '${_SOURCE_COMMIT}' =~ ^[0-9a-f]{40}$$ ]] || { echo 'Invalid exact
+        source SHA'; exit 1; }
+
+        [[ '${_SOURCE_REPO}' = 'sargonxg/A4_PRAXIS_CLOUD_Work' ]] || exit 1
+
+        [[ '${_SOURCE_BRANCH}' = 'build/praxis-workspace-local-20261002' ]] ||
+        exit 1
+    id: verify-release-provenance
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        if grep -rE "gemini-2\.0|gemini-3-flash-preview|gemini-3\.1-pro-preview|gemini-3-pro-preview|claude-|gpt-|firecrawl|tavily|parallel-web|@ai-sdk/anthropic" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" --exclude="providers.ts" --exclude="providers.py" --exclude="model-matrix-data.ts" 2>/dev/null; then
+          echo "ERROR: Forbidden retired/unavailable model strings found. Use src/lib/ai/providers.ts (frontend) or backend/config.py (backend)."
+          exit 1
+        fi
+        echo "OK: no forbidden model strings"
+    id: check-model-strings
+    waitFor:
+      - verify-release-provenance
+  - name: node:22-slim
+    entrypoint: node
+    args:
+      - scripts/audit-ai-routes.mjs
+    id: preflight-audit-routes
+    waitFor:
+      - check-model-strings
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        set -e
+        apt-get update -qq && apt-get install -y -qq nodejs >/dev/null
+        GCP_PROJECT_ID=$PROJECT_ID node scripts/audit-gcp.mjs
+    id: preflight-audit-gcp
+    waitFor:
+      - check-model-strings
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: bash
+    args:
+      - -c
+      - gcloud run services describe praxis-backend --region=us-central1
+        --format="value(status.url)" > /workspace/backend_url.txt
+    id: get-backend-url
+    waitFor:
+      - check-model-strings
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -t
+      - us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}
+      - --build-arg
+      - NEXT_PUBLIC_PRAXIS_BACKEND_URL=https://praxis-backend-pgoyqovcza-uc.a.run.app
+      - --build-arg
+      - NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY
+      - --build-arg
+      - NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw
+      - --build-arg
+      - NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${_GOOGLE_MAPS_KEY}
+      - --build-arg
+      - NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}
+      - --build-arg
+      - NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO}
+      - --build-arg
+      - NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}
+      - --build-arg
+      - NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}
+      - --build-arg
+      - NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID
+      - .
+    id: build-frontend
+    waitFor:
+      - preflight-audit-routes
+      - preflight-audit-gcp
+      - get-backend-url
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}
+    id: push-frontend-commit
+    waitFor:
+      - build-frontend
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - services
+      - update
+      - praxis-frontend
+      - --project=$PROJECT_ID
+      - --region=us-central1
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}
+      - --no-traffic
+      - --tag=workspace-release
+      - --update-env-vars
+      - ^|^PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|PRAXIS_BUILD_ID=$BUILD_ID|NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID
+      - --update-labels
+      - source=workspace-release,repo=a4-praxis-cloud-work,branch=workspace-release,commit=${_SOURCE_COMMIT}
+      - --quiet
+    id: deploy-frontend
+    waitFor:
+      - push-frontend-commit
+images:
+  - us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}
+substitutions:
+  _BUILD_SOURCE: workspace-release
+  _SOURCE_REPO: sargonxg/A4_PRAXIS_CLOUD_Work
+  _SOURCE_BRANCH: build/praxis-workspace-local-20261002
+  _SOURCE_COMMIT: must-be-overridden-with-verified-commit
+  _GOOGLE_MAPS_KEY: ""
+options:
+  dynamicSubstitutions: true
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8
+timeout: 2400s
