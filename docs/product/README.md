@@ -3,6 +3,13 @@
 Updated: 2026-09-30
 Status: canonical index for the current app structure
 
+Local candidate, October 2: the isolated `build/praxis-workspace-local-20261002`
+worktree adds private projects, explicit analytical scope, exact capsule pins and
+saved draft assignments. These assignments do not dispatch agents or create
+deliverables. The [candidate handover](../reviews/2026-10-02-praxis-workspace-local-candidate.md)
+records fixture boundaries, export corrections, validation and remaining phases.
+This note does not change the served release or establish production acceptance.
+
 For using the product, start with the
 [current user guide](CONTEXT_CAPSULE_POLICY_RESEARCH_GUIDE.md). For implementation,
 use the [September 30 implementation ledger](../reviews/2026-09-30-praxis-implementation-ledger.md),

@@ -88,7 +88,8 @@ describe('account settings page contract', () => {
     expect(proxy).not.toContain("pathname === '/app/settings'");
     expect(proxy).not.toContain("pathname.startsWith('/app/settings/')");
     expect(proxy).not.toContain("pathname.startsWith('/app/settings') || pathname === '/app/profile'");
-    expect(appShell).toContain("goSettings: () => router.push('/app/settings')");
+    expect(appShell).toContain("goSettings: () => navigateWorkspace('/app/settings')");
+    expect(appShell).toContain('if (canLeaveWorkspaceEditor()) router.push(path)');
     expect(appShell).toContain('<AppSidebar');
   });
 

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "synthetic": true,
+  "title": "Example Advisory reporting-rule dossier — synthetic",
+  "scope": {
+    "title": "Example Advisory reporting-rule dossier — synthetic",
+    "question": "How have the proposed start date and stakeholder positions changed without adoption?",
+    "purpose": "Internal geopolitical-risk assessment; no legal advice",
+    "audience": "Research director and analysts",
+    "jurisdiction": "Fictional Example jurisdiction",
+    "asOfDate": "2026-01-15",
+    "language": "en",
+    "mandate": "Explain policy developments using attributable evidence",
+    "conventions": "Separate source assertions, analysis and recommendations. Unknown dates stay unknown."
+  },
+  "sources": [
+    { "id": "EA-D1", "version": 1, "publicationDate": "2026-01-01", "eventDate": null, "effectiveDate": null, "language": "en", "rights": "Synthetic fixture; redistributable", "text": "Day 1: The Example Advisory office proposes a January start for the reporting rule. Funding remains undecided. A small pilot is recommended as an option, not a requirement. The proposal has not been adopted." },
+    { "id": "EA-D8", "version": 1, "publicationDate": "2026-01-08", "eventDate": null, "effectiveDate": null, "language": "en", "rights": "Synthetic fixture; redistributable", "text": "Day 8: The Example Industry Association requests a transition period before any reporting obligation. It opposes the proposed January start. This attributed request does not change the proposal or establish an adopted rule." },
+    { "id": "EA-D15", "version": 2, "publicationDate": "2026-01-15", "eventDate": null, "effectiveDate": null, "language": "pt", "rights": "Synthetic fixture; redistributable", "text": "Day 15: A revised consultation considers July instead of January. No start date has been adopted. Funding remains undecided. Original language: O piloto poderá ser realizado, sujeito a financiamento. Analyst translation: The pilot may be carried out, subject to funding. Poderá can express possibility; this passage does not establish a mandate." }
+  ],
+  "snapshots": [
+    { "id": "EA-snapshot-1", "asOfDate": "2026-01-08", "sourceIds": ["EA-D1", "EA-D8"] },
+    { "id": "EA-snapshot-2", "asOfDate": "2026-01-15", "sourceIds": ["EA-D1", "EA-D8", "EA-D15"] }
+  ],
+  "review": { "actor": "fixture-analyst", "scope": "synthetic extraction qualification", "decision": "Accept possibility wording; do not turn the pilot into a mandate", "timestamp": "2026-01-15T12:00:00Z", "synthetic": true },
+  "questions": [
+    { "id": "funding", "question": "Has capital been secured, allocated or spent?", "expected": "Unknown. Funding remains undecided.", "support": ["EA-D1", "EA-D15"] },
+    { "id": "mandate", "question": "Is the pilot mandatory?", "expected": "No mandate is established; it is an optional recommendation subject to funding.", "support": ["EA-D1", "EA-D15"] },
+    { "id": "adoption", "question": "When does the adopted rule enter into force?", "expected": "The premise is unsupported: no rule or start date has been adopted.", "support": ["EA-D15"] },
+    { "id": "positions", "question": "Who requests a transition period?", "expected": "The Example Industry Association requests it; this is an attributed position.", "support": ["EA-D8"] },
+    { "id": "chronology", "question": "Did July supersede an adopted January date?", "expected": "No. Both dates belong to proposals or consultation; adoption is absent.", "support": ["EA-D1", "EA-D15"] },
+    { "id": "language", "question": "Does poderá mean the pilot must occur?", "expected": "No. The source-language anchor permits a possibility reading and conditions it on funding.", "support": ["EA-D15"] }
+  ]
+}

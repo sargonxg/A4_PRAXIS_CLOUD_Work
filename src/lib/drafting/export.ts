@@ -70,36 +70,41 @@ export async function exportWorkProductDocx(input: NormalizedWorkProductExport):
 }
 
 export function exportWorkProductPdf(input: NormalizedWorkProductExport): Buffer {
+  const allText = [input.title, ...input.sections.flatMap((section) => [section.heading, section.body]), ...input.sourceCards.flatMap((source) => [source.id, source.title, source.url ?? ''])].join('\n');
+  // Built-in PDF fonts use WinAnsi, not an arbitrary Unicode font. Never corrupt source text silently.
+  if (/[^\u0009\u000a\u000d\u0020-\u00ff\u0152\u0153\u0160\u0161\u0178\u017d\u017e\u0192\u02c6\u02dc\u2013\u2014\u2018-\u201a\u201c-\u201e\u2020-\u2022\u2026\u2030\u2039\u203a\u20ac\u2122]/u.test(allText)) throw new WorkProductPdfTextError();
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const margin = 48;
-  const width = 500;
+  const width = doc.internal.pageSize.getWidth() - margin * 2;
+  const bottom = doc.internal.pageSize.getHeight() - margin;
   let y = margin;
-
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
-  doc.text(input.title, margin, y);
-  y += 28;
-
-  for (const section of input.sections) {
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(12);
-    doc.text(section.heading, margin, y);
-    y += 18;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    for (const line of doc.splitTextToSize(section.body || ' ', width)) {
-      if (y > 740) {
-        doc.addPage();
-        y = margin;
-      }
-      doc.text(line, margin, y);
-      y += 14;
+  function write(text: string, size: number, bold = false, keepNextLines = 0) {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal');
+    doc.setFontSize(size);
+    const lines: string[] = doc.splitTextToSize(text || ' ', width);
+    const lineHeight = size * 1.4;
+    if (keepNextLines && y + Math.min(lines.length + keepNextLines, 5) * lineHeight > bottom) { doc.addPage(); y = margin; }
+    for (const line of lines) {
+      if (y + lineHeight > bottom) { doc.addPage(); y = margin; }
+      doc.text(line, margin, y); y += lineHeight;
     }
-    y += 12;
+    y += 8;
   }
-
+  write(input.title, 16, true, 2);
+  for (const section of input.sections) {
+    write(section.heading, 12, true, 2);
+    write(section.body, 10);
+  }
+  if (input.sourceCards.length) {
+    write('Sources', 12, true, 2);
+    for (const source of input.sourceCards) write(`${source.id}: ${source.title}${source.url ? ` (${source.url})` : ''}`, 10);
+  }
   const arrayBuffer = doc.output('arraybuffer');
   return Buffer.from(arrayBuffer);
+}
+
+export class WorkProductPdfTextError extends Error {
+  constructor() { super('This PDF export cannot render one or more source-language characters. Choose DOCX to preserve the original text.'); }
 }
 
 export function exportGoogleDocDisabledResponse(): { status: 'disabled'; reason: string } {

@@ -50,6 +50,7 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     label: 'Workspace',
     defaultOpen: true,
     items: [
+      { id: 'projects', label: 'Projects', icon: 'FolderKanban', href: '/app/projects', hint: 'Continue private research assignments with pinned context' },
       { id: 'home', label: 'Chat', icon: 'MessageSquareText', href: '/app', matchPaths: ['/app/conversations'], shortcut: 'g h', hint: 'Ask, draft, and review with your context' },
       { id: 'capsules', label: 'Capsules', icon: 'FolderKanban', href: '/app/capsules', shortcut: 'g c', hint: 'Manage, improve, source, and download reusable capsules' },
     ],

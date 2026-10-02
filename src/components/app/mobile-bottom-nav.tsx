@@ -25,7 +25,8 @@ export function MobileBottomNav() {
   return (
     <nav ref={rootRef} className="praxis-mobile-navigation fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 md:hidden" aria-label="Primary mobile navigation" data-testid="mobile-bottom-nav">
       {open ? <div id="mobile-more-destinations" className="absolute bottom-full right-3 mb-2 grid w-[min(18rem,calc(100vw-1.5rem))] gap-1 rounded-xl border border-[var(--color-app-border)] bg-white p-2 shadow-[var(--shadow-float)]" aria-label="More workspace tools">{secondary.map((item) => <Link key={item.id} href={item.href} className="praxis-nav-link" onClick={() => setOpen(false)}>{item.label}</Link>)}<Link href="/guide" className="praxis-nav-link" onClick={() => setOpen(false)}>Quick start</Link></div> : null}
-      <div className="mx-auto grid max-w-lg grid-cols-3 gap-1">
+      <div className="mx-auto grid max-w-lg grid-cols-4 gap-1">
+        <Link href="/app/projects" aria-current={pathname.startsWith('/app/projects') ? 'page' : undefined} className="praxis-mobile-nav-link" onClick={() => setOpen(false)}><FolderKanban className="h-5 w-5" />Projects</Link>
         <Link href="/app" aria-current={pathname === '/app' || pathname.startsWith('/app/conversations/') ? 'page' : undefined} className="praxis-mobile-nav-link" onClick={() => setOpen(false)}><MessageSquareText className="h-5 w-5" />Chat</Link>
         <Link href="/app/capsules" aria-current={pathname.startsWith('/app/capsules') ? 'page' : undefined} className="praxis-mobile-nav-link" onClick={() => setOpen(false)}><FolderKanban className="h-5 w-5" />Capsules</Link>
         <button ref={moreRef} type="button" className="praxis-mobile-nav-link" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-controls="mobile-more-destinations"><MoreHorizontal className="h-5 w-5" />More</button>

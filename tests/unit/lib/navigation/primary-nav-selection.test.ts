@@ -11,9 +11,10 @@ describe('primary navigation selection', () => {
     expect(primaryNavForPath('/app/capsules?lane=repository')?.id).toBe('capsules');
     expect(itemMatchesPath({ href: '/app/capsules?lane=marketplace' }, '/app/capsules')).toBe(false);
   });
-  it('keeps Chat and Capsules primary with deeper work available under More', () => {
+  it('adds continuing Projects while preserving Chat, Capsules and deeper work under More', () => {
     expect(HOME_SIDEBAR_DESTINATIONS.map(({ label }) => label)).toEqual(['Chat', 'Capsules']);
-    expect(NAV_GROUPS.find((group) => group.id === 'workspace')?.items.map(({ id }) => id)).toEqual(['home', 'capsules']);
+    expect(NAV_GROUPS.find((group) => group.id === 'workspace')?.items.map(({ id }) => id)).toEqual(['projects', 'home', 'capsules']);
+    expect(primaryNavForPath('/app/projects')?.id).toBe('projects');
     expect(NAV_GROUPS.find((group) => group.id === 'advanced')).toMatchObject({ label: 'More', defaultOpen: false });
     expect(primaryNavForPath('/app/boardroom')?.id).toBe('boardroom');
     expect(primaryNavForPath('/app/conversations/saved-a?capsuleId=case-a')?.id).toBe('home');

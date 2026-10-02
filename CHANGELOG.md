@@ -2,6 +2,14 @@
 
 ## [Unreleased]
 
+- October 2 local candidate: private Projects with explicit analytical scope,
+  pinned capsule versions/hashes, transactional revision checks, recoverable
+  draft assignments and idempotent creation. Drafts do not dispatch agents.
+  PDF work-product exports now retain source cards and wrap across pages;
+  unsupported script characters return an explicit DOCX fallback. See the
+  [local handover](docs/reviews/2026-10-02-praxis-workspace-local-candidate.md)
+  for fixture proof and incomplete acceptance. This candidate is not deployed.
+
 Current validation and release state: [user-readiness receipt](docs/reviews/2026-09-29-praxis-user-readiness.md).
 Served-release identity and real-service journey results are tracked in the
 [production acceptance record](docs/reviews/2026-09-29-praxis-production-acceptance.md).

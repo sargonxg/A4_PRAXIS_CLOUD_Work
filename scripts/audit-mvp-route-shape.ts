@@ -22,6 +22,7 @@ function expectMissing(rel: string): void {
 const primaryNav = read('src/lib/navigation/primary-nav.ts');
 for (const marker of [
   "label: 'Chat'",
+  "label: 'Projects'",
   "label: 'Capsules'",
   "href: '/app'",
   "href: '/app/capsules'",
@@ -29,10 +30,11 @@ for (const marker of [
   if (!primaryNav.includes(marker)) failures.push(`PRIMARY_NAV missing canonical marker: ${marker}`);
 }
 const workspaceItems = NAV_GROUPS.find((group) => group.id === 'workspace')?.items ?? [];
-if (workspaceItems.length !== 2 || workspaceItems[0]?.href !== '/app' || workspaceItems[1]?.href !== '/app/capsules') {
-  failures.push('Workspace primary navigation must contain Chat and Capsules only, in that order');
+if (workspaceItems.length !== 3 || workspaceItems[0]?.href !== '/app/projects' || workspaceItems[1]?.href !== '/app' || workspaceItems[2]?.href !== '/app/capsules') {
+  failures.push('Workspace primary navigation must contain Projects, Chat and Capsules, in that order');
 }
 for (const [path, expected] of [
+  ['/app/projects', 'projects'],
   ['/app', 'home'],
   ['/app/conversations/route-audit', 'home'],
   ['/app/capsules', 'capsules'],

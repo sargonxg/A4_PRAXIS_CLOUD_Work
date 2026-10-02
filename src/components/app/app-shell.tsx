@@ -18,6 +18,7 @@ import { useSituationStore } from '@/stores/situation-store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PraxisRouteTransition } from '@/components/ui/praxis-motion';
 import { SignedInChrome } from '@/components/app/signed-in-chrome';
+import { canLeaveWorkspaceEditor } from '@/lib/navigation/unsaved-work';
 
 type SearchOpenEvent = CustomEvent<{ query?: string }>;
 
@@ -75,6 +76,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const openSearch = useCallback((query?: string) => { setSearchInitialQuery(query ?? ''); setSearchOpen(true); }, []);
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchInitialQuery(''); }, []);
   const openAsk = useCallback((prompt?: string) => {
+    if ((prompt || pathname !== '/app') && !canLeaveWorkspaceEditor()) return;
     if (prompt) router.push(`/app?${new URLSearchParams({ prompt })}`);
     else if (pathname !== '/app') router.push('/app');
     else document.querySelector<HTMLTextAreaElement>('[data-testid="marketing-hero-prompt"]')?.focus();
@@ -88,7 +90,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return () => { window.removeEventListener('open-praxis-search', search); window.removeEventListener('open-praxis-chat', ask); };
   }, [openAsk, openSearch]);
 
-  useKeyboardShortcuts({ openSearch: () => openSearch(), openAsk: () => openAsk(), openHelp: () => window.dispatchEvent(new CustomEvent('open-praxis-help')), goHome: () => router.push('/app'), goCores: () => router.push('/app/capsules'), goLibrary: () => router.push('/app/capsules'), goWrite: () => router.push('/app?panel=memo'), goCanvas: () => router.push('/app/capsules?lane=inspect'), goTools: () => router.push('/app'), goSettings: () => router.push('/app/settings'), closeModal: closeSearch });
+  const navigateWorkspace = (path: string) => { if (canLeaveWorkspaceEditor()) router.push(path); };
+  useKeyboardShortcuts({ openSearch: () => openSearch(), openAsk: () => openAsk(), openHelp: () => window.dispatchEvent(new CustomEvent('open-praxis-help')), goHome: () => navigateWorkspace('/app'), goCores: () => navigateWorkspace('/app/capsules'), goLibrary: () => navigateWorkspace('/app/capsules'), goWrite: () => navigateWorkspace('/app?panel=memo'), goCanvas: () => navigateWorkspace('/app/capsules?lane=inspect'), goTools: () => navigateWorkspace('/app'), goSettings: () => navigateWorkspace('/app/settings'), closeModal: closeSearch });
 
   if (loading || !user) return <AppShellLoadingState label={loading ? 'Loading your workspace…' : 'Opening sign in…'} />;
 

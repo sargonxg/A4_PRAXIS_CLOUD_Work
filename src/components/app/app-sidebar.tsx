@@ -9,9 +9,10 @@ import { NAV_GROUPS, primaryNavForPath } from '@/lib/navigation/primary-nav';
 import { useAuth } from '@/lib/auth/auth-context';
 import { useAppStore } from '@/stores/app-store';
 import { cn } from '@/lib/utils/cn';
+import { canLeaveWorkspaceEditor } from '@/lib/navigation/unsaved-work';
 
 type RecentConversation = { conversationId: string; capsuleId?: string; title?: string; updatedAt?: string };
-const ICONS = { home: MessageSquareText, capsules: FolderKanban, boardroom: ShieldCheck, 'recent-work': FileText, marketplace: FolderKanban, settings: Settings };
+const ICONS = { projects: FolderKanban, home: MessageSquareText, capsules: FolderKanban, boardroom: ShieldCheck, 'recent-work': FileText, marketplace: FolderKanban, settings: Settings };
 
 export function AppSidebar() {
   return <Suspense fallback={<aside className="praxis-workspace-nav w-64 p-5" aria-label="PRAXIS navigation" aria-busy="true">Loading navigation…</aside>}><WorkspaceNavigation /></Suspense>;
@@ -53,11 +54,13 @@ function WorkspaceNavigation() {
   }, [historyRefresh, path, query, user?.id]);
 
   function newChat() {
+    if (!canLeaveWorkspaceEditor()) return;
     router.push(`/app?thread=${encodeURIComponent(`chat-${crypto.randomUUID()}`)}`);
     if (window.matchMedia('(max-width: 767px)').matches) setSidebarOpen(false);
   }
 
   async function signOut() {
+    if (!canLeaveWorkspaceEditor()) return;
     await logout();
     router.push('/login');
   }

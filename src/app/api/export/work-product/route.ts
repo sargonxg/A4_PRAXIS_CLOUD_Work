@@ -8,6 +8,7 @@ import {
   exportWorkProductDocx,
   exportWorkProductPdf,
   normalizeWorkProductExportInput,
+  WorkProductPdfTextError,
 } from '@/lib/drafting/export';
 
 const WorkProductExportSchema = z.object({
@@ -48,9 +49,13 @@ export const POST = withAuth(async (request, user) => {
     return NextResponse.json(exportGoogleDocDisabledResponse(), { status: 501 });
   }
 
-  const buffer = input.format === 'docx'
-    ? await exportWorkProductDocx(input)
-    : exportWorkProductPdf(input);
+  let buffer: Buffer;
+  try {
+    buffer = input.format === 'docx' ? await exportWorkProductDocx(input) : exportWorkProductPdf(input);
+  } catch (error) {
+    if (error instanceof WorkProductPdfTextError) return NextResponse.json({ error: error.message, code: 'pdf_text_unsupported' }, { status: 422 });
+    return NextResponse.json({ error: 'Export could not be created. Your saved work is unchanged; retry or choose another format.', code: 'export_failed' }, { status: 503 });
+  }
   const extension = input.format === 'docx' ? 'docx' : 'pdf';
   const contentType = input.format === 'docx'
     ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'

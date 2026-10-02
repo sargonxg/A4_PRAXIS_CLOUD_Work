@@ -84,6 +84,7 @@ export const V3_NAV_MAPPINGS: readonly V3NavMapping[] = [
 ] as const;
 
 export const V3_PRIMARY_ROUTE_CLASSIFICATIONS: readonly V3PrimaryRouteClassification[] = [
+  { currentNavId: 'projects', currentLabel: 'Projects', currentHref: '/app/projects', classification: 'LOOP', targetLabel: 'Ask', note: 'Private continuing assignments keep scope and pinned capsule context inside the existing signed-in shell.' },
   {
     currentNavId: 'home',
     currentLabel: 'Home',
