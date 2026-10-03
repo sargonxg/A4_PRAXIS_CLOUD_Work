@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Add reviewed Cognitive Capsule expertise in the existing inspector: guided interviews, explicit human decisions, correction lessons, provenance and native downloads. Conditional rules remain unapplied until their prerequisites and guards are established.
+- Compile worker-specific cognitive context within rendered prompt budgets, freeze source/model/tool dependencies, and use typed working objects in the existing specialist, writer and red-team memo workflow.
+- Add the local PRAXIS capsule CLI, defensive portable package import/export, private local registry and detached attestations. Hosted distribution and empirical performance claims remain pending; see the [implementation ledger](docs/build/COGNITIVE_CAPSULE_IMPLEMENTATION_LEDGER.md).
+
 Current validation and release state: [user-readiness receipt](docs/reviews/2026-09-29-praxis-user-readiness.md).
 Served-release identity and real-service journey results are tracked in the
 [production acceptance record](docs/reviews/2026-09-29-praxis-production-acceptance.md).

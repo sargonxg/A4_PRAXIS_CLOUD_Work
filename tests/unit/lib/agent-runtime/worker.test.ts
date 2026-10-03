@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewReceipt } from '@/lib/memo/output-review';
 import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
 import { AgentExecutionLeaseError } from '@/lib/agent-runtime/execution-lease';
+import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
 import type { SaveMemoDraftInput } from '@/lib/firebase/memo-service';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -214,6 +215,72 @@ function makeQualityCapsule(overrides: Record<string, unknown> = {}) {
 }
 
 describe('agent runtime no-op worker', () => {
+  it('locks reviewed cognition before generation and hands typed analysis and draft IDs to writer/review steps', async () => {
+    const actor = { type: 'human' as const, id: 'expert', at: '2026-05-15T12:00:00Z' };
+    const c = createCognitiveCapsule(payload.capsuleId, '1.0.0');
+    c.knowledge.push(KnowledgeSchema.parse({ id: 'dist-1', kind: 'distinction', label: 'Conditional openness', scope: ['general'], reviewState: 'accepted', provenance: { generatedBy: actor, reviewedBy: actor, reviewedAt: actor.at, sourceRefs: [] }, conceptA: 'consider', conceptB: 'accept', explanation: 'Considering is not acceptance.', whyItMatters: 'Preserve modality.', commonMistake: 'Convert conditional wording to agreement.' }));
+    let current = makeRun('queued', { policyAgentId: 'research-memo', askExecutionPreference: { allowExternalSources: false } });
+    const phases: string[] = []; const events: AgentRunEvent[] = [];
+    await executeAgentRun(payload, {
+      getRun: async () => current,
+      getCapsuleAtVersion: async () => makeSavedCapsule({ cognition: c } as Partial<PraxisCapsule>),
+      updateStatus: async (i) => { current = { ...current, status: i.toStatus, metadata: { ...current.metadata, ...i.metadata } }; return current; },
+      appendToolCall: async (call) => call, appendApproval: async (a) => a,
+      appendEvent: async (e) => { events.push(e); return e; },
+      buildEvidencePack: async () => makeEvidencePack(),
+      generateText: async (i) => {
+        phases.push(i.generationPhase!);
+        expect(current.metadata.cognitiveContextLock).toBeTruthy();
+        expect(i.prompt).toContain('Considering is not acceptance.');
+        expect(i.prompt).toContain('analysis-1');
+        if (i.generationPhase === 'memo-self-critique') expect(i.prompt).toContain('draft-1');
+        return { text: i.generationPhase === 'memo-draft' ? 'Conditional openness [D1:p.1].' : 'Review the exact wording.' };
+      },
+      saveMemoDraft: async () => ({ memo: { id: 'cognitive-memo' } }),
+      saveOutputCapsule: async () => ({ id: 'cognitive-output' }),
+    });
+    expect(phases).toEqual(['memo-domain-analysis', 'memo-draft', 'memo-self-critique']);
+    expect(events.some((e) => e.data.phase === 'cognition.context_locked')).toBe(true);
+    const board = current.metadata.cognitiveBlackboard as { objects: Array<{ id: string; kind: string; objectRefs: string[] }> };
+    expect(board.objects).toContainEqual(expect.objectContaining({ id: 'draft-1', kind: 'WorkingDraftBlock', objectRefs: expect.arrayContaining(['analysis-1']) }));
+    expect(board.objects).toContainEqual(expect.objectContaining({ kind: 'WorkingReviewIssue', objectRefs: expect.arrayContaining(['draft-1']) }));
+    expect(c.knowledge).toHaveLength(1);
+    current = { ...current, status: 'running' };
+    const validReplay = vi.fn(async () => ({ text: 'Unexpected regeneration.' }));
+    await executeAgentRun({ ...payload, attempt: 2 }, {
+      getRun: async () => current,
+      getCapsuleAtVersion: async () => makeSavedCapsule({ cognition: c } as Partial<PraxisCapsule>),
+      updateStatus: async (i) => { current = { ...current, status: i.toStatus, metadata: { ...current.metadata, ...i.metadata } }; return current; },
+      appendToolCall: async (call) => call, appendApproval: async (a) => a, appendEvent: async (e) => e,
+      buildEvidencePack: async () => makeEvidencePack({ packId: 'new-transient-pack-id', builtAt: '2026-10-03T15:00:00Z' }),
+      generateText: validReplay,
+      saveMemoDraft: async () => ({ memo: { id: 'cognitive-memo' } }), saveOutputCapsule: async () => ({ id: 'cognitive-output' }),
+    });
+    expect(validReplay).not.toHaveBeenCalled();
+    current = { ...current, status: 'running' };
+    const replayGenerate = vi.fn(async () => ({ text: 'Should never generate under changed evidence.' }));
+    await expect(executeAgentRun({ ...payload, attempt: 2 }, {
+      getRun: async () => current,
+      getCapsuleAtVersion: async () => makeSavedCapsule({ cognition: c } as Partial<PraxisCapsule>),
+      updateStatus: async (i) => { current = { ...current, status: i.toStatus, metadata: { ...current.metadata, ...i.metadata } }; return current; },
+      appendToolCall: async (call) => call, appendApproval: async (a) => a, appendEvent: async (e) => e,
+      buildEvidencePack: async () => makeEvidencePack({ sourcedParagraphs: [{ ...makeEvidencePack().sourcedParagraphs[0], excerpt: 'Changed source body.' }] }),
+      generateText: replayGenerate,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'cognitive-context-lock', errorMessage: expect.stringMatching(/stale replay/i) } });
+    expect(replayGenerate).not.toHaveBeenCalled();
+    current = { ...current, status: 'running' };
+    vi.stubEnv('PRAXIS_SOURCE_COMMIT', 'changed-test-worker-implementation');
+    try {
+      await expect(executeAgentRun({ ...payload, attempt: 3 }, {
+        getRun: async () => current,
+        getCapsuleAtVersion: async () => makeSavedCapsule({ cognition: c } as Partial<PraxisCapsule>),
+        updateStatus: async (i) => { current = { ...current, status: i.toStatus, metadata: { ...current.metadata, ...i.metadata } }; return current; },
+        appendToolCall: async (call) => call, appendApproval: async (a) => a, appendEvent: async (e) => e,
+        buildEvidencePack: async () => makeEvidencePack(), generateText: replayGenerate,
+      })).rejects.toMatchObject({ diagnostic: { failedPhase: 'cognitive-context-lock', errorMessage: expect.stringMatching(/stale replay/i) } });
+      expect(replayGenerate).not.toHaveBeenCalled();
+    } finally { vi.unstubAllEnvs(); }
+  });
   it('keeps manual capsule research local despite selected search tool cores and a persisted search plan', async () => {
     const metadata = {
       policyAgentId: 'research-memo',

@@ -207,6 +207,9 @@ export const POST = withAuth(async (request, user) => {
     if (err instanceof CapsuleBuilderDraftError) {
       return NextResponse.json({ error: err.message }, { status: err.status });
     }
+    if (err instanceof Error && (err as Error & { code?: string }).code === 'COGNITIVE_COMBINE_UNSUPPORTED') {
+      return NextResponse.json({ error: err.message, code: 'COGNITIVE_COMBINE_UNSUPPORTED' }, { status: 409 });
+    }
     return handleRouteError(err, 'context/capsules/create');
   }
 });

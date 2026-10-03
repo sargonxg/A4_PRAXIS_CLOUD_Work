@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
-import { appendWorkingObject, createBlackboard, freezeRunContext, compileLockedRole, validateBlackboard, assertRunContextReplay } from '@/lib/agent-runtime/blackboard';
+import { appendWorkingObject, updateWorkingObject, createBlackboard, freezeRunContext, compileLockedRole, validateBlackboard, assertRunContextReplay } from '@/lib/agent-runtime/blackboard';
 
 const at = '2026-10-03T12:00:00Z';
 const identity = { ownerUid: 'u1', runId: 'r1', capsuleId: 'c1' };
@@ -26,6 +26,17 @@ describe('run-scoped cognitive blackboard', () => {
   it('cannot turn an unresolved quotation into verified supporting evidence', () => {
     const b = createBlackboard(identity);
     expect(() => appendWorkingObject(b, { ...identity, id: 'e1', kind: 'WorkingEvidenceSpan', createdAt: at, updatedAt: at, objectRefs: [], knowledgeRefs: [], evidenceRefs: [], sourceId: 's1', sourceVersion: '1', quote: 'May consider', anchorStatus: 'unresolved', supportStatus: 'verified' })).toThrow(/unresolved|verified/i);
+  });
+  it('validates entity and proposal targets and allows questions to be resolved by ID', () => {
+    const b = createBlackboard(identity, { entityIds: ['actor-1'], knowledgeIds: ['rule-1'] });
+    const base = { ...identity, createdAt: at, updatedAt: at, objectRefs: [], knowledgeRefs: [], evidenceRefs: [] };
+    expect(() => appendWorkingObject(b, { ...base, id: 'er', kind: 'WorkingEntityResolution', candidateIds: ['missing'], relation: 'alias', status: 'proposed' })).toThrow(/reference/i);
+    expect(() => appendWorkingObject(b, { ...base, id: 'proposal', kind: 'CapsuleChangeProposal', targetIds: ['missing'], changeSummary: 'Change', reviewState: 'proposed', promotion: 'human-review-required' })).toThrow(/reference/i);
+    const q = { ...base, id: 'q', kind: 'WorkingQuestion', text: 'Is the group the same actor?', status: 'open' };
+    const opened = appendWorkingObject(b, q);
+    const resolved = updateWorkingObject(opened, { ...q, status: 'resolved' });
+    expect(resolved.objects[0]).toMatchObject({ status: 'resolved' });
+    expect(opened.objects[0]).toMatchObject({ status: 'open' });
   });
   it('captures role views and exceptions immutably and rejects stale source/model/compiler replay', () => {
     const locked = freezeRunContext(input());

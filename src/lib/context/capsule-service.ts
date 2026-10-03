@@ -1,5 +1,9 @@
 import { FieldPath, type Firestore, type Query, type Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
+import { CognitiveCapsuleSchema, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
+import { fromV3 } from '@/lib/cognitive-capsule/from-v3';
+import { decideKnowledge, proposeKnowledge } from '@/lib/cognitive-capsule/review';
+import type { CognitiveCapsule } from '@/lib/cognitive-capsule/types';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { withDocumentOwnerWrite } from '@/lib/documents/owner-write';
 import { capsulePageLimit, decodeCapsuleCursor, encodeCapsuleCursor } from '@/lib/context/capsule-pagination';
@@ -225,6 +229,8 @@ export interface CapsuleReviewRejectionMetadata {
 }
 
 export interface CapsuleReviewCard {
+  /** Server-derived changed knowledge IDs; migrating legacy rows does not approve them. */
+  cognitiveKnowledgeIds?: string[];
   reviewCardId: string;
   capsuleId: string;
   ownerUid: string;
@@ -375,6 +381,7 @@ export interface ResolveCapsuleOntologyStackInput {
 }
 
 export interface PraxisCapsule {
+  cognition?: CognitiveCapsule;
   capsuleId: string;
   ownerUid: string;
   scope: CapsuleScope;
@@ -430,6 +437,7 @@ export interface PraxisCapsule {
 }
 
 export interface CreateCapsuleInput {
+  cognition?: CognitiveCapsule;
   capsuleId?: string;
   label?: string;
   summary?: string;
@@ -745,6 +753,7 @@ export async function createCapsule(
     ...(isRecord(input.agentPermissions) ? { agentPermissions: input.agentPermissions } : {}),
     ...(isRecord(input.memoryPosture) ? { memoryPosture: input.memoryPosture } : {}),
     ...(isRecord(input.humanTacitKnowledge) ? { humanTacitKnowledge: input.humanTacitKnowledge } : {}),
+    ...(input.cognition ? { cognition: input.cognition } : {}),
     ...(isRecord(input.temporality) ? { temporality: input.temporality } : {}),
     ...(isRecord(input.causality) ? { causality: input.causality } : {}),
     ...(isRecord(input.ontologyBinding) ? { ontologyBinding: input.ontologyBinding } : {}),
@@ -1915,6 +1924,13 @@ export async function createCapsuleReviewCard(
   let proposedEnvelopePatch: CapsuleEnvelopePatch;
   try {
     proposedEnvelopePatch = normalizeReviewEnvelopePatch(input.proposedEnvelopePatch);
+    if (proposedEnvelopePatch.cognition) {
+      if (capsule.archivedAt) throw Object.assign(new CapsuleReadOnlyError('Restore the archived capsule before proposing expertise.'), { status: 409 });
+      if (proposedEnvelopePatch.cognition.capsuleId !== capsule.capsuleId) throw new Error('Cognition belongs to another capsule.');
+      const ids = new Set(changedCognitiveKnowledgeIds(capsule, proposedEnvelopePatch.cognition));
+      proposedEnvelopePatch.cognition = CognitiveCapsuleSchema.parse({ ...proposedEnvelopePatch.cognition,
+        knowledge: proposedEnvelopePatch.cognition.knowledge.map((item) => ids.has(item.id) ? proposeKnowledge(item, item.provenance.generatedBy) : item) });
+    }
   } catch (err) {
     await recordReviewPatchRejection(uid, capsule, input, err, deps);
     throw err;
@@ -1929,6 +1945,7 @@ export async function createCapsuleReviewCard(
     state,
     evidence: normalizeReviewEvidence(input.evidence ?? []),
     proposedEnvelopePatch,
+    ...(proposedEnvelopePatch.cognition ? { cognitiveKnowledgeIds: changedCognitiveKnowledgeIds(capsule, proposedEnvelopePatch.cognition) } : {}),
     proposalBase: buildProposalBase(capsule, proposedEnvelopePatch),
     applyMetadata: null,
     createdAt: existingCreatedAt ?? timestamp,
@@ -1943,6 +1960,7 @@ export async function createCapsuleReviewCard(
       const [latestCapsuleSnap, latestCardSnap] = await Promise.all([transaction.get(ref), transaction.get(cardRef)]);
       if (!latestCapsuleSnap.exists) throw new Error('Capsule no longer exists.');
       const latestCapsule = sanitizeCapsule(latestCapsuleSnap.data());
+      if (proposedEnvelopePatch.cognition && latestCapsule.archivedAt) throw Object.assign(new CapsuleReadOnlyError('Restore the archived capsule before proposing expertise.'), { status: 409 });
       const latestCardData = latestCardSnap.exists ? latestCardSnap.data() : null;
       if (latestCardData && !['proposed', 'moderation_required'].includes(normalizeReviewState(latestCardData.state))) {
         return normalizeReviewCard(latestCardData, latestCapsule, reviewCardId);
@@ -2032,6 +2050,65 @@ export async function applyCapsuleReviewCard(
   await writeDependencyInvalidationNotes(uid, applied.capsule, applied.card, deps);
   await writeOntologyDiagnosticsNote(uid, applied.capsule, applied.card, deps);
   return { capsule: applied.capsule, card: applied.card };
+}
+
+/** Typed expertise decisions share the capsule transaction, stale hashes and immutable snapshots. */
+export async function decideCognitiveCapsuleReviewCard(
+  uid: string, capsuleId: string, reviewCardId: string,
+  input: { decision: 'accept' | 'edit_accept' | 'reject' | 'need_evidence'; reason: string; edited?: unknown },
+  deps?: CapsuleServiceDeps,
+): Promise<{ capsule: PraxisCapsule; card: CapsuleReviewCard } | null> {
+  const db = dbOf(deps);
+  const ref = capsulesCollection(uid, deps).doc(cleanId(capsuleId, DEFAULT_CONTEXT_STACK_ID));
+  const cardRef = ref.collection('reviewCards').doc(cleanId(reviewCardId, 'review-card'));
+  const run = deps?.requireWritableOwner
+    ? <T>(work: (tx: Transaction) => Promise<T>) => withDocumentOwnerWrite(uid, work, db)
+    : <T>(work: (tx: Transaction) => Promise<T>) => db.runTransaction(work);
+  const result = await run(async (transaction) => {
+    const [capsuleSnap, cardSnap] = await Promise.all([transaction.get(ref), transaction.get(cardRef)]);
+    if (!capsuleSnap.exists || !cardSnap.exists) return null;
+    const capsule = sanitizeCapsule({ ...capsuleSnap.data(), capsuleId: ref.id });
+    if (capsule.ownerUid !== uid) return null;
+    if (capsule.archivedAt) throw Object.assign(new CapsuleReadOnlyError('Restore the archived capsule before reviewing expertise.'), { status: 409 });
+    const card = normalizeReviewCard(cardSnap.data(), capsule, cardRef.id);
+    if (card.ownerUid !== uid || !card.proposedEnvelopePatch.cognition) return null;
+    assertReviewCardDecidable(card);
+    for (const [path, hash] of Object.entries(card.proposalBase?.fieldHashes ?? {})) {
+      if (proposalFieldHash(readProposalField(capsule, path)) !== hash) throw new StaleCapsuleProposalError('This capsule changed. Rebuild the expertise proposal before deciding.');
+    }
+    const timestamp = nowIso(deps);
+    const selected = new Set(card.cognitiveKnowledgeIds ?? changedCognitiveKnowledgeIds(capsule, card.proposedEnvelopePatch.cognition));
+    if (!selected.size) throw new Error('The review card has no proposed expertise changes.');
+    const edited = input.edited === undefined ? undefined : KnowledgeSchema.parse(input.edited);
+    if (edited && !selected.has(edited.id)) throw new Error('Edit only a knowledge item proposed by this review card.');
+    if (input.decision === 'edit_accept' && !edited) throw new Error('Edited knowledge is required for edit and accept.');
+    const knowledge = card.proposedEnvelopePatch.cognition.knowledge.map((item) => selected.has(item.id)
+      ? decideKnowledge(item, { ...input, decision: input.decision === 'edit_accept' && edited?.id !== item.id ? 'accept' : input.decision,
+        edited: edited?.id === item.id ? edited : undefined, reviewer: { type: 'human', id: uid, at: timestamp } }) : item);
+    const nextCard: CapsuleReviewCard = { ...card, updatedAt: timestamp, proposedEnvelopePatch: {
+      ...card.proposedEnvelopePatch, cognition: CognitiveCapsuleSchema.parse({ ...card.proposedEnvelopePatch.cognition, knowledge }),
+    } };
+    if (input.decision === 'accept' || input.decision === 'edit_accept') {
+      const metadata = normalizeApplyMetadata({ reviewerUid: uid, confirmationReason: input.reason,
+        diffHash: `diff:cognition:${proposalFieldHash(nextCard.proposedEnvelopePatch).slice(0, 24)}` }, capsule.version + 1, timestamp);
+      const applied = buildAppliedReviewCardUpdate(capsule, nextCard, metadata);
+      transaction.set(ref.collection('versions').doc(`v${capsule.version}`), applied.previousSnapshot);
+      transaction.set(ref.collection('versions').doc(`v${applied.capsule.version}`), applied.capsule);
+      transaction.set(ref, applied.capsule, { merge: true });
+      transaction.set(cardRef, cloneSerializable(applied.card));
+      return { capsule: applied.capsule, card: applied.card };
+    }
+    if (input.decision === 'reject') {
+      nextCard.state = 'rejected';
+      nextCard.rejectionMetadata = { reviewerUid: uid, rejectedAt: timestamp, confirmationReason: input.reason,
+        generatedBy: graphGeneratedBy(uid, timestamp, 'review_decision') };
+    } else nextCard.state = 'owner_review';
+    transaction.set(cardRef, cloneSerializable(nextCard));
+    transaction.set(ref, { latestGateState: nextCard.state, updatedAt: timestamp }, { merge: true });
+    return { capsule: { ...capsule, latestGateState: nextCard.state, updatedAt: timestamp }, card: nextCard };
+  });
+  if (result && ['accept', 'edit_accept'].includes(input.decision)) await mirrorActiveContextStack(uid, result.capsule, deps);
+  return result;
 }
 
 export async function rejectCapsuleReviewCard(
@@ -2334,8 +2411,10 @@ export async function forkCapsule(
 ): Promise<PraxisCapsule | null> {
   const parent = await getCapsule(uid, capsuleId, deps);
   if (!parent) return null;
+  const forkCapsuleId = cleanId(input.capsuleId ?? capsulesCollection(uid, deps).doc().id, DEFAULT_CONTEXT_STACK_ID);
   return createCapsule(uid, {
-    capsuleId: input.capsuleId,
+    capsuleId: forkCapsuleId,
+    ...(parent.cognition ? { cognition: CognitiveCapsuleSchema.parse({ ...cloneSerializable(parent.cognition), capsuleId: forkCapsuleId }) } : {}),
     label: input.label ?? `${parent.label} fork`,
     scope: input.scope ?? parent.scope,
     coreRefs: parent.coreRefs,
@@ -2361,6 +2440,10 @@ export async function combineCapsules(
   const parents = (await Promise.all(parentIds.map((capsuleId) => getCapsule(uid, capsuleId, deps))))
     .filter((capsule): capsule is PraxisCapsule => Boolean(capsule));
   if (parents.length !== parentIds.length) return null;
+  if (parents.some((parent) => parent.cognition)) {
+    throw Object.assign(new Error('Combining Cognitive Capsules is not supported yet. Attach them together in your workbench or fork one capsule to preserve its expertise.'),
+      { status: 409, code: 'COGNITIVE_COMBINE_UNSUPPORTED' });
+  }
 
   const { coreRefs, conflicts } = mergeCapsuleCoreRefs(parents.map((capsule) => capsule.coreRefs));
   const activeForSituationIds = cleanStringArray(input.activateForSituationIds);
@@ -2790,6 +2873,7 @@ export function sanitizeCapsule(input: unknown, options: { metadataOnly?: boolea
     ...(isRecord(body.agentPermissions) ? { agentPermissions: cloneSerializable(body.agentPermissions) } : {}),
     ...(isRecord(body.memoryPosture) ? { memoryPosture: cloneSerializable(body.memoryPosture) } : {}),
     ...(isRecord(body.humanTacitKnowledge) ? { humanTacitKnowledge: cloneSerializable(body.humanTacitKnowledge) } : {}),
+    ...(!options.metadataOnly && body.cognition ? { cognition: CognitiveCapsuleSchema.parse(body.cognition) } : {}),
     ...(isRecord(body.temporality) ? { temporality: cloneSerializable(body.temporality) } : {}),
     ...(isRecord(body.causality) ? { causality: cloneSerializable(body.causality) } : {}),
     ...(isRecord(body.ontologyBinding) ? { ontologyBinding: cloneSerializable(body.ontologyBinding) } : {}),
@@ -3583,6 +3667,7 @@ function normalizeReviewCard(input: unknown, capsule: PraxisCapsule, fallbackId:
     state: normalizeReviewState(body.state),
     evidence: normalizeReviewEvidence(Array.isArray(body.evidence) ? body.evidence : []),
     proposedEnvelopePatch: normalizeReviewEnvelopePatch(isRecord(body.proposedEnvelopePatch) ? body.proposedEnvelopePatch : {}),
+    ...(Array.isArray(body.cognitiveKnowledgeIds) ? { cognitiveKnowledgeIds: cleanStringArray(body.cognitiveKnowledgeIds) } : {}),
     applyMetadata: normalizeExistingApplyMetadata(body.applyMetadata),
     ...(rejectionMetadata ? { rejectionMetadata } : {}),
     ...(isRecord(body.proposalBase) && typeof body.proposalBase.version === 'number' && isRecord(body.proposalBase.fieldHashes)
@@ -3619,6 +3704,7 @@ function normalizeReviewEnvelopePatch(input: unknown): CapsuleReviewCard['propos
   }
   const body = parsed.data;
   const patch: CapsuleReviewCard['proposedEnvelopePatch'] = {};
+  if (body.cognition) patch.cognition = cloneSerializable(body.cognition);
   const label = cleanText(body.label, 160);
   const summary = cleanText(body.summary, 600);
   const latestGateState = normalizeGateState(body.latestGateState);
@@ -3911,7 +3997,27 @@ function buildAppliedReviewCardUpdate(
       }
     }
   }
-  const patch = card.proposedEnvelopePatch;
+  const patch = { ...card.proposedEnvelopePatch };
+  if (patch.cognition) {
+    if (capsule.archivedAt) throw Object.assign(new CapsuleReadOnlyError('Restore the archived capsule before accepting expertise.'), { status: 409 });
+    if (patch.cognition.capsuleId !== capsule.capsuleId) throw new Error('Cognition belongs to another capsule.');
+    const ids = new Set(card.cognitiveKnowledgeIds ?? changedCognitiveKnowledgeIds(capsule, patch.cognition));
+    patch.cognition = CognitiveCapsuleSchema.parse({ ...patch.cognition, knowledge: patch.cognition.knowledge.map((item) =>
+      ids.has(item.id) ? decideKnowledge(proposeKnowledge(item, item.provenance.generatedBy), {
+        decision: item.reviewDecision === 'edit_accept' ? 'edit_accept' : 'accept',
+        reviewer: { type: 'human', id: applyMetadata.reviewerUid, at: applyMetadata.appliedAt }, reason: applyMetadata.confirmationReason,
+      }) : item) });
+    const baseline = capsule.cognition ?? fromV3(capsule.v3 ?? normalizeToLatest(capsule));
+    const previous = new Map(baseline.knowledge.map((item) => [item.id, item]));
+    const semanticContent = (item: CognitiveCapsule['knowledge'][number]) => Object.fromEntries(Object.entries(item).filter(([key]) =>
+      !['provenance', 'reviewState', 'migrationStatus', 'reviewDecision', 'reviewNote'].includes(key)));
+    const selected = patch.cognition.knowledge.filter((item) => ids.has(item.id));
+    const breaking = selected.some((item) => previous.get(item.id)?.reviewState === 'accepted'
+      && proposalFieldHash(semanticContent(previous.get(item.id)!)) !== proposalFieldHash(semanticContent(item)));
+    const additive = selected.some((item) => previous.get(item.id)?.reviewState !== 'accepted');
+    const [major, minor, revision] = baseline.version.split('.').map(Number);
+    patch.cognition.version = breaking ? `${major + 1}.0.0` : additive ? `${major}.${minor + 1}.0` : `${major}.${minor}.${revision + 1}`;
+  }
   const graphPatch = buildAppliedGraphProjectionPatch(capsule, card, applyMetadata);
   const graphCoreRefs = isRecord(graphPatch.coreRefs) ? graphPatch.coreRefs : {};
   const graphReadiness = isRecord(graphPatch.readinessSummary) ? graphPatch.readinessSummary : {};
@@ -3933,6 +4039,9 @@ function buildAppliedReviewCardUpdate(
     version: applyMetadata.targetVersion,
     updatedAt: applyMetadata.appliedAt,
   });
+  if (patch.cognition && Buffer.byteLength(JSON.stringify(updated), 'utf8') > 900_000) {
+    throw Object.assign(new Error('This capsule is too large to save safely. Split the context before accepting more expertise.'), { status: 413 });
+  }
   const appliedCard: CapsuleReviewCard = {
     ...card,
     state: 'applied',
@@ -4109,6 +4218,12 @@ function proposalFieldHash(value: unknown): string {
   const ordered = (item: unknown): unknown => Array.isArray(item) ? item.map(ordered)
     : isRecord(item) ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, ordered(item[key])])) : item ?? null;
   return createHash('sha256').update(JSON.stringify(ordered(value))).digest('hex');
+}
+
+function changedCognitiveKnowledgeIds(capsule: PraxisCapsule, cognition: CognitiveCapsule): string[] {
+  const baseline = capsule.cognition ?? fromV3(capsule.v3 ?? normalizeToLatest(capsule));
+  const previous = new Map(baseline.knowledge.map((item) => [item.id, proposalFieldHash(item)]));
+  return cognition.knowledge.filter((item) => previous.get(item.id) !== proposalFieldHash(item)).map((item) => item.id);
 }
 
 function buildProposalBase(capsule: PraxisCapsule, patch: CapsuleEnvelopePatch): NonNullable<CapsuleReviewCard['proposalBase']> {

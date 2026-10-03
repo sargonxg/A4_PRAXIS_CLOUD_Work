@@ -42,7 +42,7 @@ describe('scientifically bounded cognitive evaluation', () => {
     expect(skipped.results.every((r) => r.status === 'not-run')).toBe(true);
     expect(skipped.modelImprovementEstablished).toBe(false);
     let calls = 0;
-    const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async (request) => {
+    const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async () => {
       calls++; return { providerReceipt: 'actual-test-provider', output: { conclusions: ['acceptance-not-established'], distinctions: ['consider-is-not-accept'], citedIds: ['language-rule'], questions: [] }, model: 'test-adapter' };
     }, { retrieveEvidence: async () => c.evidence });
     expect(calls).toBe(5);
@@ -53,6 +53,24 @@ describe('scientifically bounded cognitive evaluation', () => {
     const c = createCognitiveCapsule('synthetic');
     const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async () => ({ providerReceipt: 'receipt', model: 'test', output: { conclusions: [], distinctions: [], citedIds: [], questions: [] } }));
     expect(result.results.find((r) => r.profile === 'rag')).toMatchObject({ status: 'not-run' });
+  });
+  it('rejects retrieved evidence outside the locked snapshot before provider evaluation', async () => {
+    const c = createCognitiveCapsule('retrieval-lock'); const profiles: string[] = [];
+    const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async (request) => {
+      profiles.push(request.profile); return { providerReceipt: 'receipt', model: 'test', output: { conclusions: [], distinctions: [], citedIds: [], questions: [] } };
+    }, { retrieveEvidence: async () => [{ id: 'invented', sourceId: 'unknown', sourceVersion: '1', quote: 'Invented source', anchorStatus: 'exact', stance: 'supports' }] });
+    expect(result.results.find((r) => r.profile === 'rag')).toMatchObject({ status: 'failed' });
+    expect(profiles).not.toContain('rag');
+  });
+  it('keeps reviewed expertise out of the plain graph ablation', async () => {
+    const c = createCognitiveCapsule('ablation'); const at = '2026-10-03T00:00:00Z'; const human = { type: 'human', id: 'expert', at };
+    c.knowledge.push(KnowledgeSchema.parse({ id: 'secret-distinction', kind: 'distinction', label: 'Authorization is not expenditure', scope: ['finance'], conceptA: 'authorization', conceptB: 'expenditure', explanation: 'Separate stages', whyItMatters: 'Do not overclaim', commonMistake: 'Conflating stages', reviewState: 'accepted', provenance: { generatedBy: human, sourceRefs: [], reviewedBy: human, reviewedAt: at } }));
+    const contexts: Record<string, string> = {};
+    await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.filter((t) => t.id === 'public-finance'), async (request) => {
+      contexts[request.profile] = request.context; return { providerReceipt: 'receipt', model: 'test', output: { conclusions: [], distinctions: [], citedIds: [], questions: [] } };
+    });
+    expect(contexts.graph).not.toContain('secret-distinction');
+    expect(contexts['cognitive-capsule']).toContain('secret-distinction');
   });
   it('charges evidence against the same context budget and omits dependent knowledge together', () => {
     const c = createCognitiveCapsule('budget'); const at = '2026-10-03T00:00:00Z'; const human = { type: 'human', id: 'expert', at };

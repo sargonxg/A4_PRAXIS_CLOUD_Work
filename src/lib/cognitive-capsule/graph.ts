@@ -1,4 +1,4 @@
-import { CognitiveCapsuleSchema, CognitiveNodeSchema, CognitiveStatementSchema, KnowledgeSchema } from './schema';
+import { CognitiveCapsuleSchema, CognitiveNodeSchema, CognitiveStatementSchema } from './schema';
 import type { CognitiveCapsule, CognitiveNode, CognitiveStatement, Condition, EvidenceSpan, ExpertHeuristic, Knowledge } from './types';
 
 export type ValidationIssue = { code: string; id: string; message: string };
@@ -15,6 +15,30 @@ export function withinTime(v: { validFrom?: string; validUntil?: string }, asOf:
   return (!v.validFrom || Date.parse(v.validFrom) <= at) && (!v.validUntil || Date.parse(v.validUntil) >= at);
 }
 export function withinScope(scopes: string[], scope: string): boolean { return scopes.includes(scope) || scopes.includes('general'); }
+export function knowledgeConditions(k: Knowledge): Condition[] {
+  switch (k.kind) {
+    case 'heuristic': return [...k.when, ...k.exceptions];
+    case 'cue': return [...k.onlyWhen, ...k.falsePositiveConditions];
+    case 'pattern': return [...k.expectedCues, ...k.optionalCues, ...k.disconfirmingCues, ...k.failureConditions];
+    case 'redFlag': return k.onlyWhen;
+    case 'exception': case 'revisionTrigger': return k.when;
+    case 'procedure': return [...k.stopConditions, ...k.escalationConditions, ...k.steps.flatMap((s) => [...s.branches, ...s.stopIf, ...s.escalateIf])];
+    default: return [];
+  }
+}
+/** Missing guard facts never establish that an exception or failure condition is absent. */
+export function knowledgeActivation(k: Knowledge, facts: ContextFacts): 'applied' | 'guarded' | 'blocked' {
+  const required = k.kind === 'heuristic' || k.kind === 'exception' || k.kind === 'revisionTrigger' ? k.when
+    : k.kind === 'cue' || k.kind === 'redFlag' ? k.onlyWhen : k.kind === 'pattern' ? k.expectedCues : [];
+  const guards = k.kind === 'heuristic' ? k.exceptions : k.kind === 'cue' ? k.falsePositiveConditions
+    : k.kind === 'pattern' ? [...k.disconfirmingCues, ...k.failureConditions]
+      : k.kind === 'procedure' ? [...k.stopConditions, ...k.escalationConditions, ...k.steps.flatMap((s) => [...s.stopIf, ...s.escalateIf])] : [];
+  if (guards.some((c) => conditionMatches(c, facts)) || required.some((c) => Object.hasOwn(facts, c.key) && !conditionMatches(c, facts))) return 'blocked';
+  if ([...required, ...guards].some((c) => !Object.hasOwn(facts, c.key))) return 'guarded';
+  // This compiler exposes methods; it does not execute a procedure's branch interpreter.
+  if (k.kind === 'procedure' && k.steps.some((s) => s.branches.length > 0)) return 'guarded';
+  return 'applied';
+}
 
 export class CognitiveGraph {
   private capsule: CognitiveCapsule;
@@ -48,10 +72,11 @@ export class CognitiveGraph {
     )));
   }
   findApplicableHeuristics(facts: ContextFacts, scope: string, asOf = new Date().toISOString()): ExpertHeuristic[] {
+    const invalid = new Set(this.validate().map((issue) => issue.id));
     return structuredClone(this.capsule.knowledge.filter((k): k is ExpertHeuristic => k.kind === 'heuristic'
       && k.reviewState === 'accepted' && withinScope(k.scope, scope) && withinTime(k, asOf)
-      && k.when.length > 0 && k.when.every((c) => conditionMatches(c, facts))
-      && !k.exceptions.some((c) => conditionMatches(c, facts))));
+      && k.when.length > 0 && knowledgeActivation(k, facts) === 'applied'
+      && !invalid.has(k.id)));
   }
   findLanguageRules(expression: string, scope: string, asOf = new Date().toISOString()) {
     return structuredClone(this.capsule.knowledge.filter((k) => k.kind === 'languageRule' && k.reviewState === 'accepted'
@@ -80,13 +105,14 @@ export class CognitiveGraph {
       if ('node' in s.object && !nodes.has(s.object.node) && !statements.has(s.object.node)) add('missing-node', s.id, `Missing object ${s.object.node}.`);
       for (const ref of [s.wordingRef, ...s.sourceRefs].filter((v): v is string => Boolean(v))) if (!spans.has(ref)) add('missing-evidence', s.id, `Missing evidence span ${ref}.`);
       for (const ref of [s.assertedBy, s.rationaleRef, ...s.addressedTo, ...s.audience].filter((v): v is string => Boolean(v))) if (!seen.has(ref)) add('missing-reference', s.id, `Missing annotation reference ${ref}.`);
-      for (const c of [...s.conditions, ...s.exceptions]) if (c.kind !== 'context' && !seen.has(c.key)) add('missing-reference', s.id, `Missing condition ${c.key}.`);
+      for (const c of [...s.conditions, ...s.exceptions]) if ((c.kind === 'node' && !nodes.has(c.key)) || (c.kind === 'statement' && !statements.has(c.key))) add('missing-reference', s.id, `Missing condition ${c.key}.`);
     }
     for (const n of this.capsule.nodes) if (n.type === 'aco:Commitment' && n.reviewState === 'accepted' && !this.capsule.statements.some((s) =>
       s.reviewState === 'accepted' && ((s.subject === n.id && ['COMMITTED_BY', 'HAS_ACTOR'].includes(s.predicate) && 'node' in s.object && nodes.get(s.object.node)?.type === 'aco:Actor')
         || ('node' in s.object && s.object.node === n.id && ['COMMITS', 'MAKES_COMMITMENT'].includes(s.predicate) && nodes.get(s.subject)?.type === 'aco:Actor'))))
       add('commitment-without-actor', n.id, 'An accepted commitment requires a linked actor.');
     for (const k of this.capsule.knowledge) {
+      for (const c of knowledgeConditions(k)) if ((c.kind === 'node' && !nodes.has(c.key)) || (c.kind === 'statement' && !statements.has(c.key))) add('missing-reference', k.id, `Missing ${c.kind} condition ${c.key}.`);
       const refs: string[] = k.kind === 'heuristic' ? [...k.attendTo, ...k.cases] : k.kind === 'cue' ? [...k.suggests, ...k.examples]
         : k.kind === 'exception' ? k.ruleRefs : k.kind === 'question' ? k.resolves : k.kind === 'revisionTrigger' ? k.affectedIds : k.kind === 'case' ? k.cues : [];
       for (const ref of refs) if (!seen.has(ref)) add('missing-reference', k.id, `Missing knowledge reference ${ref}.`);

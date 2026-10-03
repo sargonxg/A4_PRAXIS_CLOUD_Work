@@ -61,6 +61,18 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('edits only a selected interview item and preserves provenance across the reviewed group', async () => {
+    const db = architectDb();
+    const capsule = await createCapsule('u1', { capsuleId: 'interview-group' }, deps(db));
+    const cognition = createCognitiveCapsule(capsule.capsuleId);
+    for (const id of ['first', 'second']) cognition.knowledge.push(KnowledgeSchema.parse({ id, kind: 'distinction', label: `Distinction ${id}`, scope: ['budget'], conceptA: 'authorization', conceptB: 'expenditure', explanation: 'Approval is not payment.', whyItMatters: 'Avoid unsupported claims.', commonMistake: 'Treating approval as payment.', provenance: { generatedBy: { type: 'human', id: `original-${id}`, at: '2026-10-03T00:00:00Z' }, sourceRefs: [] } }));
+    const card = await createCapsuleReviewCard('u1', capsule.capsuleId, { title: 'Interview group', target: 'capsuleEnvelope', sourceType: 'user', proposedEnvelopePatch: { cognition } }, deps(db));
+    await expect(decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Reviewed every item.', edited: { ...cognition.knowledge[1], id: 'unselected' } }, deps(db))).rejects.toThrow(/proposed by this review card/);
+    const result = await decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Inspected every interview item; corrected the second label.', edited: { ...cognition.knowledge[1], label: 'Edited second distinction', provenance: { ...cognition.knowledge[1].provenance, generatedBy: { type: 'human', id: 'forged-author', at: '2026-10-03T00:00:00Z' } } } }, deps(db));
+    expect(result?.capsule.cognition?.knowledge.map((item) => item.reviewState)).toEqual(['accepted', 'accepted']);
+    expect(result?.capsule.cognition?.knowledge[0]).toMatchObject({ label: 'Distinction first', provenance: { generatedBy: { id: 'original-first' }, reviewedBy: { id: 'u1' } } });
+    expect(result?.capsule.cognition?.knowledge[1]).toMatchObject({ label: 'Edited second distinction', provenance: { generatedBy: { id: 'original-second' }, reviewedBy: { id: 'u1' } } });
+  });
   it('forks expertise with a new capsule identity while preserving reviewed content and provenance', async () => {
     const db = new FakeFirestore();
     const cognition = createCognitiveCapsule('expert-parent', '2.1.0');

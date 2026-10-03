@@ -1,0 +1,2 @@
+# Preserve the supplied architecture document exactly, including its original line endings.
+docs/product/COGNITIVE_CAPSULE_MASTER_PLAN_2026-10-02.md -text

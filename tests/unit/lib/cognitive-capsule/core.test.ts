@@ -60,7 +60,8 @@ describe('cognitive graph and review', () => {
   it('excludes heuristics whose exception is present or whose condition is unknown', () => {
     const c = capsule(); c.knowledge.push(KnowledgeSchema.parse({ kind: 'heuristic', id: 'h1', label: 'Contact continues', scope: ['diplomacy'], provenance, reviewState: 'accepted', when: [{ kind: 'context', key: 'public-rejection', operator: 'present' }, { kind: 'context', key: 'technical-contact', operator: 'present' }], exceptions: [{ kind: 'context', key: 'formal-withdrawal', operator: 'present' }], interpretation: 'Audience management may explain rejection', rationale: 'Expert practice rule' }));
     const graph = new CognitiveGraph(c);
-    expect(graph.findApplicableHeuristics({ 'public-rejection': true, 'technical-contact': true }, 'diplomacy')).toHaveLength(1);
+    expect(graph.findApplicableHeuristics({ 'public-rejection': true, 'technical-contact': true, 'formal-withdrawal': false }, 'diplomacy')).toHaveLength(1);
+    expect(graph.findApplicableHeuristics({ 'public-rejection': true, 'technical-contact': true }, 'diplomacy')).toHaveLength(0);
     expect(graph.findApplicableHeuristics({ 'public-rejection': true, 'technical-contact': true, 'formal-withdrawal': true }, 'diplomacy')).toHaveLength(0);
     expect(graph.findApplicableHeuristics({}, 'diplomacy')).toHaveLength(0);
   });

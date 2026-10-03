@@ -49,6 +49,7 @@ import { POLICY_MISSION_EXAMPLES } from '@/lib/product/policy-missions';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
 import { DIRECT_ASK_HISTORY_CAPSULE_ID } from '@/lib/ai/ask-conversation';
+import { CapsuleLessonCapture } from '@/components/capsules/CapsuleLessonCapture';
 import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import type { Situation } from '@/types/situation';
 
@@ -567,6 +568,7 @@ export function PraxisChat({
                   onExportToEditor={isPublic ? undefined : exportMessageToEditor}
                   onContinueWithoutOnboarding={continueWithoutOnboarding}
                   variant={variant}
+                  teachingEnabled={!isPublic && !demoMode}
                 />
               ))}
               <div ref={messagesEndRef} />
@@ -704,6 +706,7 @@ function ChatBubble({
   onExportToEditor,
   onContinueWithoutOnboarding,
   variant,
+  teachingEnabled,
 }: {
   activeSituation?: Situation | null;
   isStreaming: boolean;
@@ -711,6 +714,7 @@ function ChatBubble({
   onExportToEditor?: (message: ChatMessage) => Promise<string | null>;
   onContinueWithoutOnboarding?: (prompt: string) => Promise<void>;
   variant: 'home' | 'floating';
+  teachingEnabled?: boolean;
 }) {
   const isAssistant = message.role === 'assistant';
   return (
@@ -761,6 +765,9 @@ function ChatBubble({
           {!isStreaming && message.content.trim() ? (
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <ResponseActions message={message} situation={activeSituation} question={message.question} />
+              {teachingEnabled && message.answerEnvelope?.groundingReceipt.capsuleId && message.answerEnvelope.groundingReceipt.capsuleId !== DIRECT_ASK_HISTORY_CAPSULE_ID ? (
+                <CapsuleLessonCapture capsuleId={message.answerEnvelope.groundingReceipt.capsuleId} answerId={message.id} />
+              ) : null}
               {onExportToEditor && message.answerEnvelope?.documentPackCandidate ? (
                 <ExportToEditorButton message={message} onExportToEditor={onExportToEditor} variant={variant} />
               ) : null}

@@ -1,0 +1,4639 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "cognitive-capsule/vNext"
+    },
+    "capsuleId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "profile": {
+      "default": "expertise",
+      "type": "string",
+      "enum": [
+        "situation",
+        "expertise",
+        "method",
+        "language",
+        "organization",
+        "role",
+        "casebook",
+        "output"
+      ]
+    },
+    "nodes": {
+      "default": [],
+      "maxItems": 5000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "layer": {
+            "type": "string",
+            "enum": [
+              "world",
+              "epistemic",
+              "argument",
+              "expertise",
+              "language",
+              "procedure",
+              "temporal",
+              "case",
+              "normative",
+              "provenance"
+            ]
+          },
+          "reviewState": {
+            "default": "proposed",
+            "type": "string",
+            "enum": [
+              "proposed",
+              "reviewed",
+              "accepted",
+              "rejected",
+              "superseded"
+            ]
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "generatedBy": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "human",
+                      "model",
+                      "rule",
+                      "import"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "id",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              "sourceRefs": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "derivedFrom": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "reviewedBy": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "human",
+                      "model",
+                      "rule",
+                      "import"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "id",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              "reviewedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "confidenceKind": {
+                "default": "model-proposed",
+                "type": "string",
+                "enum": [
+                  "human-authored",
+                  "human-confirmed",
+                  "model-extracted",
+                  "model-proposed",
+                  "rule-inferred",
+                  "imported",
+                  "derived",
+                  "expert-practice-rule"
+                ]
+              }
+            },
+            "required": [
+              "generatedBy",
+              "sourceRefs",
+              "derivedFrom",
+              "confidenceKind"
+            ],
+            "additionalProperties": false
+          },
+          "validFrom": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+          },
+          "validUntil": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "label",
+          "layer",
+          "reviewState",
+          "provenance"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "statements": {
+      "default": [],
+      "maxItems": 10000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "subject": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "predicate": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "object": {
+            "anyOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  }
+                },
+                "required": [
+                  "node"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "literal": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      },
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "boolean"
+                      }
+                    ]
+                  }
+                },
+                "required": [
+                  "literal"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          },
+          "layer": {
+            "type": "string",
+            "enum": [
+              "world",
+              "epistemic",
+              "argument",
+              "expertise",
+              "language",
+              "procedure",
+              "temporal",
+              "case",
+              "normative",
+              "provenance"
+            ]
+          },
+          "polarity": {
+            "type": "string",
+            "enum": [
+              "positive",
+              "negative",
+              "mixed"
+            ]
+          },
+          "modality": {
+            "type": "string",
+            "enum": [
+              "asserted",
+              "possible",
+              "probable",
+              "conditional",
+              "counterfactual",
+              "desired",
+              "obligatory"
+            ]
+          },
+          "strength": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "conditions": {
+            "default": [],
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "context",
+                    "node",
+                    "statement"
+                  ]
+                },
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "present",
+                    "absent",
+                    "equals"
+                  ]
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 4000
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "key",
+                "operator"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "exceptions": {
+            "default": [],
+            "maxItems": 100,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "context",
+                    "node",
+                    "statement"
+                  ]
+                },
+                "key": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                },
+                "operator": {
+                  "type": "string",
+                  "enum": [
+                    "present",
+                    "absent",
+                    "equals"
+                  ]
+                },
+                "value": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "maxLength": 4000
+                    },
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "boolean"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "kind",
+                "key",
+                "operator"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "validFrom": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+          },
+          "validUntil": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+          },
+          "observedAt": {
+            "type": "string",
+            "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+          },
+          "assertedBy": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "addressedTo": {
+            "default": [],
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          "audience": {
+            "default": [],
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          "channel": {
+            "type": "string",
+            "enum": [
+              "public",
+              "private",
+              "confidential",
+              "internal"
+            ]
+          },
+          "speechAct": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "language": {
+            "type": "string",
+            "maxLength": 40
+          },
+          "wordingRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "sourceRefs": {
+            "default": [],
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          "rationaleRef": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "annotations": {
+            "default": [],
+            "maxItems": 200,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 240
+            }
+          },
+          "reviewState": {
+            "default": "proposed",
+            "type": "string",
+            "enum": [
+              "proposed",
+              "reviewed",
+              "accepted",
+              "rejected",
+              "superseded"
+            ]
+          },
+          "provenance": {
+            "type": "object",
+            "properties": {
+              "generatedBy": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "human",
+                      "model",
+                      "rule",
+                      "import"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "id",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              "sourceRefs": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "derivedFrom": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "reviewedBy": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "human",
+                      "model",
+                      "rule",
+                      "import"
+                    ]
+                  },
+                  "id": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 240
+                  },
+                  "at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  }
+                },
+                "required": [
+                  "type",
+                  "id",
+                  "at"
+                ],
+                "additionalProperties": false
+              },
+              "reviewedAt": {
+                "type": "string",
+                "format": "date-time",
+                "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+              },
+              "confidenceKind": {
+                "default": "model-proposed",
+                "type": "string",
+                "enum": [
+                  "human-authored",
+                  "human-confirmed",
+                  "model-extracted",
+                  "model-proposed",
+                  "rule-inferred",
+                  "imported",
+                  "derived",
+                  "expert-practice-rule"
+                ]
+              }
+            },
+            "required": [
+              "generatedBy",
+              "sourceRefs",
+              "derivedFrom",
+              "confidenceKind"
+            ],
+            "additionalProperties": false
+          }
+        },
+        "required": [
+          "id",
+          "subject",
+          "predicate",
+          "object",
+          "layer",
+          "polarity",
+          "conditions",
+          "exceptions",
+          "addressedTo",
+          "audience",
+          "sourceRefs",
+          "annotations",
+          "reviewState",
+          "provenance"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "evidence": {
+      "default": [],
+      "maxItems": 10000,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "sourceId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "sourceVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4000
+          },
+          "uri": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "page": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "maximum": 9007199254740991
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "prefix": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "suffix": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "quoteHash": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "sourceHash": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "documentId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "chunkId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "citationId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "geometry": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "y": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "width": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "height": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "width",
+              "height"
+            ],
+            "additionalProperties": false
+          },
+          "anchorStatus": {
+            "default": "excerpt",
+            "type": "string",
+            "enum": [
+              "exact",
+              "excerpt",
+              "unresolved"
+            ]
+          },
+          "stance": {
+            "default": "supports",
+            "type": "string",
+            "enum": [
+              "supports",
+              "contradicts",
+              "qualifies",
+              "mixed"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "sourceId",
+          "sourceVersion",
+          "quote",
+          "anchorStatus",
+          "stance"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "knowledge": {
+      "default": [],
+      "maxItems": 2000,
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "cue"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "suggests": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "significance": {
+                "default": "context_dependent",
+                "type": "string",
+                "enum": [
+                  "weak",
+                  "moderate",
+                  "strong",
+                  "context_dependent"
+                ]
+              },
+              "onlyWhen": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "falsePositiveConditions": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "followUpChecks": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "doNotInfer": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "examples": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "description",
+              "suggests",
+              "significance",
+              "onlyWhen",
+              "falsePositiveConditions",
+              "followUpChecks",
+              "doNotInfer",
+              "examples"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "pattern"
+              },
+              "expectedCues": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "optionalCues": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "disconfirmingCues": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "interpretation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "likelyEvolution": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "recommendedChecks": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "failureConditions": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "expectedCues",
+              "optionalCues",
+              "disconfirmingCues",
+              "interpretation",
+              "likelyEvolution",
+              "recommendedChecks",
+              "failureConditions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "heuristic"
+              },
+              "when": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "attendTo": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "interpretation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "action": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "exceptions": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "failureModes": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "nextChecks": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "rationale": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "cases": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "when",
+              "attendTo",
+              "interpretation",
+              "exceptions",
+              "failureModes",
+              "nextChecks",
+              "rationale",
+              "cases"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "distinction"
+              },
+              "conceptA": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "conceptB": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "whyItMatters": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "decisionTests": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "commonMistake": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "examples": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "counterexamples": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "expertRefs": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "conceptA",
+              "conceptB",
+              "explanation",
+              "whyItMatters",
+              "decisionTests",
+              "commonMistake",
+              "examples",
+              "counterexamples",
+              "expertRefs"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "exception"
+              },
+              "ruleRefs": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "when": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "requiredChecks": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "ruleRefs",
+              "when",
+              "explanation",
+              "requiredChecks"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "redFlag"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "onlyWhen": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "possibleSignificance": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "doNotInfer": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "nextEvidence": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "description",
+              "onlyWhen",
+              "possibleSignificance",
+              "doNotInfer",
+              "nextEvidence"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "question"
+              },
+              "question": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "whyItMatters": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "resolves": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "requiredEvidence": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "question",
+              "whyItMatters",
+              "resolves",
+              "requiredEvidence"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "languageRule"
+              },
+              "expression": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "language": {
+                "type": "string",
+                "minLength": 2,
+                "maxLength": 40
+              },
+              "meaning": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "domain": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "speechAct": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "audience": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "preferredAlternatives": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "avoidAlternatives": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "implications": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "nonImplications": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "examples": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "expression",
+              "language",
+              "meaning",
+              "domain",
+              "audience",
+              "preferredAlternatives",
+              "avoidAlternatives",
+              "implications",
+              "nonImplications",
+              "examples"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "procedure"
+              },
+              "purpose": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "inputs": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "outputs": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "steps": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "instruction": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 4000
+                    },
+                    "requires": {
+                      "default": [],
+                      "maxItems": 200,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      }
+                    },
+                    "produces": {
+                      "default": [],
+                      "maxItems": 200,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      }
+                    },
+                    "precedes": {
+                      "default": [],
+                      "maxItems": 200,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      }
+                    },
+                    "checks": {
+                      "default": [],
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 4000
+                      }
+                    },
+                    "branches": {
+                      "default": [],
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "context",
+                              "node",
+                              "statement"
+                            ]
+                          },
+                          "key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 240
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              "present",
+                              "absent",
+                              "equals"
+                            ]
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 4000
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "key",
+                          "operator"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "stopIf": {
+                      "default": [],
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "context",
+                              "node",
+                              "statement"
+                            ]
+                          },
+                          "key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 240
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              "present",
+                              "absent",
+                              "equals"
+                            ]
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 4000
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "key",
+                          "operator"
+                        ],
+                        "additionalProperties": false
+                      }
+                    },
+                    "escalateIf": {
+                      "default": [],
+                      "maxItems": 100,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "kind": {
+                            "type": "string",
+                            "enum": [
+                              "context",
+                              "node",
+                              "statement"
+                            ]
+                          },
+                          "key": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 240
+                          },
+                          "operator": {
+                            "type": "string",
+                            "enum": [
+                              "present",
+                              "absent",
+                              "equals"
+                            ]
+                          },
+                          "value": {
+                            "anyOf": [
+                              {
+                                "type": "string",
+                                "maxLength": 4000
+                              },
+                              {
+                                "type": "number"
+                              },
+                              {
+                                "type": "boolean"
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "kind",
+                          "key",
+                          "operator"
+                        ],
+                        "additionalProperties": false
+                      }
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "instruction",
+                    "requires",
+                    "produces",
+                    "precedes",
+                    "checks",
+                    "branches",
+                    "stopIf",
+                    "escalateIf"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "stopConditions": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "escalationConditions": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "purpose",
+              "inputs",
+              "outputs",
+              "steps",
+              "stopConditions",
+              "escalationConditions"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "case"
+              },
+              "situation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "cues": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "interpretation": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "decision": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "outcome": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "lessons": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "analogyDimensions": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "nonTransferableDimensions": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "reviewedBy": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "situation",
+              "cues",
+              "interpretation",
+              "decision",
+              "lessons",
+              "analogyDimensions",
+              "nonTransferableDimensions",
+              "reviewedBy"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "unknown"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "requiredEvidence": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 4000
+                }
+              },
+              "outOfScope": {
+                "default": false,
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "description",
+              "requiredEvidence",
+              "outOfScope"
+            ],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 240
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "scope": {
+                "minItems": 1,
+                "maxItems": 30,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "provenance": {
+                "type": "object",
+                "properties": {
+                  "generatedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "sourceRefs": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "derivedFrom": {
+                    "default": [],
+                    "maxItems": 200,
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    }
+                  },
+                  "reviewedBy": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "human",
+                          "model",
+                          "rule",
+                          "import"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 240
+                      },
+                      "at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "id",
+                      "at"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "reviewedAt": {
+                    "type": "string",
+                    "format": "date-time",
+                    "pattern": "^(?:(?:\\d\\d[2468][048]|\\d\\d[13579][26]|\\d\\d0[48]|[02468][048]00|[13579][26]00)-02-29|\\d{4}-(?:(?:0[13578]|1[02])-(?:0[1-9]|[12]\\d|3[01])|(?:0[469]|11)-(?:0[1-9]|[12]\\d|30)|(?:02)-(?:0[1-9]|1\\d|2[0-8])))T(?:(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d(?:\\.\\d+)?)?(?:Z|([+-](?:[01]\\d|2[0-3]):[0-5]\\d)))$"
+                  },
+                  "confidenceKind": {
+                    "default": "model-proposed",
+                    "type": "string",
+                    "enum": [
+                      "human-authored",
+                      "human-confirmed",
+                      "model-extracted",
+                      "model-proposed",
+                      "rule-inferred",
+                      "imported",
+                      "derived",
+                      "expert-practice-rule"
+                    ]
+                  }
+                },
+                "required": [
+                  "generatedBy",
+                  "sourceRefs",
+                  "derivedFrom",
+                  "confidenceKind"
+                ],
+                "additionalProperties": false
+              },
+              "reviewState": {
+                "default": "proposed",
+                "type": "string",
+                "enum": [
+                  "proposed",
+                  "reviewed",
+                  "accepted",
+                  "rejected",
+                  "superseded"
+                ]
+              },
+              "migrationStatus": {
+                "default": "native",
+                "type": "string",
+                "enum": [
+                  "native",
+                  "needs_review"
+                ]
+              },
+              "validFrom": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "validUntil": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}(?:T.*)?$"
+              },
+              "reviewDecision": {
+                "type": "string",
+                "enum": [
+                  "accept",
+                  "edit_accept",
+                  "reject",
+                  "need_evidence"
+                ]
+              },
+              "reviewNote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              },
+              "kind": {
+                "type": "string",
+                "const": "revisionTrigger"
+              },
+              "when": {
+                "default": [],
+                "maxItems": 100,
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "kind": {
+                      "type": "string",
+                      "enum": [
+                        "context",
+                        "node",
+                        "statement"
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 240
+                    },
+                    "operator": {
+                      "type": "string",
+                      "enum": [
+                        "present",
+                        "absent",
+                        "equals"
+                      ]
+                    },
+                    "value": {
+                      "anyOf": [
+                        {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        }
+                      ]
+                    }
+                  },
+                  "required": [
+                    "kind",
+                    "key",
+                    "operator"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "affectedIds": {
+                "default": [],
+                "maxItems": 200,
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 240
+                }
+              },
+              "action": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 4000
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "scope",
+              "provenance",
+              "reviewState",
+              "migrationStatus",
+              "kind",
+              "when",
+              "affectedIds",
+              "action"
+            ],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "dependencies": {
+      "default": [],
+      "maxItems": 100,
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "pattern": "^[a-zA-Z0-9._-]+\\/[a-zA-Z0-9._-]+$"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "digest": {
+            "type": "string",
+            "pattern": "^sha256:[a-f0-9]{64}$"
+          }
+        },
+        "required": [
+          "name",
+          "version",
+          "digest"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "rights": {
+      "default": {
+        "mode": "private"
+      },
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "open",
+            "private",
+            "organization",
+            "licensed"
+          ]
+        },
+        "license": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        }
+      },
+      "required": [
+        "mode"
+      ],
+      "additionalProperties": false
+    },
+    "legacy": {
+      "type": "object",
+      "properties": {
+        "capsuleVersion": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "schemaVersion": {
+          "type": "number",
+          "const": 3
+        }
+      },
+      "required": [
+        "capsuleVersion",
+        "schemaVersion"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "capsuleId",
+    "version",
+    "profile",
+    "nodes",
+    "statements",
+    "evidence",
+    "knowledge",
+    "dependencies",
+    "rights"
+  ],
+  "additionalProperties": false
+}

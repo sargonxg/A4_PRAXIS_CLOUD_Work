@@ -49,6 +49,15 @@ type MockedAuthRouteHandler = (
 ) => Promise<Response>;
 
 describe('GET /api/context/capsules', () => {
+  it('returns a clear conflict instead of silently dropping expertise in an unsupported combination', async () => {
+    service.combineCapsules.mockRejectedValueOnce(Object.assign(new Error('Combining Cognitive Capsules is not supported yet. Attach them together.'), { status: 409, code: 'COGNITIVE_COMBINE_UNSUPPORTED' }));
+    const { POST } = await import('@/app/api/context/capsules/route');
+    const response = await (POST as unknown as MockedAuthRouteHandler)(new Request('http://localhost/api/context/capsules', {
+      method: 'POST', body: JSON.stringify({ action: 'combine', capsuleIds: ['cognitive', 'legacy'] }),
+    }), { uid: 'u1', isDemo: false });
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'COGNITIVE_COMBINE_UNSUPPORTED', error: expect.stringContaining('Attach them together') });
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

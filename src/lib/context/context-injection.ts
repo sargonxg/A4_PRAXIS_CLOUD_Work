@@ -17,6 +17,7 @@ import {
 } from '@/lib/context/capsule-service';
 import { buildCapsuleStarterPromptBlock } from '@/lib/product/context-capsules';
 import { resolveCapsuleReference, stackWithResolvedGoverningCapsule, validateCapsuleVersionPins } from './capsule-version-resolution';
+import { cognitiveContextForCapsule } from '@/lib/cognitive-capsule/context-adapter';
 
 export interface InjectableContextInput {
   uid: string;
@@ -230,6 +231,7 @@ export function buildCapsulePromptBlock(
     buildGenerationContractPromptBlock(capsule, input.associatedCapsules ?? []),
     buildBuilderDraftPromptBlock(capsule),
     buildAdvisoryMemoryPromptBlock(capsule),
+    cognitiveContextForCapsule(capsule, { asOf: input.resolvedAt, maxChars: 8000 }).text,
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
     `limit: ${capsule.retrievalPolicy.limit}`,

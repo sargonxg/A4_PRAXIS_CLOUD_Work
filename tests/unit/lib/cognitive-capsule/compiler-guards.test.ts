@@ -25,7 +25,11 @@ describe('compiled expert guards and exact rendered budgets', () => {
     expect(unknown.guardedCandidates).toContainEqual(expect.objectContaining({ activation: 'not-applied', knowledge: expect.objectContaining({ id: 'k' }) }));
     expect(renderContext(unknown)).toContain('guarded_candidate_not_applied');
     expect(compileContext(c, { ...base, facts: { signal: true, misleading: false } }).knowledge).toHaveLength(1);
-    if (record.kind === 'pattern' || record.kind === 'cue') expect(compileContext(c, { ...base, facts: { signal: true, misleading: true } }).knowledge).toHaveLength(0);
+    if (record.kind === 'pattern' || record.kind === 'cue') {
+      const missingGuard = compileContext(c, { ...base, facts: { signal: true } });
+      expect(missingGuard.knowledge).toHaveLength(0); expect(missingGuard.guardedCandidates).toHaveLength(1);
+      expect(compileContext(c, { ...base, facts: { signal: true, misleading: true } }).knowledge).toHaveLength(0);
+    }
   });
   it('validates node/statement condition targets throughout knowledge including procedure steps', () => {
     for (const record of records) {
@@ -45,5 +49,32 @@ describe('compiled expert guards and exact rendered budgets', () => {
     expect(renderContext(view).length).toBeLessThanOrEqual(1800);
     expect(view.knowledge).toHaveLength(0);
     expect(cognitiveContextForCapsule({ capsuleId: 'c', cognition: context(records[0]) }, { role: 'domain-specialist', asOf: at }).text).toContain('guarded_candidate_not_applied');
+  });
+  it.each(['stopConditions', 'escalationConditions', 'stopIf', 'escalateIf'])('keeps procedure %s controls mandatory and never applies an unknown guard', (field) => {
+    const control = [{ ...condition, key: 'unsafe' }];
+    const c = context({ kind: 'procedure', purpose: 'Review',
+      ...(field === 'stopConditions' || field === 'escalationConditions' ? { [field]: control } : {}),
+      steps: [{ id: 'step', instruction: 'Inspect evidence', ...(field === 'stopIf' || field === 'escalateIf' ? { [field]: control } : {}) }] });
+    const input = { objective: 'Review', role: 'domain-specialist' as const, scope: 'diplomacy', asOf: at };
+    expect(compileContext(c, { ...input, facts: { unsafe: true } }).knowledge).toHaveLength(0);
+    const unknown = compileContext(c, input);
+    expect(unknown.knowledge).toHaveLength(0); expect(unknown.guardedCandidates).toHaveLength(1);
+    expect(compileContext(c, { ...input, facts: { unsafe: false } }).knowledge).toHaveLength(1);
+  });
+  it('retains procedure branch conditions as conditional data rather than claiming step execution', () => {
+    const c = context({ kind: 'procedure', purpose: 'Review', steps: [{ id: 'step', instruction: 'Inspect', branches: [condition] }] });
+    const view = compileContext(c, { objective: 'Review', role: 'domain-specialist', scope: 'diplomacy', asOf: at, facts: { signal: true } });
+    expect(view.knowledge).toHaveLength(0); expect(view.guardedCandidates).toHaveLength(1);
+    expect(renderContext(view)).toContain('branches');
+  });
+  it('captures evidence-backed cue examples even when provenance has no sourceRefs, within one budget', () => {
+    const c = context({ kind: 'cue', description: 'Quoted cue', examples: ['example'] });
+    c.evidence.push({ id: 'example', sourceId: 'source', sourceVersion: '1', quote: 'q'.repeat(3000), anchorStatus: 'exact', stance: 'qualifies' });
+    const input = { objective: 'Assess', role: 'domain-specialist' as const, scope: 'diplomacy', asOf: at };
+    const full = compileContext(c, input);
+    expect(full.evidence).toHaveLength(1); expect(full.receipt.evidenceSpans).toContainEqual(expect.objectContaining({ id: 'example', sourceId: 'source', sourceVersion: '1' }));
+    const limited = compileContext(c, { ...input, maxChars: 1500 });
+    expect(limited.knowledge).toHaveLength(0); expect(limited.evidence).toHaveLength(0);
+    expect(renderContext(limited).length).toBeLessThanOrEqual(1500);
   });
 });

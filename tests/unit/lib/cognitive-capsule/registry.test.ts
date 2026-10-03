@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -38,5 +38,15 @@ describe('private local content addressed registry', () => {
     expect(fork.capsuleId).toBe('local/fork'); expect(fork.version).toBe('0.1.0');
     expect((await r.list()).length).toBe(1);
     await expect(r.fork(c.capsuleId, c.version, '../escape', { allowWrite: true })).rejects.toThrow(/identity/);
+  });
+  it('rejects incompatible redistribution rights and symlink registry targets', async () => {
+    const r = await registry();
+    const dep = await r.publish(await packCapsule(createCognitiveCapsule('local/private', '1.0.0')), { allowWrite: true });
+    const open = createCognitiveCapsule('local/open', '1.0.0'); open.rights = { mode: 'open', license: 'CC0' };
+    open.dependencies = [{ name: dep.name, version: dep.version, digest: dep.digest }];
+    await expect(r.publish(await packCapsule(open), { allowWrite: true })).rejects.toThrow(/rights/);
+    const parent = await mkdtemp(join(tmpdir(), 'praxis-link-')); roots.push(parent);
+    await symlink(r.root, join(parent, 'alias'), 'junction');
+    await expect(new LocalCapsuleRegistry(join(parent, 'alias')).publish(await packCapsule(createCognitiveCapsule('local/test')), { allowWrite: true })).rejects.toThrow(/symlink/);
   });
 });

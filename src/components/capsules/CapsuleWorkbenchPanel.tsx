@@ -28,6 +28,7 @@ import { CapsuleGraphSection } from '@/components/capsules/workbench/CapsuleGrap
 import { CapsuleResearchSection } from '@/components/capsules/workbench/CapsuleResearchSection';
 import { StatePill } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
 import { CapsuleMethodInspection } from '@/components/capsules/CapsuleMethodInspection';
+import { CapsuleExpertisePanel } from '@/components/capsules/CapsuleExpertisePanel';
 
 const CapsuleAgentView = dynamic(() => import('@/components/capsules/CapsuleAgentView'), {
   ssr: false,
@@ -94,6 +95,7 @@ export function CapsuleWorkbenchPanel({
         onInspect={(category) => setInspectedCategory(category.id)}
       />
       <CapsuleMethodInspection snapshot={activeCapsule.starterSnapshot} />
+      <CapsuleExpertisePanel key={model.capsuleId} capsuleId={model.capsuleId} capsuleVersion={activeCapsule.version} onReviewed={setReviewedCapsule} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <CapsuleWorkbenchViewToggle value={workbenchView} onChange={setWorkbenchView} />
         <div className="flex items-center gap-2">

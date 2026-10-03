@@ -2,6 +2,8 @@ import { TACITUS_CORE_PRIMITIVES } from '@/lib/graph/core-primitives';
 import { getOntology } from '@/lib/ontology/registry';
 import { validateOntologyReadiness } from '@/lib/ontology/validator-pass-rate';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import { cognitiveContextForCapsule } from '@/lib/cognitive-capsule/context-adapter';
+import type { ContextCompilationReceipt } from '@/lib/cognitive-capsule/compiler';
 import {
   buildTemporalTimeline,
   isTemporalIntent,
@@ -42,6 +44,7 @@ export interface AgentContextGroundingMap {
 }
 
 export interface AgentContextPacketResult {
+  cognitiveReceipt?: ContextCompilationReceipt;
   packetText: string;
   selected: SelectedAgentContext;
   omitted: OmittedContextItem[];
@@ -73,15 +76,20 @@ export function buildAgentContextPacket(input: BuildAgentContextPacketInput): Ag
     requestTime: input.requestTime,
     temporalIntent,
   });
-  const selected = enforceRenderedTokenBudget(selection, input);
+  const selected = enforceRenderedTokenBudget(selection, { ...input, temporalIntent });
   const render = buildRenderContext(selected);
   const groundingMap = buildGroundingMap(selected, render);
   const temporalTimeline = buildTemporalTimeline({
     capsule: input.capsule,
     requestTime: input.requestTime,
   });
+  const basePacket = renderPacket({ ...input, temporalIntent }, selected, render, temporalTimeline);
+  const remainingChars = Math.max(0, agentContextBudgetForTier(input.budgetTier).maxTokens * 4 - basePacket.length - 1);
+  const cognitive = cognitiveContextForCapsule(input.capsule, { objective: input.userQuery ?? undefined, asOf: input.requestTime, maxChars: Math.min(6000, remainingChars) });
+  const renderInput = { ...input, cognitiveText: cognitive.text };
   return {
-    packetText: renderPacket({ ...input, temporalIntent }, selected, render, temporalTimeline),
+    packetText: renderPacket({ ...renderInput, temporalIntent }, selected, render, temporalTimeline),
+    ...(cognitive.view ? { cognitiveReceipt: cognitive.view.receipt } : {}),
     selected,
     omitted: selected.omitted,
     groundingMap,
@@ -110,7 +118,7 @@ export function appendAgentContextPacketToPromptBlock(input: BuildAgentContextPa
 }
 
 function renderPacket(
-  input: BuildAgentContextPacketInput,
+  input: BuildAgentContextPacketInput & { cognitiveText?: string },
   selection: AgentContextSelectionResult,
   render: RenderContext,
   temporalTimeline: TemporalTimeline,
@@ -123,7 +131,7 @@ function renderPacket(
     `packet_id: capsule:${capsule.capsuleId}:turn:${clean(input.turnId) || 'unknown'}:graph-packet-v1`,
     `capsule: ${capsule.capsuleId} v${capsule.version}`,
     `as_of: ${temporality.asOf ?? input.requestTime}`,
-    `query: ${clean(input.userQuery) || 'none'}`,
+    `query: ${shorten(clean(input.userQuery), 1000) || 'none'}`,
     `budget: ${estimateTokens(renderSelectionBody(selection, render))}/${budget.maxTokens}`,
     'canonical_store: Firestore ContextCapsules',
     'advisory_policy: advisory graph rows require review before promotion',
@@ -137,6 +145,7 @@ function renderPacket(
     renderReasoningPaths(selection.paths, selection, render),
     renderTemporalFrame(capsule, selection, input.requestTime, render, temporalTimeline, Boolean(input.temporalIntent)),
     renderCausalChains(selection, render),
+    input.cognitiveText ?? '',
     renderAgentUseInstructions(),
   ].join('\n');
   return body;
@@ -412,7 +421,7 @@ function renderAgentUseInstructions(): string {
 
 function enforceRenderedTokenBudget(
   selection: AgentContextSelectionResult,
-  input: BuildAgentContextPacketInput,
+  input: BuildAgentContextPacketInput & { cognitiveText?: string },
 ): AgentContextSelectionResult {
   const budget = agentContextBudgetForTier(input.budgetTier);
   const temporalTimeline = buildTemporalTimeline({

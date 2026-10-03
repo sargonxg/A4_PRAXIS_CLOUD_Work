@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CognitiveCapsuleSchema } from '@/lib/cognitive-capsule/schema';
 
 import { deriveCapsuleQuality, type CapsuleQualityResult } from '@/lib/context/capsule-quality';
 import {
@@ -113,6 +114,8 @@ const EnvelopeCoreRefsPatchSchema = z.object({
 }).strict();
 
 export const CapsuleEnvelopePatchSchema = z.object({
+  cognition: CognitiveCapsuleSchema.refine((value) => new TextEncoder().encode(JSON.stringify(value)).length <= 500_000,
+    'Cognitive extensions must be smaller than 500 kB.').optional(),
   label: z.string().min(1).max(160).optional(),
   summary: z.string().min(1).max(600).optional(),
   coreRefs: EnvelopeCoreRefsPatchSchema.optional(),

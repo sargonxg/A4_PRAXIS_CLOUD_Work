@@ -20,14 +20,14 @@ describe('bounded expert interview proposals', () => {
       expect(getExpertInterviewQuestions(mode)).toEqual(questions);
       const result = proposeFromExpertInterview({ mode, answers: {} }, context());
       expect(result.status).toBe('needs_answers');
-      if (result.status === 'needs_answers') expect(result.missing.map((q) => q.key)).toContain('label');
+      if (result.status === 'needs_answers') expect(result.missingQuestions.map((q) => q.key)).toContain('label');
     }
   });
   it('requires explicit applicability and exception answers instead of inventing missing conditions', () => {
     const answers = { ...common, situation: 'Public refusal while technical talks continued.', interpretation: 'Refusal may address an audience.', decision: 'Check technical contacts.', rationale: 'Continuing contacts distinguished this incident.', failureModes: [], nextChecks: ['Look for withdrawal.'] };
     const result = proposeFromExpertInterview({ mode: 'critical-decision', answers }, context());
     expect(result.status).toBe('needs_answers');
-    if (result.status === 'needs_answers') expect(result.missing.map((q) => q.key)).toEqual(['when', 'exceptions']);
+    if (result.status === 'needs_answers') expect(result.missingQuestions.map((q) => q.key)).toEqual(['when', 'exceptions']);
     const complete = proposeFromExpertInterview({ mode: 'critical-decision', answers: { ...answers, when, exceptions: [] } }, context());
     expect(complete.status).toBe('ready');
     if (complete.status === 'ready') {
@@ -58,5 +58,25 @@ describe('bounded expert interview proposals', () => {
     expect(() => proposeFromExpertInterview({ mode: 'language', answers }, { ...context(), author: { ...author, type: 'model' } })).toThrow(/human/);
     expect(() => proposeFromExpertInterview({ mode: 'exception', answers: { ...common, ruleRefs: ['missing-rule'], when, explanation: 'The rule fails here.', requiredChecks: [] } }, context())).toThrow(/reference|rule/);
     expect(() => proposeFromExpertInterview({ mode: 'language', answers: { ...answers, reviewState: 'accepted' } }, context())).toThrow();
+  });
+  it('captures an exception to a known rule with honest undocumented recollection and bounded inputs', () => {
+    const ctx = context();
+    ctx.capsule.knowledge.push(KnowledgeSchema.parse({ kind: 'heuristic', id: 'rule-1', label: 'Contact rule', scope: ['diplomacy'], when, exceptions: [], interpretation: 'Contact may leave negotiating room.', rationale: 'Expert practice.', provenance: { generatedBy: author, sourceRefs: ['span-1'], confidenceKind: 'human-authored' } }));
+    const answers = { ...common, sourceRefs: [], ruleRefs: ['rule-1'], when, explanation: 'Formal withdrawal changes that interpretation.', requiredChecks: ['Check the withdrawal notice.'] };
+    const result = proposeFromExpertInterview({ mode: 'exception', answers }, ctx);
+    expect(result.status).toBe('ready');
+    if (result.status === 'ready') expect(result.proposals[0]).toMatchObject({ kind: 'exception', ruleRefs: ['rule-1'], provenance: { sourceRefs: [], confidenceKind: 'human-authored' }, reviewState: 'proposed' });
+    expect(() => proposeFromExpertInterview({ mode: 'exception', answers: { ...answers, explanation: 'x'.repeat(4001) } }, ctx)).toThrow();
+    expect(() => proposeFromExpertInterview({ mode: 'exception', answers: { ...answers, when: [{ kind: 'node', key: 'missing-node', operator: 'present' }] } }, ctx)).toThrow(/reference/);
+  });
+  it('returns actionable validation errors and refuses unresolved interview anchors', () => {
+    const ctx = context();
+    const answers = { ...common, expression: 'prepared to consider', language: 'en', domain: 'diplomacy', meaning: 'Conditional willingness.', nonImplications: ['Acceptance'] };
+    let caught: unknown;
+    try { proposeFromExpertInterview({ mode: 'language', answers: { ...answers, sourceRefs: ['missing'] } }, ctx); } catch (error) { caught = error; }
+    expect(caught).toMatchObject({ status: 400 });
+    ctx.capsule.evidence[0].anchorStatus = 'unresolved';
+    expect(() => proposeFromExpertInterview({ mode: 'language', answers }, ctx)).toThrow(/anchor|span/);
+    expect(() => proposeFromExpertInterview({ mode: 'language', answers: { ...answers, sourceRefs: [], exampleRefs: ['span-1'] } }, ctx)).toThrow(/anchor|span/);
   });
 });

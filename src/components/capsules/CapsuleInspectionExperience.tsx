@@ -9,6 +9,7 @@ import { CapsuleTimelineSection } from '@/components/capsules/workbench/CapsuleT
 import { CapsuleReviewQueueSection } from '@/components/capsules/workbench/CapsuleReviewQueueSection';
 import { CapsuleAdvancedDrawer } from '@/components/capsules/workbench/CapsuleAdvancedDrawer';
 import { CapsuleMethodInspection } from '@/components/capsules/CapsuleMethodInspection';
+import { CapsuleExpertisePanel } from '@/components/capsules/CapsuleExpertisePanel';
 import { cn } from '@/lib/utils/cn';
 import type { CapsuleGraphViewerProps } from '@/components/capsules/viewers/CapsuleGraphViewer';
 
@@ -107,6 +108,7 @@ export function CapsuleInspectionExperience({ capsule, model: initialModel, mode
     </div>
     <div id={`${id}-panel`} role="tabpanel" aria-labelledby={`${id}-tab-${tab}`} tabIndex={0} className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 outline-none sm:p-6">
       {tab === 'Overview' ? <div className="space-y-5">
+        {owned && authenticated ? <CapsuleExpertisePanel key={model.capsuleId} capsuleId={model.capsuleId} capsuleVersion={currentCapsule.version} onReviewed={setReviewed} /> : null}
         <p className="max-w-3xl whitespace-pre-wrap text-base leading-7">{summary || 'A reusable context package. Add your purpose and sources before relying on it.'}</p>
         <div className="flex flex-wrap gap-x-6 gap-y-2 border-y border-[color:var(--color-mineral)] py-3 text-sm" aria-label="Recorded contents"><span><strong>{model.evidence.sourceCount}</strong> source references</span><span><strong>{model.claims.length}</strong> claims</span><span><strong>{model.graph.edges.length}</strong> mapped relationships</span></div>
         <section className="overflow-hidden rounded-lg border border-[color:var(--color-mineral)] bg-white" aria-label="Evidence map">

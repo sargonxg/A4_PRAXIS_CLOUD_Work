@@ -30,6 +30,13 @@ for the current priorities and cleanup rules.
 
 ## Current Production Shape
 
+The [Cognitive Capsule architecture](./docs/architecture/COGNITIVE_CAPSULE_ARCHITECTURE.md)
+extends the owner-scoped capsule envelope with reviewed expertise, typed evidence,
+worker context compilation and portable packages. The
+[implementation ledger](./docs/build/COGNITIVE_CAPSULE_IMPLEMENTATION_LEDGER.md)
+tracks the complete October 2 plan and separates implemented foundations from
+later distribution, interoperability and empirical acceptance.
+
 PRAXIS is a dual-service GCP application:
 
 - Next.js 16 frontend and API gateway on Cloud Run.
