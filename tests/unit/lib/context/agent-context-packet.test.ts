@@ -6,10 +6,20 @@ import {
 import { buildLadybugProjectionFromGraphJsonLd } from '@/lib/context/ladybug-projection';
 import { selectAgentContextSubgraph } from '@/lib/context/agent-context-salience';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
 
 const requestTime = '2026-06-24T12:00:00.000Z';
 
 describe('agent context graph packet', () => {
+  it('shrinks cognitive records atomically within the whole tiny packet budget', () => {
+    const capsule = makeCapsule(); const cognition = createCognitiveCapsule(capsule.capsuleId);
+    const actor = { type: 'human', id: 'reviewer', at: requestTime };
+    cognition.knowledge = Array.from({ length: 10 }, (_, i) => KnowledgeSchema.parse({ id: `rule-${i}`, kind: 'distinction', label: `Rule ${i}`, scope: ['general'], reviewState: 'accepted', provenance: { generatedBy: actor, reviewedBy: actor, reviewedAt: requestTime, sourceRefs: [] }, conceptA: 'A', conceptB: 'B', explanation: '<'.repeat(900), whyItMatters: 'Scope', commonMistake: 'Conflation' }));
+    const result = buildAgentContextPacket({ capsule: { ...capsule, cognition }, userQuery: 'Assess access. '.repeat(1600), budgetTier: 'tiny', requestTime });
+    expect(Math.ceil(result.packetText.length / 4)).toBeLessThanOrEqual(4500);
+    expect(result.packetText).not.toContain('"explanation":"<<<<');
+    expect(result.cognitiveReceipt?.knowledgeIds.length ?? 0).toBeLessThan(10);
+  });
   it('emits deterministic Packet v1 text with the exact ten sections in order', () => {
     const capsule = makeCapsule();
 

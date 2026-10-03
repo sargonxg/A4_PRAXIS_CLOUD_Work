@@ -61,6 +61,31 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('forks expertise with a new capsule identity while preserving reviewed content and provenance', async () => {
+    const db = new FakeFirestore();
+    const cognition = createCognitiveCapsule('expert-parent', '2.1.0');
+    const actor = { type: 'human' as const, id: 'expert', at: '2026-10-03T00:00:00Z' };
+    cognition.knowledge.push(KnowledgeSchema.parse({ id: 'distinction', kind: 'distinction', label: 'Authorization versus expenditure', scope: ['budget'], conceptA: 'authorization', conceptB: 'expenditure', explanation: 'Approval is not payment.', whyItMatters: 'Avoid unsupported spending claims.', commonMistake: 'Treating stages as equivalent.', reviewState: 'accepted', provenance: { generatedBy: actor, sourceRefs: [], reviewedBy: actor, reviewedAt: actor.at } }));
+    await createCapsule('u1', { capsuleId: 'expert-parent', cognition }, deps(db));
+    const fork = await forkCapsule('u1', 'expert-parent', { capsuleId: 'expert-fork' }, deps(db));
+    expect(fork?.cognition?.capsuleId).toBe('expert-fork');
+    expect(fork?.cognition?.version).toBe('2.1.0');
+    expect(fork?.cognition?.knowledge).toEqual(cognition.knowledge);
+    expect(fork?.provenance.parentCapsuleId).toBe('expert-parent');
+    expect((await getCapsule('u1', 'expert-parent', deps(db)))?.cognition?.capsuleId).toBe('expert-parent');
+    expect((await getCapsule('u1', 'expert-fork', deps(db)))?.cognition?.knowledge).toEqual(cognition.knowledge);
+    const unnamed = await forkCapsule('u1', 'expert-parent', {}, deps(db));
+    expect(unnamed?.cognition?.capsuleId).toBe(unnamed?.capsuleId);
+  });
+  it('rejects unsupported cognitive combinations before creating any partial capsule', async () => {
+    const db = new FakeFirestore();
+    await createCapsule('u1', { capsuleId: 'cognitive-parent', cognition: createCognitiveCapsule('cognitive-parent') }, deps(db));
+    await createCapsule('u1', { capsuleId: 'legacy-parent' }, deps(db));
+    const size = db.data.size;
+    await expect(combineCapsules('u1', { capsuleIds: ['cognitive-parent', 'legacy-parent'], capsuleId: 'unsupported-combination' }, deps(db))).rejects.toThrow(/Combining Cognitive Capsules/);
+    expect(db.data.size).toBe(size);
+    expect(await getCapsule('u1', 'unsupported-combination', deps(db))).toBeNull();
+  });
   it('keeps cognitive knowledge additive, server review-stamped, and stale-gated', async () => {
     const db = architectDb();
     const capsule = await createCapsule('u1', { capsuleId: 'cognitive', humanTacitKnowledge: { practicalHeuristics: ['Keep legacy.'] } }, deps(db));

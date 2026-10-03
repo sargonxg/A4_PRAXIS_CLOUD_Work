@@ -2,6 +2,7 @@ import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CapsuleInspectionDialog, CapsuleInspectionExperience } from '@/components/capsules/CapsuleInspectionExperience';
 import { CapsuleClaimReceiptsSection } from '@/components/capsules/workbench/CapsuleClaimReceiptsSection';
+import { CapsuleExpertisePanel } from '@/components/capsules/CapsuleExpertisePanel';
 import { buildCapsuleWorkbenchViewModel, type CapsuleClaimDisplay, type CapsuleWorkbenchCapsuleInput } from '@/lib/context/capsule-workbench-view-model';
 
 const runtime = vi.hoisted(() => ({ cursor: 0, hooks: new Map<number, unknown>(), effects: [] as Array<() => void> }));
@@ -23,11 +24,20 @@ const capsule: CapsuleWorkbenchCapsuleInput = { capsuleId: 'capsule-a', label: '
 const repositoryDocuments = [{ id: 'source-document', title: 'Captured minutes' }];
 const initialModel = buildCapsuleWorkbenchViewModel({ capsule, repositoryDocuments });
 const onUse = vi.fn();
-function render() { runtime.cursor = 0; return CapsuleInspectionExperience({ capsule, model: initialModel, modelInput: { repositoryDocuments }, owned: true, authenticated: true, busy: false, onClose: vi.fn(), onUse, onSources: vi.fn(), onImprove: vi.fn(), onFork: vi.fn(), forkBusy: false, onAsk: vi.fn() }); }
+function render(owned = true, authenticated = true) { runtime.cursor = 0; return CapsuleInspectionExperience({ capsule, model: initialModel, modelInput: { repositoryDocuments }, owned, authenticated, busy: false, onClose: vi.fn(), onUse, onSources: vi.fn(), onImprove: vi.fn(), onFork: vi.fn(), forkBusy: false, onAsk: vi.fn() }); }
 beforeEach(() => { runtime.cursor = 0; runtime.hooks.clear(); runtime.effects = []; onUse.mockReset(); });
 afterEach(() => vi.unstubAllGlobals());
 
 describe('capsule inspection experience', () => {
+  it('mounts expertise in the actual owner inspector and refreshes its capsule version after review', () => {
+    const panel = elements(render()).find((node) => node.type === CapsuleExpertisePanel);
+    expect(panel).toBeDefined();
+    expect(panel?.props).toMatchObject({ capsuleId: 'capsule-a', capsuleVersion: 1 });
+    (panel!.props.onReviewed as (capsule: CapsuleWorkbenchCapsuleInput) => void)({ ...capsule, version: 2 });
+    expect(elements(render()).find((node) => node.type === CapsuleExpertisePanel)?.props.capsuleVersion).toBe(2);
+    expect(elements(render(false)).some((node) => node.type === CapsuleExpertisePanel)).toBe(false);
+    expect(elements(render(true, false)).some((node) => node.type === CapsuleExpertisePanel)).toBe(false);
+  });
   it('wraps Tab and Shift+Tab at dialog boundaries without focusing hidden or roving controls', () => {
     const control = (tabIndex = 0, visible = true) => ({ tabIndex, getClientRects: () => visible ? [{}] : [], closest: () => null, focus: vi.fn() });
     const first = control(); const middle = control(); const hidden = control(0, false); const roving = control(-1); const last = control();
