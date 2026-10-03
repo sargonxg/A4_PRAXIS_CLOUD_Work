@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createCognitiveCapsule } from '@/lib/cognitive-capsule/schema';
 
 const service = vi.hoisted(() => ({ getCognitiveCapsuleInventory: vi.fn(), proposeCognitiveKnowledge: vi.fn(), decideCognitiveKnowledge: vi.fn() }));
 vi.mock('@/lib/api/with-auth', () => ({ withAuth: (handler: unknown) => handler }));
-vi.mock('@/lib/cognitive-capsule/service', () => service);
+vi.mock('@/lib/cognitive-capsule/service', async (importOriginal) => ({ ...await importOriginal<Record<string, unknown>>(), ...service }));
 type Handler = (request: Request, user: { uid: string; isDemo: boolean }, context: { params: Promise<{ capsuleId: string }> }) => Promise<Response>;
 const context = { params: Promise.resolve({ capsuleId: 'owned' }) };
 const user = { uid: 'owner', isDemo: false };
@@ -39,5 +40,16 @@ describe('authenticated cognition route', () => {
     const response = await (route.PATCH as unknown as Handler)(new Request('http://localhost/cognition', { method: 'PATCH', body: JSON.stringify({ decision: 'accept', reviewCardId: 'proposal', reason: 'Checked scope and source.' }) }), user, context);
     expect(response.status).toBe(409);
     expect(await response.json()).toMatchObject({ code: 'STALE_CAPSULE_PROPOSAL' });
+  });
+  it('exports a real native capsule only when the owner permits downloads', async () => {
+    const route = await import('@/app/api/context/capsules/[capsuleId]/cognition/route');
+    service.getCognitiveCapsuleInventory.mockResolvedValue({ capsuleId: 'owned', cognition: createCognitiveCapsule('owned'), allowDownload: true });
+    const response = await (route.GET as unknown as Handler)(new Request('http://localhost/cognition?format=package'), user, context);
+    expect(response.headers.get('content-type')).toBe('application/vnd.tacitus.cognitive-capsule+zip');
+    expect(response.headers.get('content-disposition')).toContain('owned.capsule');
+    expect(new Uint8Array(await response.arrayBuffer()).slice(0, 2)).toEqual(new Uint8Array([80, 75]));
+    service.getCognitiveCapsuleInventory.mockResolvedValue({ capsuleId: 'owned', cognition: createCognitiveCapsule('owned'), allowDownload: false });
+    expect((await (route.GET as unknown as Handler)(new Request('http://localhost/cognition?format=package'), user, context)).status).toBe(403);
+    expect((await (route.GET as unknown as Handler)(new Request('http://localhost/cognition?format=jsonld'), user, context)).status).toBe(403);
   });
 });
