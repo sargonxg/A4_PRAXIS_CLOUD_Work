@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
-import { proposeCognitiveKnowledge, proposeCognitiveInterview } from '@/lib/cognitive-capsule/service';
+import { createCognitiveCapsule, KnowledgeSchema, CognitiveNodeSchema, CognitiveStatementSchema, EvidenceSpanSchema } from '@/lib/cognitive-capsule/schema';
+import { proposeCognitiveKnowledge, proposeCognitiveInterview, proposeCognitiveGraph, stageRegistryCapsuleInstallation } from '@/lib/cognitive-capsule/service';
 import { decideCognitiveCapsuleReviewCard } from '@/lib/context/capsule-service';
 import {
   activateCapsule,
@@ -62,6 +62,58 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('demotes changed graph records and only stamps them through a human decision', async () => {
+    const db = architectDb(); db.rejectUndefined = true;
+    await createCapsule('u1', { capsuleId: 'graph-review' }, deps(db));
+    const cognition = createCognitiveCapsule('graph-review');
+    const actor = { type: 'model' as const, id: 'extraction-model', at: '2026-05-14T00:00:00Z' };
+    const fakeReviewer = { type: 'human' as const, id: 'caller-claimed-reviewer', at: actor.at };
+    const provenance = { generatedBy: actor, sourceRefs: ['e'], reviewedBy: fakeReviewer, reviewedAt: actor.at };
+    cognition.evidence.push(EvidenceSpanSchema.parse({ id: 'e', sourceId: 'source', sourceVersion: 'hash-1', quote: 'State A may consider the proposal.', anchorStatus: 'exact' }));
+    cognition.nodes.push(CognitiveNodeSchema.parse({ id: 'a', type: 'aco:Actor', label: 'State A', layer: 'world', reviewState: 'accepted', provenance }));
+    cognition.statements.push(CognitiveStatementSchema.parse({ id: 's', subject: 'a', predicate: 'MAY_CONSIDER', object: { literal: 'proposal' }, layer: 'world', polarity: 'positive', modality: 'possible', reviewState: 'accepted', sourceRefs: ['e'], provenance }));
+    const card = await createCapsuleReviewCard('u1', 'graph-review', { title: 'Graph proposal', target: 'graphProposal', sourceType: 'agent', proposedEnvelopePatch: { cognition } }, deps(db));
+    expect(card.cognitiveNodeIds).toEqual(['a']); expect(card.cognitiveStatementIds).toEqual(['s']);
+    expect(card.proposedEnvelopePatch.cognition?.nodes[0]).toMatchObject({ reviewState: 'proposed', provenance: { generatedBy: actor } });
+    expect(card.proposedEnvelopePatch.cognition?.nodes[0].provenance.reviewedBy).toBeUndefined();
+    expect(card.proposedEnvelopePatch.cognition?.statements[0].reviewState).toBe('proposed');
+    expect((await getCapsule('u1', 'graph-review', deps(db)))?.cognition).toBeUndefined();
+    const result = await decideCognitiveCapsuleReviewCard('u1', 'graph-review', card.reviewCardId, { decision: 'edit_accept', reason: 'Checked exact wording and actor.',
+      edited: { ...card.proposedEnvelopePatch.cognition!.nodes[0], label: 'State A government', provenance: { ...card.proposedEnvelopePatch.cognition!.nodes[0].provenance, generatedBy: fakeReviewer } } }, deps(db));
+    expect(result?.capsule.cognition?.nodes[0]).toMatchObject({ label: 'State A government', reviewState: 'accepted', provenance: { generatedBy: actor, reviewedBy: { type: 'human', id: 'u1' } } });
+    expect(result?.capsule.cognition?.statements[0]).toMatchObject({ reviewState: 'accepted', provenance: { reviewedBy: { id: 'u1' } } });
+  });
+  it('preserves omitted canonical records and requires an explicit reviewed supersession', async () => {
+    const db = architectDb();
+    const cognition = createCognitiveCapsule('supersession', '1.0.0'); const actor = { type: 'human' as const, id: 'original', at: '2026-05-14T00:00:00Z' };
+    cognition.knowledge.push(KnowledgeSchema.parse({ id: 'old', kind: 'distinction', label: 'Old distinction', scope: ['budget'], conceptA: 'A', conceptB: 'B', explanation: 'Keep distinct.', whyItMatters: 'Avoid confusion.', commonMistake: 'Equating A with B.', reviewState: 'accepted', provenance: { generatedBy: actor, sourceRefs: [], reviewedBy: actor, reviewedAt: actor.at } }));
+    await createCapsule('u1', { capsuleId: 'supersession', cognition }, deps(db));
+    const replacement = createCognitiveCapsule('supersession'); replacement.knowledge.push(KnowledgeSchema.parse({ ...cognition.knowledge[0], id: 'new', label: 'New distinction', reviewState: 'proposed' }));
+    const additive = await createCapsuleReviewCard('u1', 'supersession', { title: 'Add replacement', sourceType: 'user', target: 'capsuleEnvelope', proposedEnvelopePatch: { cognition: replacement } }, deps(db));
+    expect(additive.proposedEnvelopePatch.cognition?.knowledge.map((k) => k.id)).toEqual(['old', 'new']);
+    const added = await decideCognitiveCapsuleReviewCard('u1', 'supersession', additive.reviewCardId, { decision: 'accept', reason: 'Add the new rule without deleting the old.' }, deps(db));
+    const supersede = { ...added!.capsule.cognition!, knowledge: added!.capsule.cognition!.knowledge.map((k) => k.id === 'old' ? { ...k, reviewState: 'superseded' as const } : k) };
+    const card = await createCapsuleReviewCard('u1', 'supersession', { title: 'Retire old rule', sourceType: 'user', target: 'capsuleEnvelope', proposedEnvelopePatch: { cognition: supersede } }, deps(db));
+    expect(card.cognitiveSupersededIds).toEqual(['old']);
+    expect((await getCapsule('u1', 'supersession', deps(db)))?.cognition?.knowledge[0].reviewState).toBe('accepted');
+    const result = await decideCognitiveCapsuleReviewCard('u1', 'supersession', card.reviewCardId, { decision: 'accept', reason: 'Explicitly retired the old distinction.' }, deps(db));
+    expect(result?.capsule.cognition?.knowledge.find((k) => k.id === 'old')?.reviewState).toBe('superseded');
+    expect(result?.capsule.cognition?.version).toBe('2.0.0');
+  });
+  it('keeps invalid graph acceptance and rejected graph proposals out of canonical cognition', async () => {
+    const db = architectDb(); await createCapsule('u1', { capsuleId: 'invalid-graph' }, deps(db));
+    const cognition = createCognitiveCapsule('invalid-graph'); const actor = { type: 'model' as const, id: 'model', at: '2026-05-14T00:00:00Z' };
+    cognition.nodes.push(CognitiveNodeSchema.parse({ id: 'a', type: 'aco:Actor', label: 'A', layer: 'world', provenance: { generatedBy: actor, sourceRefs: [] } }));
+    cognition.evidence.push(EvidenceSpanSchema.parse({ id: 'e', sourceId: 'source', sourceVersion: 'unknown', quote: 'Unresolved excerpt.', anchorStatus: 'unresolved' }));
+    cognition.statements.push(CognitiveStatementSchema.parse({ id: 's', subject: 'a', predicate: 'ACCEPTED', object: { literal: 'proposal' }, layer: 'world', polarity: 'positive', sourceRefs: ['e'], provenance: { generatedBy: actor, sourceRefs: ['e'] } }));
+    const card = await createCapsuleReviewCard('u1', 'invalid-graph', { title: 'Unresolved assertion', target: 'graphProposal', sourceType: 'agent', proposedEnvelopePatch: { cognition } }, deps(db));
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'invalid-graph', card.reviewCardId, { decision: 'accept', reason: 'Claim needs an anchored source.' }, deps(db))).rejects.toThrow(/unresolved evidence/i);
+    expect((await getCapsule('u1', 'invalid-graph', deps(db)))?.cognition).toBeUndefined();
+    const rejected = await decideCognitiveCapsuleReviewCard('u1', 'invalid-graph', card.reviewCardId, { decision: 'reject', reason: 'The source has not been resolved.' }, deps(db));
+    expect(rejected?.card.proposedEnvelopePatch.cognition?.nodes[0].reviewState).toBe('rejected');
+    expect(rejected?.card.proposedEnvelopePatch.cognition?.statements[0].reviewState).toBe('rejected');
+    expect(rejected?.capsule.cognition).toBeUndefined();
+  });
   it('persists correction and interview proposals with strict Firestore values', async () => {
     const db = architectDb();
     db.rejectUndefined = true;
@@ -97,9 +149,9 @@ describe('capsule service', () => {
     const card = await createCapsuleReviewCard('u1', capsule.capsuleId, { title: 'Interview group', target: 'capsuleEnvelope', sourceType: 'user', proposedEnvelopePatch: { cognition } }, deps(db));
     await expect(decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Reviewed every item.', edited: { ...cognition.knowledge[1], id: 'unselected' } }, deps(db))).rejects.toThrow(/proposed by this review card/);
     const result = await decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Inspected every interview item; corrected the second label.', edited: { ...cognition.knowledge[1], label: 'Edited second distinction', provenance: { ...cognition.knowledge[1].provenance, generatedBy: { type: 'human', id: 'forged-author', at: '2026-10-03T00:00:00Z' } } } }, deps(db));
-    expect(result?.capsule.cognition?.knowledge.map((item) => item.reviewState)).toEqual(['accepted', 'accepted']);
-    expect(result?.capsule.cognition?.knowledge[0]).toMatchObject({ label: 'Distinction first', provenance: { generatedBy: { id: 'original-first' }, reviewedBy: { id: 'u1' } } });
-    expect(result?.capsule.cognition?.knowledge[1]).toMatchObject({ label: 'Edited second distinction', provenance: { generatedBy: { id: 'original-second' }, reviewedBy: { id: 'u1' } } });
+    expect(result?.capsule.cognition?.knowledge.filter((item) => card.cognitiveKnowledgeIds?.includes(item.id)).map((item) => item.reviewState)).toEqual(['accepted', 'accepted']);
+    expect(result?.capsule.cognition?.knowledge.find((item) => item.id === 'first')).toMatchObject({ label: 'Distinction first', provenance: { generatedBy: { id: 'original-first' }, reviewedBy: { id: 'u1' } } });
+    expect(result?.capsule.cognition?.knowledge.find((item) => item.id === 'second')).toMatchObject({ label: 'Edited second distinction', provenance: { generatedBy: { id: 'original-second' }, reviewedBy: { id: 'u1' } } });
   });
   it('forks expertise with a new capsule identity while preserving reviewed content and provenance', async () => {
     const db = new FakeFirestore();
@@ -117,14 +169,85 @@ describe('capsule service', () => {
     const unnamed = await forkCapsule('u1', 'expert-parent', {}, deps(db));
     expect(unnamed?.cognition?.capsuleId).toBe(unnamed?.capsuleId);
   });
-  it('rejects unsupported cognitive combinations before creating any partial capsule', async () => {
-    const db = new FakeFirestore();
+  it('creates cognitive combinations as private inactive review drafts with exact parent locks', async () => {
+    const db = architectDb(); db.rejectUndefined = true;
     await createCapsule('u1', { capsuleId: 'cognitive-parent', cognition: createCognitiveCapsule('cognitive-parent') }, deps(db));
-    await createCapsule('u1', { capsuleId: 'legacy-parent' }, deps(db));
-    const size = db.data.size;
-    await expect(combineCapsules('u1', { capsuleIds: ['cognitive-parent', 'legacy-parent'], capsuleId: 'unsupported-combination' }, deps(db))).rejects.toThrow(/Combining Cognitive Capsules/);
-    expect(db.data.size).toBe(size);
-    expect(await getCapsule('u1', 'unsupported-combination', deps(db))).toBeNull();
+    await createCapsule('u1', { capsuleId: 'legacy-parent', humanTacitKnowledge: { caveats: ['Check the actual case.'] } }, deps(db));
+    const result = await combineCapsules('u1', { capsuleIds: ['cognitive-parent', 'legacy-parent'], capsuleId: 'reviewed-combination', activateForSituationIds: ['case-1'] }, deps(db));
+    expect(result?.capsule.cognition).toBeUndefined();
+    expect(result?.capsule.access.visibility).toBe('private');
+    expect(result?.capsule.activeForSituationIds).toEqual([]);
+    expect(result?.reviewCard?.proposedEnvelopePatch.cognition?.knowledge[0].reviewState).toBe('proposed');
+    expect(result?.capsule.memoryPosture).toMatchObject({ cognitiveComposition: { parentLocks: [{ capsuleId: 'cognitive-parent', capsuleVersion: 1 }, { capsuleId: 'legacy-parent', capsuleVersion: 1 }] } });
+    expect(await getCapsule('u1', 'reviewed-combination', deps(db))).toMatchObject({ latestGateState: 'proposed' });
+    await expect(combineCapsules('u1', { capsuleIds: ['cognitive-parent', 'legacy-parent'], capsuleId: 'reviewed-combination' }, deps(db))).rejects.toThrow(/already exists/);
+  });
+  it.each(['situation', 'expertise', 'method', 'language', 'organization', 'role', 'casebook', 'output'])('reviews a profile-only %s proposal before saving canonical cognition', async (profile) => {
+    const db = architectDb(); await createCapsule('u1', { capsuleId: 'profile-only' }, deps(db));
+    const proposal = await proposeCognitiveGraph('u1', 'profile-only', { operation: 'graph-proposal', baseVersion: 1, profile }, deps(db));
+    expect(proposal?.card).toMatchObject({ cognitiveProfileChanged: true, cognitiveNodeIds: [], cognitiveStatementIds: [], cognitiveKnowledgeIds: [] });
+    expect((await getCapsule('u1', 'profile-only', deps(db)))?.cognition).toBeUndefined();
+    const approved = await decideCognitiveCapsuleReviewCard('u1', 'profile-only', proposal!.card.reviewCardId, { decision: 'accept', reason: 'Reviewed this initial cognitive profile.' }, deps(db));
+    expect(approved?.capsule.cognition).toMatchObject({ profile, version: '1.1.0' });
+    const inventory = await listCapsuleInventory('u1', { metadataOnly: true }, deps(db));
+    expect(inventory.capsules[0]).toMatchObject({ cognitiveProfile: profile, cognitiveStatementCount: 0 });
+    expect(inventory.capsules[0].cognition).toBeUndefined();
+    await expect(proposeCognitiveGraph('u1', 'profile-only', { operation: 'graph-proposal', baseVersion: 1, profile: 'method' }, deps(db))).rejects.toMatchObject({ status: 409 });
+    const changedProfile = profile === 'method' ? 'expertise' : 'method';
+    const change = await proposeCognitiveGraph('u1', 'profile-only', { operation: 'graph-proposal', baseVersion: 2, profile: changedProfile }, deps(db));
+    const changed = await decideCognitiveCapsuleReviewCard('u1', 'profile-only', change!.card.reviewCardId, { decision: 'accept', reason: 'Reviewed the changed profile.' }, deps(db));
+    expect(changed?.capsule.cognition).toMatchObject({ profile: changedProfile, version: '2.0.0' });
+    if (profile === 'language') {
+      const graph = await proposeCognitiveGraph('u1', 'profile-only', { operation: 'graph-proposal', baseVersion: 3, nodes: [{ id: 'actor', type: 'aco:Actor', label: 'Actor', layer: 'world' }] }, deps(db));
+      expect(graph?.card.proposedEnvelopePatch.cognition?.profile).toBe('method');
+      expect(graph?.card.cognitiveProfileChanged).toBe(false);
+    }
+  });
+  it('rejects composition approval when an exact parent lock changed after draft creation', async () => {
+    const db = architectDb();
+    for (const id of ['lock-a', 'lock-b']) await createCapsule('u1', { capsuleId: id, cognition: createCognitiveCapsule(id) }, deps(db));
+    const result = await combineCapsules('u1', { capsuleIds: ['lock-a', 'lock-b'], capsuleId: 'locked-draft' }, deps(db));
+    await bumpCapsuleVersion('u1', 'lock-a', { label: 'Changed parent' }, deps(db));
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'locked-draft', result!.reviewCard!.reviewCardId, { decision: 'accept', reason: 'Inspect the parent locks.' }, deps(db))).rejects.toThrow(/parent changed/i);
+    expect((await getCapsule('u1', 'locked-draft', deps(db)))?.cognition).toBeUndefined();
+  });
+  it('stages native registry drafts in the caller transaction and preserves idempotent owner edits', async () => {
+    const db = architectDb(); db.rejectUndefined = true;
+    const cognition = createCognitiveCapsule('publisher/native', '1.0.0');
+    const input = { cognition, registryName: cognition.capsuleId, registryVersion: cognition.version, artifactDigest: `sha256:${'a'.repeat(64)}` };
+    const transactionSpy = vi.spyOn(db, 'runTransaction');
+    let rolledBackId = '';
+    await expect(db.runTransaction(async (transaction) => {
+      const draft = await stageRegistryCapsuleInstallation('u1', input, deps(db), transaction as never);
+      rolledBackId = draft.draftCapsuleId;
+      throw new Error('Registry compare-and-swap failed.');
+    })).rejects.toThrow(/compare-and-swap/);
+    expect(transactionSpy).toHaveBeenCalledTimes(1);
+    expect(await getCapsule('u1', rolledBackId, deps(db))).toBeNull();
+    const first = await stageRegistryCapsuleInstallation('u1', input, deps(db));
+    const saved = await getCapsule('u1', first.draftCapsuleId, deps(db));
+    expect(saved).toMatchObject({ access: { visibility: 'private' }, activeForSituationIds: [] });
+    expect(saved?.cognition).toBeUndefined();
+    await bumpCapsuleVersion('u1', first.draftCapsuleId, { label: 'Owner edited draft label' }, deps(db));
+    const second = await stageRegistryCapsuleInstallation('u1', { ...input, sourceEnvelopeVersion: 12 }, deps(db));
+    expect(second).toEqual(first);
+    expect((await getCapsule('u1', second.draftCapsuleId, deps(db)))?.label).toBe('Owner edited draft label');
+  });
+  it('enforces fork rights and preserves restricted download permission', async () => {
+    const db = architectDb();
+    await createCapsule('u1', { capsuleId: 'no-clone', access: { allowClone: false } }, deps(db));
+    await expect(forkCapsule('u1', 'no-clone', {}, deps(db))).rejects.toMatchObject({ status: 403 });
+    for (const mode of ['organization', 'licensed'] as const) {
+      const cognition = { ...createCognitiveCapsule(`rights-${mode}`), rights: { mode } };
+      await createCapsule('u1', { capsuleId: cognition.capsuleId, cognition }, deps(db));
+      await expect(forkCapsule('u1', cognition.capsuleId, {}, deps(db))).rejects.toMatchObject({ status: 403 });
+    }
+    const privateCognition = createCognitiveCapsule('private-fork');
+    await createCapsule('u1', { capsuleId: privateCognition.capsuleId, cognition: privateCognition, access: { allowDownload: false } }, deps(db));
+    expect(await forkCapsule('u1', privateCognition.capsuleId, { capsuleId: 'private-child' }, deps(db))).toMatchObject({ access: { visibility: 'private', allowDownload: false }, cognition: { rights: { mode: 'private' } } });
+    await expect(combineCapsules('u1', { capsuleIds: ['no-clone', 'private-fork'] }, deps(db))).rejects.toMatchObject({ status: 403 });
+    const combination = await combineCapsules('u1', { capsuleIds: ['private-fork', 'private-child'], capsuleId: 'restricted-composition' }, deps(db));
+    expect(combination?.capsule.access.allowDownload).toBe(false);
   });
   it('keeps cognitive knowledge additive, server review-stamped, and stale-gated', async () => {
     const db = architectDb();
@@ -136,14 +259,15 @@ describe('capsule service', () => {
     const older = await createCapsuleReviewCard('u1', capsule.capsuleId, { title: 'Older lesson', target: 'capsuleEnvelope', sourceType: 'user', proposedEnvelopePatch: { cognition } }, deps(db));
     expect((await getCapsule('u1', capsule.capsuleId, deps(db)))?.cognition).toBeUndefined();
     const result = await applyCapsuleReviewCard('u1', capsule.capsuleId, proposal.reviewCardId, { reviewerUid: 'u1', diffHash: 'diff:expertise-review', confirmationReason: 'Checked budget terminology.' }, deps(db));
-    expect(result?.capsule.cognition?.knowledge[0]).toMatchObject({ reviewState: 'accepted', provenance: { reviewedBy: { type: 'human', id: 'u1' } } });
+    expect(result?.capsule.cognition?.knowledge.find((item) => item.id === 'rule')).toMatchObject({ reviewState: 'accepted', provenance: { reviewedBy: { type: 'human', id: 'u1' } } });
+    expect(result?.capsule.cognition?.knowledge.find((item) => item.id.startsWith('legacy:'))?.reviewState).toBe('proposed');
     expect(result?.capsule.cognition?.version).toBe('1.1.0');
     expect(result?.capsule.humanTacitKnowledge).toEqual({ practicalHeuristics: ['Keep legacy.'] });
     expect((await getCapsule('u1', capsule.capsuleId, deps(db)))?.cognition).toEqual(result?.capsule.cognition);
     await expect(applyCapsuleReviewCard('u1', capsule.capsuleId, older.reviewCardId, { reviewerUid: 'u1', diffHash: 'diff:expertise-stale', confirmationReason: 'Checked stale proposal.' }, deps(db))).rejects.toThrow(/changed/);
     const bumped = await bumpCapsuleVersion('u1', capsule.capsuleId, { label: 'Updated label' }, deps(db));
     expect(bumped?.cognition).toEqual(result?.capsule.cognition);
-    const editedCognition = { ...result!.capsule.cognition!, knowledge: [{ ...result!.capsule.cognition!.knowledge[0], label: 'Require disbursement evidence before claiming expenditure' }] };
+    const editedCognition = { ...result!.capsule.cognition!, knowledge: [{ ...result!.capsule.cognition!.knowledge.find((item) => item.id === 'rule')!, label: 'Require disbursement evidence before claiming expenditure' }] };
     const edit = await createCapsuleReviewCard('u1', capsule.capsuleId, { title: 'Revised budget distinction', target: 'capsuleEnvelope', sourceType: 'user', proposedEnvelopePatch: { cognition: editedCognition } }, deps(db));
     const revised = await applyCapsuleReviewCard('u1', capsule.capsuleId, edit.reviewCardId, { reviewerUid: 'u1', diffHash: 'diff:revised-budget-rule', confirmationReason: 'Reviewed changed interpretation.' }, deps(db));
     expect(revised?.capsule.cognition?.version).toBe('2.0.0');
@@ -159,10 +283,10 @@ describe('capsule service', () => {
     cognition.knowledge.push(KnowledgeSchema.parse({ id: 'lesson', kind: 'heuristic', label: 'Contact may continue', scope: ['diplomacy'], interpretation: 'Do not assume rejection terminates contact.', rationale: 'Private contacts can persist after public rejection.', when: [{ kind: 'context', key: 'technical-contact', operator: 'present' }], provenance: { generatedBy: { type: 'human', id: 'u1', at: '2026-10-03T00:00:00Z' }, sourceRefs: [] } }));
     const card = await createCapsuleReviewCard('u1', capsule.capsuleId, { title: 'Expert lesson', sourceType: 'user', target: 'capsuleEnvelope', proposedEnvelopePatch: { cognition } }, deps(db));
     const pending = await decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'need_evidence', reason: 'Check private contact records.' }, deps(db));
-    expect(pending?.card.proposedEnvelopePatch.cognition?.knowledge[0]).toMatchObject({ reviewState: 'proposed', reviewDecision: 'need_evidence' });
+    expect(pending?.card.proposedEnvelopePatch.cognition?.knowledge.find((item) => item.id === 'lesson')).toMatchObject({ reviewState: 'proposed', reviewDecision: 'need_evidence' });
     expect(pending?.capsule.cognition).toBeUndefined();
     const accepted = await decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Reviewed wording.', edited: { ...cognition.knowledge[0], label: 'Check whether private contact continues' } }, deps(db));
-    expect(accepted?.capsule.cognition?.knowledge[0]).toMatchObject({ label: 'Check whether private contact continues', reviewState: 'accepted', provenance: { reviewedBy: { type: 'human', id: 'u1' } } });
+    expect(accepted?.capsule.cognition?.knowledge.find((item) => item.id === 'lesson')).toMatchObject({ label: 'Check whether private contact continues', reviewState: 'accepted', provenance: { reviewedBy: { type: 'human', id: 'u1' } } });
     await expect(decideCognitiveCapsuleReviewCard('u2', capsule.capsuleId, card.reviewCardId, { decision: 'accept', reason: 'Wrong owner.' }, deps(db))).resolves.toBeNull();
   });
   it('pages light inventory without losing rows and rejects a cursor from another owner or filter', async () => {

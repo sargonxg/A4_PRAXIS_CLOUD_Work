@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { CognitiveKnowledgeCaptureSchema, CognitiveKnowledgeDecisionSchema, getCognitiveCapsuleInventory, proposeCognitiveKnowledge, proposeCognitiveInterview, decideCognitiveKnowledge } from '@/lib/cognitive-capsule/service';
+import { CognitiveKnowledgeCaptureSchema, CognitiveKnowledgeDecisionSchema, CognitiveGraphProposalSchema, CognitiveModelProposalSchema, getCognitiveCapsuleInventory, proposeCognitiveKnowledge, proposeCognitiveInterview, proposeCognitiveGraph, decideCognitiveKnowledge } from '@/lib/cognitive-capsule/service';
 import { ExpertInterviewInputSchema } from '@/lib/cognitive-capsule/interview';
 import { CAPSULE_MIMETYPE, packCapsule } from '@/lib/cognitive-capsule/package';
 import { CapsuleReviewConflictError } from '@/lib/context/capsule-service';
@@ -54,6 +54,14 @@ export const POST = withAuth<RouteContext>(async (request, user, context) => {
     const { capsuleId } = await context.params;
     if (!idPattern.test(capsuleId)) return NextResponse.json({ error: 'Invalid capsule ID' }, { status: 400 });
     const body = await readBody(request);
+    if (body && typeof body === 'object' && 'operation' in body) {
+      const operation = body.operation;
+      const result = operation === 'graph-proposal' ? await proposeCognitiveGraph(user.uid, capsuleId, CognitiveGraphProposalSchema.parse(body))
+        : operation === 'model-proposal' ? await proposeCognitiveKnowledge(user.uid, capsuleId, CognitiveModelProposalSchema.parse(body).capture, undefined,
+          { type: 'model', id: 'mcp:external-proposal-unverified' }) : null;
+      if (!result) return NextResponse.json({ error: operation === 'graph-proposal' || operation === 'model-proposal' ? 'Capsule not found' : 'Unknown proposal operation' }, { status: operation === 'graph-proposal' || operation === 'model-proposal' ? 404 : 400 });
+      return NextResponse.json(result, { status: 201 });
+    }
     const interview = body && typeof body === 'object' && !Array.isArray(body) && 'mode' in body;
     const result = interview
       ? await proposeCognitiveInterview(user.uid, capsuleId, ExpertInterviewInputSchema.parse(body))

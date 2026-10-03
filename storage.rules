@@ -2,7 +2,7 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    match /users/{uid}/{allPaths=**} {
+    match /users/{uid}/{firstPath}/{allPaths=**} {
       function isActiveOwner() {
         return request.auth != null && request.auth.uid == uid
                && (!firestore.exists(/databases/(default)/documents/users/$(uid))
@@ -10,8 +10,10 @@ service firebase.storage {
                         .hasAny(['accountDeletionStatus'])));
       }
       allow read: if isActiveOwner();
-      allow delete: if isActiveOwner();
+      // Native registry bytes are immutable and managed by the server.
+      allow delete: if isActiveOwner() && firstPath != 'capsule-registry';
       allow create, update: if isActiveOwner()
+                         && firstPath != 'capsule-registry'
                          && request.resource.size < 25 * 1024 * 1024
                          && request.resource.contentType.matches('application/pdf|application/vnd.openxmlformats-officedocument.wordprocessingml.document|text/plain');
     }

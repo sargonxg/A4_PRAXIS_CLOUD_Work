@@ -257,6 +257,9 @@
     }
   ],
   "fieldOverrides": [
+    { "collectionGroup": "capsuleRegistry", "fieldPath": "dependencies", "indexes": [] },
+    { "collectionGroup": "capsuleRegistry", "fieldPath": "quality", "indexes": [] },
+    { "collectionGroup": "capsuleRegistryInstallations", "fieldPath": "lock", "indexes": [] },
     {
       "collectionGroup": "audit_logs",
       "fieldPath": "expiresAt",

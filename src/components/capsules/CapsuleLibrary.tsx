@@ -330,7 +330,7 @@ export function CapsuleLibrary({
                       categoryLabel={entry.taxonomy.types[0]?.label ?? entry.capsuleType}
                       domainLabel={entry.taxonomy.domains[0]?.label ?? entry.starterDomain}
                       roleLabel={entry.origin === 'user' ? 'Workspace capsule' : 'Starter capsule'}
-                      badges={[{ label: reviewStateLabel(entry) }]}
+                      badges={[{ label: reviewStateLabel(entry) }, ...(entry.cognitiveProfile ? [{ label: `${entry.cognitiveProfile} context` }] : [])]}
                       qualityScore={entry.structuralScore ?? null}
                       metadata={[entry.version !== null ? `Version ${entry.version}` : null, entry.updatedAt ? `Updated ${readableDate(entry.updatedAt)}` : null]}
                       counts={{

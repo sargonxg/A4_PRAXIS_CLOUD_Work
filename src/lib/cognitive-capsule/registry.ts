@@ -6,6 +6,7 @@ import { CognitiveCapsuleSchema } from './schema';
 import { bytesDigest, packCapsule, readCapsulePackage } from './package';
 import { canonicalJson } from './integrity';
 import type { CognitiveCapsule } from './types';
+import { validateRegistryDependencies } from './registry-validation';
 
 const identity = /^[a-zA-Z0-9_-][a-zA-Z0-9._-]*\/[a-zA-Z0-9_-][a-zA-Z0-9._-]*$/;
 const EntrySchema = z.object({ name: z.string(), version: z.string().regex(/^\d+\.\d+\.\d+$/), digest: z.string().regex(/^sha256:[a-f0-9]{64}$/), capsuleDigest: z.string().regex(/^sha256:[a-f0-9]{64}$/), dependencies: CognitiveCapsuleSchema.shape.dependencies, rights: CognitiveCapsuleSchema.shape.rights, installed: z.boolean().default(false), deprecated: z.string().max(2000).optional() }).strict();
@@ -55,17 +56,12 @@ export class LocalCapsuleRegistry {
     if (canonicalJson(capsule.dependencies) !== canonicalJson(entry.dependencies) || canonicalJson(capsule.rights) !== canonicalJson(entry.rights)) throw new Error('Registry object rights or dependency lock mismatch.');
     return { bytes, capsule };
   }
-  private async dependencies(c: CognitiveCapsule, entries: RegistryEntry[], seen = new Set<string>(), validated = new Set<string>(), cache = new Map<string, CognitiveCapsule>()): Promise<void> {
-    for (const dep of c.dependencies) {
-      const key = `${dep.name}@${dep.version}`;
-      if (seen.has(key)) throw new Error('Cyclic capsule dependency lock.');
-      const entry = entries.find((e) => e.name === dep.name && e.version === dep.version && e.digest === dep.digest);
-      if (!entry || entry.deprecated) throw new Error(`Unresolved or deprecated exact dependency lock: ${key}`);
-      const capsule = cache.get(dep.digest) ?? (await this.object(entry)).capsule; cache.set(dep.digest, capsule);
-      if (capsule.rights.mode !== 'open' && c.rights.mode === 'open') throw new Error('Dependency rights are incompatible with open redistribution.');
-      if (capsule.rights.mode === 'licensed' && capsule.rights.license !== c.rights.license) throw new Error('Dependency license is incompatible.');
-      if (!validated.has(key)) { await this.dependencies(capsule, entries, new Set([...seen, key]), validated, cache); validated.add(key); }
-    }
+  private async dependencies(c: CognitiveCapsule, entries: RegistryEntry[], _seen = new Set<string>()): Promise<void> {
+    await validateRegistryDependencies(c, async (dependency) => {
+      const entry = entries.find((record) => record.name === dependency.name && record.version === dependency.version && record.digest === dependency.digest);
+      if (!entry || entry.deprecated) throw new Error(`Unresolved or deprecated exact dependency lock: ${dependency.name}@${dependency.version}`);
+      return { entry, capsule: (await this.object(entry)).capsule };
+    });
   }
   private async mutate<T>(options: RegistryWriteOptions, action: (index: z.infer<typeof IndexSchema>) => Promise<T>): Promise<T> {
     authorize(options); await mkdir(await this.safe('.'), { recursive: true, mode: 0o700 });
@@ -96,6 +92,24 @@ export class LocalCapsuleRegistry {
   async inspect(name: string, version: string): Promise<CognitiveCapsule> {
     assertIdentity(name); const entry = (await this.index()).entries.find((e) => e.name === name && e.version === version);
     if (!entry) throw new Error('Capsule version is not present in the local registry.'); return (await this.object(entry)).capsule;
+  }
+  /** Read exact historical bytes, including deprecated versions, without mutating installation state. */
+  async pull(name: string, version: string): Promise<{ entry: RegistryEntry; bytes: Uint8Array }> {
+    assertIdentity(name); const entry = (await this.index()).entries.find((e) => e.name === name && e.version === version);
+    if (!entry) throw new Error('Capsule version is not present in the local registry.');
+    const { bytes } = await this.object(entry); return { entry: structuredClone(entry), bytes: Uint8Array.from(bytes) };
+  }
+  async dependencyImpact(name: string, version: string): Promise<{ target: RegistryEntry; directDependents: RegistryEntry[]; transitiveDependents: RegistryEntry[] }> {
+    assertIdentity(name); const entries = (await this.index()).entries;
+    const target = entries.find((e) => e.name === name && e.version === version);
+    if (!target) throw new Error('Capsule version is not present in the local registry.'); await this.object(target);
+    const key = (entry: Pick<RegistryEntry, 'name' | 'version' | 'digest'>) => `${entry.name}@${entry.version}#${entry.digest}`;
+    const reverse = new Map<string, RegistryEntry[]>();
+    for (const entry of entries) for (const dep of entry.dependencies) { const k = key(dep); reverse.set(k, [...(reverse.get(k) ?? []), entry]); }
+    const direct = reverse.get(key(target)) ?? []; const visited = new Set<string>([key(target)]); const pending = [...direct]; const affected: RegistryEntry[] = [];
+    while (pending.length) { const entry = pending.shift()!; const k = key(entry); if (visited.has(k)) continue; visited.add(k); await this.object(entry); affected.push(entry); pending.push(...(reverse.get(k) ?? [])); }
+    const sort = (a: RegistryEntry, b: RegistryEntry) => key(a).localeCompare(key(b));
+    return structuredClone({ target, directDependents: [...direct].sort(sort), transitiveDependents: affected.sort(sort) });
   }
   async install(name: string, version: string, options: RegistryWriteOptions = {}): Promise<RegistryEntry> {
     assertIdentity(name); return this.mutate(options, async (index) => {

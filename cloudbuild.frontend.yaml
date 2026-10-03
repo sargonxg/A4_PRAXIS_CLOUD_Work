@@ -176,7 +176,7 @@ substitutions:
   _SOURCE_COMMIT: '${COMMIT_SHA:-manual}'
   _GOOGLE_MAPS_KEY: ''
   _DEPLOY_FIRESTORE_RULES: 'true'
-  _FIRESTORE_RULES_SHA256: 'f742d194d5ea2868c8efc496cf630386d67b5cdb59dfec84ae20e7c00deed4ba'
+  _FIRESTORE_RULES_SHA256: '9fd0eef2c060227a6a67453b4e6213afc3d8b48572461c43a9f75b14a1a3950b'
 
 options:
   dynamicSubstitutions: true

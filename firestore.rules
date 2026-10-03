@@ -202,6 +202,16 @@ service cloud.firestore {
         allow read, write: if isActiveOwner(uid);
       }
 
+      // Private native registry metadata and installation locks are server-managed.
+      match /capsuleRegistry/{versionId} {
+        allow read: if isActiveOwner(uid) && resource.data.ownerUid == uid;
+        allow write: if false;
+      }
+      match /capsuleRegistryInstallations/{installationId} {
+        allow read: if isActiveOwner(uid) && resource.data.ownerUid == uid;
+        allow write: if false;
+      }
+
       // Canonical PRAXIS context capsules: owner-only. The server-side
       // capsule API keeps legacy contextStacks/default compatible while
       // new Ask, memo, tool, and agent flows converge on this collection.

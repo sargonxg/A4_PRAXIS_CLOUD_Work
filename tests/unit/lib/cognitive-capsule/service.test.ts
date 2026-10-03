@@ -21,6 +21,27 @@ describe('expertise capture service', () => {
     expect(call[2].proposedEnvelopePatch.cognition.knowledge[0]).toMatchObject({ label: 'Keep legacy untouched.', reviewState: 'proposed', migrationStatus: 'needs_review' });
     expect(saved().v3.humanTacitKnowledge.practicalHeuristics).toEqual(['Keep legacy untouched.']);
   });
+  it('preserves practice guards, procedure controls and non-transferable case dimensions', async () => {
+    const condition = { kind: 'context', key: 'authority-missing', operator: 'present' };
+    const procedure = await proposeCognitiveKnowledge('owner', 'owned', { kind: 'procedure', label: 'Authority check', scope: ['budget'], body: 'Review authority before publication.',
+      inputs: ['Budget record'], outputs: ['Review finding'], escalationConditions: [condition],
+      structuredSteps: [{ id: 'check', instruction: 'Inspect signing authority.', escalateIf: [condition] }] });
+    expect(procedure?.knowledge).toMatchObject({ inputs: ['Budget record'], outputs: ['Review finding'], escalationConditions: [condition], steps: [{ id: 'check', escalateIf: [condition] }] });
+    const precedent = await proposeCognitiveKnowledge('owner', 'owned', { kind: 'case', label: 'Reviewed case', scope: ['budget'], body: 'Similar funding stages.', situation: 'A synthetic authorization.', decision: 'Inspect payment records.', analogyDimensions: ['approval stage'], nonTransferableDimensions: ['enforcement mechanism'] });
+    expect(precedent?.knowledge).toMatchObject({ nonTransferableDimensions: ['enforcement mechanism'] });
+    const cue = await proposeCognitiveKnowledge('owner', 'owned', { kind: 'cue', label: 'Reassessment', scope: ['budget'], body: 'A review milestone.', falsePositiveConditions: [condition], nonImplications: ['termination'] });
+    expect(cue?.knowledge).toMatchObject({ falsePositiveConditions: [condition], doNotInfer: ['termination'] });
+  });
+  it('stamps generated proposals with server model authorship rather than a human author', async () => {
+    const result = await proposeCognitiveKnowledge('owner', 'owned', correction, undefined, { type: 'model', id: 'configured-model' });
+    expect(result?.knowledge.provenance).toMatchObject({ generatedBy: { type: 'model', id: 'configured-model' }, confidenceKind: 'model-proposed' });
+    expect(storage.createCapsuleReviewCard.mock.calls[0][2].sourceType).toBe('agent');
+  });
+  it('rejects a generated proposal if context changed before the capture service reads it', async () => {
+    storage.getCapsule.mockResolvedValue({ ...saved(), version: 2 });
+    await expect(proposeCognitiveKnowledge('owner', 'owned', correction, undefined, { type: 'model', id: 'configured-model', expectedCapsuleVersion: 1 })).rejects.toMatchObject({ status: 409 });
+    expect(storage.createCapsuleReviewCard).not.toHaveBeenCalled();
+  });
   it('maps a source ID to attached evidence anchors and rejects unresolved or missing references', async () => {
     const cognition = createCognitiveCapsule('owned');
     cognition.evidence.push(EvidenceSpanSchema.parse({ id: 'span', sourceId: 'source', sourceVersion: '1', quote: 'Payment was reported.', anchorStatus: 'exact' }));

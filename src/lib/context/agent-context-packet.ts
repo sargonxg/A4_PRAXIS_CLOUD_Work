@@ -33,6 +33,7 @@ export interface BuildAgentContextPacketInput {
   requestTime: string;
   turnId?: string | null;
   temporalIntent?: boolean;
+  includeCognition?: boolean;
 }
 
 export interface AgentContextGroundingMap {
@@ -85,7 +86,7 @@ export function buildAgentContextPacket(input: BuildAgentContextPacketInput): Ag
   });
   const basePacket = renderPacket({ ...input, temporalIntent }, selected, render, temporalTimeline);
   const remainingChars = Math.max(0, agentContextBudgetForTier(input.budgetTier).maxTokens * 4 - basePacket.length - 1);
-  const cognitive = cognitiveContextForCapsule(input.capsule, { objective: input.userQuery ?? undefined, asOf: input.requestTime, maxChars: Math.min(6000, remainingChars) });
+  const cognitive = input.includeCognition === false ? { text: '' } : cognitiveContextForCapsule(input.capsule, { objective: input.userQuery ?? undefined, asOf: input.requestTime, maxChars: Math.min(6000, remainingChars) });
   const renderInput = { ...input, cognitiveText: cognitive.text };
   return {
     packetText: renderPacket({ ...renderInput, temporalIntent }, selected, render, temporalTimeline),

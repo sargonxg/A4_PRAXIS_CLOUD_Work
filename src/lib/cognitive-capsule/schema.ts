@@ -32,7 +32,7 @@ function reviewAndTime(v: { reviewState: string; provenance: z.infer<typeof Know
     ctx.addIssue({ code: 'custom', path: ['validUntil'], message: 'Validity end precedes start.' });
 }
 export const EvidenceSpanSchema = z.object({
-  id, sourceId: id, sourceVersion: id, quote: text,
+  id, sourceId: id, sourceVersion: id, quote: z.string().min(1).max(4000).refine(value => value.trim().length > 0, 'Evidence quote cannot be blank.'),
   uri: z.string().max(2000).optional(), page: z.number().int().positive().optional(),
   start: z.number().int().nonnegative().optional(), end: z.number().int().nonnegative().optional(),
   prefix: z.string().max(2000).optional(), suffix: z.string().max(2000).optional(),
@@ -52,7 +52,7 @@ export const CognitiveNodeSchema = z.object({ id, type: id, label: text, layer: 
   validFrom: date.optional(), validUntil: date.optional(),
 }).strict().superRefine(reviewAndTime);
 export const CognitiveStatementSchema = z.object({
-  id, subject: id, predicate: id, object: z.union([z.object({ node: id }).strict(), z.object({ literal: z.union([text, z.number().finite(), z.boolean()]) }).strict()]),
+  id, subject: id, predicate: id, object: z.union([z.object({ node: id }).strict(), z.object({ literal: z.union([z.string().min(1).max(4000).refine(value => value.trim().length > 0, 'Literal wording cannot be blank.'), z.number().finite(), z.boolean()]) }).strict()]),
   layer: z.enum(COGNITIVE_LAYERS), polarity: z.enum(['positive', 'negative', 'mixed']),
   modality: z.enum(['asserted', 'possible', 'probable', 'conditional', 'counterfactual', 'desired', 'obligatory']).optional(),
   strength: text.optional(), conditions, exceptions: conditions,
@@ -87,6 +87,7 @@ const variants = [
   z.object({ ...common, kind: z.literal('unknown'), description: text, requiredEvidence: texts, outOfScope: z.boolean().default(false) }).strict(),
   z.object({ ...common, kind: z.literal('revisionTrigger'), when: conditions, affectedIds: ids, action: text }).strict(),
 ] as const;
+export const ProcedureStepsSchema = variants[8].shape.steps;
 export const KnowledgeSchema = z.discriminatedUnion('kind', variants).superRefine((v, ctx) => {
   reviewAndTime(v, ctx);
   if (v.reviewState === 'accepted' && v.migrationStatus === 'needs_review')

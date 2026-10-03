@@ -3,7 +3,7 @@ import { CognitiveGraph, conditionMatches, knowledgeActivation, withinScope, wit
 import { capsuleDigest, contentDigest } from './integrity';
 import type { CognitiveCapsule, CognitiveStatement, EvidenceSpan, Knowledge } from './types';
 
-export const COMPILER_VERSION = 'cognitive-compiler/0.2.0';
+export const COMPILER_VERSION = 'cognitive-compiler/0.3.0';
 export const WORKER_ROLES = ['researcher', 'source-verifier', 'entity-resolver', 'domain-specialist', 'language-analyst', 'red-team', 'writer', 'capsule-curator'] as const;
 export type CognitiveWorkerRole = (typeof WORKER_ROLES)[number];
 const kindsByWorker: Record<CognitiveWorkerRole, Knowledge['kind'][]> = {
@@ -21,6 +21,7 @@ export interface ContextCompilationReceipt {
   role: CognitiveWorkerRole; objective: string; scope: string; scopes: string[]; asOf: string;
   knowledgeIds: string[]; guardedKnowledgeIds: string[]; statementIds: string[]; evidenceSpans: Array<{ id: string; sourceId: string; sourceVersion: string; digest: string }>;
   dependencies: CognitiveCapsule['dependencies']; viewDigest: string;
+  attentionPolicy: { algorithm: 'task-terms-and-kinds/1'; objectiveTerms: string[]; prioritizedKinds: Knowledge['kind'][] };
 }
 export interface CognitiveContextView {
   objective: string; role: CognitiveWorkerRole; scope: string; asOf: string;
@@ -29,6 +30,39 @@ export interface CognitiveContextView {
   renderingSuppressed?: true;
   omissions: Array<{ id: string; reason: string }>; receipt: ContextCompilationReceipt;
 }
+const ATTENTION_STOP_WORDS = new Set(['a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'can', 'do', 'does', 'for', 'from', 'has', 'have', 'how', 'i', 'in', 'is', 'it', 'of', 'on', 'or', 'our', 'should', 'that', 'the', 'their', 'there', 'these', 'this', 'to', 'was', 'we', 'were', 'what', 'when', 'which', 'who', 'will', 'with', 'would', 'you', 'your']);
+function attentionTerms(text: string): string[] {
+  return [...new Set((text.toLocaleLowerCase('en').match(/[\p{L}\p{N}]+/gu) ?? []).filter((term) => term.length > 1 && !ATTENTION_STOP_WORDS.has(term)))].slice(0, 80);
+}
+function taskAttention(objective: string): ContextCompilationReceipt['attentionPolicy'] {
+  const terms = attentionTerms(objective);
+  const text = terms.join(' ');
+  const prioritizedKinds: Knowledge['kind'][] = [];
+  if (/\b(language|wording|phrase|phrases|term|terms|terminology|speech|diplomatic|acceptance|commitment|drafting)\b/.test(text)) prioritizedKinds.push('languageRule', 'distinction');
+  if (/\b(identity|actor|actors|faction|factions|alias|aliases|funding|finance|spent|expenditure|authorization|allocation|obligation)\b/.test(text)) prioritizedKinds.push('distinction', 'question');
+  if (/\b(method|methods|procedure|procedures|steps|workflow|checklist)\b/.test(text)) prioritizedKinds.push('procedure', 'question');
+  if (/\b(case|cases|precedent|precedents|analogy|analogies|compare|comparison)\b/.test(text)) prioritizedKinds.push('case', 'distinction');
+  if (/\b(exception|exceptions|risk|risks|failure|failures|withdrawal|warning|warnings)\b/.test(text)) prioritizedKinds.push('exception', 'redFlag', 'heuristic', 'unknown');
+  return { algorithm: 'task-terms-and-kinds/1', objectiveTerms: terms, prioritizedKinds: [...new Set(prioritizedKinds)] };
+}
+/** Selection policy only: matching task terms does not establish confidence, truth or applicability. */
+function attentionOrder(capsule: CognitiveCapsule, policy: ContextCompilationReceipt['attentionPolicy']) {
+  const labels = new Map(capsule.nodes.map((node) => [node.id, node.label]));
+  const scores = new Map<string, number>();
+  const score = (record: Knowledge | CognitiveStatement) => {
+    const cached = scores.get(record.id);
+    if (cached !== undefined) return cached;
+    const label = attentionTerms('label' in record ? [record.label, 'expression' in record ? record.expression : '', 'conceptA' in record ? `${record.conceptA} ${record.conceptB}` : ''].join(' ') : [record.predicate, labels.get(record.subject) ?? '', 'node' in record.object ? labels.get(record.object.node) ?? '' : String(record.object.literal)].join(' '));
+    const { provenance: _provenance, id: _id, reviewState: _reviewState, ...content } = record;
+    const body = new Set(attentionTerms(JSON.stringify(content)));
+    const labelSet = new Set(label);
+    const matched = policy.objectiveTerms.reduce((total, term) => total + (labelSet.has(term) ? 4 : body.has(term) ? 1 : 0), 0);
+    const rank = matched + ('kind' in record && policy.prioritizedKinds.includes(record.kind) ? 3 : 0);
+    scores.set(record.id, rank); return rank;
+  };
+  return (left: { record: Knowledge | CognitiveStatement }, right: { record: Knowledge | CognitiveStatement }) => score(right.record) - score(left.record) || left.record.id.localeCompare(right.record.id, 'en');
+}
+
 export function compileContext(value: CognitiveCapsule, input: {
   objective: string; role: CognitiveWorkerRole; scope: string; scopes?: string[]; asOf: string; facts?: ContextFacts; maxChars?: number;
 }): CognitiveContextView {
@@ -55,17 +89,18 @@ export function compileContext(value: CognitiveCapsule, input: {
       : (s.conditions.length && !s.conditions.every((cond) => conditionMatches(cond, input.facts ?? {}))) || s.exceptions.some((cond) => !Object.hasOwn(input.facts ?? {}, cond.key) || conditionMatches(cond, input.facts ?? {})) ? 'conditions-or-exception' : null;
     if (reason) omissions.push({ id: s.id, reason }); return !reason;
   });
-  const max = Math.max(0, Math.min(input.maxChars ?? 24000, 64000));
+  const max = Math.max(0, Math.min(Number.isFinite(input.maxChars) ? Math.floor(input.maxChars!) : 24000, 64000));
+  const attentionPolicy = taskAttention(input.objective);
   const chosenEvidence = new Map<string, EvidenceSpan>();
   const knowledge: Knowledge[] = []; const selectedStatements: CognitiveStatement[] = []; const guardedCandidates: CognitiveContextView['guardedCandidates'] = [];
   const baseReceipt: ContextCompilationReceipt = { compilerVersion: COMPILER_VERSION, capsuleId: c.capsuleId, capsuleVersion: c.version,
     capsuleDigest: capsuleDigest(c), role: input.role, objective: input.objective, scope: input.scope, scopes: input.scopes ?? [input.scope], asOf: input.asOf,
-    knowledgeIds: [], guardedKnowledgeIds: [], statementIds: [], evidenceSpans: [], dependencies: structuredClone(c.dependencies), viewDigest: `sha256:${'0'.repeat(64)}` };
+    knowledgeIds: [], guardedKnowledgeIds: [], statementIds: [], evidenceSpans: [], dependencies: structuredClone(c.dependencies), attentionPolicy, viewDigest: `sha256:${'0'.repeat(64)}` };
   const currentView = (): CognitiveContextView => ({ objective: input.objective, role: input.role, scope: input.scope, asOf: input.asOf,
     statements: selectedStatements, knowledge, guardedCandidates, evidence: [...chosenEvidence.values()], omissions, receipt: baseReceipt });
   const retain = (r: Knowledge | CognitiveStatement, push: () => void, pop: () => void) => {
-    const refs = 'subject' in r ? [...r.sourceRefs, ...(r.wordingRef ? [r.wordingRef] : []),
-      ...graph.findContradictions(r.id).filter((s) => s.reviewState === 'accepted' && withinTime(s, input.asOf)).flatMap((s) => s.sourceRefs)]
+    const refs = 'subject' in r ? [...r.sourceRefs, ...r.provenance.sourceRefs, ...(r.wordingRef ? [r.wordingRef] : []),
+      ...graph.findContradictions(r.id).filter((s) => s.reviewState === 'accepted' && withinTime(s, input.asOf)).flatMap((s) => [...s.sourceRefs, ...s.provenance.sourceRefs])]
       : [...r.provenance.sourceRefs, ...(['languageRule', 'cue'].includes(r.kind) && 'examples' in r ? r.examples : [])];
     const anchors = c.evidence.filter((e) => refs.includes(e.id) && !chosenEvidence.has(e.id));
     push(); anchors.forEach((e) => chosenEvidence.set(e.id, e));
@@ -74,9 +109,16 @@ export function compileContext(value: CognitiveCapsule, input: {
     }
   };
   // Charge the actual escaped serialization, including candidate wrappers and all anchors, atomically.
-  for (const k of applied) retain(k, () => knowledge.push(k), () => knowledge.pop());
-  for (const s of statements) retain(s, () => selectedStatements.push(s), () => selectedStatements.pop());
-  for (const candidate of guarded) retain(candidate.knowledge, () => guardedCandidates.push(candidate), () => guardedCandidates.pop());
+  const candidates = [
+    ...applied.map((record) => ({ type: 'knowledge' as const, record })),
+    ...statements.map((record) => ({ type: 'statement' as const, record })),
+    ...guarded.map((candidate) => ({ type: 'guarded' as const, record: candidate.knowledge, candidate })),
+  ].sort(attentionOrder(c, attentionPolicy));
+  for (const candidate of candidates) {
+    if (candidate.type === 'knowledge') retain(candidate.record, () => knowledge.push(candidate.record), () => knowledge.pop());
+    else if (candidate.type === 'statement') retain(candidate.record, () => selectedStatements.push(candidate.record), () => selectedStatements.pop());
+    else retain(candidate.record, () => guardedCandidates.push(candidate.candidate), () => guardedCandidates.pop());
+  }
   const evidence = [...chosenEvidence.values()];
   const renderingSuppressed = renderContext(currentView()).length > max ? true as const : undefined;
   const view = { objective: input.objective, role: input.role, scope: input.scope, asOf: input.asOf, statements: selectedStatements, knowledge, guardedCandidates, evidence, omissions,
@@ -85,7 +127,7 @@ export function compileContext(value: CognitiveCapsule, input: {
     capsuleDigest: capsuleDigest(c), role: input.role, objective: input.objective, scope: input.scope, scopes: input.scopes ?? [input.scope], asOf: input.asOf,
     knowledgeIds: knowledge.map((k) => k.id), guardedKnowledgeIds: guardedCandidates.map((k) => k.knowledge.id), statementIds: selectedStatements.map((s) => s.id),
     evidenceSpans: evidence.map((e) => ({ id: e.id, sourceId: e.sourceId, sourceVersion: e.sourceVersion, digest: contentDigest(e) })),
-    dependencies: structuredClone(c.dependencies), viewDigest: contentDigest(view) };
+    dependencies: structuredClone(c.dependencies), attentionPolicy, viewDigest: contentDigest({ ...view, attentionPolicy }) };
   return { ...view, receipt };
 }
 /** Render authored rationale and rules as data, never hidden model chain-of-thought. */

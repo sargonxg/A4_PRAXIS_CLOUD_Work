@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { evidenceFromReceipt, evidenceFromSpatialCitation, toWebAnnotation, documentIrFromChunks } from '@/lib/cognitive-capsule/evidence';
+import { evidenceFromReceipt, evidenceFromSpatialCitation, toWebAnnotation, documentIrFromChunks, evidenceQuoteDigest } from '@/lib/cognitive-capsule/evidence';
 import { evaluateGoldenOutput, runCognitiveBenchmark, GOLDEN_COGNITIVE_TASKS } from '@/lib/cognitive-capsule/evaluation';
 import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
 import { compileContext, renderContext } from '@/lib/cognitive-capsule/compiler';
@@ -7,9 +7,10 @@ import { compileContext, renderContext } from '@/lib/cognitive-capsule/compiler'
 describe('unified portable evidence', () => {
   it('retains original quote, offsets, source version and PDF geometry through Web Annotation', () => {
     const span = evidenceFromSpatialCitation({ cid: 'c1', documentId: 'd1', chunkId: 'chunk1', pageNumber: 2,
-      coords: { x: 0.1, y: 0.2, width: 0.3, height: 0.1 }, textPreview: 'Prepared to consider', quoteHash: 'provided-hash', confidence: 0.9 },
-    { sourceId: 'source', sourceVersion: 'sha256:document-version', quote: 'Prepared to consider', start: 20, end: 39 });
-    expect(span.sourceVersion).toBe('sha256:document-version');
+      coords: { x: 0.1, y: 0.2, width: 0.3, height: 0.1 }, textPreview: 'Prepared to consider', quoteHash: evidenceQuoteDigest('Prepared to consider'), confidence: 0.9 },
+    { sourceId: 'source', sourceVersion: `sha256:${'1'.repeat(64)}`, quote: 'Prepared to consider', start: 20, end: 39 });
+    expect(span.sourceVersion).toBe(`sha256:${'1'.repeat(64)}`);
+    expect(span.anchorStatus).toBe('exact');
     expect(span.geometry?.x).toBe(0.1);
     const annotation = toWebAnnotation(span);
     expect(annotation.target.selector).toContainEqual({ type: 'TextPositionSelector', start: 20, end: 39 });
@@ -44,8 +45,8 @@ describe('scientifically bounded cognitive evaluation', () => {
     let calls = 0;
     const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async () => {
       calls++; return { providerReceipt: 'actual-test-provider', output: { conclusions: ['acceptance-not-established'], distinctions: ['consider-is-not-accept'], citedIds: ['language-rule'], questions: [] }, model: 'test-adapter' };
-    }, { retrieveEvidence: async () => c.evidence });
-    expect(calls).toBe(5);
+    }, { retrieveEvidence: async () => ({ evidence: c.evidence, retriever: 'test-adapter', retrievalReceipt: 'actual-test-retrieval' }) });
+    expect(calls).toBe(9);
     expect(result.results.every((r) => r.status === 'evaluated' && r.providerReceipt === 'actual-test-provider')).toBe(true);
     expect(result.modelImprovementEstablished).toBe(false);
   });
@@ -58,7 +59,7 @@ describe('scientifically bounded cognitive evaluation', () => {
     const c = createCognitiveCapsule('retrieval-lock'); const profiles: string[] = [];
     const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async (request) => {
       profiles.push(request.profile); return { providerReceipt: 'receipt', model: 'test', output: { conclusions: [], distinctions: [], citedIds: [], questions: [] } };
-    }, { retrieveEvidence: async () => [{ id: 'invented', sourceId: 'unknown', sourceVersion: '1', quote: 'Invented source', anchorStatus: 'exact', stance: 'supports' }] });
+    }, { retrieveEvidence: async () => ({ evidence: [{ id: 'invented', sourceId: 'unknown', sourceVersion: '1', quote: 'Invented source', anchorStatus: 'exact', stance: 'supports' }], retriever: 'test-adapter', retrievalReceipt: 'actual-test-retrieval' }) });
     expect(result.results.find((r) => r.profile === 'rag')).toMatchObject({ status: 'failed' });
     expect(profiles).not.toContain('rag');
   });

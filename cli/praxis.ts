@@ -6,11 +6,12 @@ import { pathToFileURL } from 'node:url';
 import { CognitiveCapsuleSchema } from '../src/lib/cognitive-capsule/schema';
 import { CognitiveGraph } from '../src/lib/cognitive-capsule/graph';
 import { capsuleDigest, semanticDiff } from '../src/lib/cognitive-capsule/integrity';
-import { PACKAGE_LIMITS, packCapsule, readCapsulePackage } from '../src/lib/cognitive-capsule/package';
+import { CAPSULE_MIMETYPE, PACKAGE_LIMITS, bytesDigest, packCapsule, readCapsulePackage } from '../src/lib/cognitive-capsule/package';
+import { HostedRegistryRequestSchema } from '../src/lib/cognitive-capsule/hosted-registry-contract';
 import { LocalCapsuleRegistry } from '../src/lib/cognitive-capsule/registry';
 import type { CognitiveCapsule } from '../src/lib/cognitive-capsule/types';
 
-type RemoteOptions = { baseUrl?: string; session?: string; authOrigin?: string; fetch?: typeof fetch };
+export type RemoteOptions = { baseUrl?: string; session?: string; authOrigin?: string; fetch?: typeof fetch };
 type CliOptions = RemoteOptions & { cwd?: string; registry?: string; write?: (output: string) => void };
 const HELP = `PRAXIS local capsule CLI\n
 capsule list [--directory DIR | --registry DIR]
@@ -19,6 +20,10 @@ capsule diff BEFORE AFTER
 capsule pack JSON --output FILE --allow-write
 capsule unpack FILE --output NEW_DIRECTORY --allow-write
 capsule publish FILE [--registry DIR] --allow-write
+capsule push FILE [--registry DIR] --allow-write
+capsule pull NAME VERSION --output FILE --allow-write
+capsule impact NAME VERSION
+capsule version FILE NEW_VERSION --output JSON --allow-write
 capsule install NAME VERSION [--registry DIR] --allow-write
 capsule fork NAME VERSION NEW_NAME --output JSON --allow-write
 capsule deprecate NAME VERSION --reason TEXT --allow-write
@@ -27,6 +32,18 @@ run OBJECTIVE --capsule ID
 receipt RUN_ID
 list --capsule ID
 whoami
+cognition inspect|history ID [--cursor CURSOR]
+cognition diff ID --from N --to N
+cognition export ID --format package|jsonld --output FILE --allow-write
+cognition propose ID --input JSON --allow-write
+cognition review ID --input JSON --allow-write --human-review
+registry list [--cursor CURSOR]
+registry publish ID --envelope-version N --name NAME --allow-write
+registry pull NAME VERSION --output FILE --allow-write
+registry install NAME VERSION --allow-write
+registry update NAME VERSION --expected-digest DIGEST --allow-write
+registry deprecate NAME VERSION --reason TEXT --allow-write
+registry impact NAME VERSION
 Remote commands require PRAXIS_BASE_URL, PRAXIS_AUTH_ORIGIN and PRAXIS_SESSION.
 Local eval reports deterministic structural checks; it is not a model ablation.
 `;
@@ -62,7 +79,7 @@ function redact(value: unknown, secrets: string[]): unknown {
 }
 
 /** Use the existing signed session cookie contract, scoped to an explicitly declared origin. */
-export async function remoteRequest(path: string, method: 'GET' | 'POST', body: unknown, options: RemoteOptions = {}): Promise<unknown> {
+async function remoteResponse(path: string, method: 'GET' | 'POST' | 'PATCH', body: unknown, options: RemoteOptions = {}) {
   const base = new URL(options.baseUrl ?? process.env.PRAXIS_BASE_URL ?? 'https://praxis.tacitus.me');
   if (base.protocol !== 'https:' && !(base.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(base.hostname))) throw new Error('Remote API requires HTTPS except localhost.');
   if (base.username || base.password || base.pathname !== '/' || base.search || base.hash) throw new Error('Base URL must contain only a safe origin.');
@@ -70,6 +87,7 @@ export async function remoteRequest(path: string, method: 'GET' | 'POST', body: 
   if (!origin || new URL(origin).href !== `${base.origin}/`) throw new Error('Session authentication origin must exactly match the API origin.');
   if (!path.startsWith('/api/') || path.startsWith('//') || path.includes('\\')) throw new Error('Invalid API path or origin.');
   const url = new URL(path, base); if (url.origin !== base.origin) throw new Error('Cross-origin API request rejected.');
+  if (!url.pathname.startsWith('/api/')) throw new Error('Invalid normalized API path.');
   const session = options.session ?? process.env.PRAXIS_SESSION;
   if (!session || /[\x00-\x20\x7f;,]/.test(session)) throw new Error('PRAXIS_SESSION must be an encoded signed session cookie, never a raw token.');
   let decoded: string; let token = '';
@@ -83,32 +101,49 @@ export async function remoteRequest(path: string, method: 'GET' | 'POST', body: 
   const response = await (options.fetch ?? fetch)(url.href, {
     method, headers: { Cookie: `tacitus-auth-session=${session}`, ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}) },
     body: body === undefined ? undefined : JSON.stringify(body), redirect: 'error', credentials: 'omit', signal: AbortSignal.timeout(90_000),
-  });
+  }).catch(() => { throw new Error('PRAXIS network request failed.'); });
   if (!response.ok) throw new Error(`PRAXIS API request failed (${response.status}).`);
   const reader = response.body?.getReader(); const chunks: Uint8Array[] = []; let size = 0;
   if (reader) {
-    try { while (true) { const next = await reader.read(); if (next.done) break; size += next.value.length; if (size > 8 * 1024 * 1024) throw new Error('API response byte budget exceeded.'); chunks.push(next.value); } }
+    try { while (true) { const next = await reader.read(); if (next.done) break; size += next.value.length; if (size > PACKAGE_LIMITS.maxArchiveBytes) throw new Error('API response byte budget exceeded.'); chunks.push(next.value); } }
     finally { await reader.cancel(); }
   }
-  const result = Buffer.concat(chunks).toString('utf8');
+  return { response, bytes: Buffer.concat(chunks), secrets: [session, decoded, token] };
+}
+
+export async function remoteRequest(path: string, method: 'GET' | 'POST' | 'PATCH', body: unknown, options: RemoteOptions = {}): Promise<unknown> {
+  const { response, bytes, secrets } = await remoteResponse(path, method, body, options);
+  const result = bytes.toString('utf8');
   let value: unknown = result;
   if (response.headers.get('content-type')?.includes('application/json')) {
     try { value = JSON.parse(result); } catch { throw new Error('PRAXIS API returned invalid JSON.'); }
   }
-  return redact(value, [session, decoded, token]);
+  return redact(value, secrets);
+}
+
+/** Exact native bytes are validated before writing or exposing a download receipt. */
+export async function remoteArtifact(path: string, options: RemoteOptions = {}, requireDigest = false) {
+  const { response, bytes } = await remoteResponse(path, 'GET', undefined, options);
+  if (response.headers.get('content-type')?.split(';')[0] !== CAPSULE_MIMETYPE) throw new Error('API did not return a native capsule artifact.');
+  const digest = bytesDigest(bytes); const declared = response.headers.get('x-capsule-digest');
+  if ((requireDigest && !declared) || (declared && declared !== digest)) throw new Error('Native artifact digest mismatch or missing digest.');
+  const contentDigest = response.headers.get('content-digest');
+  if (contentDigest && contentDigest !== `sha-256=:${Buffer.from(digest.slice(7), 'hex').toString('base64')}:`) throw new Error('Native artifact content digest mismatch.');
+  const { capsule, manifest } = await readCapsulePackage(bytes);
+  return { bytes, digest, capsule, manifest };
 }
 
 export async function runCli(args: string[], options: CliOptions = {}): Promise<void> {
   const out = options.write ?? ((v: string) => process.stdout.write(`${v}\n`));
   if (!args.length || ['help', '--help', '-h'].includes(args[0])) { out(HELP); return; }
   const positional: string[] = []; const flags: Record<string, string | boolean> = {};
-  const valued = new Set(['output', 'directory', 'registry', 'reason', 'capsule', 'base-url', 'auth-origin']);
+  const valued = new Set(['output', 'directory', 'registry', 'reason', 'capsule', 'base-url', 'auth-origin', 'input', 'format', 'cursor', 'from', 'to', 'name', 'envelope-version', 'expected-digest']);
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (!arg.startsWith('--')) { positional.push(arg); continue; }
     const key = arg.slice(2);
     if (key in flags) throw new Error(`Duplicate option --${key}.`);
-    if (key === 'allow-write') flags[key] = true;
+    if (key === 'allow-write' || key === 'human-review') flags[key] = true;
     else if (valued.has(key) && args[i + 1] && !args[i + 1].startsWith('--')) flags[key] = args[++i];
     else throw new Error(`Unknown or incomplete option --${key}.`);
   }
@@ -124,7 +159,17 @@ export async function runCli(args: string[], options: CliOptions = {}): Promise<
       if (flag('directory')) { const dir = localPath(flag('directory')!); const names = (await readdir(dir)).filter((n) => n.endsWith('.capsule')); const rows = []; for (const n of names) { const c = await load(join(dir, n)); rows.push({ file: n, capsuleId: c.capsuleId, version: c.version, profile: c.profile, digest: capsuleDigest(c) }); } emit(rows); }
       else emit(await registry().list()); return;
     }
-    if (action === 'publish') { emit(await registry().publish(await boundedFile(localPath(required(file, 'file'))), { allowWrite })); return; }
+    if (action === 'publish' || action === 'push') { emit(await registry().publish(await boundedFile(localPath(required(file, 'file'))), { allowWrite })); return; }
+    if (action === 'pull') { const { bytes, entry } = await registry().pull(required(file, 'name'), required(other, 'version')); await save(localPath(required(flag('output'), '--output')), bytes, allowWrite); emit({ output: flag('output'), entry }); return; }
+    if (action === 'impact') { emit(await registry().dependencyImpact(required(file, 'name'), required(other, 'version'))); return; }
+    if (action === 'version') {
+      const c = await load(localPath(required(file, 'file'))); const version = required(other, 'new version');
+      const parsed = CognitiveCapsuleSchema.parse({ ...c, version });
+      const before = c.version.split('.').map(Number); const after = parsed.version.split('.').map(Number);
+      const difference = after.findIndex((n, i) => n !== before[i]);
+      if (difference < 0 || after[difference] < before[difference]) throw new Error('New version must be greater than the current version.');
+      await save(localPath(required(flag('output'), '--output')), JSON.stringify(parsed, null, 2), allowWrite); emit({ output: flag('output'), version, published: false }); return;
+    }
     if (action === 'install') { emit(await registry().install(required(file, 'name'), required(other, 'version'), { allowWrite })); return; }
     if (action === 'deprecate') { emit(await registry().deprecate(required(file, 'name'), required(other, 'version'), required(flag('reason'), '--reason'), { allowWrite })); return; }
     if (action === 'fork') { const c = await registry().fork(required(file, 'name'), required(other, 'version'), required(positional[4], 'new name'), { allowWrite }); await save(localPath(required(flag('output'), '--output')), JSON.stringify(c, null, 2), allowWrite); emit({ capsuleId: c.capsuleId, version: c.version, published: false }); return; }
@@ -150,6 +195,45 @@ export async function runCli(args: string[], options: CliOptions = {}): Promise<
     return;
   }
   const remote = { ...options, baseUrl: flag('base-url') ?? options.baseUrl, authOrigin: flag('auth-origin') ?? options.authOrigin };
+  const requireWrite = () => { if (!allowWrite) throw new Error('This operation requires --allow-write.'); };
+  if (command === 'cognition') {
+    const id = required(file, 'capsule id');
+    if (!/^[a-zA-Z0-9._:-]{1,160}$/.test(id)) throw new Error('Invalid capsule id.');
+    const path = `/api/context/capsules/${encodeURIComponent(id)}`;
+    if (action === 'inspect') { emit(await remoteRequest(`${path}/cognition${flag('cursor') ? `?cursor=${encodeURIComponent(flag('cursor')!)}` : ''}`, 'GET', undefined, remote)); return; }
+    if (action === 'history') { emit(await remoteRequest(`${path}/history`, 'GET', undefined, remote)); return; }
+    if (action === 'diff') {
+      const from = required(flag('from'), '--from'); const to = required(flag('to'), '--to');
+      if (![from, to].every((v) => /^v?[1-9]\d*$/.test(v))) throw new Error('Diff versions must be positive saved versions.');
+      emit(await remoteRequest(`${path}/diff?from=${from}&to=${to}`, 'GET', undefined, remote)); return;
+    }
+    if (action === 'export') {
+      requireWrite(); const target = localPath(required(flag('output'), '--output')); const format = flag('format') ?? 'package';
+      if (format === 'package') { const artifact = await remoteArtifact(`${path}/cognition?format=package`, remote); if (artifact.capsule.capsuleId !== id) throw new Error('Native artifact identity mismatch.'); await save(target, artifact.bytes, true); emit({ output: target, digest: artifact.digest, version: artifact.capsule.version }); }
+      else if (format === 'jsonld') { await save(target, JSON.stringify(await remoteRequest(`${path}/cognition?format=jsonld`, 'GET', undefined, remote), null, 2), true); emit({ output: target, format }); }
+      else throw new Error('Export format must be package or jsonld.'); return;
+    }
+    if (action === 'propose' || action === 'review') {
+      requireWrite(); if (action === 'review' && flags['human-review'] !== true) throw new Error('A human review decision requires --human-review. Model clients must only propose.');
+      const bytes = await boundedFile(localPath(required(flag('input'), '--input')));
+      if (bytes.length > 64_000) throw new Error('Expertise request byte budget exceeded.');
+      emit(await remoteRequest(`${path}/cognition`, action === 'review' ? 'PATCH' : 'POST', JSON.parse(bytes.toString('utf8')), remote)); return;
+    }
+    throw new Error('Unknown cognition command.');
+  }
+  if (command === 'registry') {
+    const path = '/api/context/capsule-registry';
+    if (action === 'list') { emit(await remoteRequest(`${path}${flag('cursor') ? `?cursor=${encodeURIComponent(flag('cursor')!)}` : ''}`, 'GET', undefined, remote)); return; }
+    if (action === 'impact' || action === 'pull') {
+      const query = new URLSearchParams({ name: required(file, 'name'), version: required(other, 'version') });
+      if (action === 'impact') emit(await remoteRequest(`${path}/impact?${query}`, 'GET', undefined, remote));
+      else { requireWrite(); const target = localPath(required(flag('output'), '--output')); const artifact = await remoteArtifact(`${path}/artifact?${query}`, remote, true); if (artifact.capsule.version !== other || artifact.capsule.capsuleId !== file) throw new Error('Native artifact identity or version mismatch.'); await save(target, artifact.bytes, true); emit({ output: target, digest: artifact.digest, capsuleDigest: artifact.manifest.capsuleDigest, version: artifact.capsule.version }); } return;
+    }
+    requireWrite();
+    const input = action === 'publish' ? { operation: action, capsuleId: required(file, 'capsule id'), envelopeVersion: Number(required(flag('envelope-version'), '--envelope-version')), name: required(flag('name'), '--name') }
+      : { operation: action, name: required(file, 'name'), version: required(other, 'version'), ...(action === 'update' ? { expectedDigest: required(flag('expected-digest'), '--expected-digest') } : {}), ...(action === 'deprecate' ? { reason: required(flag('reason'), '--reason') } : {}) };
+    emit(await remoteRequest(path, 'POST', HostedRegistryRequestSchema.parse(input), remote)); return;
+  }
   if (command === 'ask') { emit(await remoteRequest('/api/ai/ask-praxis', 'POST', { messages: [{ role: 'user', content: required(action, 'question') }], capsuleId: required(flag('capsule'), '--capsule') }, remote)); return; }
   if (command === 'run') { emit(await remoteRequest('/api/agents/runs', 'POST', { objective: required(action, 'objective'), capsuleId: required(flag('capsule'), '--capsule'), triggerType: 'manual' }, remote)); return; }
   if (command === 'receipt') { emit(await remoteRequest(`/api/agents/runs/${encodeURIComponent(required(action, 'run id'))}`, 'GET', undefined, remote)); return; }

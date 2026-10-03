@@ -1,5 +1,6 @@
 import { createHash } from 'crypto';
 import { GoogleAuth } from 'google-auth-library';
+import { documentIrFromChunks } from '@/lib/cognitive-capsule/evidence';
 import type {
   DocumentLayoutChunk,
   SpatialBoundingBox,
@@ -63,12 +64,21 @@ export async function buildSpatialSourceBinding(input: SpatialBindingInput): Pro
   ) {
     try {
       const parsed = await parseWithDocumentAiLayoutParser(input);
-      if (parsed.chunks.length > 0) return parsed;
+      if (parsed.chunks.length > 0) return withDocumentIr(input, parsed);
     } catch (err) {
       console.warn('[spatial-source-binding] Document AI layout parser failed; using text fallback.', err);
     }
   }
-  return buildFallbackSpatialSourceBinding(input);
+  return withDocumentIr(input, buildFallbackSpatialSourceBinding(input));
+}
+
+function withDocumentIr(input: SpatialBindingInput, binding: SpatialSourceBinding): SpatialSourceBinding {
+  // A parser's timestamps and receipt IDs are never document content versions.
+  const sourceVersion = `sha256:${createHash('sha256').update(input.fileBuffer ?? Buffer.from(input.text, 'utf8')).digest('hex')}`;
+  return { ...binding, metadata: { ...binding.metadata, sourceVersion,
+    documentIr: documentIrFromChunks(input.documentId, sourceVersion, binding.chunks, {
+      parser: { name: binding.parser, version: binding.parserVersion }, textPosture: 'normalized',
+    }) } };
 }
 
 export function buildFallbackSpatialSourceBinding(input: SpatialBindingInput): SpatialSourceBinding {

@@ -1,0 +1,52 @@
+# Full cognitive roadmap continuation
+
+The user requested all mandatory work in the preserved master plan and explicitly authorized publication. The first execution-pack release is not completion of that request. Waves 0–15 remain mandatory; the plan's explicit deferrals for commerce, sealed-use, AG-UI/A2A and OCI distribution remain conditional.
+
+## Current source, not a published release
+
+PRAXIS main HEAD is `225c3972`. Uncommitted continuation source adds all 12 capture kinds, 8 reviewed profiles, graph inspection and grouped graph review, conflict-preserving composition, adaptive interviewing, deterministic Capsule Chat, semantic history, separately compiled historical attachments and receipts, data-selected specialists, exact dependency/run locks, private hosted registry operations with review-only installation, authenticated CLI/MCP adapters, evidence/DocumentIR/SHACL exports and incremental ablation/parser benchmark harnesses.
+
+DIALECTICA at `C:\Users\giuli\tacitus-products\dialectica_v3` adds a draft-only compiler and a real native export bridge using the PRAXIS shared runtime. Its focused Rust tests, existing compiler regressions, clippy and real bridge invocation passed before the disk blocker. This source is not yet committed or pushed.
+
+The prior live application remains `d5efb79ac4e0abe8df0a0c929e8f198f32d1b7a6`, revision `praxis-frontend-01104-85z`. Public runtime health was rechecked and reports status `ok` and this exact build. The new continuation source is not served.
+
+## Resource blocker resolved; publication gates in progress
+
+C: previously reached 0 MB free. The user freed space; the resumed checkpoint has approximately 15 GB available. No rejected generated-cache deletion was performed. The pinned development dependency `@modelcontextprotocol/sdk@1.32.0` is installed, and two actual SDK in-memory transport tests pass. Focused continuation checks and TypeScript passed; final full-suite/build/release gates are in progress. Source remains unpublished until the release evidence below records a serving revision.
+
+Local authenticated browser QA reached login but owner capsule creation returned 503 because Firebase Admin credentials were absent. Anonymous cognition protection passed. The prior live provider journey returned 429 because the canary allowance was exhausted. Neither provider output acceptance nor blinded human efficacy evaluation is established. No allowance was changed.
+
+## Publication checklist
+
+1. Recheck free disk, preserve the user's pre-existing dirty configuration/audit/Graphify files, and inspect all current source diffs. Do not retry rejected deletion through another mechanism.
+2. Completed: install the pinned MCP SDK with `--ignore-scripts`, actual in-memory protocol tests, focused lane tests/lint and final TypeScript. Corrected-source full suite passed **477 files / 2,845 tests**. Stale generated proposals are rejected before staging, and the private registry is mounted in the actual owned capsule inspector.
+3. Run the complete repository gate serially, including the full test suite, build, audit/gcp/architecture/AI-route checks and dependency security review. Save evidence separately from user audit files. Run Graphify as required after code changes.
+4. Update the ledger around the final implementation and remaining observed acceptance, then commit and push only scoped task files in PRAXIS and DIALECTICA. No completion claim based on source alone.
+5. Deploy from an updated clean clone; include reviewed Firestore/Storage rules and index changes. Warm the exact revision and verify image/source identity, then explicitly move pinned Cloud Run traffic to the new revision.
+6. Run the expanded live authenticated capture, graph review, profile, composition, registry publication/install/update/deprecation, package and attachment journeys. Attempt provider acceptance only through legitimate available account capacity. Record actual failures and unrun parser/provider/human-scoring results honestly.
+
+Publication remains authorized. No additional user approval is required once mandatory verification can complete.
+
+## Mandatory continuation implementation
+
+| Area | Implemented behavior | Evidence boundary |
+| --- | --- | --- |
+| Studio and correction | All twelve typed capture kinds, all eight reviewed profiles, graph inspection and grouped proposals, deterministic Capsule Chat, semantic history | Human review alone promotes knowledge; synthetic browser journeys do not establish domain quality |
+| Composition | Conflict-preserving merge with parent permissions, numeric versions and semantic digests checked at creation and acceptance | No silent parent updates or upstream promotion |
+| Expert interviewing | Calibrated adaptive six-mode model assistance with exact-version staging, bounded output and unverified model authorship | Actual provider output and interviewing quality remain unverified |
+| Evidence | Canonical spans, literal quote hashes, DocumentIR in the existing spatial binding, JSON-LD and SHACL exports | Optional Docling comparison and external SHACL execution are not claimed |
+| Context and runtime | Separately compiled exact historical attachments, actual transmitted receipts, task attention, frozen dependency artifacts, source/entity/domain/language specialists before writer/red-team | Frozen-context contracts are tested; empirical model effectiveness remains unestablished |
+| Distribution | Owner-private hosted registry, immutable source publication, dependency locks, transactional installation plus review draft, CAS update/fork/deprecate/impact | Private/internal ownership only; no organization-governance or commerce acceptance |
+| CLI/MCP | Authenticated production API clients and actual MCP SDK transport, read-only default, operator-enabled proposals and private-registry writes | MCP has no acceptance or canonical-promotion tools; no npm installer distribution claimed |
+| DIALECTICA | Rust draft compiler and shared-PRAXIS native package export bridge | Draft-only; no canonical-store writes, production engine deployment or Ladybug promotion claimed |
+| Evaluation | Nine context ablations, hidden rubrics, anchored citation checks and explicit retrieval/execution receipts | Representative provider comparison, gold parser annotations and blinded expert assessment remain required before efficacy claims |
+
+## Final local verification
+
+Corrected source: **477 test files / 2,845 tests passed**. Production build and final TypeScript passed. Full lint passed with five inherited warnings and no errors. Actual MCP SDK transport tests passed. Production dependency audit has 3 low / 14 moderate / 0 high / 0 critical findings; full audit retains five high findings in the existing development-only ESLint chain. No forced framework downgrade or account allowance change was made.
+
+The aggregate `audit:gate`, repository-shape and architecture-reference checks passed. Graphify refreshed to 19,820 nodes / 43,943 edges / 934 communities; SQL and Terraform parser extras remain unavailable. Generated graphs and the user's pre-existing configuration/audit edits are excluded from release source.
+
+DIALECTICA draft/export source is separately pushed and remote-verified at `e60bb0525e802ddb0216f1a3ad20695122bd9081`. Prior focused compiler/CLI tests, clippy and actual native export passed; resumed fmt, Python compilation and five Python tests passed. The retained native artifact validates through current PRAXIS. Full workspace/Ladybug gates were not rerun; no DIALECTICA cloud deployment or canonical promotion is claimed.
+
+Ignored evidence is under `output/cognitive-capsule-2026-10-03/`, including `final-full-tests.log`, `final-typecheck.log`, `final-build.log`, `final-lint.log`, dependency audits, rule compilation receipts and focused lane evidence. Deployment/live identity results will be appended only after observation.

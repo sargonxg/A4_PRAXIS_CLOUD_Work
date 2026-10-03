@@ -1,9 +1,30 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page, type Locator } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { authenticateFirebaseCanary, canaryCredentialSkipReason, expectAuthenticatedSession, hasFirebaseCanaryCredentials } from './helpers/auth';
 import { readCapsulePackage, CAPSULE_MIMETYPE } from '../../src/lib/cognitive-capsule/package';
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+
+async function openOwnerInspector(page: Page, capsuleId: string) {
+  await page.goto(`${BASE}/app/capsules?${new URLSearchParams({ lane: 'inspect', starter: capsuleId })}`);
+  const inspector = page.getByTestId('capsule-inspector-sheet');
+  await expect(inspector).toBeVisible({ timeout: 30_000 });
+  const expertise = inspector.getByTestId('capsule-expertise-panel');
+  await expertise.locator('summary').first().click();
+  await expect(expertise.getByTestId('capsule-expertise-capture').getByRole('button', { name: 'Propose for review', exact: true })).toBeEnabled({ timeout: 30_000 });
+  return { inspector, expertise };
+}
+async function registryRow(registry: Locator, page: Page, name: string, version: string) {
+  const row = registry.locator('article').filter({ has: page.getByText(`${name} · ${version}`, { exact: true }) });
+  for (let attempt = 0; attempt < 12 && await row.count() === 0; attempt++) {
+    const more = registry.getByRole('button', { name: 'Load more versions', exact: true });
+    if (!await more.isVisible()) break;
+    const loaded = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'GET');
+    await more.click(); await loaded;
+  }
+  await expect(row).toBeVisible({ timeout: 30_000 }); return row;
+}
 
 test.describe('Cognitive Capsule owner journey', () => {
   test('keeps cognition protected when no session is present', async ({ request }) => {
@@ -16,6 +37,9 @@ test.describe('Cognitive Capsule owner journey', () => {
     test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
     await expectAuthenticatedSession(page);
+    const allowanceResponse = await page.request.get(`${BASE}/api/account`);
+    const allowance = allowanceResponse.ok() ? await allowanceResponse.json() : {};
+    await test.info().attach('canary-allowance-read-only', { body: JSON.stringify({ status: allowanceResponse.status(), credits: allowance.credits ?? null, subscription: allowance.subscription ?? null, totalCreditsUsed: allowance.totalCreditsUsed ?? null }), contentType: 'application/json' });
     const capsuleId = `qa-cognition-${Date.now()}`;
     const created = await page.request.post(`${BASE}/api/context/capsules`, { data: { action: 'create', capsuleId,
       label: 'Synthetic QA expertise fixture', scope: 'user', community: { tags: ['synthetic-qa', 'private-canary'] } } });
@@ -33,6 +57,10 @@ test.describe('Cognitive Capsule owner journey', () => {
     await expertise.locator('summary').first().click();
     const capture = expertise.getByTestId('capsule-expertise-capture');
     await expect(capture.getByRole('button', { name: 'Propose for review', exact: true })).toBeEnabled({ timeout: 30_000 });
+    for (const kind of ['cue', 'pattern', 'heuristic', 'distinction', 'exception', 'redFlag', 'question', 'languageRule', 'procedure', 'case', 'unknown', 'revisionTrigger']) {
+      await capture.getByRole('combobox', { name: 'Capture', exact: true }).selectOption(kind);
+      await expect(capture.getByTestId(`capture-fields-${kind}`)).toBeVisible();
+    }
 
     // The correction action is inside the inspected capsule, with the same
     // human review boundary as an interview; this test performs no model call.
@@ -52,7 +80,7 @@ test.describe('Cognitive Capsule owner journey', () => {
     expect(proposal.knowledge.provenance.reviewedBy).toBeUndefined();
     const beforeReview = await page.request.get(`${BASE}/api/context/capsules/${capsuleId}`);
     expect(beforeReview.ok()).toBe(true);
-    expect((await beforeReview.json()).capsule.cognition).toBeUndefined();
+    expect((await beforeReview.json()).capsule.cognition).toEqual(initial.cognition);
 
     const review = expertise.getByRole('region', { name: 'Expertise proposal review' });
     await expect(review).toBeVisible({ timeout: 30_000 });
@@ -62,10 +90,14 @@ test.describe('Cognitive Capsule owner journey', () => {
     const evidence = await evidenceResponse;
     expect(evidence.ok()).toBe(true);
     const pending = await evidence.json();
-    expect(pending.capsule.cognition).toBeUndefined();
+    expect(pending.capsule.cognition).toEqual(initial.cognition);
     expect(pending.card.proposedEnvelopePatch.cognition.knowledge.find((item: { id: string }) => item.id === proposal.knowledge.id)).toMatchObject({ reviewState: 'proposed', reviewDecision: 'need_evidence' });
 
     await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed the distinction, scoped it to budget analysis, and preserved the requirement to inspect payment records.');
+    if (proposal.card.cognitiveProfileChanged) {
+      await expect(review.getByRole('button', { name: 'Accept all proposed changes', exact: true })).toBeDisabled();
+      await review.getByRole('checkbox').check();
+    }
     await review.getByRole('button', { name: 'Edit and accept', exact: true }).click();
     const edit = review.locator('form');
     await expect(edit).toBeVisible();
@@ -73,7 +105,7 @@ test.describe('Cognitive Capsule owner journey', () => {
     await edit.locator('[name="label"]').fill(acceptedLabel);
     await edit.locator('[name="decisionTests"]').fill('Check payment or expenditure records before claiming funds were spent.');
     const acceptedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
-    await edit.getByRole('button', { name: 'Save edits and accept', exact: true }).click();
+    await edit.getByRole('button', { name: proposal.card.cognitiveProfileChanged ? 'Edit selected item and accept all proposed changes' : 'Save edits and accept', exact: true }).click();
     const accepted = await acceptedResponse;
     expect(accepted.ok()).toBe(true);
     const applied = await accepted.json();
@@ -91,6 +123,18 @@ test.describe('Cognitive Capsule owner journey', () => {
     expect(persisted.ok()).toBe(true);
     const inventory = await persisted.json();
     expect(inventory.cognition.knowledge.find((item: { id: string }) => item.id === proposal.knowledge.id)).toEqual(acceptedKnowledge);
+    const capsuleChat = expertise.getByTestId('capsule-cognitive-chat');
+    await capsuleChat.locator('summary').first().click();
+    const providerRequests: string[] = [];
+    const observeProvider = (request: import('@playwright/test').Request) => { if (/\/api\/(?:ai\/chat|context\/capsules\/[^/]+\/cognitive-assist)$/.test(new URL(request.url()).pathname) && request.method() === 'POST') providerRequests.push(request.url()); };
+    page.on('request', observeProvider);
+    await capsuleChat.getByRole('button', { name: 'What would a novice miss?', exact: true }).click();
+    await expect(capsuleChat.getByRole('status')).toContainText('Human-accepted distinctions');
+    await expect(capsuleChat.getByRole('status')).toContainText(acceptedLabel);
+    await capsuleChat.getByRole('button', { name: 'Which knowledge came from documents?', exact: true }).click();
+    await expect(capsuleChat.getByRole('status')).toContainText('Knowledge linked to document evidence');
+    expect(providerRequests).toEqual([]);
+    page.off('request', observeProvider);
 
     // Chromium downloads emit a download event without a normal page response.
     // Check HTTP metadata independently, then verify the real clicked download.
@@ -159,5 +203,155 @@ test.describe('Cognitive Capsule owner journey', () => {
       }, { timeout: 30_000 }).toBe(true);
       await test.info().attach('single-fixture-live-ask', { body: JSON.stringify({ capsuleId, capsuleVersion: applied.capsule.version, threadId, prompt, answerText }, null, 2), contentType: 'application/json' });
     }
+  });
+
+  test('reviews typed graph proposals and inspects their semantics without a model call', async ({ page }) => {
+    test.setTimeout(240_000);
+    test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
+    await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
+    const capsuleId = `qa-cognitive-graph-${Date.now()}`;
+    const created = await page.request.post(`${BASE}/api/context/capsules`, { data: { action: 'create', capsuleId, label: 'Synthetic QA typed graph fixture', scope: 'user', community: { tags: ['synthetic-qa', 'private-canary'] } } });
+    expect(created.ok()).toBe(true);
+    const initial = (await created.json()).capsule;
+    const proposed = await page.request.post(`${BASE}/api/context/capsules/${capsuleId}/cognition`, { data: {
+      operation: 'graph-proposal', baseVersion: initial.version,
+      nodes: [{ id: 'qa-authorization', type: 'Concept', label: 'Synthetic authorization', layer: 'language' }, { id: 'qa-expenditure', type: 'Concept', label: 'Synthetic expenditure', layer: 'language' }],
+      statements: [{ id: 'qa-no-expenditure', subject: 'qa-authorization', predicate: 'DOES_NOT_IMPLY', object: { node: 'qa-expenditure' }, layer: 'language', polarity: 'negative', modality: 'asserted', sourceRefs: [], conditions: [{ kind: 'context', key: 'authorization-only', operator: 'present' }], exceptions: [] }],
+    } });
+    expect(proposed.status()).toBe(201);
+    const proposal = await proposed.json();
+    expect(proposal.card.cognitiveNodeIds).toEqual(expect.arrayContaining(['qa-authorization', 'qa-expenditure']));
+    const before = await page.request.get(`${BASE}/api/context/capsules/${capsuleId}`);
+    expect((await before.json()).capsule.cognition).toEqual(initial.cognition);
+    await page.goto(`${BASE}/app/capsules?${new URLSearchParams({ lane: 'inspect', starter: capsuleId })}`);
+    const inspector = page.getByTestId('capsule-inspector-sheet');
+    await expect(inspector).toBeVisible({ timeout: 30_000 });
+    const expertise = inspector.getByTestId('capsule-expertise-panel');
+    await expertise.locator('summary').first().click();
+    const review = expertise.getByRole('region', { name: 'Expertise proposal review' });
+    await expect(review.getByLabel('Proposed graph changes')).toContainText('DOES_NOT_IMPLY');
+    await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed all three typed graph records and their scope.');
+    await expect(review.getByRole('button', { name: 'Accept all proposed changes', exact: true })).toBeDisabled();
+    await review.getByRole('checkbox').check();
+    await review.getByRole('button', { name: 'Edit and accept', exact: true }).click();
+    await review.getByLabel('Graph item to edit', { exact: true }).selectOption('qa-authorization');
+    await review.getByLabel('Node label', { exact: true }).fill('Synthetic reviewed authorization');
+    const acceptedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
+    await review.getByRole('button', { name: 'Edit selected graph item and accept proposal', exact: true }).click();
+    const accepted = await acceptedResponse;
+    expect(accepted.ok()).toBe(true);
+    const saved = (await accepted.json()).capsule;
+    expect(saved.cognition.nodes.find((node: { id: string }) => node.id === 'qa-authorization')).toMatchObject({ label: 'Synthetic reviewed authorization', reviewState: 'accepted', provenance: { reviewedBy: { type: 'human' } } });
+    expect(saved.cognition.statements.find((statement: { id: string }) => statement.id === 'qa-no-expenditure')).toMatchObject({ reviewState: 'accepted', predicate: 'DOES_NOT_IMPLY' });
+    await page.reload(); await expect(inspector).toBeVisible({ timeout: 30_000 }); await expertise.locator('summary').first().click();
+    const graph = expertise.getByTestId('capsule-cognitive-graph');
+    await graph.getByLabel('Graph layer', { exact: true }).selectOption('language');
+    await graph.getByLabel('Search graph and evidence', { exact: true }).fill('Synthetic reviewed authorization');
+    await expect(graph.getByRole('article', { name: 'Selected cognitive relationship' })).toContainText('authorization-only');
+    const capsuleChat = expertise.getByTestId('capsule-cognitive-chat'); await capsuleChat.locator('summary').first().click();
+    await capsuleChat.getByLabel('Inspect an edge, origin or source', { exact: true }).fill('Why does edge qa-no-expenditure exist?');
+    await capsuleChat.getByRole('button', { name: 'Inspect', exact: true }).click();
+    await expect(capsuleChat.getByRole('status')).toContainText('qa-no-expenditure');
+    await page.setViewportSize({ width: 360, height: 844 });
+    expect(await inspector.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(2);
+    expect(await graph.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(2);
+    const screenshotPath = test.info().outputPath('cognitive-graph-review-360.png');
+    await inspector.screenshot({ path: screenshotPath }); await test.info().attach('typed-graph-review-360px', { path: screenshotPath, contentType: 'image/png' });
+  });
+  test('reviews profiles and publishes exact private registry versions with staged installation and update', async ({ page }) => {
+    test.setTimeout(420_000); test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
+    await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
+    const stamp = Date.now(); const capsuleId = `qa-registry-source-${stamp}`; const registryName = `qa-private/capsule-${stamp}`;
+    const created = await page.request.post(`${BASE}/api/context/capsules`, { data: { action: 'create', capsuleId, label: 'Synthetic QA private registry source', scope: 'user', community: { tags: ['synthetic-qa', 'private-canary'] } } });
+    expect(created.ok()).toBe(true); const initial = (await created.json()).capsule;
+    let { inspector, expertise } = await openOwnerInspector(page, capsuleId);
+    await expertise.getByLabel('Proposed capsule profile', { exact: true }).selectOption('method');
+    const proposedProfileResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'POST');
+    await expertise.getByRole('button', { name: 'Propose profile change', exact: true }).click();
+    const profileProposal = await proposedProfileResponse; expect(profileProposal.status()).toBe(201);
+    expect((await profileProposal.json()).card.cognitiveProfileChanged).toBe(true);
+    const beforeProfile = await page.request.get(`${BASE}/api/context/capsules/${capsuleId}`); expect((await beforeProfile.json()).capsule.cognition).toEqual(initial.cognition);
+    let review = expertise.getByRole('region', { name: 'Expertise proposal review' });
+    await expect(review.getByLabel('Proposed profile change')).toContainText('After: method');
+    await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed this empty method capsule profile before publication.');
+    const acceptedProfileResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
+    await review.getByRole('button', { name: 'Accept profile change', exact: true }).click();
+    const acceptedProfile = await acceptedProfileResponse; expect(acceptedProfile.ok()).toBe(true); const firstSaved = (await acceptedProfile.json()).capsule;
+    expect(firstSaved.cognition.profile).toBe('method');
+    await page.reload(); ({ inspector, expertise } = await openOwnerInspector(page, capsuleId));
+    let registry = inspector.getByText('Private capsule registry', { exact: true }).locator('..');
+    await registry.locator('summary').first().click(); await registry.getByLabel('Registry name (publisher/name)', { exact: true }).fill(registryName);
+    const publishedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'POST');
+    await registry.getByRole('button', { name: `Publish saved v${firstSaved.version}`, exact: true }).click();
+    const published = await publishedResponse; expect(published.ok()).toBe(true); const publishedBody = await published.json(); const firstEntry = publishedBody.entry ?? publishedBody;
+    expect(firstEntry).toMatchObject({ name: registryName, version: firstSaved.cognition.version, sourceCapsuleId: capsuleId, sourceEnvelopeVersion: firstSaved.version, profile: 'method', trust: { factualTruthVerified: false } });
+    const artifact = await page.request.get(`${BASE}/api/context/capsule-registry/artifact?${new URLSearchParams({ name: registryName, version: firstEntry.version })}`);
+    expect(artifact.ok()).toBe(true); const artifactBytes = await artifact.body(); expect(artifact.headers()['content-type']).toBe(CAPSULE_MIMETYPE);
+    expect(`sha256:${createHash('sha256').update(artifactBytes).digest('hex')}`).toBe(firstEntry.digest);
+    expect((await readCapsulePackage(new Uint8Array(artifactBytes))).capsule).toMatchObject({ capsuleId: registryName, profile: 'method', version: firstEntry.version });
+    let row = await registryRow(registry, page, registryName, firstEntry.version);
+    const beforeInstallStack = await page.request.get(`${BASE}/api/workspace/context-stack`); const priorStack = (await beforeInstallStack.json()).stack;
+    const installedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'POST');
+    await row.getByRole('button', { name: 'Install for review', exact: true }).click(); const installed = await installedResponse; expect(installed.ok()).toBe(true);
+    const installedBody = await installed.json(); const firstInstall = installedBody.installation ?? installedBody;
+    expect(firstInstall).toMatchObject({ digest: firstEntry.digest, promotion: 'not-promoted' });
+    const repeated = await page.request.post(`${BASE}/api/context/capsule-registry`, { data: { operation: 'install', name: registryName, version: firstEntry.version } }); expect(repeated.ok()).toBe(true);
+    const repeatBody = await repeated.json(); expect((repeatBody.installation ?? repeatBody).draftCapsuleId).toBe(firstInstall.draftCapsuleId);
+    const afterInstallStack = await page.request.get(`${BASE}/api/workspace/context-stack`); expect((await afterInstallStack.json()).stack?.capsuleId).toBe(priorStack?.capsuleId);
+    await registry.getByRole('link', { name: 'Open installed draft for review', exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`starter=${firstInstall.draftCapsuleId}`));
+    const draft = await page.request.get(`${BASE}/api/context/capsules/${firstInstall.draftCapsuleId}`); expect((await draft.json()).capsule.cognition).toBeUndefined();
+    const draftInventory = await page.request.get(`${BASE}/api/context/capsules/${firstInstall.draftCapsuleId}/cognition`); expect((await draftInventory.json()).reviewCards.some((card: { reviewCardId: string; state: string }) => card.reviewCardId === firstInstall.reviewCardId && card.state === 'proposed')).toBe(true);
+    ({ inspector, expertise } = await openOwnerInspector(page, capsuleId));
+    await expertise.getByLabel('Proposed capsule profile', { exact: true }).selectOption('language');
+    await expertise.getByRole('button', { name: 'Propose profile change', exact: true }).click(); review = expertise.getByRole('region', { name: 'Expertise proposal review' });
+    await expect(review.getByLabel('Proposed profile change')).toContainText('After: language');
+    await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed a breaking method-to-language profile change.');
+    const secondProfileResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
+    await review.getByRole('button', { name: 'Accept profile change', exact: true }).click(); const secondProfile = await secondProfileResponse; expect(secondProfile.ok()).toBe(true); const secondSaved = (await secondProfile.json()).capsule;
+    expect(Number(secondSaved.cognition.version.split('.')[0])).toBe(Number(firstSaved.cognition.version.split('.')[0]) + 1);
+    ({ inspector, expertise } = await openOwnerInspector(page, capsuleId)); registry = inspector.getByText('Private capsule registry', { exact: true }).locator('..'); await registry.locator('summary').first().click();
+    await registry.getByLabel('Registry name (publisher/name)', { exact: true }).fill(registryName);
+    const secondPublishedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'POST');
+    await registry.getByRole('button', { name: `Publish saved v${secondSaved.version}`, exact: true }).click(); const secondPublished = await secondPublishedResponse; expect(secondPublished.ok()).toBe(true); const secondBody = await secondPublished.json(); const secondEntry = secondBody.entry ?? secondBody;
+    row = await registryRow(registry, page, registryName, secondEntry.version);
+    const updateResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'POST');
+    await row.getByRole('button', { name: `Stage update from ${firstEntry.version}`, exact: true }).click(); const update = await updateResponse; expect(update.ok()).toBe(true);
+    expect(update.request().postDataJSON().expectedDigest).toBe(firstEntry.digest); const updateBody = await update.json(); const secondInstall = updateBody.installation ?? updateBody;
+    expect(secondInstall).toMatchObject({ digest: secondEntry.digest, promotion: 'not-promoted' }); expect(secondInstall.draftCapsuleId).not.toBe(firstInstall.draftCapsuleId);
+    const stale = await page.request.post(`${BASE}/api/context/capsule-registry`, { data: { operation: 'update', name: registryName, version: secondEntry.version, expectedDigest: firstEntry.digest } }); expect(stale.status()).toBe(409);
+    row = await registryRow(registry, page, registryName, secondEntry.version); await row.getByRole('button', { name: 'Dependency impact', exact: true }).click();
+    await expect(registry.getByRole('region', { name: 'Dependency impact' })).toContainText('installed drafts');
+    await page.setViewportSize({ width: 360, height: 844 }); expect(await registry.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(2);
+    const screenshotPath = test.info().outputPath('private-registry-360.png'); await registry.screenshot({ path: screenshotPath }); await test.info().attach('private-registry-360px', { path: screenshotPath, contentType: 'image/png' });
+    await registry.getByLabel('Reason for deprecating a version', { exact: true }).fill('Synthetic QA artifact retired after verifying staged update.');
+    const deprecatedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'POST');
+    await row.getByRole('button', { name: 'Deprecate with reason', exact: true }).click(); const deprecated = await deprecatedResponse; expect(deprecated.ok()).toBe(true);
+    const historical = await page.request.get(`${BASE}/api/context/capsule-registry/artifact?${new URLSearchParams({ name: registryName, version: secondEntry.version })}`); expect(historical.ok()).toBe(true); expect(`sha256:${createHash('sha256').update(await historical.body()).digest('hex')}`).toBe(secondEntry.digest);
+  });
+
+  test('composes reviewed parent expertise into a locked proposal and requires human acceptance', async ({ page }) => {
+    test.setTimeout(300_000); test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
+    await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
+    const parents = [];
+    for (const index of [1, 2]) {
+      const capsuleId = `qa-compose-parent-${index}-${Date.now()}`;
+      const created = await page.request.post(`${BASE}/api/context/capsules`, { data: { action: 'create', capsuleId, label: `Synthetic QA composition parent ${index}`, scope: 'user' } }); expect(created.ok()).toBe(true);
+      const captured = await page.request.post(`${BASE}/api/context/capsules/${capsuleId}/cognition`, { data: { kind: 'distinction', label: `Synthetic distinction ${index}`, scope: ['budget'], terms: index === 1 ? ['authorization', 'expenditure'] : ['commitment', 'payment'], body: 'These synthetic budget stages must remain distinct.', checks: ['Inspect original accounting records.'] } }); expect(captured.status()).toBe(201); const proposal = await captured.json();
+      const accepted = await page.request.patch(`${BASE}/api/context/capsules/${capsuleId}/cognition`, { data: { reviewCardId: proposal.card.reviewCardId, decision: 'accept', reason: 'Synthetic QA: reviewed this explicit budget distinction.' } }); expect(accepted.ok()).toBe(true); parents.push((await accepted.json()).capsule);
+    }
+    const targetId = `qa-composition-${Date.now()}`;
+    const combinedResponse = await page.request.post(`${BASE}/api/context/capsules`, { data: { action: 'combine', capsuleIds: parents.map((parent) => parent.capsuleId), combinedCapsuleId: targetId, label: 'Synthetic QA reviewed composition', scope: 'user' } }); expect(combinedResponse.ok()).toBe(true); const combined = await combinedResponse.json();
+    expect(combined.capsule.cognition).toBeUndefined(); expect(combined.reviewCard.state).toBe('proposed');
+    expect(combined.capsule.memoryPosture.cognitiveComposition.parentLocks).toEqual(expect.arrayContaining(parents.map((parent) => expect.objectContaining({ capsuleId: parent.capsuleId, capsuleVersion: parent.version, version: parent.cognition.version }))));
+    const { inspector, expertise } = await openOwnerInspector(page, targetId); const review = expertise.getByRole('region', { name: 'Expertise proposal review' });
+    await expect(review).toContainText('Synthetic distinction 1'); await expect(review).toContainText('Synthetic distinction 2');
+    await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed both parent distinctions and their locked source versions.');
+    await expect(review.getByRole('button', { name: 'Accept all proposed changes', exact: true })).toBeDisabled(); await review.getByRole('checkbox').check();
+    const acceptedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${targetId}/cognition` && response.request().method() === 'PATCH');
+    await review.getByRole('button', { name: 'Accept all proposed changes', exact: true }).click(); const accepted = await acceptedResponse; expect(accepted.ok()).toBe(true); const final = (await accepted.json()).capsule;
+    expect(final.cognition.knowledge).toHaveLength(2); expect(final.cognition.knowledge.every((item: { reviewState: string; provenance: { reviewedBy: { type: string } } }) => item.reviewState === 'accepted' && item.provenance.reviewedBy.type === 'human')).toBe(true);
+    await page.reload(); await expect(inspector).toBeVisible({ timeout: 30_000 }); await expertise.locator('summary').first().click(); await expect(expertise).toContainText('Synthetic distinction 1');
+    const persisted = await page.request.get(`${BASE}/api/context/capsules/${targetId}`); expect((await persisted.json()).capsule.cognition).toEqual(final.cognition);
   });
 });

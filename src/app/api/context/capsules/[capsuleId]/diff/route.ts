@@ -4,6 +4,7 @@ import { handleRouteError } from '@/lib/api/standard-error';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { bumpCapsuleVersion, getCapsule, type CapsuleCoreRefs, type PraxisCapsule } from '@/lib/context/capsule-service';
 import { CapsuleFactoryReviewDiffSchema, type CapsuleFactoryReviewDiff } from '@/lib/genkit/schemas/capsule-factory';
+import { diffCognitiveCapsules } from '@/lib/cognitive-capsule/semantic-diff';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
       return NextResponse.json({ addedCoreRefs: [], removedCoreRefs: [], changedRetrievalPolicy: false, healthDelta: 0 });
     }
     const { capsuleId } = await context.params;
+    if (!/^[a-zA-Z0-9._:-]{1,160}$/.test(capsuleId)) return NextResponse.json({ error: 'Invalid capsule ID' }, { status: 400 });
     const url = new URL(request.url);
     const fromVersion = parseVersion(url.searchParams.get('from'));
     const toVersion = parseVersion(url.searchParams.get('to'));
@@ -36,6 +38,7 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
       changedRetrievalPolicy: JSON.stringify(from.retrievalPolicy) !== JSON.stringify(to.retrievalPolicy),
       healthDelta: (to.health?.score ?? 0) - (from.health?.score ?? 0),
       fieldDiffs: buildCapsuleFieldDiffs(from, to),
+      cognitiveDiff: diffCognitiveCapsules(from.cognition, to.cognition),
     });
   } catch (err) {
     return handleRouteError(err, 'context/capsules/diff');
@@ -178,7 +181,7 @@ function parseVersion(value: string | null): number | null {
   const match = value?.match(/^v?(\d+)$/i);
   if (!match) return null;
   const parsed = Number(match[1]);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function flattenCoreRefs(capsule: PraxisCapsule): Set<string> {

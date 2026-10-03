@@ -1,23 +1,29 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
-import type { Knowledge } from '@/lib/cognitive-capsule/types';
+import type { CognitiveCapsule, CognitiveNode, CognitiveStatement, Knowledge } from '@/lib/cognitive-capsule/types';
 import type { CapsuleWorkbenchCapsuleInput } from '@/lib/context/capsule-workbench-view-model';
 import { CapsuleExpertInterview } from '@/components/capsules/CapsuleExpertInterview';
+import { buildKnowledgeCaptureInput, CAPTURE_LABELS, KNOWLEDGE_CAPTURE_KINDS, KnowledgeCaptureFields, type CaptureKind } from '@/components/capsules/CapsuleKnowledgeCapture';
+import { CapsuleCognitiveGraphPanel } from '@/components/capsules/CapsuleCognitiveGraphPanel';
+import { CapsuleGraphProposalDetails, CapsuleGraphProposalEditForm } from '@/components/capsules/CapsuleGraphProposalReview';
+import { CapsuleCognitiveChat } from '@/components/capsules/CapsuleCognitiveChat';
 
 type KnowledgeView = Pick<Knowledge, 'id' | 'kind' | 'label' | 'scope' | 'reviewState'> & {
-  provenance: { generatedBy: { type: string; id: string; at: string }; sourceRefs: string[]; reviewedBy?: { id: string }; reviewedAt?: string };
+  provenance: { generatedBy: { type: string; id: string; at: string }; sourceRefs: string[]; reviewedBy?: { id: string }; reviewedAt?: string; derivedFrom?: string[]; confidenceKind?: string };
   [key: string]: unknown;
 };
-type ReviewCard = { reviewCardId: string; title: string; state: string; cognitiveKnowledgeIds?: string[]; proposedEnvelopePatch: { cognition?: { knowledge: Knowledge[] } } };
-type Snapshot = { capsuleId: string; cognition: { knowledge: Knowledge[]; evidence?: Array<{ id: string; sourceId: string; quote: string }> }; reviewCards: ReviewCard[]; nextCursor: string | null; hasMore: boolean;
+type ReviewCard = { reviewCardId: string; title: string; state: string; cognitiveKnowledgeIds?: string[]; cognitiveNodeIds?: string[]; cognitiveStatementIds?: string[]; cognitiveSupersededIds?: string[]; cognitiveProfileChanged?: boolean; proposedEnvelopePatch: { cognition?: CognitiveCapsule } };
+type Snapshot = { capsuleId: string; capsuleVersion?: number; hasSavedCognition?: boolean; cognition: CognitiveCapsule; reviewCards: ReviewCard[]; nextCursor: string | null; hasMore: boolean;
   allowDownload?: boolean;
   quality: { cognitiveDepth: number; interpretation: string; dimensions: Record<string, number> }; validation: Array<{ code: string; message: string }> };
-type CaptureKind = 'heuristic' | 'distinction' | 'languageRule' | 'case';
 const fieldClass = 'mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-950';
 const buttonClass = 'min-h-10 rounded-md border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-900 disabled:opacity-50';
 const lines = (value: string) => value.split('\n').map((entry) => entry.trim()).filter(Boolean);
 const scopeList = (value: string) => value.split(',').map((entry) => entry.trim()).filter(Boolean);
+const graphChangeCount = (card: ReviewCard) => (card.cognitiveNodeIds?.length ?? 0) + (card.cognitiveStatementIds?.length ?? 0);
+const proposalChangeCount = (card: ReviewCard) => new Set([...(card.cognitiveKnowledgeIds ?? []), ...(card.cognitiveNodeIds ?? []), ...(card.cognitiveStatementIds ?? []), ...(card.cognitiveSupersededIds ?? [])]).size + Number(Boolean(card.cognitiveProfileChanged));
+const profiles: CognitiveCapsule['profile'][] = ['situation', 'expertise', 'method', 'language', 'organization', 'role', 'casebook', 'output'];
 
 export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowledge = [], onReviewed }: {
   capsuleId: string; capsuleVersion?: number | null; initialKnowledge?: KnowledgeView[]; onReviewed?: (capsule: CapsuleWorkbenchCapsuleInput) => void;
@@ -31,9 +37,11 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
   const [kind, setKind] = useState<CaptureKind>('heuristic');
   const [correction, setCorrection] = useState(false);
   const [filter, setFilter] = useState('all');
+  const [knowledgeSearch, setKnowledgeSearch] = useState('');
   const [editing, setEditing] = useState<ReviewCard | null>(null);
   const [reason, setReason] = useState('');
   const [reviewedGroups, setReviewedGroups] = useState<Record<string, boolean>>({});
+  const [proposedProfile, setProposedProfile] = useState<CognitiveCapsule['profile']>('expertise');
   const activeId = useRef(capsuleId); activeId.current = capsuleId;
   const controller = useRef<AbortController | null>(null);
   const sequence = useRef(0);
@@ -48,6 +56,7 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
       if (!response.ok) throw new Error(data.error ?? 'Expertise could not be loaded. Sign in and retry.');
       if (data.capsuleId !== capsuleId || !Array.isArray(data.cognition?.knowledge) || !Array.isArray(data.reviewCards)) throw new Error('Saved expertise is unavailable. Retry loading.');
       if (signal?.aborted || activeId.current !== capsuleId || requestId !== sequence.current) return;
+      if (!cursor && profiles.includes(data.cognition.profile)) setProposedProfile(data.cognition.profile);
       setSnapshot((previous) => cursor && previous ? { ...data, reviewCards: Array.from(new Map([...previous.reviewCards, ...data.reviewCards].map((card: ReviewCard) => [card.reviewCardId, card])).values()) } : data);
     } catch (failure) {
       if (!signal?.aborted && activeId.current === capsuleId && requestId === sequence.current) setError(failure instanceof Error ? failure.message : 'Expertise could not be loaded.');
@@ -56,27 +65,37 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
   useEffect(() => {
     const requestController = new AbortController();
     controller.current = requestController;
-    setSnapshot(null); setEditing(null); setError(''); setNotice(''); setBusy(false); setReviewedGroups({});
+    setSnapshot(null); setEditing(null); setError(''); setNotice(''); setBusy(false); setReviewedGroups({}); setKnowledgeSearch(''); setFilter('all');
     if (open) void load();
     return () => requestController.abort();
   }, [capsuleId, capsuleVersion, open, load]);
+
+  async function proposeProfile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const baseVersion = snapshot?.capsuleVersion ?? capsuleVersion;
+    if (busy || loading || !snapshot || !baseVersion || (snapshot.hasSavedCognition !== false && proposedProfile === snapshot.cognition.profile)) return;
+    const signal = controller.current?.signal;
+    setBusy(true); setError(''); setNotice('');
+    try {
+      const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ operation: 'graph-proposal', baseVersion, profile: proposedProfile, nodes: [], statements: [] }), signal });
+      const result = await response.json();
+      if (!response.ok) throw new Error(response.status === 409 ? 'This capsule changed. Reload before proposing its profile.' : result.error ?? 'The profile proposal could not be saved.');
+      if (signal?.aborted || activeId.current !== capsuleId) return;
+      setNotice('Profile change proposed. The saved profile changes only after human review.'); await load();
+    } catch (failure) { if (!signal?.aborted && activeId.current === capsuleId) setError(failure instanceof Error ? failure.message : 'The profile proposal could not be saved.'); }
+    finally { if (!signal?.aborted && activeId.current === capsuleId) setBusy(false); }
+  }
 
   async function capture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); if (busy) return;
     const form = event.currentTarget;
     const data = new FormData(form);
     const read = (name: string) => String(data.get(name) ?? '').trim();
-    const body: Record<string, unknown> = { kind, label: read('label'), scope: scopeList(read('scope')), body: read('body') };
-    if (kind === 'distinction') body.terms = [read('conceptA'), read('conceptB')];
-    if (kind === 'heuristic') { body.when = lines(read('when')).map((key) => ({ kind: 'context', key, operator: 'present' })); body.exceptions = lines(read('exceptions')).map((key) => ({ kind: 'context', key, operator: 'present' })); }
-    if (kind === 'languageRule') { body.language = read('language') || 'en'; body.nonImplications = lines(read('nonImplications')); body.implications = lines(read('implications')); }
-    if (kind === 'case') { body.situation = read('situation'); body.decision = read('decision'); body.analogyDimensions = lines(read('analogyDimensions')); if (read('outcome')) body.outcome = read('outcome'); }
-    if (read('rationale')) body.rationale = read('rationale');
-    if (read('sources')) body.sourceRefs = scopeList(read('sources'));
-    if (read('checks')) body.checks = lines(read('checks'));
     setBusy(true); setError(''); setNotice('');
     const signal = controller.current?.signal;
     try {
+      const body = buildKnowledgeCaptureInput(kind, read);
       const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body), signal });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error ?? 'The expertise proposal could not be saved.');
@@ -85,9 +104,9 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
     } catch (failure) { if (!signal?.aborted && activeId.current === capsuleId) setError(failure instanceof Error ? failure.message : 'Proposal could not be saved.'); }
     finally { if (!signal?.aborted && activeId.current === capsuleId) setBusy(false); }
   }
-  async function decide(card: ReviewCard, decision: 'accept' | 'edit_accept' | 'reject' | 'need_evidence', edited?: Knowledge) {
+  async function decide(card: ReviewCard, decision: 'accept' | 'edit_accept' | 'reject' | 'need_evidence', edited?: Knowledge | CognitiveNode | CognitiveStatement) {
     if (busy || !reason.trim()) return;
-    if (['accept', 'edit_accept'].includes(decision) && (card.cognitiveKnowledgeIds?.length ?? 0) > 1 && !reviewedGroups[card.reviewCardId]) return;
+    if (['accept', 'edit_accept'].includes(decision) && proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId]) return;
     setBusy(true); setError(''); setNotice('');
     const signal = controller.current?.signal;
     try {
@@ -119,34 +138,32 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
         {snapshot.cognition.evidence?.length ? <details className="mt-2"><summary className="cursor-pointer">Inspect evidence excerpts</summary><div className="mt-2 space-y-3">{snapshot.cognition.evidence.slice(0, 30).map((span) => <blockquote key={span.id} className="break-words border-l-2 border-slate-300 pl-3"><p>{span.quote}</p><p className="mt-1 text-slate-500">Source: {span.sourceId} · Evidence reference: {span.id}</p></blockquote>)}</div></details> : null}
         {snapshot.allowDownload ? <div className="mt-2 flex flex-wrap gap-3"><a href={`${endpoint}?format=jsonld`} download className="underline">Download semantic graph (JSON-LD)</a><a href={`${endpoint}?format=package`} download className="underline">Download native capsule</a></div> : null}
       </div> : null}
-      <div>
-        <label className="text-xs font-semibold text-slate-700">Inspect knowledge <select className={fieldClass} value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All kinds</option>{kinds.map((value) => <option key={value} value={value}>{kindLabel(value)}</option>)}</select></label>
-        <div className="mt-3 grid gap-2">{knowledge.filter((item) => filter === 'all' || item.kind === filter).map((item) => <KnowledgeDetails key={item.id} item={item} />)}</div>
+      {snapshot ? <section aria-label="Capsule profile" className="min-w-0 rounded-md border border-slate-200 bg-white p-3"><h3 className="text-sm font-semibold text-slate-950">Capsule profile</h3><p className="mt-1 text-xs text-slate-600">{snapshot.hasSavedCognition === false ? 'Current inferred profile' : 'Saved profile'}: {snapshot.cognition.profile}. Choose how this capsule should be organized; a change stays proposed until reviewed.</p><form className="mt-3 flex flex-wrap items-end gap-3" onSubmit={(event) => void proposeProfile(event)}><label className="min-w-0 flex-1 text-xs font-semibold text-slate-700">Proposed capsule profile<select value={proposedProfile} disabled={busy || loading} className={fieldClass} onChange={(event) => setProposedProfile(event.target.value as CognitiveCapsule['profile'])}>{profiles.map((profile) => <option key={profile} value={profile}>{profile[0].toUpperCase()}{profile.slice(1)}</option>)}</select></label><button type="submit" className={buttonClass} disabled={busy || loading || !(snapshot.capsuleVersion ?? capsuleVersion) || (snapshot.hasSavedCognition !== false && proposedProfile === snapshot.cognition.profile)}>Propose profile change</button></form></section> : null}
+      <div className="min-w-0">
+        <div className="grid min-w-0 gap-3 sm:grid-cols-2"><label className="text-xs font-semibold text-slate-700">Inspect knowledge <select className={fieldClass} value={filter} onChange={(event) => setFilter(event.target.value)}><option value="all">All kinds</option>{kinds.map((value) => <option key={value} value={value}>{kindLabel(value)}</option>)}</select></label><label className="min-w-0 text-xs font-semibold text-slate-700">Search expert knowledge<input type="search" className={fieldClass} value={knowledgeSearch} onChange={(event) => setKnowledgeSearch(event.target.value)} placeholder="Lesson, author, scope or evidence ID" /></label></div>
+        <div className="mt-3 grid min-w-0 gap-2">{knowledge.filter((item) => (filter === 'all' || item.kind === filter) && (!knowledgeSearch.trim() || JSON.stringify(item).toLocaleLowerCase().includes(knowledgeSearch.trim().toLocaleLowerCase()))).map((item) => <KnowledgeDetails key={item.id} item={item} />)}</div>
         {!knowledge.length ? <p className="mt-3 text-sm text-slate-600">No expert knowledge has been saved yet. Start with one consequential distinction or a real case.</p> : null}
       </div>
+      {snapshot ? <CapsuleCognitiveGraphPanel key={capsuleId} cognition={{ nodes: snapshot.cognition.nodes ?? [], statements: snapshot.cognition.statements ?? [], evidence: snapshot.cognition.evidence ?? [] }} /> : null}
+      {snapshot ? <CapsuleCognitiveChat key={capsuleId} capsuleId={capsuleId} cognition={snapshot.cognition} onProposed={() => void load()} /> : null}
       <CapsuleExpertInterview key={capsuleId} capsuleId={capsuleId} onProposed={() => void load()} />
       <form data-testid="capsule-expertise-capture" onSubmit={(event) => void capture(event)} className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold text-slate-950">{correction ? 'Save lesson from correction' : 'Interview an expert'}</h3><button className={buttonClass} type="button" disabled={busy} onClick={() => { setCorrection(!correction); setKind('distinction'); }}>Save lesson from correction</button></div>
-        <label className="block text-xs font-semibold text-slate-700">Capture <select name="kind" value={kind} disabled={busy} onChange={(event) => setKind(event.target.value as CaptureKind)} className={fieldClass}><option value="heuristic">Heuristic</option><option value="distinction">Distinction</option><option value="languageRule">Language rule</option><option value="case">Critical case</option></select></label>
-        <p className="text-sm font-medium text-slate-900">{kind === 'case' ? 'What first caught your attention? What did you do next, and where does the analogy fail?' : kind === 'distinction' ? 'Which two concepts does a beginner confuse? What evidence separates them?' : kind === 'languageRule' ? 'Which words carry institutional meaning? What should never be inferred from them?' : 'What would a beginner miss? When would you NOT apply this rule?'}</p>
-        <Field name="label" label={kind === 'languageRule' ? 'Exact expression' : 'Lesson title'} required maxLength={240} />
-        <Field name="scope" label="Scope (domains, separated by commas)" required maxLength={1000} placeholder="diplomacy, budget analysis" />
-        {kind === 'distinction' ? <div className="grid gap-3 sm:grid-cols-2"><Field name="conceptA" label="First concept" required /><Field name="conceptB" label="Second concept" required /></div> : null}
-        {kind === 'case' ? <Field name="situation" label="Situation and what you noticed" required area /> : null}
-        <Field name="body" label={kind === 'languageRule' ? 'Meaning in this context' : 'Expert interpretation or corrected explanation'} required area />
-        {kind === 'heuristic' ? <><Field name="when" label="Apply only when (condition keys, one per line)" required area placeholder="technical-contact-continues" /><Field name="exceptions" label="Exceptions (condition keys, one per line)" area /></> : null}
-        {kind === 'languageRule' ? <><Field name="language" label="Language" defaultValue="en" maxLength={40} /><Field name="implications" label="What the wording suggests (one per line)" area /><Field name="nonImplications" label="What the wording does not establish (one per line)" required area /></> : null}
-        {kind === 'case' ? <><Field name="decision" label="What you decided and why" required area /><Field name="analogyDimensions" label="Where this case is analogous (one dimension per line)" required area /><Field name="outcome" label="Observed outcome, if known" area /></> : null}
-        <details><summary className="cursor-pointer text-xs font-semibold text-slate-700">Rationale, evidence and follow-up checks</summary><div className="mt-3 space-y-3"><Field name="rationale" label="Why the distinction or rule matters" area /><Field name="sources" label="Attached source or evidence IDs (comma separated)" /><Field name="checks" label="Checks before reuse (one per line)" area /></div></details>
+        <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold text-slate-950">{correction ? 'Save lesson from correction' : 'Capture expert knowledge'}</h3><button className={buttonClass} type="button" disabled={busy} onClick={() => { setCorrection(!correction); if (!correction) setKind('distinction'); }}>Save lesson from correction</button></div>
+        {correction ? <p className="text-xs text-slate-600">Choose whether this correction is a distinction, a domain rule, an example, a language rule, or another lesson.</p> : null}
+        <label className="block text-xs font-semibold text-slate-700">Capture <select name="kind" value={kind} disabled={busy} onChange={(event) => setKind(event.target.value as CaptureKind)} className={fieldClass}>{KNOWLEDGE_CAPTURE_KINDS.map((value) => <option key={value} value={value}>{CAPTURE_LABELS[value]}</option>)}</select></label>
+        <KnowledgeCaptureFields key={`${capsuleId}:${kind}`} kind={kind} />
         <button className="min-h-10 rounded-md bg-slate-950 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50" disabled={busy || loading} type="submit">{busy ? 'Saving…' : 'Propose for review'}</button>
       </form>
       {pending.length ? <section className="space-y-3" aria-label="Expertise proposal review">
         <h3 className="text-sm font-semibold text-slate-950">Review proposed expertise</h3><Field name="review-reason" label="Reason for your next review decision" area value={reason} onChange={setReason} maxLength={600} />
         {pending.map((card) => <article key={card.reviewCardId} className="space-y-3 rounded-md border border-slate-200 bg-white p-3"><p className="text-sm font-semibold text-slate-950">{card.title}</p>
+          {card.cognitiveProfileChanged ? <div aria-label="Proposed profile change" className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700"><p className="font-semibold">Profile change</p><p>Before: {snapshot?.cognition.profile ?? 'saved profile unavailable'}{snapshot?.hasSavedCognition === false ? ' (inferred from the earlier capsule)' : ''}</p><p>After: {card.proposedEnvelopePatch.cognition?.profile}</p><p>Acceptance records this capsule’s profile and saves a new version.</p></div> : null}
           {(card.proposedEnvelopePatch.cognition?.knowledge ?? []).filter((item) => card.cognitiveKnowledgeIds?.includes(item.id)).map((item) => <KnowledgeDetails key={item.id} item={item} />)}
-          {(card.cognitiveKnowledgeIds?.length ?? 0) > 1 ? <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={Boolean(reviewedGroups[card.reviewCardId])} disabled={busy} onChange={(event) => setReviewedGroups((previous) => ({ ...previous, [card.reviewCardId]: event.target.checked }))} />I have inspected every proposed interview item and am ready to accept all of them.</label> : null}
-          <div className="flex flex-wrap gap-2"><button type="button" className={buttonClass} disabled={busy || !reason.trim() || ((card.cognitiveKnowledgeIds?.length ?? 0) > 1 && !reviewedGroups[card.reviewCardId])} onClick={() => void decide(card, 'accept')}>{(card.cognitiveKnowledgeIds?.length ?? 0) > 1 ? 'Accept all interview items' : 'Accept'}</button><button type="button" className={buttonClass} disabled={busy} onClick={() => setEditing(card)}>Edit and accept</button><button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'reject')}>Reject</button><button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'need_evidence')}>Need evidence</button></div>
-          {editing?.reviewCardId === card.reviewCardId ? <KnowledgeEditForm key={card.reviewCardId} card={card} disabled={busy || !reason.trim() || ((card.cognitiveKnowledgeIds?.length ?? 0) > 1 && !reviewedGroups[card.reviewCardId])} onCancel={() => setEditing(null)} onAccept={(edited) => void decide(card, 'edit_accept', edited)} /> : null}
+          {graphChangeCount(card) > 0 || card.cognitiveSupersededIds?.length ? <CapsuleGraphProposalDetails card={card} current={snapshot?.cognition} /> : null}
+          {proposalChangeCount(card) > 1 ? <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={Boolean(reviewedGroups[card.reviewCardId])} disabled={busy} onChange={(event) => setReviewedGroups((previous) => ({ ...previous, [card.reviewCardId]: event.target.checked }))} />I have inspected every proposed item and am ready to accept all changes.</label> : null}
+          <div className="flex flex-wrap gap-2"><button type="button" className={buttonClass} disabled={busy || !reason.trim() || (proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId])} onClick={() => void decide(card, 'accept')}>{(graphChangeCount(card) > 0 || card.cognitiveProfileChanged) && proposalChangeCount(card) > 1 ? 'Accept all proposed changes' : card.cognitiveProfileChanged ? 'Accept profile change' : (card.cognitiveKnowledgeIds?.length ?? 0) > 1 ? 'Accept all interview items' : 'Accept'}</button>{(card.cognitiveKnowledgeIds?.length ?? 0) + graphChangeCount(card) > 0 ? <button type="button" className={buttonClass} disabled={busy} onClick={() => setEditing(card)}>Edit and accept</button> : null}<button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'reject')}>Reject</button><button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'need_evidence')}>Need evidence</button></div>
+          {editing?.reviewCardId === card.reviewCardId && card.cognitiveKnowledgeIds?.length ? <KnowledgeEditForm key={card.reviewCardId} card={card} disabled={busy || !reason.trim() || (proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId])} onCancel={() => setEditing(null)} onAccept={(edited) => void decide(card, 'edit_accept', edited)} /> : null}
+          {editing?.reviewCardId === card.reviewCardId && graphChangeCount(card) > 0 ? <CapsuleGraphProposalEditForm key={`graph-${card.reviewCardId}`} card={card} current={snapshot?.cognition} disabled={busy || !reason.trim() || (proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId])} onCancel={() => setEditing(null)} onAccept={(edited) => void decide(card, 'edit_accept', edited)} /> : null}
         </article>)}
       </section> : null}
       {snapshot?.hasMore && snapshot.nextCursor ? <button type="button" className={buttonClass} disabled={busy || loading} onClick={() => void load(snapshot.nextCursor!)}>Load more expertise proposals</button> : null}
@@ -164,7 +181,8 @@ function Field({ name, label, area = false, required, value, onChange, defaultVa
 function KnowledgeDetails({ item }: { item: KnowledgeView }) {
   const hidden = new Set(['id', 'kind', 'label', 'scope', 'reviewState', 'provenance', 'migrationStatus']);
   return <details className="min-w-0 rounded-md border border-slate-200 bg-white p-3"><summary className="cursor-pointer break-words text-sm font-medium text-slate-950">{item.label} <span className="ml-2 text-xs text-slate-500">{item.reviewState}</span></summary>
-    <div className="mt-2 space-y-2 break-words text-xs text-slate-600"><p>{kindLabel(item.kind)} · Scope: {item.scope.join(', ')}</p><p>Authored by {item.provenance.generatedBy.id} · {item.provenance.generatedBy.at}</p><p>Sources: {item.provenance.sourceRefs.length ? item.provenance.sourceRefs.join(', ') : 'Expert input; no attached source reference'}</p>
+    <div className="mt-2 space-y-2 break-words text-xs text-slate-600"><p>{kindLabel(item.kind)} · Scope: {item.scope.join(', ')}</p><p>Authored by {item.provenance.generatedBy.id} ({item.provenance.generatedBy.type}) · {item.provenance.generatedBy.at}</p><p>Sources: {item.provenance.sourceRefs.length ? item.provenance.sourceRefs.join(', ') : 'No attached source reference'}</p>
+      {item.provenance.confidenceKind ? <p>Origin: {item.provenance.confidenceKind}</p> : null}{item.provenance.derivedFrom?.length ? <p>Derived from: {item.provenance.derivedFrom.join(', ')}</p> : null}
       {item.provenance.reviewedBy ? <p>Reviewed by {item.provenance.reviewedBy.id} · {item.provenance.reviewedAt}</p> : null}
       {Object.entries(item).filter(([key, value]) => !hidden.has(key) && value !== undefined && !(Array.isArray(value) && !value.length)).map(([key, value]) => <p key={key}><span className="font-semibold">{key.replace(/([A-Z])/g, ' $1')}: </span>{displayValue(value)}</p>)}
     </div></details>;
@@ -197,6 +215,6 @@ function KnowledgeEditForm({ card, disabled, onAccept, onCancel }: { card: Revie
     {arrayKeys.map((key) => <Field key={key} name={key} label={`${key.replace(/([A-Z])/g, ' $1')} (one per line)`} defaultValue={((item as unknown as Record<string, unknown>)[key] as string[]).join('\n')} area />)}
     {item.kind === 'heuristic' ? <Field name="when" label="Apply only when (condition keys, one per line)" defaultValue={item.when.map((condition) => condition.key).join('\n')} required area /> : null}
     {item.kind === 'case' ? <Field name="analogyDimensions" label="Analogy dimensions (one per line)" defaultValue={item.analogyDimensions.join('\n')} required area /> : null}
-    <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={disabled} type="submit">{items.length > 1 ? 'Edit selected item and accept all interview items' : 'Save edits and accept'}</button><button className={buttonClass} type="button" disabled={disabled} onClick={onCancel}>Cancel edit</button></div>
+    <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={disabled} type="submit">{(graphChangeCount(card) > 0 || card.cognitiveProfileChanged) && proposalChangeCount(card) > 1 ? 'Edit selected item and accept all proposed changes' : items.length > 1 ? 'Edit selected item and accept all interview items' : 'Save edits and accept'}</button><button className={buttonClass} type="button" disabled={disabled} onClick={onCancel}>Cancel edit</button></div>
   </form></div>;
 }

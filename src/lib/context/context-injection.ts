@@ -17,7 +17,13 @@ import {
 } from '@/lib/context/capsule-service';
 import { buildCapsuleStarterPromptBlock } from '@/lib/product/context-capsules';
 import { resolveCapsuleReference, stackWithResolvedGoverningCapsule, validateCapsuleVersionPins } from './capsule-version-resolution';
-import { cognitiveContextForCapsule } from '@/lib/cognitive-capsule/context-adapter';
+import { cognitiveContextForAttachments, type CognitiveAttachmentReceipt, type CognitiveAttachmentSource } from '@/lib/cognitive-capsule/context-adapter';
+import { MAX_ASSOCIATED_REFERENCE_CAPSULES } from './capsule-associations';
+import type { CognitiveCapsule } from '@/lib/cognitive-capsule/types';
+
+type InjectableContextDeps = CapsuleServiceDeps & {
+  verifyCognitiveDependencies?: (uid: string, cognition: CognitiveCapsule) => Promise<unknown>;
+};
 
 export interface InjectableContextInput {
   uid: string;
@@ -25,6 +31,7 @@ export interface InjectableContextInput {
   contextPackageId?: string | null;
   activeContextStack?: unknown;
   situationId?: string | null;
+  query?: string | null;
 }
 
 export interface InjectableContext {
@@ -39,6 +46,8 @@ export interface InjectableContext {
   promptBlock: string;
   sharePath: string;
   resolvedAt: string;
+  cognitiveReceipts?: CognitiveAttachmentReceipt[];
+  cognitiveOmissions?: Array<{ capsuleId: string; reason: string }>;
 }
 
 export interface DockCapsuleEntry {
@@ -50,6 +59,7 @@ export interface ProtectedContextPromptBlock {
   promptBlock: string;
   dockTrimmed: boolean;
   contextTrimmed: boolean;
+  cognitiveAttachmentKeys?: string[];
 }
 
 const DOCK_ROLE_CONTRACT: Record<CapsuleDockSlotKind, string> = {
@@ -61,7 +71,7 @@ const DOCK_ROLE_CONTRACT: Record<CapsuleDockSlotKind, string> = {
 
 export async function resolveInjectableContext(
   input: InjectableContextInput,
-  deps?: CapsuleServiceDeps,
+  deps?: InjectableContextDeps,
 ): Promise<InjectableContext> {
   validateCapsuleVersionPins(input.activeContextStack);
   const pointer = cleanPointer(input.capsuleId ?? input.contextPackageId);
@@ -111,6 +121,28 @@ export async function resolveInjectableContext(
     if (loaded && !associated.capsules.some((item) => item.capsuleId === loaded.capsuleId)) associated.capsules.push(loaded);
     else if (!loaded && !associated.missingIds.includes(ref.capsuleId)) associated.missingIds.push(ref.capsuleId);
   }
+  const omittedAssociatedIds = associated.capsules.slice(MAX_ASSOCIATED_REFERENCE_CAPSULES).map((item) => item.capsuleId);
+  associated.capsules = associated.capsules.slice(0, MAX_ASSOCIATED_REFERENCE_CAPSULES);
+  const dependencySources = [capsule, ...dock.entries.map((entry) => entry.capsule), ...associated.capsules];
+  const dependencyPins = new Set<string>();
+  for (const source of dependencySources) {
+    if (!source.cognition?.dependencies.length) continue;
+    const key = `${source.capsuleId}@v${source.version}`;
+    if (dependencyPins.has(key)) continue;
+    dependencyPins.add(key);
+    if (deps?.verifyCognitiveDependencies) await deps.verifyCognitiveDependencies(input.uid, source.cognition);
+    else {
+      const { HostedCapsuleRegistry } = await import('@/lib/cognitive-capsule/hosted-registry');
+      await new HostedCapsuleRegistry(input.uid, { db: deps?.db }).verifyDependencies(source.cognition);
+    }
+  }
+  const compiled = buildCapsuleContext(capsule, {
+    resolvedAt, objective: input.query ?? undefined,
+    situationId: input.situationId, activeContextStack: stack,
+    associatedCapsules: associated.capsules, missingAssociatedCapsuleIds: associated.missingIds,
+    omittedAssociatedCapsuleIds: omittedAssociatedIds,
+    dockCapsules: dock.entries, missingDockCapsuleIds: dock.missingIds,
+  });
   return {
     capsule,
     associatedCapsules: associated.capsules,
@@ -119,15 +151,9 @@ export async function resolveInjectableContext(
     missingDockCapsuleIds: dock.missingIds,
     stack,
     injectionKey: buildCapsuleInjectionKey(capsule),
-    promptBlock: buildCapsulePromptBlock(capsule, {
-      resolvedAt,
-      situationId: input.situationId,
-      activeContextStack: stack,
-      associatedCapsules: associated.capsules,
-      missingAssociatedCapsuleIds: associated.missingIds,
-      dockCapsules: dock.entries,
-      missingDockCapsuleIds: dock.missingIds,
-    }),
+    promptBlock: compiled.promptBlock,
+    cognitiveReceipts: compiled.cognitiveReceipts,
+    cognitiveOmissions: [...compiled.cognitiveOmissions, ...omittedAssociatedIds.map((capsuleId) => ({ capsuleId, reason: 'reference-limit' }))],
     sharePath: `/app?capsuleId=${encodeURIComponent(capsule.capsuleId)}`,
     resolvedAt,
   };
@@ -173,19 +199,27 @@ export function buildCapsuleInjectionKey(capsule: PraxisCapsule): string {
   ].join(':');
 }
 
-export function buildCapsulePromptBlock(
-  capsule: PraxisCapsule,
-  input: {
+interface CapsulePromptInput {
     resolvedAt?: string;
+    objective?: string;
+    maxChars?: number;
     situationId?: string | null;
     activeContextStack?: ActiveContextStackState | null;
     associatedCapsules?: PraxisCapsule[];
     missingAssociatedCapsuleIds?: string[];
     dockCapsules?: DockCapsuleEntry[];
     missingDockCapsuleIds?: string[];
-  } = {},
-): string {
+    omittedAssociatedCapsuleIds?: string[];
+}
+
+export function buildCapsulePromptBlock(capsule: PraxisCapsule, input: CapsulePromptInput = {}): string {
+  return buildCapsuleContext(capsule, input).promptBlock;
+}
+
+function buildCapsuleContext(capsule: PraxisCapsule, input: CapsulePromptInput) {
   const refs = capsule.coreRefs;
+  const dockCapsules = (input.dockCapsules ?? []).filter((entry) => ownerAccessible(entry.capsule, capsule.ownerUid));
+  const associatedCapsules = (input.associatedCapsules ?? []).slice(0, MAX_ASSOCIATED_REFERENCE_CAPSULES).filter((item) => ownerAccessible(item, capsule.ownerUid));
   const lines = [
     '<praxis-context-capsule>',
     'context_mode: praxis_lite',
@@ -225,13 +259,12 @@ export function buildCapsulePromptBlock(
     `memory_core: ${refs.memoryCoreId ?? 'none'}`,
     '',
     buildCapsuleStarterPromptBlock(capsule.capsuleId, capsule.starterSnapshot),
-    buildCapsuleDockPromptBlock(input.dockCapsules ?? [], input.missingDockCapsuleIds ?? []),
-    buildAssociatedCapsulesPromptBlock(input.associatedCapsules ?? [], input.missingAssociatedCapsuleIds ?? []),
+    buildCapsuleDockPromptBlock(dockCapsules, input.missingDockCapsuleIds ?? []),
+    buildAssociatedCapsulesPromptBlock(associatedCapsules, input.missingAssociatedCapsuleIds ?? [], input.omittedAssociatedCapsuleIds ?? []),
     buildContextChainBlocksPromptBlock(input.activeContextStack?.contextBlocks),
-    buildGenerationContractPromptBlock(capsule, input.associatedCapsules ?? []),
+    buildGenerationContractPromptBlock(capsule, associatedCapsules),
     buildBuilderDraftPromptBlock(capsule),
     buildAdvisoryMemoryPromptBlock(capsule),
-    cognitiveContextForCapsule(capsule, { asOf: input.resolvedAt, maxChars: 8000 }).text,
     '[retrieval_policy]',
     `layers: ${capsule.retrievalPolicy.layers.join(', ')}`,
     `limit: ${capsule.retrievalPolicy.limit}`,
@@ -263,7 +296,20 @@ export function buildCapsulePromptBlock(
     );
   }
 
-  return lines.join('\n');
+  const raw = lines.join('\n');
+  const maxChars = Math.max(800, Number.isFinite(input.maxChars) ? Math.floor(input.maxChars!) : 12000);
+  const sources: CognitiveAttachmentSource[] = [{ role: 'governing', capsule },
+    ...dockCapsules.map((entry) => ({ role: entry.role, capsule: entry.capsule })),
+    ...associatedCapsules.map((item) => ({ role: input.activeContextStack?.capsuleRefs.find((ref) => ref.capsuleId === item.capsuleId)?.role ?? 'reference', capsule: item })),
+  ];
+  const reserve = sources.some((source) => source.capsule.cognition) ? Math.min(8000, Math.floor(maxChars * 0.55)) : 0;
+  const legacy = buildProtectedContextPromptBlock(raw, dockCapsules, input.missingDockCapsuleIds ?? [], { maxChars: Math.max(800, maxChars - reserve) });
+  const cognitive = cognitiveContextForAttachments(sources, { objective: input.objective, asOf: input.resolvedAt ?? capsule.updatedAt, maxChars: Math.min(8000, Math.max(0, maxChars - legacy.promptBlock.length - 1)) });
+  const protectedContext = buildProtectedContextPromptBlock(insertCognitiveContext(legacy.promptBlock, cognitive.text), dockCapsules, input.missingDockCapsuleIds ?? [], { maxChars });
+  const keys = new Set(protectedContext.cognitiveAttachmentKeys ?? []);
+  return { promptBlock: protectedContext.promptBlock,
+    cognitiveReceipts: cognitive.receipts.filter((receipt) => keys.has(receipt.key)),
+    cognitiveOmissions: [...cognitive.omissions, ...cognitive.receipts.filter((receipt) => !keys.has(receipt.key)).map((receipt) => ({ capsuleId: receipt.capsuleId, reason: 'whole-context-budget' }))] };
 }
 
 /**
@@ -300,6 +346,53 @@ export function buildProtectedContextPromptBlock(
   dockCapsules: DockCapsuleEntry[],
   missingDockCapsuleIds: string[] = [],
   options: { maxChars?: number; dockMaxChars?: number } = {},
+): ProtectedContextPromptBlock {
+  const maxChars = Math.max(800, Number.isFinite(options.maxChars) ? Math.floor(options.maxChars!) : 12000);
+  const start = rawPromptBlock.indexOf('<cognitive-attachments>');
+  if (start < 0) return protectLegacyContext(rawPromptBlock, dockCapsules, missingDockCapsuleIds, options);
+  const end = rawPromptBlock.indexOf('</cognitive-attachments>', start);
+  if (end < 0) {
+    // Never feed a partial inherited cognitive record to the model.
+    const withoutPartial = `${rawPromptBlock.slice(0, start)}\n</praxis-context-capsule>`;
+    return { ...protectLegacyContext(withoutPartial, dockCapsules, missingDockCapsuleIds, options), cognitiveAttachmentKeys: [], contextTrimmed: true };
+  }
+  const section = rawPromptBlock.slice(start, end + '</cognitive-attachments>'.length);
+  const withoutCognition = `${rawPromptBlock.slice(0, start)}${rawPromptBlock.slice(end + '</cognitive-attachments>'.length)}`;
+  const blocks = [...section.matchAll(/<cognitive-attachment>\nattachment: ([^\n]+)\n[\s\S]*?\n<\/cognitive-attachment>/g)].map((match) => {
+    try { const identity = JSON.parse(match[1]) as { key?: unknown }; return typeof identity.key === 'string' ? { key: identity.key, text: match[0] } : null; }
+    catch { return null; }
+  }).filter((block): block is { key: string; text: string } => Boolean(block));
+  const pool = Math.min(Math.max(0, maxChars - 800), Math.floor(maxChars * 0.55));
+  const kept: typeof blocks = [];
+  const heading = '<cognitive-attachments>\nSeparately reviewed domain data; preserve governing precedence, guard uncertainty and source identity.\n';
+  const closing = '\n</cognitive-attachments>';
+  let length = heading.length + closing.length + 190;
+  for (const block of blocks) {
+    if (length + block.text.length + 1 <= pool) { kept.push(block); length += block.text.length + 1; }
+  }
+  const dropped = blocks.length - kept.length;
+  const priorOmissions = section.match(/cognitive_attachment_omissions: \d+; budget_omissions: \d+; invalid_attachments: \d+/)?.[0] ?? '';
+  const note = `cognitive_context_budget_note: ${dropped} complete attachment(s) omitted by whole-context budget.`;
+  const cognitive = `${heading}${kept.map((block) => block.text).join('\n')}\n${priorOmissions}\n${note}${closing}`;
+  const include = cognitive.length <= maxChars - 800;
+  const protectedLegacy = protectLegacyContext(withoutCognition, dockCapsules, missingDockCapsuleIds, { ...options, maxChars: maxChars - (include ? cognitive.length + 1 : 0) });
+  return { ...protectedLegacy, promptBlock: insertCognitiveContext(protectedLegacy.promptBlock, include ? cognitive : ''),
+    contextTrimmed: protectedLegacy.contextTrimmed || dropped > 0 || !include,
+    cognitiveAttachmentKeys: include ? kept.map((block) => block.key) : [] };
+}
+
+function insertCognitiveContext(promptBlock: string, cognitive: string): string {
+  if (!cognitive) return promptBlock;
+  const closing = '</praxis-context-capsule>';
+  const end = promptBlock.indexOf(closing);
+  return end < 0 ? `${promptBlock.trimEnd()}\n${cognitive}` : `${promptBlock.slice(0, end).trimEnd()}\n${cognitive}\n${promptBlock.slice(end)}`;
+}
+
+function protectLegacyContext(
+  rawPromptBlock: string,
+  dockCapsules: DockCapsuleEntry[],
+  missingDockCapsuleIds: string[],
+  options: { maxChars?: number; dockMaxChars?: number },
 ): ProtectedContextPromptBlock {
   const maxChars = Math.max(800, options.maxChars ?? 12_000);
   const dockMaxChars = Math.min(Math.max(400, options.dockMaxChars ?? 4_000), maxChars - 240);
@@ -600,12 +693,12 @@ async function resolveAssociatedCapsules(
 ): Promise<{ capsules: PraxisCapsule[]; missingIds: string[] }> {
   const candidateIds = uniqueStrings(capsule.associatedCapsuleIds)
     .filter((capsuleId) => capsuleId !== capsule.capsuleId)
-    .slice(0, 5);
+    .slice(0, MAX_ASSOCIATED_REFERENCE_CAPSULES);
   const capsules: PraxisCapsule[] = [];
   const missingIds: string[] = [];
   for (const capsuleId of candidateIds) {
     const associated = attached.get(capsuleId) ?? await getCapsule(uid, capsuleId, deps);
-    if (!associated || associated.archivedAt) {
+    if (!associated || !ownerAccessible(associated, uid) || associated.capsuleId !== capsuleId) {
       missingIds.push(capsuleId);
       continue;
     }
@@ -614,14 +707,17 @@ async function resolveAssociatedCapsules(
   return { capsules, missingIds };
 }
 
-function buildAssociatedCapsulesPromptBlock(capsules: PraxisCapsule[], missingIds: string[]): string {
+function buildAssociatedCapsulesPromptBlock(capsules: PraxisCapsule[], missingIds: string[], omittedIds: string[] = []): string {
   return [
     '[associated_capsules]',
-    capsules.length ? capsules.slice(0, 5).map(formatAssociatedCapsuleSummary).join('\n---\n') : 'none',
+    capsules.length ? capsules.slice(0, MAX_ASSOCIATED_REFERENCE_CAPSULES).map(formatAssociatedCapsuleSummary).join('\n---\n') : 'none',
     missingIds.length ? `missing_or_archived: ${missingIds.join(', ')}` : 'missing_or_archived: none',
+    omittedIds.length ? `reference_context_omissions: ${omittedIds.map((id) => promptSafeLine(id, 160)).join(', ')}; reason=reference-limit; maximum=${MAX_ASSOCIATED_REFERENCE_CAPSULES}` : '',
     '',
   ].join('\n');
 }
+
+function ownerAccessible(capsule: PraxisCapsule, uid: string): boolean { return capsule.ownerUid === uid && !capsule.archivedAt; }
 
 function formatAssociatedCapsuleSummary(capsule: PraxisCapsule): string {
   return [

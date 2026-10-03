@@ -12,6 +12,7 @@
     "schema:gen": "tsx scripts/codegen-schema.ts",
     "schema:cognitive": "tsx scripts/codegen-cognitive-schema.ts",
     "praxis": "tsx cli/praxis.ts",
+    "praxis:mcp": "tsx cli/mcp.ts",
     "verify-tools": "npx tsx scripts/verify-tools.ts",
     "check:landing-bundle": "tsx scripts/check-landing-bundle.ts",
     "check:authenticated-app-bundle": "tsx scripts/check-authenticated-app-bundle.ts",
@@ -213,6 +214,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@modelcontextprotocol/sdk": "1.32.0",
     "@next/bundle-analyzer": "16.3.7",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",

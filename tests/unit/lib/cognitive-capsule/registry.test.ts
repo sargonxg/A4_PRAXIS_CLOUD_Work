@@ -10,6 +10,22 @@ const roots: string[] = [];
 async function registry() { const root = await mkdtemp(join(tmpdir(), 'praxis-registry-')); roots.push(root); return new LocalCapsuleRegistry(root); }
 afterEach(async () => { await Promise.all(roots.splice(0).map((p) => rm(p, { recursive: true, force: true }))); });
 describe('private local content addressed registry', () => {
+  it('pulls exact immutable bytes and reports direct/transitive dependency impact without writes', async () => {
+    const r = await registry(); const c = createCognitiveCapsule('local/base', '1.0.0'); const bytes = await packCapsule(c);
+    const base = await r.publish(bytes, { allowWrite: true });
+    const middle = createCognitiveCapsule('local/middle', '1.0.0'); middle.dependencies = [{ name: base.name, version: base.version, digest: base.digest }];
+    const mid = await r.publish(await packCapsule(middle), { allowWrite: true });
+    const top = createCognitiveCapsule('local/top', '1.0.0'); top.dependencies = [{ name: mid.name, version: mid.version, digest: mid.digest }];
+    await r.publish(await packCapsule(top), { allowWrite: true });
+    await r.publish(await packCapsule(createCognitiveCapsule('local/base', '2.0.0')), { allowWrite: true });
+    const before = await r.list(); const pulled = await r.pull('local/base', '1.0.0');
+    expect(pulled.bytes).toEqual(bytes); expect(pulled.entry.digest).toBe(base.digest);
+    const impact = await r.dependencyImpact('local/base', '1.0.0');
+    expect(impact.directDependents.map((e) => e.name)).toEqual(['local/middle']);
+    expect(impact.transitiveDependents.map((e) => e.name).sort()).toEqual(['local/middle', 'local/top']);
+    expect((await r.dependencyImpact('local/base', '2.0.0')).transitiveDependents).toEqual([]);
+    expect(await r.list()).toEqual(before);
+  });
   it('requires explicit writes and keeps published versions immutable', async () => {
     const r = await registry(); const c = createCognitiveCapsule('tacitus/example', '1.0.0'); const bytes = await packCapsule(c);
     await expect(r.publish(bytes)).rejects.toThrow(/allow-write/);

@@ -18,7 +18,7 @@ describe('authenticated cognition route', () => {
   it('creates an owner-scoped proposal without accepting caller review metadata', async () => {
     service.proposeCognitiveKnowledge.mockResolvedValue({ card: { state: 'proposed' } });
     expect((await post(proposal)).status).toBe(201);
-    expect(service.proposeCognitiveKnowledge).toHaveBeenCalledWith('owner', 'owned', proposal);
+    expect(service.proposeCognitiveKnowledge).toHaveBeenCalledWith('owner', 'owned', expect.objectContaining(proposal));
     expect((await post({ ...proposal, reviewState: 'accepted', reviewedBy: 'forged' })).status).toBe(400);
     expect(service.proposeCognitiveKnowledge).toHaveBeenCalledTimes(1);
   });

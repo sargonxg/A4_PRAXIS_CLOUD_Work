@@ -263,6 +263,7 @@ export async function buildTurnCapsule(
     requestTime,
     turnId: input.traceId ?? injectableContext.injectionKey,
     temporalIntent,
+    includeCognition: !injectableContext.cognitiveReceipts?.some((receipt) => receipt.capsuleId === injectableContext.capsule.capsuleId),
   });
   const augmentedInjectableContext: InjectableContext = {
     ...injectableContext,

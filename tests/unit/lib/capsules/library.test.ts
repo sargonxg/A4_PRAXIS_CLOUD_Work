@@ -4,7 +4,9 @@ import {
   buildCapsuleLibraryFacetOptions,
   filterCapsuleRepositoryEntries,
   proposeDockSlotForCapsule,
+  capsuleRepositoryEntryFromCapsule,
 } from '@/lib/capsules/library';
+import { sanitizeCapsule } from '@/lib/context/capsule-service';
 import {
   assignCapsuleToDockSlot,
   buildCapsuleDockSlots,
@@ -12,6 +14,14 @@ import {
 } from '@/lib/context/active-context-stack';
 
 describe('capsule library taxonomy helpers', () => {
+  it('finds cognitive profile metadata and assigns expertise layers without hiding saved situation context', () => {
+    const entries = ['expertise', 'method', 'language', 'casebook', 'role', 'output', 'organization', 'situation'].map(profile =>
+      capsuleRepositoryEntryFromCapsule(sanitizeCapsule({ capsuleId: `saved-${profile}`, ownerUid: 'owner', cognitiveProfile: profile })));
+    expect(entries.map(entry => proposeDockSlotForCapsule(entry))).toEqual(['tool', 'tool', 'tool', 'tool', 'user', 'output', 'situation', 'situation']);
+    const facets = buildCapsuleLibraryFacetOptions(entries);
+    expect(facets.types.some(facet => facet.tag === 'type:cognitive-language')).toBe(true);
+    expect(filterCapsuleRepositoryEntries(entries, 'all', '', { type: 'type:cognitive-language' }).map(entry => entry.id)).toEqual(['saved-language']);
+  });
   it('maps type taxonomy facets onto dock slots with situation fallback', () => {
     expect(proposeDockSlotForCapsule(taxonomyInput('type:user'))).toBe('user');
     expect(proposeDockSlotForCapsule(taxonomyInput('type:situation'))).toBe('situation');

@@ -73,6 +73,7 @@ import { enqueueAgentRunDispatch } from '@/lib/agent-runtime/cloud-tasks';
 import { destinationHref } from '@/lib/product/policy-agents';
 import { formatWorkIntentPromptBlock } from '@/lib/ai/work-intent-router';
 import { DEFAULT_SELECTED_CORE_IDS, type CapsuleAgentExecutionContext, type SelectedCoreIds } from '@/lib/agent-runtime/types';
+import { cognitiveAskReceipts, cognitiveAskMaxStep } from '@/lib/cognitive-capsule/ask-receipts';
 import { resolveGroundingPlan } from '@/lib/agent-runtime/grounding-adapter';
 import { shouldEnableAgentContextVerifier, verifyAgentContextGrounding } from '@/lib/context/agent-context-verifier';
 import {
@@ -1235,6 +1236,7 @@ function decorateAskRuntimeReceipt(
   return {
     ...receipt,
     intent: input.intent,
+    cognitiveReceipts: cognitiveAskReceipts(input.turnCapsule),
     contextPackageId: input.contextPackageId ?? null,
     capsuleId: resolvedCapsule?.capsuleId ?? input.turnCapsule?.capsuleId ?? null,
     capsuleVersion: resolvedCapsule?.version ?? input.turnCapsule?.capsuleVersion ?? null,
@@ -1389,7 +1391,7 @@ async function maybeQueueAskAgentRun(input: {
       traceId: receipt.traceId ?? `ask-${Date.now().toString(36)}`,
       parentRunId: null,
       idempotencyKey: buildAskAgentRunIdempotencyKey(input.threadId, receipt.traceId, input.prompt),
-      maxStep: receipt.triage.complexity === 'deep' ? 8 : 4,
+      maxStep: cognitiveAskMaxStep(receipt.triage.complexity === 'deep', cognitiveAskReceipts(input.turnCapsule)),
       maxSessionMinutes: receipt.triage.complexity === 'deep' ? 45 : 20,
       internalEstimatedCostCents: null,
       metadata: {
@@ -1638,6 +1640,7 @@ function buildCapsuleAgentExecutionContext(input: {
   const retrievalPlan = input.turnCapsule?.retrievalPlan;
   return {
     version: 1,
+    cognitiveReceipts: cognitiveAskReceipts(input.turnCapsule),
     capsuleId: input.capsule.capsuleId,
     capsuleVersion: input.capsule.version,
     contextPackageId: input.contextPackageId ?? null,

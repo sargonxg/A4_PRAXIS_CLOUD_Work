@@ -5,7 +5,8 @@ import { CapsuleExpertisePanel } from '@/components/capsules/CapsuleExpertisePan
 describe('Capsule expertise panel', () => {
   it('provides critical case, distinction, language and correction capture inside the capsule', () => {
     const html = renderToStaticMarkup(<CapsuleExpertisePanel capsuleId="owned" />);
-    for (const text of ['Expertise', 'Critical case', 'Distinction', 'Language rule', 'Save lesson from correction', 'What would a beginner miss?', 'Scope', 'Propose for review']) expect(html).toContain(text);
+    for (const text of ['Expertise', 'Critical case', 'Distinction', 'Language rule', 'Save lesson from correction', 'What would a beginner miss?', 'Scope', 'Propose for review', 'Search expert knowledge']) expect(html).toContain(text);
+    for (const kind of ['cue', 'pattern', 'heuristic', 'distinction', 'exception', 'redFlag', 'question', 'languageRule', 'procedure', 'case', 'unknown', 'revisionTrigger']) expect(html).toContain(`value="${kind}"`);
     expect(html).not.toContain('Mark accepted');
   });
   it('shows saved knowledge with provenance and review state', () => {

@@ -4,6 +4,7 @@ import { memo, useEffect, useState } from 'react';
 import { GitBranch } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { WorkbenchSection } from '@/components/capsules/workbench/CapsuleWorkbenchSections';
+import type { CognitiveDiffRow } from '@/lib/cognitive-capsule/semantic-diff';
 
 type CapsuleHistoryVersion = {
   version?: number;
@@ -21,6 +22,7 @@ type CapsuleHistoryDiffRow = {
 };
 
 type CapsuleHistoryDiffResponse = {
+  cognitiveDiff?: { beforeDigest: string | null; afterDigest: string | null; rows: CognitiveDiffRow[] };
   fieldDiffs?: Partial<Record<'label' | 'summary' | 'claimLedger' | 'sourceRefs', CapsuleHistoryDiffRow[]>>;
 };
 
@@ -108,9 +110,14 @@ export const CapsuleHistorySection = memo(function CapsuleHistorySection({ capsu
             <CapsuleDiffRows label="Summary" rows={fieldDiffs.summary ?? []} />
             <CapsuleDiffRows label="Claim ledger" rows={fieldDiffs.claimLedger ?? []} />
             <CapsuleDiffRows label="Source refs" rows={fieldDiffs.sourceRefs ?? []} />
+            {diff?.cognitiveDiff ? <div className="min-w-0 space-y-2 break-words">
+              <p className="text-xs text-slate-500">Cognitive snapshot: {diff.cognitiveDiff.beforeDigest ?? 'none'} → {diff.cognitiveDiff.afterDigest ?? 'none'}</p>
+              {(['nodes', 'statements', 'knowledge', 'evidence', 'dependencies', 'policy'] as const).map(group =>
+                <CapsuleDiffRows key={group} label={`Cognitive ${group}`} rows={diff.cognitiveDiff!.rows.filter(row => row.group === group)} />)}
+            </div> : null}
           </div>
         ) : (
-          <p className="rounded-md border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-500">Select two versions to compare label, summary, claim ledger, and source refs.</p>
+          <p className="rounded-md border border-dashed border-slate-200 px-3 py-3 text-xs text-slate-500">Select two versions to compare claims, sources, knowledge, relationships, review decisions and dependencies.</p>
         )}
       </div>
     </WorkbenchSection>
@@ -155,7 +162,7 @@ function CapsuleDiffRows({ label, rows }: { label: string; rows: CapsuleHistoryD
       {rows.length ? (
         <div className="grid gap-1.5">
           {rows.map((row) => (
-            <div key={`${label}-${row.id}`} className="rounded-md border border-slate-200 bg-white p-2 text-xs leading-5">
+            <div key={`${label}-${row.id}`} className="min-w-0 break-words rounded-md border border-slate-200 bg-white p-2 text-xs leading-5">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="font-semibold text-slate-900">{row.label}</p>
                 <span className={cn('rounded-md px-2 py-0.5 text-[10px] font-semibold', diffStateClass(row.state))}>{row.state}</span>

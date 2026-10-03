@@ -12,6 +12,7 @@ import {
   type CapsuleTaxonomyInput,
 } from '@/lib/product/context-capsules';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
+import type { CognitiveCapsule } from '@/lib/cognitive-capsule/types';
 import { POLICY_CAPSULE_SPOTLIGHTS } from '@/lib/capsules/spotlights';
 import {
   isCapsuleDockSlotKind,
@@ -92,6 +93,7 @@ export interface CapsuleLibraryCoreRefs {
 }
 
 export interface CapsuleLibraryEntry {
+  cognitiveProfile?: CognitiveCapsule['profile'];
   id: string;
   title: string;
   valueProp: string;
@@ -167,6 +169,12 @@ export function buildCapsuleLibraryFacetOptions(entries: CapsuleLibraryEntry[]):
 }
 
 export function proposeDockSlotForCapsule(input: CapsuleDockSlotProposalInput): CapsuleDockSlotKind {
+  if ('cognitiveProfile' in input && input.cognitiveProfile) {
+    if (input.cognitiveProfile === 'role') return 'user';
+    if (input.cognitiveProfile === 'output') return 'output';
+    if (['expertise', 'method', 'language', 'casebook'].includes(input.cognitiveProfile)) return 'tool';
+    return 'situation';
+  }
   const taxonomy = isResolvedTaxonomy(input)
     ? input
     : isTaxonomyCarrier(input)
@@ -192,6 +200,7 @@ export function buildCapsuleRepositoryEntries(input: {
 }
 
 export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): CapsuleLibraryEntry {
+  const profile = capsule.cognition?.profile ?? capsule.cognitiveProfile;
   const refs = capsule.coreRefs;
   const tags = capsule.community?.tags ?? [];
   const starter = getCapsuleStarterDefinition(capsule.capsuleId);
@@ -206,6 +215,7 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
     starterSnapshot: capsule.starterSnapshot as CapsuleTaxonomyInput['starterSnapshot'],
     coreRefs: refs,
   });
+  if (profile) taxonomy.types.unshift({ id: `cognitive-${profile}`, value: profile, label: `${profile[0].toUpperCase()}${profile.slice(1)} capsule`, tag: `type:cognitive-${profile}`, source: 'scope' });
   const ontologyStack = uniqueStrings([
     ...ontologyIdsForCapsule(capsule),
     capsule.activeOntologyStackId ?? null,
@@ -228,6 +238,7 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
     valueProp: cleanOneLine(capsule.summary || capsule.trust?.summary || 'Saved user capsule.'),
     category: libraryCategoryForCapsule(capsule),
     origin: 'user',
+    ...(profile ? { cognitiveProfile: profile } : {}),
     reviewState: capsule.archivedAt ? 'archived' : capsule.latestGateState === 'applied' ? 'decisions-saved' : capsule.latestGateState === 'draft' ? 'draft' : 'needs-review',
     updatedAt: capsule.updatedAt,
     structuralScore: capsule.health?.score ?? null,
@@ -245,6 +256,7 @@ export function capsuleRepositoryEntryFromCapsule(capsule: PraxisCapsule): Capsu
     researchSignals,
     readinessTier: readinessTierForCapsule(capsule),
     searchKeywords: uniqueStrings([
+      profile ?? '',
       ...tags,
       ...claimTextsForCapsule(capsule),
       ...refs.sourceCoreIds,

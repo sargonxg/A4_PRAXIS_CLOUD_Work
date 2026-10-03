@@ -47,4 +47,22 @@ describe('isolated PRAXIS CLI', () => {
     expect(output.join('')).not.toContain('secret-token');
     await expect(remoteRequest('/api/auth/session', 'GET', undefined, { ...options, session: '{"token":"raw-token"}' })).rejects.toThrow(/signed/);
   });
+  it('exports exact registry versions with pull and writes a new version without changing the original', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'praxis-cli-pull-'));
+    try {
+      await writeFile(join(dir, 'input.json'), JSON.stringify(createCognitiveCapsule('local/test', '1.0.0')));
+      const output: string[] = []; const options = { cwd: dir, registry: join(dir, 'registry'), write: (v: string) => output.push(v) };
+      await runCli(['capsule', 'pack', 'input.json', '--output', 'out.capsule', '--allow-write'], options);
+      await runCli(['capsule', 'push', 'out.capsule', '--allow-write'], options);
+      await expect(runCli(['capsule', 'pull', 'local/test', '1.0.0', '--output', 'pulled.capsule'], options)).rejects.toThrow(/allow-write/);
+      await runCli(['capsule', 'pull', 'local/test', '1.0.0', '--output', 'pulled.capsule', '--allow-write'], options);
+      expect(await readFile(join(dir, 'pulled.capsule'))).toEqual(await readFile(join(dir, 'out.capsule')));
+      await runCli(['capsule', 'impact', 'local/test', '1.0.0'], options);
+      expect(JSON.parse(output.at(-1)!).transitiveDependents).toEqual([]);
+      await runCli(['capsule', 'version', 'input.json', '1.1.0', '--output', 'new.json', '--allow-write'], options);
+      expect(JSON.parse(await readFile(join(dir, 'new.json'), 'utf8')).version).toBe('1.1.0');
+      expect(JSON.parse(await readFile(join(dir, 'input.json'), 'utf8')).version).toBe('1.0.0');
+      await expect(runCli(['capsule', 'version', 'input.json', '0.9.0', '--output', 'old.json', '--allow-write'], options)).rejects.toThrow(/greater|newer/);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
 });

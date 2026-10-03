@@ -191,6 +191,7 @@ export interface AgentReasoningLoopResult {
 }
 
 export interface CapsuleAgentExecutionContext {
+  cognitiveReceipts?: import('@/lib/cognitive-capsule/context-adapter').CognitiveAttachmentReceipt[];
   version: 1;
   capsuleId: string;
   capsuleVersion: number;

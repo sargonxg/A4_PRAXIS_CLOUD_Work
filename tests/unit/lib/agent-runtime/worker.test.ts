@@ -3,6 +3,7 @@ import { memoOutputBodyHash, normalizeMemoOutputReview, type MemoOutputReviewRec
 import { recordMemoContextSnapshot } from '@/lib/memo/context-snapshot';
 import { AgentExecutionLeaseError } from '@/lib/agent-runtime/execution-lease';
 import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
+import { compileContext } from '@/lib/cognitive-capsule/compiler';
 import type { SaveMemoDraftInput } from '@/lib/firebase/memo-service';
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 import type { Firestore } from 'firebase-admin/firestore';
@@ -16,6 +17,7 @@ import {
   type ExecuteAgentRunPayload,
 } from '@/lib/agent-runtime/worker';
 import type { AgentApproval, AgentRun, AgentRunEvent, AgentToolCall } from '@/lib/agent-runtime/types';
+import type { updateAgentRunStatus } from '@/lib/agent-runtime/postgres';
 
 // Mode tests inject persistence; execution ownership is exercised separately.
 vi.mock('@/lib/agent-runtime/owner-state', () => ({ assertAgentOwnerWritable: async () => undefined }));
@@ -215,10 +217,80 @@ function makeQualityCapsule(overrides: Record<string, unknown> = {}) {
 }
 
 describe('agent runtime no-op worker', () => {
+  it('executes demand-selected source/entity/language specialties and persists typed receipts consumed by writer/red-team', async () => {
+    const actor = { type: 'human' as const, id: 'expert', at: '2026-05-15T12:00:00Z' };
+    const provenance = { generatedBy: actor, reviewedBy: actor, reviewedAt: actor.at, sourceRefs: [], derivedFrom: [], confidenceKind: 'human-authored' as const };
+    const c = createCognitiveCapsule(payload.capsuleId);
+    c.nodes.push({ id: 'actor-a', type: 'aco:Actor', label: 'Movement Main', layer: 'world', reviewState: 'accepted', provenance }, { id: 'actor-b', type: 'aco:Actor', label: 'Movement North', layer: 'world', reviewState: 'accepted', provenance });
+    c.knowledge.push(KnowledgeSchema.parse({ id: 'language-1', kind: 'languageRule', label: 'Conditional openness', scope: ['diplomacy'], reviewState: 'accepted', provenance, expression: 'prepared to consider', language: 'en', domain: 'diplomacy', meaning: 'Conditional openness', nonImplications: ['acceptance', 'commitment'] }));
+    const attached = createCognitiveCapsule('methods-cap');
+    attached.knowledge.push(KnowledgeSchema.parse({ id: 'method-distinction', kind: 'distinction', label: 'Silence is not consent', scope: ['general'], reviewState: 'accepted', provenance, conceptA: 'silence', conceptB: 'consent', explanation: 'Silence does not establish consent.', whyItMatters: 'Preserve uncertainty', commonMistake: 'Inventing agreement' }));
+    const attachedReceipt = compileContext(attached, { objective: 'Use attached methods.', role: 'capsule-curator', scope: 'general', asOf: actor.at }).receipt;
+    let current = { ...makeRun('queued', { policyAgentId: 'research-memo', askExecutionPreference: { allowExternalSources: false }, capsuleAgentExecutionContext: {
+      version: 1, capsuleId: payload.capsuleId, capsuleVersion: 1, cognitiveReceipts: [{ key: 'methods-cap@v2', capsuleId: 'methods-cap', envelopeVersion: 2, role: 'tool', profile: 'expertise', compilation: attachedReceipt }],
+    } }), objective: 'Compare actor aliases and review diplomatic wording.' };
+    const phases: string[] = []; const events: AgentRunEvent[] = [];
+    const commonDeps = {
+      getRun: async () => current, getCapsuleAtVersion: async (_uid: string, capsuleId: string) => capsuleId === 'methods-cap'
+        ? makeSavedCapsule({ capsuleId: 'methods-cap', version: 2, cognition: attached }) : makeSavedCapsule({ cognition: c }),
+      updateStatus: async (i: Parameters<typeof updateAgentRunStatus>[0]) => { current = { ...current, status: i.toStatus, metadata: { ...current.metadata, ...i.metadata } }; return current; },
+      appendToolCall: async (call: AgentToolCall) => call, appendApproval: async (a: AgentApproval) => a,
+      appendEvent: async (e: AgentRunEvent) => { events.push(e); return e; }, buildEvidencePack: async () => makeEvidencePack(),
+      saveMemoDraft: async () => ({ memo: { id: 'specialist-memo' } }), saveOutputCapsule: async () => ({ id: 'specialist-output' }),
+    };
+    await executeAgentRun(payload, { ...commonDeps, generateText: async (i) => {
+      phases.push(i.generationPhase!);
+      if (i.generationPhase === 'memo-entity-resolution') return { text: JSON.stringify({ analysis: 'Affiliation does not establish identical command authority.', resolutions: [{ candidateIds: ['actor-a', 'actor-b'], relation: 'affiliated', validFrom: actor.at }] }) };
+      if (i.generationPhase === 'memo-draft' || i.generationPhase === 'memo-self-critique') {
+        expect(i.prompt).toContain('source-verification-1'); expect(i.prompt).toContain('entity-resolution-1'); expect(i.prompt).toContain('language-analysis-1');
+        expect(i.prompt).toContain('Silence does not establish consent.');
+      }
+      return { text: i.generationPhase === 'memo-draft' ? 'Conditional openness, not acceptance [D1:p.1].' : 'Unverified claims remain for human review.' };
+    } });
+    expect(phases).toEqual(['memo-source-verification', 'memo-entity-resolution', 'memo-language-analysis', 'memo-domain-analysis', 'memo-draft', 'memo-self-critique']);
+    const board = current.metadata.cognitiveBlackboard as { objects: Array<{ id: string; kind: string; supportStatus?: string; status?: string; relation?: string; objectRefs: string[] }> };
+    expect(board.objects).toContainEqual(expect.objectContaining({ id: 'entity-resolution-1', kind: 'WorkingEntityResolution', relation: 'affiliated', status: 'needs_review' }));
+    expect(board.objects.filter((o) => o.kind === 'WorkingEvidenceSpan').every((o) => o.supportStatus === 'unverified')).toBe(true);
+    expect(board.objects.find((o) => o.id === 'draft-1')?.objectRefs).toEqual(expect.arrayContaining(['source-verification-1', 'entity-resolution-1', 'language-analysis-1', 'analysis-1']));
+    expect(events.filter((e) => e.data.phase === 'cognition.specialist_completed')).toHaveLength(4);
+    expect(Object.keys(current.metadata.cognitiveSpecialistReceipts as object)).toHaveLength(4);
+    const replay = vi.fn(async () => ({ text: 'Unexpected regeneration.' })); current = { ...current, status: 'running' };
+    await executeAgentRun({ ...payload, attempt: 2 }, { ...commonDeps, generateText: replay });
+    expect(replay).not.toHaveBeenCalled();
+    current = { ...current, status: 'running', maxStep: 6 };
+    await expect(executeAgentRun({ ...payload, attempt: 3 }, { ...commonDeps, generateText: replay })).rejects.toMatchObject({ diagnostic: { errorMessage: expect.stringMatching(/budget/i) } });
+    expect(replay).not.toHaveBeenCalled();
+    current = { ...current, status: 'running', maxStep: 20 }; attached.knowledge[0].label = 'Changed attached method';
+    await expect(executeAgentRun({ ...payload, attempt: 4 }, { ...commonDeps, generateText: replay })).rejects.toMatchObject({ diagnostic: { failedPhase: 'cognitive-context-lock', errorMessage: expect.stringMatching(/attached|digest|stale/i) } });
+    expect(replay).not.toHaveBeenCalled();
+  });
+  it('rejects unresolved native dependencies before any provider generation', async () => {
+    const c = createCognitiveCapsule(payload.capsuleId, '1.0.0');
+    c.dependencies.push({ name: 'owner/method', version: '1.0.0', digest: `sha256:${'a'.repeat(64)}` });
+    let current = makeRun('queued', { policyAgentId: 'research-memo', askExecutionPreference: { allowExternalSources: false } });
+    const generateText = vi.fn(); const runGroundedSearch = vi.fn();
+    await expect(executeAgentRun(payload, {
+      getRun: async () => current,
+      getCapsuleAtVersion: async () => makeSavedCapsule({ cognition: c }),
+      updateStatus: async (i) => { current = { ...current, status: i.toStatus, metadata: { ...current.metadata, ...i.metadata } }; return current; },
+      appendToolCall: async (call) => call, appendApproval: async (a) => a, appendEvent: async (e) => e,
+      verifyCognitiveDependencies: async () => { throw new Error('Locked dependency artifact is missing.'); },
+      buildEvidencePack: async () => makeEvidencePack(), generateText, runGroundedSearch,
+    })).rejects.toMatchObject({ diagnostic: { failedPhase: 'cognitive-context-lock', errorMessage: expect.stringMatching(/dependency artifact/) } });
+    expect(generateText).not.toHaveBeenCalled(); expect(runGroundedSearch).not.toHaveBeenCalled();
+  });
   it('locks reviewed cognition before generation and hands typed analysis and draft IDs to writer/review steps', async () => {
     const actor = { type: 'human' as const, id: 'expert', at: '2026-05-15T12:00:00Z' };
     const c = createCognitiveCapsule(payload.capsuleId, '1.0.0');
     c.knowledge.push(KnowledgeSchema.parse({ id: 'dist-1', kind: 'distinction', label: 'Conditional openness', scope: ['general'], reviewState: 'accepted', provenance: { generatedBy: actor, reviewedBy: actor, reviewedAt: actor.at, sourceRefs: [] }, conceptA: 'consider', conceptB: 'accept', explanation: 'Considering is not acceptance.', whyItMatters: 'Preserve modality.', commonMistake: 'Convert conditional wording to agreement.' }));
+    // A valid saved capsule can exceed 300 inventory anchors without placing
+    // every inventory record in each working object's reference list.
+    for (let i = 0; i < 501; i++) {
+      const provenance = { generatedBy: actor, sourceRefs: [], derivedFrom: [], confidenceKind: 'human-authored' as const };
+      c.nodes.push({ id: `topic-${i}`, label: `Topic ${i}`, type: 'topic', layer: 'world', reviewState: 'proposed', provenance });
+      c.evidence.push({ id: `span-${i}`, sourceId: `source-${i}`, sourceVersion: '1', quote: 'Unverified captured excerpt.', anchorStatus: 'excerpt', stance: 'supports' });
+      c.statements.push({ id: `statement-${i}`, subject: `topic-${i}`, predicate: 'MAY_CONCERN', object: { literal: 'Unreviewed inventory statement' }, layer: 'epistemic', polarity: 'positive', reviewState: 'proposed', provenance, sourceRefs: [], conditions: [], exceptions: [], addressedTo: [], audience: [], annotations: [] });
+    }
     let current = makeRun('queued', { policyAgentId: 'research-memo', askExecutionPreference: { allowExternalSources: false } });
     const phases: string[] = []; const events: AgentRunEvent[] = [];
     await executeAgentRun(payload, {
@@ -232,18 +304,19 @@ describe('agent runtime no-op worker', () => {
         phases.push(i.generationPhase!);
         expect(current.metadata.cognitiveContextLock).toBeTruthy();
         expect(i.prompt).toContain('Considering is not acceptance.');
-        expect(i.prompt).toContain('analysis-1');
+        if (i.generationPhase === 'memo-draft' || i.generationPhase === 'memo-self-critique') expect(i.prompt).toContain('analysis-1');
         if (i.generationPhase === 'memo-self-critique') expect(i.prompt).toContain('draft-1');
         return { text: i.generationPhase === 'memo-draft' ? 'Conditional openness [D1:p.1].' : 'Review the exact wording.' };
       },
       saveMemoDraft: async () => ({ memo: { id: 'cognitive-memo' } }),
       saveOutputCapsule: async () => ({ id: 'cognitive-output' }),
     });
-    expect(phases).toEqual(['memo-domain-analysis', 'memo-draft', 'memo-self-critique']);
+    expect(phases).toEqual(['memo-source-verification', 'memo-domain-analysis', 'memo-draft', 'memo-self-critique']);
     expect(events.some((e) => e.data.phase === 'cognition.context_locked')).toBe(true);
     const board = current.metadata.cognitiveBlackboard as { objects: Array<{ id: string; kind: string; objectRefs: string[] }> };
     expect(board.objects).toContainEqual(expect.objectContaining({ id: 'draft-1', kind: 'WorkingDraftBlock', objectRefs: expect.arrayContaining(['analysis-1']) }));
     expect(board.objects).toContainEqual(expect.objectContaining({ kind: 'WorkingReviewIssue', objectRefs: expect.arrayContaining(['draft-1']) }));
+    expect((current.metadata.cognitiveBlackboard as { entityIds: string[] }).entityIds).toHaveLength(501);
     expect(c.knowledge).toHaveLength(1);
     current = { ...current, status: 'running' };
     const validReplay = vi.fn(async () => ({ text: 'Unexpected regeneration.' }));

@@ -38,11 +38,13 @@ describe('inventory-backed owner erasure', () => {
       'users/owner': { uid: 'owner', email: 'owner@example.test' },
       'users/owner/capsules/cap': { ownerUid: 'owner' },
       'users/owner/capsules/cap/askThreads/thread/turns/turn': { output: 'private output' },
+      'users/owner/capsuleRegistry/immutable-version': { ownerUid: 'owner' },
+      'users/owner/capsuleRegistryInstallations/installation': { ownerUid: 'owner' },
       'users/owner/situations/sit/documents/missing/chunks/chunk': { text: 'private source' },
       'capsules/root/versions/hash': { ownerUid: 'owner' },
       'capsules/root': { ownerUid: 'owner' },
       'users/other/capsules/other': { ownerUid: 'other' },
-    }, ['users/owner/sit/source.pdf', 'users/other/source.pdf']);
+    }, ['users/owner/sit/source.pdf', 'users/owner/capsule-registry/objects/digest.capsule', 'users/other/source.pdf']);
     const report = await eraseOwnerAccount('owner', f.deps);
     expect(report.status).toBe('deleted');
     expect([...f.records.keys()].sort()).toEqual(['users/other/capsules/other', 'users/owner']);

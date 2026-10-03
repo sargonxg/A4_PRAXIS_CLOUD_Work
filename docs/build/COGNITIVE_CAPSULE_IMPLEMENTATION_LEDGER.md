@@ -175,7 +175,7 @@ Baseline evidence:
 
 Add dated checkpoint entries only after verification. Each entry must distinguish implementation files, focused/full test evidence, source commit, pushed source, deployed revision and traffic, public health, authenticated durable journeys, and deferred target acceptance. The baseline tables remain a record of what existed before this work, not a claim about the final published release.
 
-### October 3 implementation checkpoint
+### October 3 published first-pack implementation checkpoint
 
 The source plan is preserved byte-for-byte. Every numbered section above remains in the inventory; the following table records the current result across its implementation waves. These are implementation statuses, not claims that every long-term acceptance condition is achieved.
 
@@ -206,6 +206,8 @@ Review found and corrected typed condition omissions, missing reference validati
 Release gates, pushed revision, deployment, traffic and observed journeys are recorded in the dated release report. Baseline audit files and unrelated Graphify/configuration edits are excluded from the publication source.
 
 ## Published acceptance — October 3, 2026
+
+The table above describes the first-pack publication. The mandatory continuation implements owner-private hosted registry, graph composition/review, adaptive interviewing, multiple-attachment execution and expanded evaluation contracts. See [the full-roadmap continuation checkpoint](COGNITIVE_CAPSULE_CONTINUATION_2026-10-03.md) for its distinct implementation, validation and serving-release evidence. These are mandatory roadmap work. Empirical provider improvement, blinded expert scoring and optional parser acceptance remain separate from implementation and publication.
 
 Application `d5efb79a` is live at `https://praxis.tacitus.me`, revision `praxis-frontend-01104-85z`, 100% traffic, Cloud Build `c0f9440d-1aee-4c14-82fe-9cfb6ff8a192`. Corrected-source gates passed: 458 test files / 2,715 tests, build, types, lint and full audits. Real Firestore rejected nested undefined proposal fields in the first release; serialization was corrected and strict-write regressions cover capture, interview proposals and review persistence.
 

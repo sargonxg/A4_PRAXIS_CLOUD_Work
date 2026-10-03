@@ -3,6 +3,18 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('root capsule Firestore rules', () => {
+  it('keeps private registry locks server-managed and native artifacts immutable to clients', () => {
+    const rules = readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
+    for (const name of ['capsuleRegistry', 'capsuleRegistryInstallations']) {
+      const match = rules.match(new RegExp(`match /${name}/\\{[^}]+\\} \\{([^}]+)\\}`));
+      expect(match?.[1]).toContain('resource.data.ownerUid == uid');
+      expect(match?.[1]).toContain('allow write: if false;');
+    }
+    const storage = readFileSync(path.join(process.cwd(), 'storage.rules'), 'utf8');
+    expect(storage).toContain('match /users/{uid}/{firstPath}/{allPaths=**}');
+    expect(storage).toContain("allow delete: if isActiveOwner() && firstPath != 'capsule-registry';");
+    expect(storage).toMatch(/allow create, update: if isActiveOwner\(\)\s+&& firstPath != 'capsule-registry'/);
+  });
   it('allow owner draft writes while keeping published versions immutable', () => {
     const rules = readFileSync(path.join(process.cwd(), 'firestore.rules'), 'utf8');
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
-import { appendWorkingObject, updateWorkingObject, createBlackboard, freezeRunContext, compileLockedRole, validateBlackboard, assertRunContextReplay } from '@/lib/agent-runtime/blackboard';
+import { appendWorkingObject, updateWorkingObject, createBlackboard, freezeRunContext, compileLockedRole, validateBlackboard, assertRunContextReplay, attachedReference } from '@/lib/agent-runtime/blackboard';
+import { compileContext } from '@/lib/cognitive-capsule/compiler';
 
 const at = '2026-10-03T12:00:00Z';
 const identity = { ownerUid: 'u1', runId: 'r1', capsuleId: 'c1' };
@@ -14,6 +15,29 @@ const runtime = { modelRoute: 'vertex:gemini-2.5-pro', toolVersions: { search: '
 const input = () => ({ ...identity, capsuleVersion: 4, cognition: cognition(), objective: 'Assess talks', scope: 'diplomacy', asOf: at, facts: { talks: true }, runtime, evidenceDependencies: [{ id: 'p1', digest: 'sha256:test' }] });
 
 describe('run-scoped cognitive blackboard', () => {
+  it('freezes verified native dependency artifacts and refuses missing or changed locks', () => {
+    const current = input();
+    const dependency = { name: 'owner/method', version: '1.0.0', digest: `sha256:${'a'.repeat(64)}` };
+    current.cognition.dependencies.push(dependency);
+    expect(() => freezeRunContext(current)).toThrow(/resolved/);
+    const resolved = { ...current, resolvedDependencies: [{ capsuleId: current.cognition.capsuleId, locks: [{ ...dependency, capsuleDigest: `sha256:${'b'.repeat(64)}` }] }] };
+    const lock = freezeRunContext(resolved);
+    expect(lock.resolvedDependencies).toEqual(resolved.resolvedDependencies);
+    expect(() => assertRunContextReplay(lock, { ...resolved, resolvedDependencies: [{ capsuleId: current.cognition.capsuleId, locks: [{ ...dependency, capsuleDigest: `sha256:${'c'.repeat(64)}` }] }] })).toThrow(/stale/i);
+  });
+  it('supports large primary and cumulative attachment inventories while keeping working references bounded', () => {
+    const primary = Array.from({ length: 501 }, (_, i) => `primary-${i}`);
+    const attached = Array.from({ length: 501 }, (_, i) => attachedReference('attached', `record-${i}`));
+    const board = createBlackboard(identity, { entityIds: [...primary, ...attached], statementIds: primary, evidenceIds: [...primary, ...attached] });
+    expect(validateBlackboard(board, identity).entityIds).toHaveLength(1002);
+    const base = { ...identity, id: 'q-large', kind: 'WorkingQuestion', createdAt: at, updatedAt: at, objectRefs: [], knowledgeRefs: [], evidenceRefs: primary, text: 'Large inventory is not a per-object handoff.', status: 'open' };
+    expect(() => appendWorkingObject(board, base)).toThrow();
+    expect(appendWorkingObject(board, { ...base, evidenceRefs: [attached[500]] }).objects).toHaveLength(1);
+    const long = attachedReference('c'.repeat(240), 'r'.repeat(240));
+    expect(long.length).toBeLessThanOrEqual(240);
+    expect(long).toBe(attachedReference('c'.repeat(240), 'r'.repeat(240)));
+    expect(long).not.toBe(attachedReference('c'.repeat(240), 's'.repeat(240)));
+  });
   it('rejects cross-run writes and dangling references without changing canonical cognition', () => {
     const b = createBlackboard(identity);
     const obj = { ...identity, id: 'q1', kind: 'WorkingQuestion', createdAt: at, updatedAt: at, objectRefs: [], knowledgeRefs: [], evidenceRefs: [], text: 'What was agreed?', status: 'open' };
@@ -51,5 +75,17 @@ describe('run-scoped cognitive blackboard', () => {
     expect(() => assertRunContextReplay(locked, changed)).toThrow(/stale/i);
     expect(() => compileLockedRole({ ...locked, compilerVersion: 'other' }, identity, 'writer')).toThrow(/stale|compiler/i);
     expect(assertRunContextReplay(locked, input())).toEqual(locked);
+  });
+  it('freezes exact attached expert snapshots into role context and refuses changed attachment dependencies', () => {
+    const attached = createCognitiveCapsule('attached', '1.0.0');
+    attached.knowledge.push(KnowledgeSchema.parse({ id: 'l', kind: 'languageRule', label: 'Attached language rule', scope: ['diplomacy'], reviewState: 'accepted', provenance: { generatedBy: actor, reviewedBy: actor, reviewedAt: at, sourceRefs: [] }, expression: 'prepared to consider', language: 'en', domain: 'diplomacy', meaning: 'Conditional openness', nonImplications: ['acceptance'] }));
+    const receipt = compileContext(attached, { objective: 'Review', role: 'capsule-curator', scope: 'diplomacy', asOf: at }).receipt;
+    const current = { ...input(), attachments: [{ capsuleId: 'attached', capsuleVersion: 3, cognition: attached, receipt }] };
+    const lock = freezeRunContext(current);
+    expect(compileLockedRole(lock, identity, 'writer')).toContain('prepared to consider');
+    expect(lock.attachments[0]).toMatchObject({ capsuleId: 'attached', capsuleVersion: 3 });
+    expect(() => assertRunContextReplay(lock, { ...current, attachments: [] })).toThrow(/stale/i);
+    attached.knowledge[0].label = 'Changed attachment';
+    expect(() => assertRunContextReplay(lock, current)).toThrow(/stale|digest/i);
   });
 });
