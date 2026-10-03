@@ -8,7 +8,7 @@ import { capsuleDigest, semanticDiff } from '@/lib/cognitive-capsule/integrity';
 import { normalizeContextCapsuleV3 } from '@/lib/context/capsule-v3';
 
 const actor = { type: 'human' as const, id: 'expert-1', at: '2026-10-03T12:00:00Z' };
-const provenance = { generatedBy: actor, sourceRefs: [], reviewedBy: actor, reviewedAt: actor.at };
+const provenance = { generatedBy: actor, sourceRefs: [], derivedFrom: [], confidenceKind: 'human-authored' as const, reviewedBy: actor, reviewedAt: actor.at };
 function language() {
   return KnowledgeSchema.parse({ kind: 'languageRule', id: 'l1', label: 'Conditional openness', scope: ['diplomacy'], reviewState: 'accepted', provenance,
     expression: 'prepared to consider', language: 'en', meaning: 'conditional openness', domain: 'diplomacy', speechAct: 'conditional-openness',
