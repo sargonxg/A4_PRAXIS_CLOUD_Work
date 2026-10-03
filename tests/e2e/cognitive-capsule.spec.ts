@@ -92,10 +92,13 @@ test.describe('Cognitive Capsule owner journey', () => {
     const inventory = await persisted.json();
     expect(inventory.cognition.knowledge.find((item: { id: string }) => item.id === proposal.knowledge.id)).toEqual(acceptedKnowledge);
 
-    const exportedResponse = page.waitForResponse((response) => new URL(response.url()).searchParams.get('format') === 'package');
-    const downloadEvent = page.waitForEvent('download');
+    // Chromium downloads emit a download event without a normal page response.
+    // Check HTTP metadata independently, then verify the real clicked download.
+    const exported = await page.request.get(`${BASE}/api/context/capsules/${capsuleId}/cognition?format=package`);
+    expect(exported.ok()).toBe(true);
+    const downloadEvent = page.waitForEvent('download', { timeout: 30_000 });
     await expertise.getByRole('link', { name: 'Download native capsule', exact: true }).click();
-    const [download, exported] = await Promise.all([downloadEvent, exportedResponse]);
+    const download = await downloadEvent;
     expect(exported.headers()['content-type']).toBe(CAPSULE_MIMETYPE);
     expect(download.suggestedFilename()).toBe(`${capsuleId}.capsule`);
     const packagePath = test.info().outputPath(`${capsuleId}.capsule`);

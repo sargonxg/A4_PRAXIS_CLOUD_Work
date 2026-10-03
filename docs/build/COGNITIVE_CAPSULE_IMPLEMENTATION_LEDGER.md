@@ -204,3 +204,9 @@ The first execution pack has concrete source for all ten tasks. Task 8 extends t
 Review found and corrected typed condition omissions, missing reference validation, escaped prompt budget growth, actual-inspector wiring, fork data loss and unsupported combine behavior. Regression tests preserve these boundaries. Structural quality dimensions and depth are not factual confidence or demonstrated model performance.
 
 Release gates, pushed revision, deployment, traffic and observed journeys are recorded in the dated release report. Baseline audit files and unrelated Graphify/configuration edits are excluded from the publication source.
+
+## Published acceptance — October 3, 2026
+
+Application `d5efb79a` is live at `https://praxis.tacitus.me`, revision `praxis-frontend-01104-85z`, 100% traffic, Cloud Build `c0f9440d-1aee-4c14-82fe-9cfb6ff8a192`. Corrected-source gates passed: 458 test files / 2,715 tests, build, types, lint and full audits. Real Firestore rejected nested undefined proposal fields in the first release; serialization was corrected and strict-write regressions cover capture, interview proposals and review persistence.
+
+Both live browser tests passed: anonymous protection and authenticated capture → need evidence → edit/accept → reload → native package roundtrip, with overflow checks at 1280/768/390/360 pixels. Exact saved v2 attachment in Chat was observed separately. The real Ask attempt returned 429 because the QA account's AI allowance was exhausted; generation and persisted exact-version answer receipts remain pending account capacity. This does not establish provider efficacy. See [the release report](../reviews/2026-10-03-cognitive-capsule-release.md) for source/image/health evidence and the continuation command. Later/conditional phases above retain their stated boundaries.
