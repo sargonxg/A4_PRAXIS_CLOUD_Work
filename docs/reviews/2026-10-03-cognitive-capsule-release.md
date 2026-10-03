@@ -12,13 +12,15 @@ The October 2 master plan is preserved byte-for-byte in the repository. The [imp
 - Cognitive library V8 coverage: **80.73% statements, 90.09% lines, 67.75% branches, 77.63% functions**, 62 focused tests. Lower branch coverage is a limitation; aggregate percentages do not replace behavioral acceptance.
 - Production dependency audit: 17 remaining findings (3 low, 14 moderate), **zero high/critical**. Full audit retains five high findings in development tooling; no forced framework downgrade was applied.
 - Graphify AST refresh: 19,444 nodes / 42,578 edges; Terraform/SQL parser extras unavailable. Existing graph/config/audit changes are excluded from published source; originals were preserved before refresh/audits.
-- Four- and five-phase review corrected applicability, procedure controls, evidence closure, escaped budgets, source replay locks, actual inspector wiring, Fork preservation, Combine errors, group review confirmation, and interview reference feedback.
+- Code review corrected applicability, procedure controls, evidence closure, escaped budgets, source replay locks, actual inspector wiring, Fork preservation, Combine errors, group review confirmation, and interview reference feedback.
 
 The source plan intentionally retains three Markdown hard-break spaces; all implementation diff whitespace checks pass. Its Git attribute disables newline conversion so the committed document matches the supplied file exactly.
 
 ## Publication evidence
 
 Deployment and live journey results will be appended after observing the serving release. Local checks, pushed source, Cloud Build, revision/traffic, public health and authenticated journeys are distinct evidence.
+
+The initial `dcc4905d` publication attempt, Cloud Build `6e7023e9-cc63-4098-8ea4-774669ca5678`, stopped before image creation or traffic changes. Cloud SDK SQL reads returned malformed HTTP 400 responses under the build identity, including both stable and locally matching SDK versions. Direct SQL Admin v1beta4 reads under that same identity succeeded for the instance, databases and users in diagnostic build `77d6a707-7eed-4ede-97f0-d0a7bd87756f`. The audit now uses that authenticated read-only REST path, still rejects denied/missing/malformed results, caches its checks, and never prints access tokens. Two focused regression tests and ESLint passed. No IAM or stored credentials were changed.
 
 ## Explicit remaining scope
 

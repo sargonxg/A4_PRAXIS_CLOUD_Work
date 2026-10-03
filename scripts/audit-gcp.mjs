@@ -9,9 +9,14 @@
  * Set AUDIT_GCP_SKIP=1 to no-op (useful until IAM is granted in CI).
  */
 import { execSync } from 'node:child_process';
+import { createCloudSqlReadinessReader } from './lib/cloud-sql-readiness.mjs';
 
 const PROJECT = process.env.GCP_PROJECT_ID ?? 'praxisbytacitus';
 const SKIP_GCLOUD = process.env.AUDIT_GCP_SKIP === '1';
+// Cloud Build's gcloud SQL transport returned malformed HTTP 400 responses;
+// direct authenticated REST proved the same resources with the same identity.
+const sql = createCloudSqlReadinessReader({ project: PROJECT, instance: 'praxisbytacitus-instance',
+  getAccessToken: () => execSync('gcloud auth print-access-token', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }) });
 
 function gcloudValue(cmd) {
   try {
@@ -95,10 +100,10 @@ const checks = [
 
   // Phase 1 application database, reusing the existing private Cloud SQL
   // instance to avoid provisioning a second paid Postgres instance.
-  { name: 'Cloud SQL: praxisbytacitus-instance',            category: 'sql',     run: () => gcloudDescribe('sql instances describe praxisbytacitus-instance') },
-  { name: 'Cloud SQL database: praxis',                     category: 'sql',     run: () => gcloudList('sql databases list --instance=praxisbytacitus-instance').includes('praxis') },
-  { name: 'Cloud SQL user: praxis_app',                     category: 'sql',     run: () => gcloudList('sql users list --instance=praxisbytacitus-instance').includes('praxis_app') },
-  { name: 'Cloud SQL database: praxis_langgraph',           category: 'sql',     run: () => gcloudList('sql databases list --instance=praxisbytacitus-instance').includes('praxis_langgraph') },
+  { name: 'Cloud SQL: praxisbytacitus-instance',            category: 'sql',     run: () => sql.hasInstance() },
+  { name: 'Cloud SQL database: praxis',                     category: 'sql',     run: () => sql.hasDatabase('praxis') },
+  { name: 'Cloud SQL user: praxis_app',                     category: 'sql',     run: () => sql.hasUser('praxis_app') },
+  { name: 'Cloud SQL database: praxis_langgraph',           category: 'sql',     run: () => sql.hasDatabase('praxis_langgraph') },
   { name: 'Service account: praxis-agents-sa',              category: 'iam',     run: () => gcloudDescribe('iam service-accounts describe praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com') },
 
   // Cloud Scheduler jobs (alerts, briefing — declared in plan)
@@ -116,7 +121,7 @@ async function main() {
   for (const c of checks) {
     let ok = false;
     try {
-      ok = c.run();
+      ok = await c.run();
     } catch (e) {
       console.error(`FAIL ${c.name}: ${e.message}`);
     }
