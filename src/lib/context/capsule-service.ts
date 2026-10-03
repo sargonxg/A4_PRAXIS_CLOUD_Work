@@ -1971,12 +1971,12 @@ export async function createCapsuleReviewCard(
         reviewCardCount: Math.max(latestCapsule.readinessSummary?.reviewCardCount ?? 0, 0) + (latestCardSnap.exists ? 0 : 1),
         reviewRequired: true,
       }, latestCapsule.coreRefs, state, timestamp);
-      transaction.set(cardRef, nextCard, { merge: true });
+      transaction.set(cardRef, cloneSerializable(nextCard), { merge: true });
       transaction.set(ref, { latestGateState: state, readinessSummary, updatedAt: timestamp }, { merge: true });
       return nextCard;
     });
   }
-  await cardRef.set(card, { merge: true });
+  await cardRef.set(cloneSerializable(card), { merge: true });
   const readinessSummary = normalizeReadinessSummary({
     ...(capsule.readinessSummary ?? {}),
     reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 0, 0) + (existingCardSnap?.exists ? 0 : 1),
@@ -2873,7 +2873,7 @@ export function sanitizeCapsule(input: unknown, options: { metadataOnly?: boolea
     ...(isRecord(body.agentPermissions) ? { agentPermissions: cloneSerializable(body.agentPermissions) } : {}),
     ...(isRecord(body.memoryPosture) ? { memoryPosture: cloneSerializable(body.memoryPosture) } : {}),
     ...(isRecord(body.humanTacitKnowledge) ? { humanTacitKnowledge: cloneSerializable(body.humanTacitKnowledge) } : {}),
-    ...(!options.metadataOnly && body.cognition ? { cognition: CognitiveCapsuleSchema.parse(body.cognition) } : {}),
+    ...(!options.metadataOnly && body.cognition ? { cognition: cloneSerializable(CognitiveCapsuleSchema.parse(body.cognition)) } : {}),
     ...(isRecord(body.temporality) ? { temporality: cloneSerializable(body.temporality) } : {}),
     ...(isRecord(body.causality) ? { causality: cloneSerializable(body.causality) } : {}),
     ...(isRecord(body.ontologyBinding) ? { ontologyBinding: cloneSerializable(body.ontologyBinding) } : {}),

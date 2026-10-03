@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createCognitiveCapsule, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
+import { proposeCognitiveKnowledge, proposeCognitiveInterview } from '@/lib/cognitive-capsule/service';
 import { decideCognitiveCapsuleReviewCard } from '@/lib/context/capsule-service';
 import {
   activateCapsule,
@@ -61,6 +62,33 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  it('persists correction and interview proposals with strict Firestore values', async () => {
+    const db = architectDb();
+    db.rejectUndefined = true;
+    const capsule = await createCapsule('u1', { capsuleId: 'strict-capture' }, deps(db));
+    const correction = await proposeCognitiveKnowledge('u1', capsule.capsuleId, {
+      kind: 'distinction', label: 'Budget stages', scope: ['budget'], terms: ['authorization', 'expenditure'], body: 'Approval does not prove payment.',
+    }, deps(db));
+    const interview = await proposeCognitiveInterview('u1', capsule.capsuleId, { mode: 'distinction', answers: {
+      label: 'Interview budget stages', scope: ['budget'], sourceRefs: [], conceptA: 'authorization', conceptB: 'expenditure',
+      explanation: 'Approval does not prove payment.', whyItMatters: 'Avoid unsupported claims.', commonMistake: 'Calling approval spending.', decisionTests: ['Check payment records.'],
+    } }, deps(db));
+    expect(correction?.card.reviewCardId).toBeTruthy();
+    expect(interview?.status).toBe('ready');
+    const cards = await listCapsuleReviewCards('u1', capsule.capsuleId, deps(db));
+    expect(cards).toHaveLength(2);
+    expect(cards.every((card) => card.proposedEnvelopePatch.cognition?.knowledge.every((item) => item.reviewState === 'proposed'))).toBe(true);
+    expect((await getCapsule('u1', capsule.capsuleId, deps(db)))?.cognition).toBeUndefined();
+    // The non-transactional compatibility write must serialize the same payload.
+    const directDb = new FakeFirestore();
+    directDb.rejectUndefined = true;
+    await createCapsule('u1', { capsuleId: capsule.capsuleId }, deps(directDb));
+    await createCapsuleReviewCard('u1', capsule.capsuleId, {
+      title: 'Direct proposal', target: 'capsuleEnvelope', sourceType: 'user', proposedEnvelopePatch: correction!.card.proposedEnvelopePatch,
+    }, deps(directDb));
+    expect(await listCapsuleReviewCards('u1', capsule.capsuleId, deps(directDb))).toHaveLength(1);
+  });
+
   it('edits only a selected interview item and preserves provenance across the reviewed group', async () => {
     const db = architectDb();
     const capsule = await createCapsule('u1', { capsuleId: 'interview-group' }, deps(db));
@@ -124,6 +152,8 @@ describe('capsule service', () => {
 
   it('records need evidence and edit acceptance atomically through the owner review card', async () => {
     const db = architectDb();
+    // Match the real Firestore SDK: nested undefined values must never reach a write.
+    db.rejectUndefined = true;
     const capsule = await createCapsule('u1', { capsuleId: 'evidence-needed' }, deps(db));
     const cognition = createCognitiveCapsule(capsule.capsuleId);
     cognition.knowledge.push(KnowledgeSchema.parse({ id: 'lesson', kind: 'heuristic', label: 'Contact may continue', scope: ['diplomacy'], interpretation: 'Do not assume rejection terminates contact.', rationale: 'Private contacts can persist after public rejection.', when: [{ kind: 'context', key: 'technical-contact', operator: 'present' }], provenance: { generatedBy: { type: 'human', id: 'u1', at: '2026-10-03T00:00:00Z' }, sourceRefs: [] } }));

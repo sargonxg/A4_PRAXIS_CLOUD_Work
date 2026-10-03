@@ -12,7 +12,7 @@ test.describe('Cognitive Capsule owner journey', () => {
   });
 
   test('captures expertise, records human review, reloads and round trips the native download', async ({ page }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(process.env.PRAXIS_LIVE_AI_SMOKE === '1' ? 420_000 : 240_000);
     test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
     await authenticateFirebaseCanary(page, BASE, '/app/capsules', { finishOnboardingLater: true, expectComposer: false });
     await expectAuthenticatedSession(page);
