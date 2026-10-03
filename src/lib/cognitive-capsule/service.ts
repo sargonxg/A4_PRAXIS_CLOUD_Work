@@ -45,9 +45,17 @@ export type CognitiveKnowledgeCapture = z.infer<typeof CognitiveKnowledgeCapture
 export const CognitiveKnowledgeDecisionSchema = z.object({
   reviewCardId: z.string().trim().min(1).max(160), decision: z.enum(['accept', 'edit_accept', 'reject', 'need_evidence']),
   reason: z.string().trim().min(1).max(600), edited: z.union([KnowledgeSchema, CognitiveNodeSchema, CognitiveStatementSchema]).optional(),
+  selectedRecordIds: z.array(z.string().trim().min(1).max(240)).max(17000).optional(), selectProfile: z.boolean().optional(),
+  expectedCapsuleVersion: z.number().int().positive().optional(),
 }).strict().superRefine((value, context) => {
   if (value.decision === 'edit_accept' && !value.edited) context.addIssue({ code: 'custom', path: ['edited'], message: 'Supply the edited knowledge before accepting.' });
   if (value.decision !== 'edit_accept' && value.edited) context.addIssue({ code: 'custom', path: ['edited'], message: 'Edits require the edit and accept decision.' });
+  if (value.decision === 'edit_accept' && (value.selectProfile === true || (value.selectedRecordIds !== undefined && (value.selectedRecordIds.length !== 1 || value.selectedRecordIds[0] !== value.edited?.id))))
+    context.addIssue({ code: 'custom', path: ['selectedRecordIds'], message: 'Edit and accept approves only the edited record, without a profile change.' });
+  if ((value.selectedRecordIds !== undefined || value.selectProfile !== undefined) && value.expectedCapsuleVersion === undefined)
+    context.addIssue({ code: 'custom', path: ['expectedCapsuleVersion'], message: 'Explicit review selection requires the current capsule version.' });
+  if ((value.selectedRecordIds !== undefined || value.selectProfile !== undefined) && !['accept', 'edit_accept'].includes(value.decision))
+    context.addIssue({ code: 'custom', path: ['selectedRecordIds'], message: 'Selection applies only to approval. Reject and Need evidence apply to the remaining proposal.' });
 });
 
 function cognitionOf(capsule: PraxisCapsule) {
@@ -66,7 +74,7 @@ export async function getCognitiveCapsuleInventory(uid: string, capsuleId: strin
     reviewCardId: card.reviewCardId, title: card.title, state: card.state, cognitiveKnowledgeIds: card.cognitiveKnowledgeIds ?? [],
     cognitiveNodeIds: card.cognitiveNodeIds ?? [], cognitiveStatementIds: card.cognitiveStatementIds ?? [], cognitiveSupersededIds: card.cognitiveSupersededIds ?? [],
     cognitiveProfileChanged: card.cognitiveProfileChanged === true,
-    evidence: card.evidence, applyMetadata: card.applyMetadata, createdAt: card.createdAt, updatedAt: card.updatedAt,
+    evidence: card.evidence, applyMetadata: card.applyMetadata, cognitiveDecisionHistory: card.cognitiveDecisionHistory ?? [], createdAt: card.createdAt, updatedAt: card.updatedAt,
     proposedEnvelopePatch: { cognition: { ...card.proposedEnvelopePatch.cognition!,
       nodes: card.proposedEnvelopePatch.cognition!.nodes.filter((item) => card.cognitiveNodeIds?.includes(item.id)),
       statements: card.proposedEnvelopePatch.cognition!.statements.filter((item) => card.cognitiveStatementIds?.includes(item.id)),

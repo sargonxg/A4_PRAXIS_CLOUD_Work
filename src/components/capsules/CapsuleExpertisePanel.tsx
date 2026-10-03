@@ -22,7 +22,11 @@ const buttonClass = 'min-h-10 rounded-md border border-slate-300 px-3 py-2 text-
 const lines = (value: string) => value.split('\n').map((entry) => entry.trim()).filter(Boolean);
 const scopeList = (value: string) => value.split(',').map((entry) => entry.trim()).filter(Boolean);
 const graphChangeCount = (card: ReviewCard) => (card.cognitiveNodeIds?.length ?? 0) + (card.cognitiveStatementIds?.length ?? 0);
-const proposalChangeCount = (card: ReviewCard) => new Set([...(card.cognitiveKnowledgeIds ?? []), ...(card.cognitiveNodeIds ?? []), ...(card.cognitiveStatementIds ?? []), ...(card.cognitiveSupersededIds ?? [])]).size + Number(Boolean(card.cognitiveProfileChanged));
+const reviewRecords = (card: ReviewCard) => [...(card.proposedEnvelopePatch.cognition?.nodes ?? []).filter((item) => card.cognitiveNodeIds?.includes(item.id)),
+  ...(card.proposedEnvelopePatch.cognition?.statements ?? []).filter((item) => card.cognitiveStatementIds?.includes(item.id)),
+  ...(card.proposedEnvelopePatch.cognition?.knowledge ?? []).filter((item) => card.cognitiveKnowledgeIds?.includes(item.id))];
+type ApprovalScope = { recordIds: string[]; profile: boolean };
+const completeScope = (card: ReviewCard): ApprovalScope => ({ recordIds: reviewRecords(card).filter((item) => !('migrationStatus' in item) || item.migrationStatus !== 'needs_review' || card.cognitiveSupersededIds?.includes(item.id)).map((item) => item.id), profile: Boolean(card.cognitiveProfileChanged) });
 const profiles: CognitiveCapsule['profile'][] = ['situation', 'expertise', 'method', 'language', 'organization', 'role', 'casebook', 'output'];
 
 export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowledge = [], onReviewed }: {
@@ -41,6 +45,12 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
   const [editing, setEditing] = useState<ReviewCard | null>(null);
   const [reason, setReason] = useState('');
   const [reviewedGroups, setReviewedGroups] = useState<Record<string, boolean>>({});
+  const [approvalScopes, setApprovalScopes] = useState<Record<string, ApprovalScope>>({});
+  const approvalScope = (card: ReviewCard) => approvalScopes[card.reviewCardId] ?? completeScope(card);
+  function selectScope(card: ReviewCard, scope: ApprovalScope) {
+    setApprovalScopes((previous) => ({ ...previous, [card.reviewCardId]: scope }));
+    setReviewedGroups((previous) => ({ ...previous, [card.reviewCardId]: false }));
+  }
   const [proposedProfile, setProposedProfile] = useState<CognitiveCapsule['profile']>('expertise');
   const activeId = useRef(capsuleId); activeId.current = capsuleId;
   const controller = useRef<AbortController | null>(null);
@@ -65,7 +75,7 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
   useEffect(() => {
     const requestController = new AbortController();
     controller.current = requestController;
-    setSnapshot(null); setEditing(null); setError(''); setNotice(''); setBusy(false); setReviewedGroups({}); setKnowledgeSearch(''); setFilter('all');
+    setSnapshot(null); setEditing(null); setError(''); setNotice(''); setBusy(false); setReviewedGroups({}); setApprovalScopes({}); setKnowledgeSearch(''); setFilter('all');
     if (open) void load();
     return () => requestController.abort();
   }, [capsuleId, capsuleVersion, open, load]);
@@ -106,16 +116,22 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
   }
   async function decide(card: ReviewCard, decision: 'accept' | 'edit_accept' | 'reject' | 'need_evidence', edited?: Knowledge | CognitiveNode | CognitiveStatement) {
     if (busy || !reason.trim()) return;
-    if (['accept', 'edit_accept'].includes(decision) && proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId]) return;
+    const scope = edited ? { recordIds: [edited.id], profile: false } : approvalScope(card);
+    const scopeCount = scope.recordIds.length + Number(scope.profile);
+    if (decision === 'accept' && (!scopeCount || (scopeCount > 1 && !reviewedGroups[card.reviewCardId]))) return;
+    const expectedCapsuleVersion = snapshot?.capsuleVersion ?? capsuleVersion;
+    if (!expectedCapsuleVersion) { setError('Reload the capsule version before deciding on the remaining proposal.'); return; }
     setBusy(true); setError(''); setNotice('');
     const signal = controller.current?.signal;
     try {
       const response = await fetch(endpoint, { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reviewCardId: card.reviewCardId, decision, reason: reason.trim(), ...(edited ? { edited } : {}) }), signal });
+        body: JSON.stringify({ reviewCardId: card.reviewCardId, decision, reason: reason.trim(), expectedCapsuleVersion, ...(edited ? { edited } : {}),
+          ...(['accept', 'edit_accept'].includes(decision) ? { selectedRecordIds: scope.recordIds, selectProfile: scope.profile } : {}) }), signal });
       const result = await response.json();
       if (!response.ok) throw new Error(response.status === 409 ? 'This capsule changed. Reload and rebuild the proposal before deciding.' : result.error ?? 'This decision could not be saved. Check the scope, conditions and required fields.');
       if (signal?.aborted || activeId.current !== capsuleId) return;
-      setEditing(null); setReason(''); setNotice(decision === 'need_evidence' ? 'More evidence requested. Expertise remains proposed.' : decision === 'reject' ? 'Proposal rejected.' : 'Expertise accepted. A new capsule version was saved.');
+      setEditing(null); setReason(''); setApprovalScopes({}); setReviewedGroups({});
+      setNotice(decision === 'need_evidence' ? 'More evidence requested. Expertise remains proposed.' : decision === 'reject' ? 'Remaining proposal rejected.' : result.card?.state === 'owner_review' ? `${scopeCount} selected changes accepted. Other changes remain proposed for review.` : 'Selected changes accepted. A new capsule version was saved.');
       if (decision === 'accept' || decision === 'edit_accept') onReviewed?.(result.capsule);
       await load();
     } catch (failure) { if (!signal?.aborted && activeId.current === capsuleId) setError(failure instanceof Error ? failure.message : 'Decision could not be saved.'); }
@@ -157,13 +173,19 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
       {pending.length ? <section className="space-y-3" aria-label="Expertise proposal review">
         <h3 className="text-sm font-semibold text-slate-950">Review proposed expertise</h3><Field name="review-reason" label="Reason for your next review decision" area value={reason} onChange={setReason} maxLength={600} />
         {pending.map((card) => <article key={card.reviewCardId} className="space-y-3 rounded-md border border-slate-200 bg-white p-3"><p className="text-sm font-semibold text-slate-950">{card.title}</p>
+          <fieldset className="space-y-2 rounded border border-slate-200 p-3"><legend className="text-xs font-semibold text-slate-900">Choose changes to approve</legend><p className="text-xs text-slate-600">Only selected changes are accepted. Unselected changes stay proposed. Imported items requiring expert structure must be edited individually before acceptance.</p>
+            <button type="button" className={buttonClass} disabled={busy} onClick={() => selectScope(card, completeScope(card))}>Select complete items</button>
+            {card.cognitiveProfileChanged ? <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" disabled={busy} checked={approvalScope(card).profile} onChange={(event) => selectScope(card, { ...approvalScope(card), profile: event.target.checked })} />Select profile change for approval</label> : null}
+            {reviewRecords(card).map((item) => <label key={item.id} className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" disabled={busy} checked={approvalScope(card).recordIds.includes(item.id)} onChange={(event) => selectScope(card, { ...approvalScope(card), recordIds: event.target.checked ? [...approvalScope(card).recordIds, item.id] : approvalScope(card).recordIds.filter((id) => id !== item.id) })} /><span>Select for approval: {'label' in item ? item.label : item.id}{'migrationStatus' in item && item.migrationStatus === 'needs_review' ? ' (requires expert structure)' : ''}</span></label>)}
+          </fieldset>
           {card.cognitiveProfileChanged ? <div aria-label="Proposed profile change" className="rounded border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700"><p className="font-semibold">Profile change</p><p>Before: {snapshot?.cognition.profile ?? 'saved profile unavailable'}{snapshot?.hasSavedCognition === false ? ' (inferred from the earlier capsule)' : ''}</p><p>After: {card.proposedEnvelopePatch.cognition?.profile}</p><p>Acceptance records this capsule’s profile and saves a new version.</p></div> : null}
           {(card.proposedEnvelopePatch.cognition?.knowledge ?? []).filter((item) => card.cognitiveKnowledgeIds?.includes(item.id)).map((item) => <KnowledgeDetails key={item.id} item={item} />)}
           {graphChangeCount(card) > 0 || card.cognitiveSupersededIds?.length ? <CapsuleGraphProposalDetails card={card} current={snapshot?.cognition} /> : null}
-          {proposalChangeCount(card) > 1 ? <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={Boolean(reviewedGroups[card.reviewCardId])} disabled={busy} onChange={(event) => setReviewedGroups((previous) => ({ ...previous, [card.reviewCardId]: event.target.checked }))} />I have inspected every proposed item and am ready to accept all changes.</label> : null}
-          <div className="flex flex-wrap gap-2"><button type="button" className={buttonClass} disabled={busy || !reason.trim() || (proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId])} onClick={() => void decide(card, 'accept')}>{(graphChangeCount(card) > 0 || card.cognitiveProfileChanged) && proposalChangeCount(card) > 1 ? 'Accept all proposed changes' : card.cognitiveProfileChanged ? 'Accept profile change' : (card.cognitiveKnowledgeIds?.length ?? 0) > 1 ? 'Accept all interview items' : 'Accept'}</button>{(card.cognitiveKnowledgeIds?.length ?? 0) + graphChangeCount(card) > 0 ? <button type="button" className={buttonClass} disabled={busy} onClick={() => setEditing(card)}>Edit and accept</button> : null}<button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'reject')}>Reject</button><button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'need_evidence')}>Need evidence</button></div>
-          {editing?.reviewCardId === card.reviewCardId && card.cognitiveKnowledgeIds?.length ? <KnowledgeEditForm key={card.reviewCardId} card={card} disabled={busy || !reason.trim() || (proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId])} onCancel={() => setEditing(null)} onAccept={(edited) => void decide(card, 'edit_accept', edited)} /> : null}
-          {editing?.reviewCardId === card.reviewCardId && graphChangeCount(card) > 0 ? <CapsuleGraphProposalEditForm key={`graph-${card.reviewCardId}`} card={card} current={snapshot?.cognition} disabled={busy || !reason.trim() || (proposalChangeCount(card) > 1 && !reviewedGroups[card.reviewCardId])} onCancel={() => setEditing(null)} onAccept={(edited) => void decide(card, 'edit_accept', edited)} /> : null}
+          {approvalScope(card).recordIds.length + Number(approvalScope(card).profile) > 1 ? <label className="flex items-start gap-2 text-xs text-slate-700"><input type="checkbox" checked={Boolean(reviewedGroups[card.reviewCardId])} disabled={busy} onChange={(event) => setReviewedGroups((previous) => ({ ...previous, [card.reviewCardId]: event.target.checked }))} />I have inspected the selected changes and their evidence.</label> : null}
+          <div className="flex flex-wrap gap-2"><button type="button" className={buttonClass} disabled={busy || !reason.trim() || !(approvalScope(card).recordIds.length + Number(approvalScope(card).profile)) || (approvalScope(card).recordIds.length + Number(approvalScope(card).profile) > 1 && !reviewedGroups[card.reviewCardId])} onClick={() => void decide(card, 'accept')}>Accept selected changes</button>{(card.cognitiveKnowledgeIds?.length ?? 0) + graphChangeCount(card) > 0 ? <button type="button" className={buttonClass} disabled={busy} onClick={() => setEditing(card)}>Edit and accept</button> : null}<button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'reject')}>Reject remaining proposal</button><button type="button" className={buttonClass} disabled={busy || !reason.trim()} onClick={() => void decide(card, 'need_evidence')}>Need evidence</button></div>
+          <p className="text-xs text-slate-600">Reject and Need evidence apply to the remaining proposal. Editing accepts only the edited item.</p>
+          {editing?.reviewCardId === card.reviewCardId && card.cognitiveKnowledgeIds?.length ? <KnowledgeEditForm key={card.reviewCardId} card={card} disabled={busy || !reason.trim()} onCancel={() => setEditing(null)} onAccept={(edited) => void decide(card, 'edit_accept', edited)} /> : null}
+          {editing?.reviewCardId === card.reviewCardId && graphChangeCount(card) > 0 ? <CapsuleGraphProposalEditForm key={`graph-${card.reviewCardId}`} card={card} current={snapshot?.cognition} disabled={busy || !reason.trim()} onCancel={() => setEditing(null)} onAccept={(edited) => void decide(card, 'edit_accept', edited)} /> : null}
         </article>)}
       </section> : null}
       {snapshot?.hasMore && snapshot.nextCursor ? <button type="button" className={buttonClass} disabled={busy || loading} onClick={() => void load(snapshot.nextCursor!)}>Load more expertise proposals</button> : null}
@@ -215,6 +237,6 @@ function KnowledgeEditForm({ card, disabled, onAccept, onCancel }: { card: Revie
     {arrayKeys.map((key) => <Field key={key} name={key} label={`${key.replace(/([A-Z])/g, ' $1')} (one per line)`} defaultValue={((item as unknown as Record<string, unknown>)[key] as string[]).join('\n')} area />)}
     {item.kind === 'heuristic' ? <Field name="when" label="Apply only when (condition keys, one per line)" defaultValue={item.when.map((condition) => condition.key).join('\n')} required area /> : null}
     {item.kind === 'case' ? <Field name="analogyDimensions" label="Analogy dimensions (one per line)" defaultValue={item.analogyDimensions.join('\n')} required area /> : null}
-    <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={disabled} type="submit">{(graphChangeCount(card) > 0 || card.cognitiveProfileChanged) && proposalChangeCount(card) > 1 ? 'Edit selected item and accept all proposed changes' : items.length > 1 ? 'Edit selected item and accept all interview items' : 'Save edits and accept'}</button><button className={buttonClass} type="button" disabled={disabled} onClick={onCancel}>Cancel edit</button></div>
+    <div className="flex flex-wrap gap-2"><button className={buttonClass} disabled={disabled} type="submit">Save edits and accept only this item</button><button className={buttonClass} type="button" disabled={disabled} onClick={onCancel}>Cancel edit</button></div>
   </form></div>;
 }

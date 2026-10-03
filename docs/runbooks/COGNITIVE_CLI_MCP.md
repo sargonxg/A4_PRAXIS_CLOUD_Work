@@ -32,6 +32,18 @@ Proposal JSON follows the cognition capture API (`kind`, `label`, `scope`,
 `body` and the kind-specific fields). Decision JSON contains `reviewCardId`,
 `decision`, `reason` and optionally `edited` for `edit_accept`. A named human
 must inspect the proposed changes before invoking the human-review command.
+
+To approve part of a grouped proposal, decision JSON can include `selectedRecordIds`,
+`selectProfile`, and the current `expectedCapsuleVersion`. Explicit selection requires
+that version. The server validates every selected ID against the pending card and
+records the exact approved scope. Unselected records remain proposed; the card is
+rebased for further human review. Reload its inventory before another decision.
+An inherited `needs_review` record still requires explicit human editing before
+acceptance; selecting it cannot bypass the completeness check.
+`edit_accept` approves exactly the edited record and never approves a profile or
+another record implicitly. After any partial approval, every decision on the
+rebased card requires the current version, including rejection and requests for
+evidence. Those latter decisions affect the remaining proposal as a whole.
 Installed registry versions create review targets; installation does not
 accept knowledge or grant tool permissions.
 

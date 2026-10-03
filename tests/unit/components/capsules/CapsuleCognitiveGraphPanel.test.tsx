@@ -35,7 +35,7 @@ describe('cognitive graph inspection', () => {
     const html = renderToStaticMarkup(<CapsuleGraphProposalDetails card={card} current={capsule} />);
     expect(html).toContain('Before:'); expect(html).toContain('accepts conditionally'); expect(html).toContain('After:'); expect(html).toContain('considers');
     expect(html).toContain('Prepared to consider'); expect(html).toContain('supersedes: old-relation'); expect(html).toContain('Impact:');
-    expect(renderToStaticMarkup(<CapsuleGraphProposalEditForm card={card} disabled={false} onAccept={() => {}} onCancel={() => {}} />)).toContain('Edit selected graph item and accept proposal');
+    expect(renderToStaticMarkup(<CapsuleGraphProposalEditForm card={card} disabled={false} onAccept={() => {}} onCancel={() => {}} />)).toContain('Save graph edits and accept only this item');
   });
   it('edits a typed relationship while preserving untouched conditions and original provenance', () => {
     const original = capsule.statements[0];

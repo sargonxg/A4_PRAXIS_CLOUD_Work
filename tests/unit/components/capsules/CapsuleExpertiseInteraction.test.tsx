@@ -21,7 +21,7 @@ async function effects() { for (const effect of runtime.pending.splice(0)) effec
 function button(tree: ReactNode, label: string) { const result = elements(tree).find((node) => node.type === 'button' && text(node).includes(label)); expect(result).toBeDefined(); return result!; }
 const knowledge = { id: 'proposed', kind: 'distinction', label: 'Authorization is not expenditure', scope: ['budget'], reviewState: 'proposed', conceptA: 'authorization', conceptB: 'expenditure', explanation: 'Check payment records.', whyItMatters: 'Avoid unsupported expenditure claims.', commonMistake: 'Conflating the stages.', provenance: { generatedBy: { type: 'human', id: 'owner', at: '2026-10-03T00:00:00Z' }, sourceRefs: [] } };
 const card = { reviewCardId: 'review', title: 'Budget distinction', state: 'proposed', cognitiveKnowledgeIds: ['proposed'], proposedEnvelopePatch: { cognition: { knowledge: [knowledge] } } };
-const page = (capsuleId = 'owned', cards: unknown[] = [], cursor: string | null = null) => ({ capsuleId, cognition: { knowledge: [] }, reviewCards: cards, nextCursor: cursor, hasMore: Boolean(cursor), quality: { dimensions: { humanReviewed: 0, evidenceSpans: 0 }, interpretation: 'Structure does not establish truth.' }, validation: [] });
+const page = (capsuleId = 'owned', cards: unknown[] = [], cursor: string | null = null) => ({ capsuleId, capsuleVersion: 1, cognition: { knowledge: [] }, reviewCards: cards, nextCursor: cursor, hasMore: Boolean(cursor), quality: { dimensions: { humanReviewed: 0, evidenceSpans: 0 }, interpretation: 'Structure does not establish truth.' }, validation: [] });
 const response = (data: unknown) => ({ ok: true, json: async () => data }) as Response;
 async function open(id = 'owned') { const tree = render(id); await effects(); (tree.props.onToggle as (event: unknown) => void)({ currentTarget: { open: true } }); render(id); await effects(); }
 
@@ -51,12 +51,12 @@ describe('expertise capture and review interactions', () => {
     expect(JSON.parse((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string)).toEqual({ operation: 'graph-proposal', baseVersion: 4, profile: 'language', nodes: [], statements: [] });
     expect(vi.mocked(fetch).mock.calls.some((call) => call[1]?.method === 'PATCH')).toBe(false);
     tree = render(); expect(text(tree)).toContain('Before: expertise'); expect(text(tree)).toContain('After: language');
-    expect(button(tree, 'Accept profile change').props.disabled).toBe(true);
+    expect(button(tree, 'Accept selected changes').props.disabled).toBe(true);
     const reason = elements(tree).find((node) => node.props.name === 'review-reason')!;
     (reason.props.onChange as (value: string) => void)('Reviewed the language-focused scope.');
     vi.mocked(fetch).mockResolvedValueOnce(response({ capsule: { capsuleId: 'owned', version: 5 }, card: { ...profileCard, state: 'applied' } })).mockResolvedValueOnce(response({ ...inventory, capsuleVersion: 5, cognition: { ...cognition, profile: 'language' } }));
-    (button(render(), 'Accept profile change').props.onClick as () => void)(); await effects();
-    expect(JSON.parse((vi.mocked(fetch).mock.calls[3][1] as RequestInit).body as string)).toMatchObject({ reviewCardId: 'review', decision: 'accept', reason: 'Reviewed the language-focused scope.' });
+    (button(render(), 'Accept selected changes').props.onClick as () => void)(); await effects();
+    expect(JSON.parse((vi.mocked(fetch).mock.calls[3][1] as RequestInit).body as string)).toMatchObject({ reviewCardId: 'review', decision: 'accept', reason: 'Reviewed the language-focused scope.', selectedRecordIds: [], selectProfile: true, expectedCapsuleVersion: 4 });
   });
   it('changes the selected graph relationship and filters its layer without accepting anything', () => {
     const provenance = knowledge.provenance;
@@ -91,14 +91,31 @@ describe('expertise capture and review interactions', () => {
     await open(); let tree = render();
     const reason = elements(tree).find((node) => node.props.name === 'review-reason')!;
     (reason.props.onChange as (value: string) => void)('Reviewed both proposed lessons.'); tree = render();
-    expect(button(tree, 'Accept all interview items').props.disabled).toBe(true);
-    (button(tree, 'Accept all interview items').props.onClick as () => void)(); await effects();
+    expect(button(tree, 'Accept selected changes').props.disabled).toBe(true);
+    (button(tree, 'Accept selected changes').props.onClick as () => void)(); await effects();
     expect(fetch).toHaveBeenCalledTimes(1);
-    const checkbox = elements(tree).find((node) => node.type === 'input' && node.props.type === 'checkbox')!;
+    const confirmation = elements(tree).find((node) => node.type === 'label' && text(node).includes('I have inspected the selected changes and their evidence.'))!;
+    const checkbox = elements(confirmation).find((node) => node.type === 'input' && node.props.type === 'checkbox')!;
     (checkbox.props.onChange as (event: unknown) => void)({ target: { checked: true } }); tree = render();
-    expect(button(tree, 'Accept all interview items').props.disabled).toBe(false);
-    (button(tree, 'Accept all interview items').props.onClick as () => void)(); await effects();
-    expect(JSON.parse((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string)).toMatchObject({ decision: 'accept', reviewCardId: 'review' });
+    expect(button(tree, 'Accept selected changes').props.disabled).toBe(false);
+    (button(tree, 'Accept selected changes').props.onClick as () => void)(); await effects();
+    expect(JSON.parse((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string)).toMatchObject({ decision: 'accept', reviewCardId: 'review', selectedRecordIds: ['proposed', 'second'], selectProfile: false, expectedCapsuleVersion: 1 });
+  });
+  it('leaves incomplete migrations unchecked and approves only the human selected records', async () => {
+    const legacy = { ...knowledge, id: 'legacy', label: 'Incomplete source gap', migrationStatus: 'needs_review' };
+    const group = { ...card, cognitiveKnowledgeIds: ['proposed', 'legacy'], cognitiveProfileChanged: true, proposedEnvelopePatch: { cognition: { profile: 'situation', knowledge: [knowledge, legacy] } } };
+    vi.mocked(fetch).mockResolvedValueOnce(response(page('owned', [group]))).mockResolvedValueOnce(response({ capsule: { capsuleId: 'owned', version: 2 }, card: { ...group, state: 'owner_review' } })).mockResolvedValueOnce(response({ ...page('owned', [{ ...group, cognitiveKnowledgeIds: ['legacy'], cognitiveProfileChanged: true }]), capsuleVersion: 2 }));
+    await open(); let tree = render();
+    const legacyLabel = elements(tree).find((node) => node.type === 'label' && text(node).includes('Select for approval: Incomplete source gap'))!;
+    expect(elements(legacyLabel).find((node) => node.type === 'input')?.props.checked).toBe(false);
+    const profileLabel = elements(tree).find((node) => node.type === 'label' && text(node).includes('Select profile change for approval'))!;
+    (elements(profileLabel).find((node) => node.type === 'input')!.props.onChange as (event: unknown) => void)({ target: { checked: false } });
+    const reason = elements(tree).find((node) => node.props.name === 'review-reason')!;
+    (reason.props.onChange as (value: string) => void)('Only accept the completed distinction.'); tree = render();
+    expect(button(tree, 'Accept selected changes').props.disabled).toBe(false);
+    (button(tree, 'Accept selected changes').props.onClick as () => void)(); await effects();
+    expect(JSON.parse((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string)).toMatchObject({ selectedRecordIds: ['proposed'], selectProfile: false, expectedCapsuleVersion: 1 });
+    expect(text(render())).toContain('Other changes remain proposed for review.');
   });
   it('captures a correction as a proposal without asserting acceptance', async () => {
     vi.mocked(fetch).mockResolvedValueOnce(response(page())).mockResolvedValueOnce(response({ card })).mockResolvedValueOnce(response(page('owned', [card])));
@@ -120,7 +137,7 @@ describe('expertise capture and review interactions', () => {
     const reason = elements(tree).find((node) => node.props.name === 'review-reason')!;
     (reason.props.onChange as (value: string) => void)('Check disbursement records.'); tree = render();
     (button(tree, 'Need evidence').props.onClick as () => void)(); await effects();
-    expect(JSON.parse((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string)).toEqual({ reviewCardId: 'review', decision: 'need_evidence', reason: 'Check disbursement records.' });
+    expect(JSON.parse((vi.mocked(fetch).mock.calls[1][1] as RequestInit).body as string)).toEqual({ reviewCardId: 'review', decision: 'need_evidence', reason: 'Check disbursement records.', expectedCapsuleVersion: 1 });
     expect(text(render())).toContain('Expertise remains proposed.');
   });
   it('ignores a late response after opening a different capsule', async () => {

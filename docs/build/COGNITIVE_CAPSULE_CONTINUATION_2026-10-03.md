@@ -2,15 +2,15 @@
 
 The user requested all mandatory work in the preserved master plan and explicitly authorized publication. The first execution-pack release is not completion of that request. Waves 0–15 remain mandatory; the plan's explicit deferrals for commerce, sealed-use, AG-UI/A2A and OCI distribution remain conditional.
 
-## Current source, not a published release
+## Prepublication checkpoint (historical)
 
-PRAXIS main HEAD is `225c3972`. Uncommitted continuation source adds all 12 capture kinds, 8 reviewed profiles, graph inspection and grouped graph review, conflict-preserving composition, adaptive interviewing, deterministic Capsule Chat, semantic history, separately compiled historical attachments and receipts, data-selected specialists, exact dependency/run locks, private hosted registry operations with review-only installation, authenticated CLI/MCP adapters, evidence/DocumentIR/SHACL exports and incremental ablation/parser benchmark harnesses.
+At the resumed checkpoint, PRAXIS main HEAD was `225c3972`. Continuation source added all 12 capture kinds, 8 reviewed profiles, graph inspection and grouped graph review, conflict-preserving composition, adaptive interviewing, deterministic Capsule Chat, semantic history, separately compiled historical attachments and receipts, data-selected specialists, exact dependency/run locks, private hosted registry operations with review-only installation, authenticated CLI/MCP adapters, evidence/DocumentIR/SHACL exports and incremental ablation/parser benchmark harnesses. Its distinct publication and live correction are recorded below.
 
 DIALECTICA at `C:\Users\giuli\tacitus-products\dialectica_v3` adds a draft-only compiler and a real native export bridge using the PRAXIS shared runtime. Its focused Rust tests, existing compiler regressions, clippy and real bridge invocation passed before the disk blocker. This source is not yet committed or pushed.
 
 The prior live application remains `d5efb79ac4e0abe8df0a0c929e8f198f32d1b7a6`, revision `praxis-frontend-01104-85z`. Public runtime health was rechecked and reports status `ok` and this exact build. The new continuation source is not served.
 
-## Resource blocker resolved; publication gates in progress
+## Resumed resource and verification checkpoint (historical)
 
 C: previously reached 0 MB free. The user freed space; the resumed checkpoint has approximately 15 GB available. No rejected generated-cache deletion was performed. The pinned development dependency `@modelcontextprotocol/sdk@1.32.0` is installed, and two actual SDK in-memory transport tests pass. Focused continuation checks and TypeScript passed; final full-suite/build/release gates are in progress. Source remains unpublished until the release evidence below records a serving revision.
 
@@ -50,3 +50,21 @@ The aggregate `audit:gate`, repository-shape and architecture-reference checks p
 DIALECTICA draft/export source is separately pushed and remote-verified at `e60bb0525e802ddb0216f1a3ad20695122bd9081`. Prior focused compiler/CLI tests, clippy and actual native export passed; resumed fmt, Python compilation and five Python tests passed. The retained native artifact validates through current PRAXIS. Full workspace/Ladybug gates were not rerun; no DIALECTICA cloud deployment or canonical promotion is claimed.
 
 Ignored evidence is under `output/cognitive-capsule-2026-10-03/`, including `final-full-tests.log`, `final-typecheck.log`, `final-build.log`, `final-lint.log`, dependency audits, rule compilation receipts and focused lane evidence. Deployment/live identity results will be appended only after observation.
+
+## Initial continuation publication and live correction
+
+Application source `2e5d1e8651cae2f11433442c02728eb1a5418ab5` was pushed and deployed through Cloud Build `1bcbf1e9-7d4b-4da1-9ae9-dadeb801fefb`. Revision `praxis-frontend-01107-x2m` matches image `sha256:60c93ea9194b92ac90fd60639d96c890fe692a66e4bc1c631086eac9413b732f`. Tagged runtime returned the expected commit and status `ok` before public traffic moved to 100%. Public homepage/health returned 200, anonymous cognition/registry returned 401, and `audit:runtime-health-live` passed.
+
+Both Firestore and Storage rules were published and source-hash readback verified. Firebase CLI authentication expired at index deployment; existing valid gcloud authorization applied exactly the three reviewed single-field exemptions without changing credentials. All three operations completed successfully and remote configurations match. Account-erasure enablement remains false; this receipt does not claim independent client-rule propagation acceptance.
+
+Four hosted journeys passed: anonymous protection; capture/review/reload/deterministic Chat/native-package roundtrip; typed graph review; and private registry profile/publication/digest/install/idempotency/update/CAS/impact/deprecation/historical bytes. Responsive checks passed at 1280/768/390/360 pixels. Test-only corrections changed wrapped-select locators to accessible roles and waited explicitly for the impact response; usable mobile viewport screenshots were inspected.
+
+Ordinary composition revealed a real review defect: native approved parent knowledge coexists with automatically adapted `needs_review` legacy records. Group acceptance rejects those incomplete rows, and singleton editing cannot complete every row. The strict rejection is correct; the missing selective review flow is being corrected. Explicit selection must approve only chosen complete records/profile and keep other records proposed, with transactional rebasing and parent-version checks. No final composition acceptance is claimed for revision 01107; corrected-source gates and a new serving revision are required.
+
+Private browser evidence is ignored under `output/live-cognitive-01107*`; the original composition HTTP 400 and its trace are retained. Provider smoke remains disabled because the legitimate QA allowance is exhausted. No provider efficacy, blinded expert score, or optional parser benchmark success is claimed.
+
+## Selective-review correction
+
+The corrected decision contract accepts server-validated selected record IDs, explicit profile selection and a current capsule version. Complete selected records can be approved while incomplete inherited records remain proposed. The same card rebases to the new snapshot and keeps the pending IDs and bounded approval history. `edit_accept` approves only the edited item, preserving its original author; it cannot implicitly approve another record or profile. Rebased cards require a current version for every decision, including rejection and requests for evidence, and the generic legacy endpoint cannot bypass typed review. History titles include all partial-approval versions.
+
+Strict Firestore regressions cover ordinary parents with multiple adapted rows, native-only selected approval, pending-row preservation, human editing of one unknown without approving others, history reload, forged selections, duplicate or stale approvals, stale rejection and unrelated profile changes. Independent review findings were corrected before source freeze. All **121 focused tests** are verified passing; focused lint and typecheck pass. Corrected full suite: **477 files / 2,851 tests passed**. Corrected production build, TypeScript, full lint, repository shape, aggregate gate, architecture, GCP and AI-route audits passed. Lint retains five inherited warnings; GCP has zero failures/warnings. Graphify refreshed to 19,825 nodes / 43,955 edges / 927 communities. Fresh dependency audits retain the same 17 production findings with zero high/critical, and five development-only high findings. Serving publication and final live acceptance will be recorded separately; no result is transferred from the first revision's four journeys.

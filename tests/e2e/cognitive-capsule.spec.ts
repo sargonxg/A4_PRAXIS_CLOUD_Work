@@ -27,6 +27,7 @@ async function registryRow(registry: Locator, page: Page, name: string, version:
 }
 
 test.describe('Cognitive Capsule owner journey', () => {
+  test.use({ actionTimeout: 30_000, navigationTimeout: 45_000 });
   test('keeps cognition protected when no session is present', async ({ request }) => {
     const response = await request.get(`${BASE}/api/context/capsules/qa-unauthenticated/cognition`);
     expect(response.status()).toBe(401);
@@ -95,8 +96,8 @@ test.describe('Cognitive Capsule owner journey', () => {
 
     await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed the distinction, scoped it to budget analysis, and preserved the requirement to inspect payment records.');
     if (proposal.card.cognitiveProfileChanged) {
-      await expect(review.getByRole('button', { name: 'Accept all proposed changes', exact: true })).toBeDisabled();
-      await review.getByRole('checkbox').check();
+      await expect(review.getByRole('button', { name: 'Accept selected changes', exact: true })).toBeDisabled();
+      await review.getByRole('checkbox', { name: 'I have inspected the selected changes and their evidence.', exact: true }).check();
     }
     await review.getByRole('button', { name: 'Edit and accept', exact: true }).click();
     const edit = review.locator('form');
@@ -105,14 +106,15 @@ test.describe('Cognitive Capsule owner journey', () => {
     await edit.locator('[name="label"]').fill(acceptedLabel);
     await edit.locator('[name="decisionTests"]').fill('Check payment or expenditure records before claiming funds were spent.');
     const acceptedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
-    await edit.getByRole('button', { name: proposal.card.cognitiveProfileChanged ? 'Edit selected item and accept all proposed changes' : 'Save edits and accept', exact: true }).click();
+    await edit.getByRole('button', { name: 'Save edits and accept only this item', exact: true }).click();
     const accepted = await acceptedResponse;
     expect(accepted.ok()).toBe(true);
     const applied = await accepted.json();
     const acceptedKnowledge = applied.capsule.cognition.knowledge.find((item: { id: string }) => item.id === proposal.knowledge.id);
     expect(acceptedKnowledge).toMatchObject({ label: acceptedLabel, reviewState: 'accepted', provenance: { reviewedBy: { type: 'human' } } });
     expect(applied.capsule.version).toBe(initial.version + 1);
-    expect(applied.capsule.cognition.version).toBe('1.1.0');
+    expect(applied.capsule.cognition.version).toMatch(/^\d+\.\d+\.\d+$/);
+    if (proposal.card.cognitiveProfileChanged) expect(applied.card).toMatchObject({ state: 'owner_review', cognitiveProfileChanged: true, cognitiveKnowledgeIds: [] });
 
     // A new page load must hydrate the reviewed knowledge from storage.
     await page.reload();
@@ -122,6 +124,7 @@ test.describe('Cognitive Capsule owner journey', () => {
     const persisted = await page.request.get(`${BASE}/api/context/capsules/${capsuleId}/cognition`);
     expect(persisted.ok()).toBe(true);
     const inventory = await persisted.json();
+    expect(inventory.cognition.version).toBe(applied.capsule.cognition.version);
     expect(inventory.cognition.knowledge.find((item: { id: string }) => item.id === proposal.knowledge.id)).toEqual(acceptedKnowledge);
     const capsuleChat = expertise.getByTestId('capsule-cognitive-chat');
     await capsuleChat.locator('summary').first().click();
@@ -231,21 +234,31 @@ test.describe('Cognitive Capsule owner journey', () => {
     const review = expertise.getByRole('region', { name: 'Expertise proposal review' });
     await expect(review.getByLabel('Proposed graph changes')).toContainText('DOES_NOT_IMPLY');
     await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed all three typed graph records and their scope.');
-    await expect(review.getByRole('button', { name: 'Accept all proposed changes', exact: true })).toBeDisabled();
-    await review.getByRole('checkbox').check();
+    await expect(review.getByRole('button', { name: 'Accept selected changes', exact: true })).toBeDisabled();
+    await review.getByRole('checkbox', { name: 'I have inspected the selected changes and their evidence.', exact: true }).check();
     await review.getByRole('button', { name: 'Edit and accept', exact: true }).click();
-    await review.getByLabel('Graph item to edit', { exact: true }).selectOption('qa-authorization');
+    await review.getByRole('combobox', { name: 'Graph item to edit', exact: true }).selectOption('qa-authorization');
     await review.getByLabel('Node label', { exact: true }).fill('Synthetic reviewed authorization');
     const acceptedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
-    await review.getByRole('button', { name: 'Edit selected graph item and accept proposal', exact: true }).click();
+    await review.getByRole('button', { name: 'Save graph edits and accept only this item', exact: true }).click();
     const accepted = await acceptedResponse;
     expect(accepted.ok()).toBe(true);
-    const saved = (await accepted.json()).capsule;
-    expect(saved.cognition.nodes.find((node: { id: string }) => node.id === 'qa-authorization')).toMatchObject({ label: 'Synthetic reviewed authorization', reviewState: 'accepted', provenance: { reviewedBy: { type: 'human' } } });
+    const firstAccepted = await accepted.json();
+    expect(firstAccepted.capsule.cognition.nodes.find((node: { id: string }) => node.id === 'qa-authorization')).toMatchObject({ label: 'Synthetic reviewed authorization', reviewState: 'accepted', provenance: { reviewedBy: { type: 'human' } } });
+    expect(firstAccepted.card.state).toBe('owner_review');
+    expect(firstAccepted.card.cognitiveStatementIds).toContain('qa-no-expenditure');
+    await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: separately reviewed the remaining node, negative relationship and profile.');
+    await review.getByRole('button', { name: 'Select complete items', exact: true }).click();
+    const groupConfirmation = review.getByRole('checkbox', { name: 'I have inspected the selected changes and their evidence.', exact: true });
+    if (await groupConfirmation.isVisible()) await groupConfirmation.check();
+    const remainingAcceptedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
+    await review.getByRole('button', { name: 'Accept selected changes', exact: true }).click();
+    const remainingAccepted = await remainingAcceptedResponse; expect(remainingAccepted.ok()).toBe(true);
+    const saved = (await remainingAccepted.json()).capsule;
     expect(saved.cognition.statements.find((statement: { id: string }) => statement.id === 'qa-no-expenditure')).toMatchObject({ reviewState: 'accepted', predicate: 'DOES_NOT_IMPLY' });
     await page.reload(); await expect(inspector).toBeVisible({ timeout: 30_000 }); await expertise.locator('summary').first().click();
-    const graph = expertise.getByTestId('capsule-cognitive-graph');
-    await graph.getByLabel('Graph layer', { exact: true }).selectOption('language');
+    const graph = expertise.getByTestId('capsule-cognitive-graph').first();
+    await graph.getByRole('combobox', { name: 'Graph layer', exact: true }).selectOption('language');
     await graph.getByLabel('Search graph and evidence', { exact: true }).fill('Synthetic reviewed authorization');
     await expect(graph.getByRole('article', { name: 'Selected cognitive relationship' })).toContainText('authorization-only');
     const capsuleChat = expertise.getByTestId('capsule-cognitive-chat'); await capsuleChat.locator('summary').first().click();
@@ -265,7 +278,7 @@ test.describe('Cognitive Capsule owner journey', () => {
     const created = await page.request.post(`${BASE}/api/context/capsules`, { data: { action: 'create', capsuleId, label: 'Synthetic QA private registry source', scope: 'user', community: { tags: ['synthetic-qa', 'private-canary'] } } });
     expect(created.ok()).toBe(true); const initial = (await created.json()).capsule;
     let { inspector, expertise } = await openOwnerInspector(page, capsuleId);
-    await expertise.getByLabel('Proposed capsule profile', { exact: true }).selectOption('method');
+    await expertise.getByRole('combobox', { name: 'Proposed capsule profile', exact: true }).selectOption('method');
     const proposedProfileResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'POST');
     await expertise.getByRole('button', { name: 'Propose profile change', exact: true }).click();
     const profileProposal = await proposedProfileResponse; expect(profileProposal.status()).toBe(201);
@@ -275,7 +288,7 @@ test.describe('Cognitive Capsule owner journey', () => {
     await expect(review.getByLabel('Proposed profile change')).toContainText('After: method');
     await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed this empty method capsule profile before publication.');
     const acceptedProfileResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
-    await review.getByRole('button', { name: 'Accept profile change', exact: true }).click();
+    await review.getByRole('button', { name: 'Accept selected changes', exact: true }).click();
     const acceptedProfile = await acceptedProfileResponse; expect(acceptedProfile.ok()).toBe(true); const firstSaved = (await acceptedProfile.json()).capsule;
     expect(firstSaved.cognition.profile).toBe('method');
     await page.reload(); ({ inspector, expertise } = await openOwnerInspector(page, capsuleId));
@@ -303,12 +316,12 @@ test.describe('Cognitive Capsule owner journey', () => {
     const draft = await page.request.get(`${BASE}/api/context/capsules/${firstInstall.draftCapsuleId}`); expect((await draft.json()).capsule.cognition).toBeUndefined();
     const draftInventory = await page.request.get(`${BASE}/api/context/capsules/${firstInstall.draftCapsuleId}/cognition`); expect((await draftInventory.json()).reviewCards.some((card: { reviewCardId: string; state: string }) => card.reviewCardId === firstInstall.reviewCardId && card.state === 'proposed')).toBe(true);
     ({ inspector, expertise } = await openOwnerInspector(page, capsuleId));
-    await expertise.getByLabel('Proposed capsule profile', { exact: true }).selectOption('language');
+    await expertise.getByRole('combobox', { name: 'Proposed capsule profile', exact: true }).selectOption('language');
     await expertise.getByRole('button', { name: 'Propose profile change', exact: true }).click(); review = expertise.getByRole('region', { name: 'Expertise proposal review' });
     await expect(review.getByLabel('Proposed profile change')).toContainText('After: language');
     await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed a breaking method-to-language profile change.');
     const secondProfileResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${capsuleId}/cognition` && response.request().method() === 'PATCH');
-    await review.getByRole('button', { name: 'Accept profile change', exact: true }).click(); const secondProfile = await secondProfileResponse; expect(secondProfile.ok()).toBe(true); const secondSaved = (await secondProfile.json()).capsule;
+    await review.getByRole('button', { name: 'Accept selected changes', exact: true }).click(); const secondProfile = await secondProfileResponse; expect(secondProfile.ok()).toBe(true); const secondSaved = (await secondProfile.json()).capsule;
     expect(Number(secondSaved.cognition.version.split('.')[0])).toBe(Number(firstSaved.cognition.version.split('.')[0]) + 1);
     ({ inspector, expertise } = await openOwnerInspector(page, capsuleId)); registry = inspector.getByText('Private capsule registry', { exact: true }).locator('..'); await registry.locator('summary').first().click();
     await registry.getByLabel('Registry name (publisher/name)', { exact: true }).fill(registryName);
@@ -320,10 +333,15 @@ test.describe('Cognitive Capsule owner journey', () => {
     expect(update.request().postDataJSON().expectedDigest).toBe(firstEntry.digest); const updateBody = await update.json(); const secondInstall = updateBody.installation ?? updateBody;
     expect(secondInstall).toMatchObject({ digest: secondEntry.digest, promotion: 'not-promoted' }); expect(secondInstall.draftCapsuleId).not.toBe(firstInstall.draftCapsuleId);
     const stale = await page.request.post(`${BASE}/api/context/capsule-registry`, { data: { operation: 'update', name: registryName, version: secondEntry.version, expectedDigest: firstEntry.digest } }); expect(stale.status()).toBe(409);
-    row = await registryRow(registry, page, registryName, secondEntry.version); await row.getByRole('button', { name: 'Dependency impact', exact: true }).click();
+    row = await registryRow(registry, page, registryName, secondEntry.version);
+    const impactResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry/impact' && response.request().method() === 'GET', { timeout: 60_000 });
+    await row.getByRole('button', { name: 'Dependency impact', exact: true }).click();
+    const impact = await impactResponse; expect(impact.ok(), `Dependency impact returned ${impact.status()}`).toBe(true);
     await expect(registry.getByRole('region', { name: 'Dependency impact' })).toContainText('installed drafts');
     await page.setViewportSize({ width: 360, height: 844 }); expect(await registry.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(2);
-    const screenshotPath = test.info().outputPath('private-registry-360.png'); await registry.screenshot({ path: screenshotPath }); await test.info().attach('private-registry-360px', { path: screenshotPath, contentType: 'image/png' });
+    const screenshotPath = test.info().outputPath('private-registry-360.png');
+    await registry.getByRole('region', { name: 'Dependency impact' }).scrollIntoViewIfNeeded();
+    await inspector.screenshot({ path: screenshotPath }); await test.info().attach('private-registry-360px', { path: screenshotPath, contentType: 'image/png' });
     await registry.getByLabel('Reason for deprecating a version', { exact: true }).fill('Synthetic QA artifact retired after verifying staged update.');
     const deprecatedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'POST');
     await row.getByRole('button', { name: 'Deprecate with reason', exact: true }).click(); const deprecated = await deprecatedResponse; expect(deprecated.ok()).toBe(true);
@@ -344,14 +362,61 @@ test.describe('Cognitive Capsule owner journey', () => {
     const combinedResponse = await page.request.post(`${BASE}/api/context/capsules`, { data: { action: 'combine', capsuleIds: parents.map((parent) => parent.capsuleId), combinedCapsuleId: targetId, label: 'Synthetic QA reviewed composition', scope: 'user' } }); expect(combinedResponse.ok()).toBe(true); const combined = await combinedResponse.json();
     expect(combined.capsule.cognition).toBeUndefined(); expect(combined.reviewCard.state).toBe('proposed');
     expect(combined.capsule.memoryPosture.cognitiveComposition.parentLocks).toEqual(expect.arrayContaining(parents.map((parent) => expect.objectContaining({ capsuleId: parent.capsuleId, capsuleVersion: parent.version, version: parent.cognition.version }))));
+    const proposedKnowledge = combined.reviewCard.proposedEnvelopePatch.cognition.knowledge as Array<{ id: string; kind: string; label: string; migrationStatus: string }>;
+    const nativeItems = proposedKnowledge.filter((item) => combined.reviewCard.cognitiveKnowledgeIds.includes(item.id) && item.migrationStatus === 'native');
+    const legacyItems = proposedKnowledge.filter((item) => combined.reviewCard.cognitiveKnowledgeIds.includes(item.id) && item.migrationStatus === 'needs_review');
+    expect(nativeItems).toHaveLength(2); expect(legacyItems).toHaveLength(4);
+    // Preserve the established fail-closed boundary: adapted prose must not be
+    // accepted by a broad decision while its expert structure is incomplete.
+    const broadApproval = await page.request.patch(`${BASE}/api/context/capsules/${targetId}/cognition`, { data: { reviewCardId: combined.reviewCard.reviewCardId, decision: 'accept', reason: 'Synthetic QA: verify incomplete adapted prose cannot be broadly approved.' } });
+    expect(broadApproval.status()).toBe(400);
+    expect(await broadApproval.json()).toMatchObject({ error: 'Invalid expertise request', details: { fieldErrors: { migrationStatus: expect.arrayContaining(['Complete the expert structure before acceptance.']) } } });
+    const stillProposed = await page.request.get(`${BASE}/api/context/capsules/${targetId}`); expect((await stillProposed.json()).capsule.cognition).toBeUndefined();
     const { inspector, expertise } = await openOwnerInspector(page, targetId); const review = expertise.getByRole('region', { name: 'Expertise proposal review' });
     await expect(review).toContainText('Synthetic distinction 1'); await expect(review).toContainText('Synthetic distinction 2');
     await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed both parent distinctions and their locked source versions.');
-    await expect(review.getByRole('button', { name: 'Accept all proposed changes', exact: true })).toBeDisabled(); await review.getByRole('checkbox').check();
+    await review.getByRole('button', { name: 'Select complete items', exact: true }).click();
+    for (const item of nativeItems) await expect(review.getByRole('checkbox', { name: `Select for approval: ${item.label}`, exact: true })).toBeChecked();
+    await expect(review.getByRole('checkbox', { name: 'Select profile change for approval', exact: true })).toBeChecked();
+    await expect(review.getByRole('button', { name: 'Accept selected changes', exact: true })).toBeDisabled();
+    await review.getByRole('checkbox', { name: 'I have inspected the selected changes and their evidence.', exact: true }).check();
     const acceptedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${targetId}/cognition` && response.request().method() === 'PATCH');
-    await review.getByRole('button', { name: 'Accept all proposed changes', exact: true }).click(); const accepted = await acceptedResponse; expect(accepted.ok()).toBe(true); const final = (await accepted.json()).capsule;
-    expect(final.cognition.knowledge).toHaveLength(2); expect(final.cognition.knowledge.every((item: { reviewState: string; provenance: { reviewedBy: { type: string } } }) => item.reviewState === 'accepted' && item.provenance.reviewedBy.type === 'human')).toBe(true);
+    await review.getByRole('button', { name: 'Accept selected changes', exact: true }).click(); const accepted = await acceptedResponse;
+    expect(accepted.request().postDataJSON()).toMatchObject({ selectedRecordIds: expect.arrayContaining(nativeItems.map((item) => item.id)), selectProfile: true, expectedCapsuleVersion: combined.capsule.version });
+    expect(accepted.request().postDataJSON().selectedRecordIds).toHaveLength(2);
+    const acceptedBody = await accepted.json();
+    expect(accepted.ok(), JSON.stringify({ status: accepted.status(), error: acceptedBody.error, details: acceptedBody.details })).toBe(true); const final = acceptedBody.capsule;
+    expect(final.cognition.knowledge.filter((item: { reviewState: string }) => item.reviewState === 'accepted')).toHaveLength(2);
+    for (const item of nativeItems) expect(final.cognition.knowledge.find((saved: { id: string }) => saved.id === item.id)).toMatchObject({ reviewState: 'accepted', provenance: { reviewedBy: { type: 'human' } } });
+    expect(acceptedBody.card.state).toBe('owner_review');
+    expect(acceptedBody.card.cognitiveKnowledgeIds).toEqual(expect.arrayContaining(legacyItems.map((item) => item.id)));
+    expect(acceptedBody.card.cognitiveKnowledgeIds).toHaveLength(4);
+    for (const item of legacyItems) expect(acceptedBody.card.proposedEnvelopePatch.cognition.knowledge.find((pending: { id: string }) => pending.id === item.id)).toMatchObject({ reviewState: 'proposed', migrationStatus: 'needs_review' });
+    const stale = await page.request.patch(`${BASE}/api/context/capsules/${targetId}/cognition`, { data: { reviewCardId: combined.reviewCard.reviewCardId, decision: 'accept', reason: 'Synthetic QA: replaying a stale selected decision must be rejected.', selectedRecordIds: [legacyItems[0].id], selectProfile: false, expectedCapsuleVersion: combined.capsule.version } });
+    expect(stale.status()).toBe(409);
     await page.reload(); await expect(inspector).toBeVisible({ timeout: 30_000 }); await expertise.locator('summary').first().click(); await expect(expertise).toContainText('Synthetic distinction 1');
     const persisted = await page.request.get(`${BASE}/api/context/capsules/${targetId}`); expect((await persisted.json()).capsule.cognition).toEqual(final.cognition);
+    // Completing one explicitly edited unknown must leave the other three
+    // adapted records proposed; it cannot become another accept-all operation.
+    const unknown = legacyItems.find((item) => item.kind === 'unknown'); expect(unknown).toBeDefined();
+    await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: completed only this explicit unknown and retained its evidence requirement. Other adapted records remain pending.');
+    await review.getByRole('button', { name: 'Edit and accept', exact: true }).click();
+    await review.getByRole('combobox', { name: 'Item to edit', exact: true }).selectOption(unknown!.id);
+    await review.locator('[name="description"]').fill('Synthetic QA: the original accounting records are not yet attached; spending remains unestablished.');
+    await review.locator('[name="requiredEvidence"]').fill('Inspect original payment or expenditure records before claiming money was spent.');
+    const editedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === `/api/context/capsules/${targetId}/cognition` && response.request().method() === 'PATCH');
+    await review.getByRole('button', { name: 'Save edits and accept only this item', exact: true }).click();
+    const edited = await editedResponse; expect(edited.ok()).toBe(true);
+    expect(edited.request().postDataJSON()).toMatchObject({ selectedRecordIds: [unknown!.id], selectProfile: false, expectedCapsuleVersion: final.version });
+    const editedBody = await edited.json();
+    expect(editedBody.capsule.cognition.knowledge.find((item: { id: string }) => item.id === unknown!.id)).toMatchObject({ reviewState: 'accepted', migrationStatus: 'native', provenance: { reviewedBy: { type: 'human' } } });
+    expect(editedBody.card.state).toBe('owner_review'); expect(editedBody.card.cognitiveKnowledgeIds).toHaveLength(3);
+    for (const item of legacyItems.filter((item) => item.id !== unknown!.id)) expect(editedBody.card.proposedEnvelopePatch.cognition.knowledge.find((pending: { id: string }) => pending.id === item.id)).toMatchObject({ reviewState: 'proposed', migrationStatus: 'needs_review' });
+    await page.reload(); await expect(inspector).toBeVisible({ timeout: 30_000 }); await expertise.locator('summary').first().click();
+    const inventory = await page.request.get(`${BASE}/api/context/capsules/${targetId}/cognition`); const savedInventory = await inventory.json();
+    expect(savedInventory.reviewCards.find((card: { reviewCardId: string }) => card.reviewCardId === combined.reviewCard.reviewCardId)).toMatchObject({ state: 'owner_review', cognitiveKnowledgeIds: expect.arrayContaining(legacyItems.filter((item) => item.id !== unknown!.id).map((item) => item.id)) });
+    await page.setViewportSize({ width: 360, height: 844 }); await review.scrollIntoViewIfNeeded();
+    expect(await inspector.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(2);
+    const screenshotPath = test.info().outputPath('selective-composition-review-360.png'); await inspector.screenshot({ path: screenshotPath }); await test.info().attach('selective-composition-review-360px', { path: screenshotPath, contentType: 'image/png' });
   });
 });

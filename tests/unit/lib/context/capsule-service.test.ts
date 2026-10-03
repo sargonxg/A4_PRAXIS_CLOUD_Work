@@ -81,7 +81,9 @@ describe('capsule service', () => {
     const result = await decideCognitiveCapsuleReviewCard('u1', 'graph-review', card.reviewCardId, { decision: 'edit_accept', reason: 'Checked exact wording and actor.',
       edited: { ...card.proposedEnvelopePatch.cognition!.nodes[0], label: 'State A government', provenance: { ...card.proposedEnvelopePatch.cognition!.nodes[0].provenance, generatedBy: fakeReviewer } } }, deps(db));
     expect(result?.capsule.cognition?.nodes[0]).toMatchObject({ label: 'State A government', reviewState: 'accepted', provenance: { generatedBy: actor, reviewedBy: { type: 'human', id: 'u1' } } });
-    expect(result?.capsule.cognition?.statements[0]).toMatchObject({ reviewState: 'accepted', provenance: { reviewedBy: { id: 'u1' } } });
+    expect(result?.capsule.cognition?.statements[0]).toMatchObject({ reviewState: 'proposed', provenance: { generatedBy: actor } });
+    const final = await decideCognitiveCapsuleReviewCard('u1', 'graph-review', card.reviewCardId, { decision: 'accept', reason: 'Now reviewed the statement and remaining profile.', selectedRecordIds: ['s'], selectProfile: true, expectedCapsuleVersion: 2 }, deps(db));
+    expect(final?.capsule.cognition?.statements[0]).toMatchObject({ reviewState: 'accepted', provenance: { reviewedBy: { id: 'u1' } } });
   });
   it('preserves omitted canonical records and requires an explicit reviewed supersession', async () => {
     const db = architectDb();
@@ -141,16 +143,20 @@ describe('capsule service', () => {
     expect(await listCapsuleReviewCards('u1', capsule.capsuleId, deps(directDb))).toHaveLength(1);
   });
 
-  it('edits only a selected interview item and preserves provenance across the reviewed group', async () => {
+  it('edits only one interview item without approving other records or the profile through direct calls', async () => {
     const db = architectDb();
     const capsule = await createCapsule('u1', { capsuleId: 'interview-group' }, deps(db));
     const cognition = createCognitiveCapsule(capsule.capsuleId);
     for (const id of ['first', 'second']) cognition.knowledge.push(KnowledgeSchema.parse({ id, kind: 'distinction', label: `Distinction ${id}`, scope: ['budget'], conceptA: 'authorization', conceptB: 'expenditure', explanation: 'Approval is not payment.', whyItMatters: 'Avoid unsupported claims.', commonMistake: 'Treating approval as payment.', provenance: { generatedBy: { type: 'human', id: `original-${id}`, at: '2026-10-03T00:00:00Z' }, sourceRefs: [] } }));
     const card = await createCapsuleReviewCard('u1', capsule.capsuleId, { title: 'Interview group', target: 'capsuleEnvelope', sourceType: 'user', proposedEnvelopePatch: { cognition } }, deps(db));
     await expect(decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Reviewed every item.', edited: { ...cognition.knowledge[1], id: 'unselected' } }, deps(db))).rejects.toThrow(/proposed by this review card/);
+    await expect(decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Do not approve two through one edit.', edited: cognition.knowledge[1], selectedRecordIds: ['first', 'second'], selectProfile: false, expectedCapsuleVersion: 1 }, deps(db))).rejects.toMatchObject({ status: 400 });
+    await expect(decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Do not approve a profile through one edit.', edited: cognition.knowledge[1], selectedRecordIds: ['second'], selectProfile: true, expectedCapsuleVersion: 1 }, deps(db))).rejects.toMatchObject({ status: 400 });
     const result = await decideCognitiveCapsuleReviewCard('u1', capsule.capsuleId, card.reviewCardId, { decision: 'edit_accept', reason: 'Inspected every interview item; corrected the second label.', edited: { ...cognition.knowledge[1], label: 'Edited second distinction', provenance: { ...cognition.knowledge[1].provenance, generatedBy: { type: 'human', id: 'forged-author', at: '2026-10-03T00:00:00Z' } } } }, deps(db));
-    expect(result?.capsule.cognition?.knowledge.filter((item) => card.cognitiveKnowledgeIds?.includes(item.id)).map((item) => item.reviewState)).toEqual(['accepted', 'accepted']);
-    expect(result?.capsule.cognition?.knowledge.find((item) => item.id === 'first')).toMatchObject({ label: 'Distinction first', provenance: { generatedBy: { id: 'original-first' }, reviewedBy: { id: 'u1' } } });
+    expect(result?.capsule.cognition?.knowledge.filter((item) => card.cognitiveKnowledgeIds?.includes(item.id)).map((item) => item.reviewState)).toEqual(['proposed', 'accepted']);
+    expect(result?.capsule.cognition?.knowledge.find((item) => item.id === 'first')).toMatchObject({ label: 'Distinction first', provenance: { generatedBy: { id: 'original-first' } } });
+    expect(result?.capsule.cognition?.knowledge.find((item) => item.id === 'first')?.provenance.reviewedBy).toBeUndefined();
+    expect(result?.card).toMatchObject({ state: 'owner_review', cognitiveKnowledgeIds: ['first'], cognitiveProfileChanged: true });
     expect(result?.capsule.cognition?.knowledge.find((item) => item.id === 'second')).toMatchObject({ label: 'Edited second distinction', provenance: { generatedBy: { id: 'original-second' }, reviewedBy: { id: 'u1' } } });
   });
   it('forks expertise with a new capsule identity while preserving reviewed content and provenance', async () => {
@@ -210,6 +216,65 @@ describe('capsule service', () => {
     await bumpCapsuleVersion('u1', 'lock-a', { label: 'Changed parent' }, deps(db));
     await expect(decideCognitiveCapsuleReviewCard('u1', 'locked-draft', result!.reviewCard!.reviewCardId, { decision: 'accept', reason: 'Inspect the parent locks.' }, deps(db))).rejects.toThrow(/parent changed/i);
     expect((await getCapsule('u1', 'locked-draft', deps(db)))?.cognition).toBeUndefined();
+  });
+  it('partially reviews an ordinary composition while retaining and rebasing multiple incomplete migrations', async () => {
+    const db = architectDb(); db.rejectUndefined = true;
+    for (const id of ['ordinary-a', 'ordinary-b']) {
+      await createCapsule('u1', { capsuleId: id, label: id }, deps(db));
+      const capture = await proposeCognitiveKnowledge('u1', id, { kind: 'distinction', label: `Native ${id}`, scope: ['budget'], body: 'Approval is not payment.', terms: ['approval', 'payment'] }, deps(db));
+      await decideCognitiveCapsuleReviewCard('u1', id, capture!.card.reviewCardId, { decision: 'accept', reason: 'Reviewed the native distinction.' }, deps(db));
+    }
+    const composed = await combineCapsules('u1', { capsuleIds: ['ordinary-a', 'ordinary-b'], capsuleId: 'ordinary-composition' }, deps(db));
+    const card = composed!.reviewCard!;
+    const nativeIds = card.proposedEnvelopePatch.cognition!.knowledge.filter((item) => card.cognitiveKnowledgeIds?.includes(item.id) && item.migrationStatus === 'native').map((item) => item.id);
+    const migrated = card.proposedEnvelopePatch.cognition!.knowledge.filter((item) => card.cognitiveKnowledgeIds?.includes(item.id) && item.migrationStatus === 'needs_review');
+    expect(nativeIds).toHaveLength(2); expect(migrated.length).toBeGreaterThanOrEqual(4);
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { decision: 'accept', reason: 'Incomplete rows must fail closed.' }, deps(db))).rejects.toThrow(/Complete the expert structure/);
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { decision: 'reject', reason: 'Do not close unselected items.', selectedRecordIds: nativeIds, selectProfile: false, expectedCapsuleVersion: 1 }, deps(db))).rejects.toMatchObject({ status: 400 });
+    const scope = { decision: 'accept' as const, reason: 'Reviewed only the native distinctions and profile.', selectedRecordIds: nativeIds, selectProfile: true, expectedCapsuleVersion: 1 };
+    const first = await decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, scope, deps(db));
+    expect(first?.card.state).toBe('owner_review'); expect(first?.capsule.latestGateState).toBe('owner_review');
+    expect(first?.capsule.readinessSummary?.reviewRequired).toBe(true);
+    expect(first?.capsule.cognition).toMatchObject({ profile: 'situation', version: '1.1.0' });
+    expect(first?.card.cognitiveKnowledgeIds).toEqual(migrated.map((item) => item.id));
+    for (const item of migrated) expect(first?.capsule.cognition?.knowledge.find((row) => row.id === item.id)).toMatchObject({ reviewState: 'proposed', migrationStatus: 'needs_review', provenance: { generatedBy: item.provenance.generatedBy } });
+    for (const id of nativeIds) expect(first?.capsule.cognition?.knowledge.find((row) => row.id === id)).toMatchObject({ reviewState: 'accepted', provenance: { reviewedBy: { id: 'u1' } } });
+    const reload = (await listCapsuleReviewCards('u1', 'ordinary-composition', deps(db))).find((row) => row.reviewCardId === card.reviewCardId)!;
+    expect(reload.cognitiveDecisionHistory).toHaveLength(1); expect(reload.cognitiveDecisionHistory?.[0]).toMatchObject({ selectedRecordIds: nativeIds, selectedProfile: true });
+    expect(reload.cognitiveKnowledgeIds?.some((id) => nativeIds.includes(id))).toBe(false);
+    await expect(applyCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { reviewerUid: 'u1', confirmationReason: 'A legacy endpoint must not bypass the rebased review.', diffHash: 'diff:legacy' }, deps(db))).rejects.toMatchObject({ status: 409 });
+    await expect(rejectCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { reviewerUid: 'u1', confirmationReason: 'A legacy rejection endpoint must not close the rebased review.' }, deps(db))).rejects.toMatchObject({ status: 409 });
+    for (const decision of ['reject', 'need_evidence'] as const) {
+      await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { decision, reason: 'A stale tab must not decide the rebased proposal.', expectedCapsuleVersion: 1 }, deps(db))).rejects.toMatchObject({ status: 409 });
+      await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { decision, reason: 'An older client must reload before deciding.' }, deps(db))).rejects.toMatchObject({ status: 409 });
+    }
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, scope, deps(db))).rejects.toMatchObject({ status: 409 });
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { ...scope, expectedCapsuleVersion: 2, selectedRecordIds: ['forged'], selectProfile: false }, deps(db))).rejects.toMatchObject({ status: 400 });
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { ...scope, expectedCapsuleVersion: 2, selectProfile: false }, deps(db))).rejects.toMatchObject({ status: 400 });
+    const legacy = migrated.find((item) => item.kind === 'unknown')!;
+    const edited = { ...legacy, description: 'An explicit remaining evidence gap.', requiredEvidence: ['Inspect the original source and document its limits.'] };
+    const second = await decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { decision: 'edit_accept', reason: 'Completed only this evidence-gap structure.', edited, selectedRecordIds: [legacy.id], selectProfile: false, expectedCapsuleVersion: 2 }, deps(db));
+    expect(second?.capsule.cognition?.knowledge.find((row) => row.id === legacy.id)).toMatchObject({ reviewState: 'accepted', migrationStatus: 'native', provenance: { generatedBy: legacy.provenance.generatedBy } });
+    expect(second?.card.cognitiveKnowledgeIds).toHaveLength(migrated.length - 1); expect(second?.card.cognitiveDecisionHistory).toHaveLength(2);
+    for (const item of migrated.filter((row) => row.id !== legacy.id)) expect(second?.capsule.cognition?.knowledge.find((row) => row.id === item.id)).toMatchObject({ reviewState: 'proposed', migrationStatus: 'needs_review' });
+    const profile = await proposeCognitiveGraph('u1', 'ordinary-composition', { operation: 'graph-proposal', baseVersion: 3, profile: 'method' }, deps(db));
+    await decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', profile!.card.reviewCardId, { decision: 'accept', reason: 'Reviewed the independent profile proposal.', selectedRecordIds: [], selectProfile: true, expectedCapsuleVersion: 3 }, deps(db));
+    await expect(decideCognitiveCapsuleReviewCard('u1', 'ordinary-composition', card.reviewCardId, { decision: 'accept', reason: 'Do not use a stale rebased card.', selectedRecordIds: [second!.card.cognitiveKnowledgeIds![0]], selectProfile: false, expectedCapsuleVersion: 4 }, deps(db))).rejects.toThrow(/changed/);
+  });
+  it('keeps unselected edits to accepted graph records out of canonical cognition until their own review', async () => {
+    const db = architectDb(); const cognition = createCognitiveCapsule('scoped-graph', '1.0.0');
+    const actor = { type: 'human' as const, id: 'author', at: '2026-05-14T00:00:00Z' };
+    for (const id of ['a', 'b']) cognition.nodes.push(CognitiveNodeSchema.parse({ id, type: 'aco:Actor', label: id, layer: 'world', reviewState: 'accepted', provenance: { generatedBy: actor, sourceRefs: [], reviewedBy: actor, reviewedAt: actor.at } }));
+    await createCapsule('u1', { capsuleId: cognition.capsuleId, cognition }, deps(db));
+    const proposal = await proposeCognitiveGraph('u1', cognition.capsuleId, { operation: 'graph-proposal', baseVersion: 1, profile: 'language', nodes: cognition.nodes.map(({ provenance: _author, reviewState: _state, ...node }) => ({ ...node, label: `Updated ${node.id}` })) }, deps(db));
+    const first = await decideCognitiveCapsuleReviewCard('u1', cognition.capsuleId, proposal!.card.reviewCardId, { decision: 'accept', reason: 'Only approve A.', selectedRecordIds: ['a'], selectProfile: false, expectedCapsuleVersion: 1 }, deps(db));
+    expect(first?.capsule.cognition?.profile).toBe('expertise'); expect(first?.card.cognitiveProfileChanged).toBe(true);
+    expect(first?.capsule.cognition?.nodes.find((node) => node.id === 'a')?.label).toBe('Updated a');
+    expect(first?.capsule.cognition?.nodes.find((node) => node.id === 'b')).toEqual(cognition.nodes[1]);
+    expect(first?.card.proposedEnvelopePatch.cognition?.nodes.find((node) => node.id === 'b')).toMatchObject({ label: 'Updated b', reviewState: 'proposed' });
+    const second = await decideCognitiveCapsuleReviewCard('u1', cognition.capsuleId, proposal!.card.reviewCardId, { decision: 'accept', reason: 'Now approve B and the profile.', selectedRecordIds: ['b'], selectProfile: true, expectedCapsuleVersion: 2 }, deps(db));
+    expect(second?.card.state).toBe('applied'); expect(second?.card.cognitiveDecisionHistory).toHaveLength(2);
+    expect(second?.capsule.cognition).toMatchObject({ profile: 'language', version: '3.0.0' });
   });
   it('stages native registry drafts in the caller transaction and preserves idempotent owner edits', async () => {
     const db = architectDb(); db.rejectUndefined = true;

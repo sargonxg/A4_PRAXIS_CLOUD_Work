@@ -39,11 +39,11 @@ export const GET = withAuth<RouteContext>(async (request, user, context) => {
     const appliedReviewCardTitlesByVersion = new Map<number, string>();
     reviewCardsSnap.docs.forEach((doc) => {
       const card = doc.data();
-      const targetVersion = typeof card.applyMetadata?.targetVersion === 'number'
-        ? Math.floor(card.applyMetadata.targetVersion)
-        : null;
-      if (targetVersion && typeof card.title === 'string') {
-        appliedReviewCardTitlesByVersion.set(targetVersion, card.title);
+      const decisions = Array.isArray(card.cognitiveDecisionHistory) ? card.cognitiveDecisionHistory.slice(0, 200).map((entry) => entry?.metadata) : [];
+      for (const metadata of [card.applyMetadata, ...decisions]) {
+        const targetVersion = typeof metadata?.targetVersion === 'number' && Number.isSafeInteger(metadata.targetVersion)
+          ? metadata.targetVersion : null;
+        if (targetVersion && typeof card.title === 'string') appliedReviewCardTitlesByVersion.set(targetVersion, card.title);
       }
     });
     const versions = snap.docs.map((doc) => withAppliedReviewCardTitle(doc.data(), appliedReviewCardTitlesByVersion));

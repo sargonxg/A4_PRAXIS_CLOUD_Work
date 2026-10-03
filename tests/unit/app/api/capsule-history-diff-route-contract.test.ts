@@ -10,7 +10,7 @@ describe('capsule history and diff route contract', () => {
   it('returns version history with the applied review-card title', () => {
     expect(historyRoute).toContain('collection(\'reviewCards\')');
     expect(historyRoute).toContain('appliedReviewCardTitle');
-    expect(historyRoute).toContain('applyMetadata?.targetVersion');
+    expect(historyRoute).toContain('metadata?.targetVersion');
   });
 
   it('diffs label, summary, claim ledger, and source refs for Inspect history', () => {

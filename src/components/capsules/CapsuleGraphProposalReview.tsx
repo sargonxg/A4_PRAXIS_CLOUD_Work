@@ -79,7 +79,7 @@ export function CapsuleGraphProposalEditForm({ card, current, disabled, onAccept
   }
   return <div className="min-w-0 space-y-3"><label className="block text-xs font-semibold text-slate-700">Graph item to edit<select value={item.id} className={captureFieldClass} onChange={(event) => { setSelectedId(event.target.value); setError(''); const next = records.find((value) => value.id === event.target.value); setObjectKind(next && 'predicate' in next && 'literal' in next.object ? 'literal' : 'node'); }}>{records.map((record) => <option key={record.id} value={record.id}>{'predicate' in record ? describeCognitiveStatement(record, nodes) : record.label}</option>)}</select></label>
     <form key={item.id} className="min-w-0 space-y-3 rounded-md bg-slate-50 p-3" onSubmit={submit}>
-      <p className="text-xs text-slate-600">Edit this selected graph item. Acceptance applies to every changed item in the proposal; the original author is preserved.</p>
+      <p className="text-xs text-slate-600">Edit and accept only this graph item. Other changes remain proposed; the original author is preserved.</p>
       {!isStatement ? <CaptureField name="label" label="Node label" defaultValue={item.label} required /> : <>
         {selectNode('subject', 'Subject', item.subject)}<CaptureField name="predicate" label="Relationship" defaultValue={item.predicate} required maxLength={240} />
         <label className="block text-xs font-semibold text-slate-700">Relationship target<select name="objectKind" className={captureFieldClass} value={selectedObjectKind} onChange={(event) => setObjectKind(event.target.value)}><option value="node">Graph node</option><option value="literal">Literal value</option></select></label>
@@ -92,7 +92,7 @@ export function CapsuleGraphProposalEditForm({ card, current, disabled, onAccept
       </>}
       <div className="grid min-w-0 gap-3 sm:grid-cols-2"><CaptureField name="validFrom" label="Valid from (ISO date)" defaultValue={item.validFrom} maxLength={40} /><CaptureField name="validUntil" label="Valid until (ISO date)" defaultValue={item.validUntil} maxLength={40} /></div>
       {error ? <p role="alert" className="text-xs text-red-700">{error}</p> : null}
-      <div className="flex flex-wrap gap-2"><button type="submit" disabled={disabled} className="min-h-10 rounded border border-slate-300 px-3 py-2 text-xs font-semibold disabled:opacity-50">Edit selected graph item and accept proposal</button><button type="button" disabled={disabled} onClick={onCancel} className="min-h-10 rounded border border-slate-300 px-3 py-2 text-xs">Cancel edit</button></div>
+      <div className="flex flex-wrap gap-2"><button type="submit" disabled={disabled} className="min-h-10 rounded border border-slate-300 px-3 py-2 text-xs font-semibold disabled:opacity-50">Save graph edits and accept only this item</button><button type="button" disabled={disabled} onClick={onCancel} className="min-h-10 rounded border border-slate-300 px-3 py-2 text-xs">Cancel edit</button></div>
     </form>
   </div>;
 }
