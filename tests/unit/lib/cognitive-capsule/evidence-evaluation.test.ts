@@ -44,10 +44,15 @@ describe('scientifically bounded cognitive evaluation', () => {
     let calls = 0;
     const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async (request) => {
       calls++; return { providerReceipt: 'actual-test-provider', output: { conclusions: ['acceptance-not-established'], distinctions: ['consider-is-not-accept'], citedIds: ['language-rule'], questions: [] }, model: 'test-adapter' };
-    });
+    }, { retrieveEvidence: async () => c.evidence });
     expect(calls).toBe(5);
     expect(result.results.every((r) => r.status === 'evaluated' && r.providerReceipt === 'actual-test-provider')).toBe(true);
     expect(result.modelImprovementEstablished).toBe(false);
+  });
+  it('never labels direct document concatenation as a RAG evaluation', async () => {
+    const c = createCognitiveCapsule('synthetic');
+    const result = await runCognitiveBenchmark(c, GOLDEN_COGNITIVE_TASKS.slice(0, 1), async () => ({ providerReceipt: 'receipt', model: 'test', output: { conclusions: [], distinctions: [], citedIds: [], questions: [] } }));
+    expect(result.results.find((r) => r.profile === 'rag')).toMatchObject({ status: 'not-run' });
   });
   it('charges evidence against the same context budget and omits dependent knowledge together', () => {
     const c = createCognitiveCapsule('budget'); const at = '2026-10-03T00:00:00Z'; const human = { type: 'human', id: 'expert', at };
