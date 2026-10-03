@@ -99,7 +99,7 @@ export function CapsuleRegistryPanel({ capsuleId, capsuleVersion }: { capsuleId:
     {open ? <div className="mt-3 min-w-0 space-y-3">
       <p className="text-xs text-slate-600">Publish immutable snapshots, inspect exact dependencies, and stage installations for review. Rights and proposed records remain visible.</p>
       <form className="flex flex-wrap items-end gap-2" onSubmit={publish}>
-        <label className="min-w-0 flex-1 text-xs">Registry name (publisher/name)<input className={field} value={name} onChange={event => setName(event.target.value)} pattern="[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+" maxLength={200} required /></label>
+        <label className="min-w-0 flex-1 text-xs">Registry name (publisher/name)<input className={field} value={name} onChange={event => setName(event.target.value)} pattern="[A-Za-z0-9_.\-]+/[A-Za-z0-9_.\-]+" maxLength={200} required /></label>
         <button className={button} disabled={busy || !capsuleVersion}>Publish saved v{capsuleVersion ?? '?'}</button>
       </form>
       <label className="block text-xs">Reason for deprecating a version<input className={field} value={reason} onChange={event => setReason(event.target.value)} maxLength={600} /></label>

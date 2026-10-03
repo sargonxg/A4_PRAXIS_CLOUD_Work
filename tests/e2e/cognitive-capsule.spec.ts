@@ -293,7 +293,12 @@ test.describe('Cognitive Capsule owner journey', () => {
     expect(firstSaved.cognition.profile).toBe('method');
     await page.reload(); ({ inspector, expertise } = await openOwnerInspector(page, capsuleId));
     let registry = inspector.getByText('Private capsule registry', { exact: true }).locator('..');
-    await registry.locator('summary').first().click(); await registry.getByLabel('Registry name (publisher/name)', { exact: true }).fill(registryName);
+    await registry.locator('summary').first().click();
+    const registryNameInput = registry.getByLabel('Registry name (publisher/name)', { exact: true });
+    await registryNameInput.fill('invalid registry name');
+    expect(await registryNameInput.evaluate((element: HTMLInputElement) => element.validity.patternMismatch)).toBe(true);
+    await registryNameInput.fill(registryName);
+    expect(await registryNameInput.evaluate((element: HTMLInputElement) => element.validity.patternMismatch)).toBe(false);
     const publishedResponse = page.waitForResponse((response) => new URL(response.url()).pathname === '/api/context/capsule-registry' && response.request().method() === 'POST');
     await registry.getByRole('button', { name: `Publish saved v${firstSaved.version}`, exact: true }).click();
     const published = await publishedResponse; expect(published.ok()).toBe(true); const publishedBody = await published.json(); const firstEntry = publishedBody.entry ?? publishedBody;
