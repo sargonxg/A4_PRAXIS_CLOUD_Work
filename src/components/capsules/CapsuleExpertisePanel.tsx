@@ -160,9 +160,9 @@ export function CapsuleExpertisePanel({ capsuleId, capsuleVersion, initialKnowle
         <div className="mt-3 grid min-w-0 gap-2">{knowledge.filter((item) => (filter === 'all' || item.kind === filter) && (!knowledgeSearch.trim() || JSON.stringify(item).toLocaleLowerCase().includes(knowledgeSearch.trim().toLocaleLowerCase()))).map((item) => <KnowledgeDetails key={item.id} item={item} />)}</div>
         {!knowledge.length ? <p className="mt-3 text-sm text-slate-600">No expert knowledge has been saved yet. Start with one consequential distinction or a real case.</p> : null}
       </div>
-      {snapshot ? <CapsuleCognitiveGraphPanel key={capsuleId} cognition={{ nodes: snapshot.cognition.nodes ?? [], statements: snapshot.cognition.statements ?? [], evidence: snapshot.cognition.evidence ?? [] }} /> : null}
-      {snapshot ? <CapsuleCognitiveChat key={capsuleId} capsuleId={capsuleId} cognition={snapshot.cognition} onProposed={() => void load()} /> : null}
-      <CapsuleExpertInterview key={capsuleId} capsuleId={capsuleId} onProposed={() => void load()} />
+      {snapshot ? <CapsuleCognitiveGraphPanel key={`graph:${capsuleId}`} cognition={{ nodes: snapshot.cognition.nodes ?? [], statements: snapshot.cognition.statements ?? [], evidence: snapshot.cognition.evidence ?? [] }} /> : null}
+      {snapshot ? <CapsuleCognitiveChat key={`chat:${capsuleId}`} capsuleId={capsuleId} cognition={snapshot.cognition} onProposed={() => void load()} /> : null}
+      <CapsuleExpertInterview key={`interview:${capsuleId}`} capsuleId={capsuleId} onProposed={() => void load()} />
       <form data-testid="capsule-expertise-capture" onSubmit={(event) => void capture(event)} className="space-y-3 rounded-md border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-semibold text-slate-950">{correction ? 'Save lesson from correction' : 'Capture expert knowledge'}</h3><button className={buttonClass} type="button" disabled={busy} onClick={() => { setCorrection(!correction); if (!correction) setKind('distinction'); }}>Save lesson from correction</button></div>
         {correction ? <p className="text-xs text-slate-600">Choose whether this correction is a distinction, a domain rule, an example, a language rule, or another lesson.</p> : null}

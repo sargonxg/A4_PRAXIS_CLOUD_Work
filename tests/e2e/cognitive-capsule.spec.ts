@@ -6,6 +6,12 @@ import { readCapsulePackage, CAPSULE_MIMETYPE } from '../../src/lib/cognitive-ca
 
 const BASE = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
+async function expectSingleExpertisePanels(expertise: Locator) {
+  await expect(expertise.getByTestId('capsule-cognitive-graph')).toHaveCount(1, { timeout: 30_000 });
+  await expect(expertise.getByTestId('capsule-cognitive-chat')).toHaveCount(1, { timeout: 30_000 });
+  await expect(expertise.getByTestId('capsule-expert-interview')).toHaveCount(1, { timeout: 30_000 });
+}
+
 async function openOwnerInspector(page: Page, capsuleId: string) {
   await page.goto(`${BASE}/app/capsules?${new URLSearchParams({ lane: 'inspect', starter: capsuleId })}`);
   const inspector = page.getByTestId('capsule-inspector-sheet');
@@ -13,6 +19,7 @@ async function openOwnerInspector(page: Page, capsuleId: string) {
   const expertise = inspector.getByTestId('capsule-expertise-panel');
   await expertise.locator('summary').first().click();
   await expect(expertise.getByTestId('capsule-expertise-capture').getByRole('button', { name: 'Propose for review', exact: true })).toBeEnabled({ timeout: 30_000 });
+  await expectSingleExpertisePanels(expertise);
   return { inspector, expertise };
 }
 async function registryRow(registry: Locator, page: Page, name: string, version: string) {
@@ -93,6 +100,8 @@ test.describe('Cognitive Capsule owner journey', () => {
     const pending = await evidence.json();
     expect(pending.capsule.cognition).toEqual(initial.cognition);
     expect(pending.card.proposedEnvelopePatch.cognition.knowledge.find((item: { id: string }) => item.id === proposal.knowledge.id)).toMatchObject({ reviewState: 'proposed', reviewDecision: 'need_evidence' });
+    await expect(capture.getByRole('button', { name: 'Propose for review', exact: true })).toBeEnabled({ timeout: 30_000 });
+    await expectSingleExpertisePanels(expertise);
 
     await review.getByLabel('Reason for your next review decision', { exact: true }).fill('Synthetic QA: reviewed the distinction, scoped it to budget analysis, and preserved the requirement to inspect payment records.');
     if (proposal.card.cognitiveProfileChanged) {
@@ -126,6 +135,7 @@ test.describe('Cognitive Capsule owner journey', () => {
     const inventory = await persisted.json();
     expect(inventory.cognition.version).toBe(applied.capsule.cognition.version);
     expect(inventory.cognition.knowledge.find((item: { id: string }) => item.id === proposal.knowledge.id)).toEqual(acceptedKnowledge);
+    await expectSingleExpertisePanels(expertise);
     const capsuleChat = expertise.getByTestId('capsule-cognitive-chat');
     await capsuleChat.locator('summary').first().click();
     const providerRequests: string[] = [];
@@ -256,8 +266,11 @@ test.describe('Cognitive Capsule owner journey', () => {
     const remainingAccepted = await remainingAcceptedResponse; expect(remainingAccepted.ok()).toBe(true);
     const saved = (await remainingAccepted.json()).capsule;
     expect(saved.cognition.statements.find((statement: { id: string }) => statement.id === 'qa-no-expenditure')).toMatchObject({ reviewState: 'accepted', predicate: 'DOES_NOT_IMPLY' });
+    await expect(expertise.getByTestId('capsule-expertise-capture').getByRole('button', { name: 'Propose for review', exact: true })).toBeEnabled({ timeout: 30_000 });
+    await expectSingleExpertisePanels(expertise);
     await page.reload(); await expect(inspector).toBeVisible({ timeout: 30_000 }); await expertise.locator('summary').first().click();
-    const graph = expertise.getByTestId('capsule-cognitive-graph').first();
+    await expectSingleExpertisePanels(expertise);
+    const graph = expertise.getByTestId('capsule-cognitive-graph');
     await graph.getByRole('combobox', { name: 'Graph layer', exact: true }).selectOption('language');
     await graph.getByLabel('Search graph and evidence', { exact: true }).fill('Synthetic reviewed authorization');
     await expect(graph.getByRole('article', { name: 'Selected cognitive relationship' })).toContainText('authorization-only');
@@ -419,6 +432,7 @@ test.describe('Cognitive Capsule owner journey', () => {
     for (const item of legacyItems.filter((item) => item.id !== unknown!.id)) expect(editedBody.card.proposedEnvelopePatch.cognition.knowledge.find((pending: { id: string }) => pending.id === item.id)).toMatchObject({ reviewState: 'proposed', migrationStatus: 'needs_review' });
     await page.reload(); await expect(inspector).toBeVisible({ timeout: 30_000 }); await expertise.locator('summary').first().click();
     const inventory = await page.request.get(`${BASE}/api/context/capsules/${targetId}/cognition`); const savedInventory = await inventory.json();
+    await expectSingleExpertisePanels(expertise);
     expect(savedInventory.reviewCards.find((card: { reviewCardId: string }) => card.reviewCardId === combined.reviewCard.reviewCardId)).toMatchObject({ state: 'owner_review', cognitiveKnowledgeIds: expect.arrayContaining(legacyItems.filter((item) => item.id !== unknown!.id).map((item) => item.id)) });
     await page.setViewportSize({ width: 360, height: 844 }); await review.scrollIntoViewIfNeeded();
     expect(await inspector.evaluate((element) => element.scrollWidth - element.clientWidth)).toBeLessThanOrEqual(2);
