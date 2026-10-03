@@ -58,7 +58,7 @@ vi.mock('react', async (importOriginal) => ({
   useCallback: <T,>(callback: T) => callback,
 }));
 vi.mock('next/navigation', () => ({ useRouter: () => runtime.router }));
-vi.mock('@/lib/auth/auth-context', () => ({ useAuth: () => ({ user: { id: runtime.owner, email: `${runtime.owner}@example.test` } }) }));
+vi.mock('@/lib/auth/auth-context', () => ({ useAuth: () => ({ user: runtime.owner ? { id: runtime.owner, email: `${runtime.owner}@example.test` } : null }) }));
 vi.mock('@/lib/domain/classifier', () => ({ classifyDomain: vi.fn().mockResolvedValue({ domainId: 'generic', confidence: 1, rationale: 'Fixture domain', alternatives: [] }) }));
 vi.mock('@/lib/domain/resolve', () => ({ resolveDomain: vi.fn().mockResolvedValue({ id: 'generic', name: 'General policy', description: 'Policy analysis', promptOverrides: {}, preferredFeeds: [], frameworks: [], defaultAudience: null }) }));
 
@@ -145,6 +145,18 @@ async function submitChat(tree: ReactNode) { await (nodes(tree).find((node) => n
 function click(tree: ReactNode, label: string) { const button = nodes(tree).find((node) => node.type === 'button' && node.props.children === label)!; expect(button).toBeDefined(); (button.props.onClick as () => void)(); }
 function tabStore() { const values = new Map<string, string>(); return { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); }, removeItem: (key: string) => { values.delete(key); } }; }
 describe('actual Chat privacy and recovery callbacks (controlled transport)', () => {
+  it.each([
+    { label: 'anonymous public visitor', mode: 'public' as const, owner: '' },
+    { label: 'signed-in analyst without a handoff', mode: 'authenticated' as const, owner: 'analyst-a' },
+  ])('does not offer nonexistent saved-question recovery to a $label', ({ mode, owner }) => {
+    runtime.owner = owner;
+    vi.stubGlobal('window', { localStorage: tabStore(), sessionStorage: tabStore() });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ turns: [] })));
+    const tree = renderChat({ mode });
+    expect(nodes(tree).some((node) => node.props['aria-label'] === 'Saved question recovery')).toBe(false);
+    expect(nodes(tree).some((node) => node.props.children === 'Restore saved question')).toBe(false);
+    expect(nodes(tree).some((node) => node.props.children === 'Dismiss saved question')).toBe(false);
+  });
   it.each(['http', 'network', 'stream'])('restores the question after a %s failure without changing its qualifications', async (failure) => {
     vi.stubGlobal('window', { localStorage: tabStore(), sessionStorage: tabStore(), dispatchEvent: vi.fn() });
     vi.stubGlobal('fetch', vi.fn(async (url: string, options?: RequestInit) => {

@@ -638,7 +638,7 @@ export function PraxisChat({
           </div>
         ) : null}
 
-        {pendingQuestion?.owner === user?.id ? <aside className="mt-3 rounded-lg border p-3 text-sm" aria-label="Saved question recovery">
+        {pendingQuestion && pendingQuestion.owner === user?.id ? <aside className="mt-3 rounded-lg border p-3 text-sm" aria-label="Saved question recovery">
           <p>A question is saved in this tab for {user?.email ?? 'this account'}. Restore it only if it belongs in this workspace. It expires after 30 minutes.</p>
           {input.trim() ? <p>Keep or clear your current draft before restoring; recovery will not replace it.</p> : null}
           <button type="button" disabled={Boolean(input.trim()) || isStreaming} onClick={restoreQuestion} className="min-h-11 px-3 underline">Restore saved question</button>
