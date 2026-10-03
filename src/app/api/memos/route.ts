@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
-import { loadMemoDraft, saveMemoDraft } from '@/lib/firebase/memo-service';
+import { loadMemoDraft, saveMemoDraft, MemoReviewConflictError } from '@/lib/firebase/memo-service';
 import { MemoBlockSchema, MemoTemplateIdSchema, MemoStatusSchema } from '@/types/memo';
 
 const MemoQuerySchema = z.object({
@@ -14,6 +14,8 @@ const SaveMemoSchema = MemoQuerySchema.extend({
   title: z.string().min(1).max(300),
   blocks: z.array(MemoBlockSchema).min(1).max(80),
   graphSnapshotId: z.string().min(1).max(300),
+  expectedVersionId: z.string().min(1).max(240).nullable(),
+  operationId: z.string().min(8).max(200).regex(/^[a-zA-Z0-9_.:-]+$/),
   status: MemoStatusSchema.optional(),
   changeNote: z.string().max(400).optional(),
   capsuleId: z.string().max(240).nullable().optional(),
@@ -50,11 +52,12 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json({ error: 'Invalid memo draft', details: parsed.error.flatten() }, { status: 400 });
     }
     if (user.isDemo) {
-      return NextResponse.json({ success: true, memo: null, versions: [], mode: 'demo-local' });
+      return NextResponse.json({ error: 'Sign in to save work.' }, { status: 403 });
     }
     const record = await saveMemoDraft(user.uid, parsed.data);
     return NextResponse.json({ success: true, ...record });
   } catch (err) {
+    if (err instanceof MemoReviewConflictError) return NextResponse.json({ error: err.message, code: 'memo_revision_conflict' }, { status: 409 });
     return handleRouteError(err, 'memos/post');
   }
 });

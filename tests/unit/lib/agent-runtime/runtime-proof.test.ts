@@ -39,6 +39,7 @@ describe('agent runtime proof smoke', () => {
       maxSessionMinutes: request.maxSessionMinutes,
       internalEstimatedCostCents: request.internalEstimatedCostCents ?? null,
       metadata: {
+        capsuleAgentExecutionContext: { version: 1, capsuleId: 'cap-1', capsuleVersion: 1 },
         policyAgentId: request.policyAgentId,
         outputDestination: request.outputDestination,
         executionMode: 'queued-only',
@@ -82,6 +83,10 @@ describe('agent runtime proof smoke', () => {
     const result = await executeAgentRun(dispatchPayload, {
       executionLease: async (_input, work) => work(async () => undefined, 'in-memory-lease'),
       assertOwnerWritable: async () => undefined,
+      getCapsuleAtVersion: async (ownerUid, capsuleId, version) => ({
+        ownerUid, capsuleId, version, archivedAt: null,
+      } as never),
+      generateText: async () => { throw new Error('Model execution disabled in controlled runtime proof'); },
       getRun: async () => run,
       updateStatus: async (input) => {
         run = {
@@ -154,6 +159,7 @@ describe('agent runtime proof smoke', () => {
         },
       }),
       saveMemoDraft: async (_uid, input) => {
+        expect(input.capsuleVersion).toBe(1);
         expect(input.blocks.map((block) => block.id)).toEqual(expect.arrayContaining([
           'sourced-paragraphs',
           'source-receipt',

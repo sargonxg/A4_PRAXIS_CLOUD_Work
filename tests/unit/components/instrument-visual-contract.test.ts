@@ -95,7 +95,10 @@ describe('Civic Atelier visual contract', () => {
     expect(workbench).toContain('WorkActionMenu');
     expect(login).not.toContain('previewRailCells');
     expect(login).not.toContain('<LivingContextRail');
-    expect(login).toContain('Your question is saved for sign-in');
+    expect(login).toContain("appRedirect.includes('handoff=')");
+    expect(login).toContain('A question may be available in this tab.');
+    expect(login).toContain('choose whether to restore it for your account');
+    expect(login).not.toContain('Your question is saved for sign-in');
     expect(settings).not.toContain('settingsRailCells');
     expect(settings).not.toContain('<LivingContextRail');
     expect(onboardingPreview).toContain('previewRailCells');

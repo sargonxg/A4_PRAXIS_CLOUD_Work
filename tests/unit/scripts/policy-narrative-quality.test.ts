@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import { buildAnalystRubric, buildQualityPair, parseQualityOptions, sanitizeQualityError, summarizeQualityComparison } from '../../../scripts/evaluate-policy-narrative-quality';
 import fixture from '../../fixtures/policy-narrative-evidence.json';
+import advisory from '../../fixtures/example-advisory-dossier.json';
 
 describe('retained policy/narrative evaluation', () => {
+  it('pins eight Advisory scenarios to the same exact source-language passages and offsets', () => {
+    const cases = fixture.cases.filter((item) => item.id.startsWith('example-advisory-'));
+    expect(cases).toHaveLength(8);
+    for (const item of cases) for (const capture of item.sourceCaptures ?? []) {
+      const source = advisory.sources.find((candidate) => candidate.id === capture.publisher)!;
+      expect(source).toBeDefined();
+      expect(capture.originalText).toBe(source.text);
+      expect(capture).toHaveProperty('locator', `synthetic:${source.id}:v${source.version}:chars:0-${source.text.length}`);
+    }
+  });
   it('gives both conditions the same source contents without leaking grading answers', () => {
     for (const item of fixture.cases) {
       const pair = buildQualityPair(item as Parameters<typeof buildQualityPair>[0]);

@@ -23,6 +23,7 @@ export function ProjectWorkspace() {
   const { user } = useAuth();
   const owner = user?.id;
   const [projects, setProjects] = useState<ProjectRecord[]>([]);
+  const [listState, setListState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [loadedOwner, setLoadedOwner] = useState<string | undefined>();
   const [project, setProject] = useState<ProjectView | null>(null);
   const [formRevision, setFormRevision] = useState(0);
@@ -100,9 +101,22 @@ export function ProjectWorkspace() {
   useEffect(() => {
     const controller = new AbortController();
     const token = ++generation.current;
-    queueMicrotask(() => { setLoadedOwner(owner); setProject(null); setProjects([]); setCreating(false); setDirtyScope(false); setDirtyWork(false); setError(''); setReceipt(''); setPending(false); });
+    queueMicrotask(() => { setLoadedOwner(owner); setProject(null); setProjects([]); setListState('loading'); setCreating(false); setDirtyScope(false); setDirtyWork(false); setError(''); setReceipt(''); setPending(false); });
     operation.current = null;
-    if (owner) void request<{ projects: ProjectRecord[] }>('/api/projects', 'GET', undefined, controller.signal).then((result) => { if (token === generation.current) setProjects(result.projects); }).catch((error: Error) => { if (!controller.signal.aborted) setError(error.message); });
+    if (owner) void request<{ projects: ProjectRecord[] }>('/api/projects', 'GET', undefined, controller.signal).then((result) => {
+      if (controller.signal.aborted || currentOwner.current !== owner) return;
+      // Opening a project must not discard its independently loading inventory.
+      // Retain newer canonical save responses if an older list response arrives late.
+      setProjects((current) => {
+        const inventory = new Map(result.projects.map((item) => [item.projectId, item]));
+        for (const item of current) {
+          const loaded = inventory.get(item.projectId);
+          if (!loaded || item.revision >= loaded.revision) inventory.set(item.projectId, item);
+        }
+        return [...inventory.values()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 100);
+      });
+      setListState('ready');
+    }).catch(() => { if (!controller.signal.aborted && currentOwner.current === owner) setListState('failed'); });
     const initialId = new URL(window.location.href).searchParams.get('projectId');
     if (owner && initialId && /^[a-zA-Z0-9_-]{1,120}$/.test(initialId)) void request<{ project: ProjectView }>(`/api/projects/${initialId}`, 'GET', undefined, controller.signal).then(async (result) => {
       if (token !== generation.current) return;
@@ -145,11 +159,11 @@ export function ProjectWorkspace() {
     const token = generation.current;
     try {
       const payload = { ...(body as object), operationId: operationId(body, method === 'POST') };
-      const result = await request<{ project: ProjectRecord; persisted: boolean }>(url, method, payload);
+      const result = await request<{ project: ProjectRecord & Partial<Pick<ProjectView, 'contextStatus'>>; persisted: boolean }>(url, method, payload);
       if (currentOwner.current !== requestOwner || token !== generation.current) return false;
       if (!result.persisted) throw new Error('Persistence was not confirmed. Keep your edits and retry.');
       if (method === 'POST') { try { sessionStorage.removeItem(pendingCreateKey); } catch { /* Same receipt remains safe for reconciliation. */ } }
-      setProject({ ...result.project, contextStatus: result.project.context.map((pin) => {
+      setProject({ ...result.project, contextStatus: result.project.contextStatus ?? result.project.context.map((pin) => {
         const old = project?.context.find((item) => item.capsuleId === pin.capsuleId && item.contentHash === pin.contentHash);
         return old && project?.contextStatus.find((item) => item.capsuleId === pin.capsuleId) || { capsuleId: pin.capsuleId, status: 'available', latestVersion: pin.version };
       }) });
@@ -176,7 +190,7 @@ export function ProjectWorkspace() {
     {receipt ? <p role="status" className="break-all text-sm">{receipt}</p> : null}
     {pending ? <p role="status" className="text-sm">Saving or loading project…</p> : null}
     <div className="grid min-w-0 gap-6 lg:grid-cols-[15rem_minmax(0,1fr)]">
-      <aside className="min-w-0"><h2 className="mb-3 text-sm font-semibold">Recent private projects</h2><p className="mb-3 text-xs">Up to 100 most recent projects. Older work remains accessible by its project link.</p>{projects.length ? <ul className="grid gap-2">{projects.map((item) => <li key={item.projectId}><button type="button" disabled={pending} className={`${projectButtonClass} w-full break-words text-left ${project?.projectId === item.projectId ? 'bg-emerald-50 text-emerald-950' : ''}`} onClick={() => void open(item.projectId)}>{item.title}</button></li>)}</ul> : <p className="text-sm">No saved projects yet. Create one to define your assignment.</p>}</aside>
+      <aside className="min-w-0"><h2 className="mb-3 text-sm font-semibold">Recent private projects</h2><p className="mb-3 text-xs">Up to 100 most recent projects. Older work remains accessible by its project link.</p>{listState === 'loading' ? <p role="status" className="text-sm">Loading recent projects…</p> : null}{listState === 'failed' ? <p role="alert" className="text-sm">Recent projects could not be loaded. Your open project is preserved. Save any edits before reloading this page.</p> : null}{projects.length ? <ul className="grid gap-2">{projects.map((item) => <li key={item.projectId}><button type="button" disabled={pending} className={`${projectButtonClass} w-full break-words text-left ${project?.projectId === item.projectId ? 'bg-emerald-50 text-emerald-950' : ''}`} onClick={() => void open(item.projectId)}>{item.title}</button></li>)}</ul> : listState === 'ready' ? <p className="text-sm">No saved projects yet. Create one to define your assignment.</p> : null}</aside>
       <div className="min-w-0 space-y-6">
         {creating || project ? <>
           <section aria-label="Project scope" className="min-w-0 space-y-3"><h2 className="text-lg font-semibold">{creating ? 'New private project' : project?.title}</h2>{project ? <p className="break-all text-xs">Private · {project.projectId} · revision {project.revision}</p> : null}<ProjectScopeForm key={`${project?.projectId ?? 'new'}:${formRevision}`} draftKey={`${owner}:${project?.projectId ?? 'new'}:scope`} revision={project?.revision ?? 0} initial={project ? projectScope(project) : emptyProjectScope} pending={pending} submitLabel={creating ? 'Create private project' : 'Save scope'} onSave={saveScope} onDirty={setDirtyScope} /></section>

@@ -90,13 +90,11 @@ import {
   type AppSearchItemInput,
 } from '@/lib/app-search/shared-contracts';
 import {
-  PENDING_POLICY_AGENT_ID_KEY,
-  PENDING_TASKLET_PROMPT_KEY,
-  policyAgentLoginHref,
   PRAXIS_POLICY_AGENTS,
   type HomeSurfaceMode,
   type PolicyAgentDefinition,
 } from '@/lib/product/policy-agents';
+import { saveQuestionHandoff } from '@/lib/auth/question-handoff';
 import {
   COCKPIT_CAPSULE_LIBRARY,
   POLICY_NEED_TABS,
@@ -929,6 +927,8 @@ export function TaskletPraxisWorkbench({
 }: TaskletPraxisWorkbenchProps) {
   const router = useRouter();
   const { user } = useAuth();
+  const memoOwner = useRef({ uid: user?.id ?? null });
+  if (memoOwner.current.uid !== (user?.id ?? null)) memoOwner.current = { uid: user?.id ?? null };
   const {
     stack: activeContextStackState,
     saveStack: saveActiveContextStack,
@@ -1006,6 +1006,15 @@ export function TaskletPraxisWorkbench({
   const [memoArtifactTab, setMemoArtifactTab] = useState<MemoArtifactTab>('editor');
   const [memoArtifactLoading, setMemoArtifactLoading] = useState(false);
   const [memoArtifactSaving, setMemoArtifactSaving] = useState(false);
+  const memoSaveOperation = useRef<{ body: string; id: string } | null>(null);
+  const memoOpenGeneration = useRef(0);
+  useEffect(() => {
+    setMemoArtifact(null);
+    setMemoArtifactSaving(false);
+    setMemoArtifactLoading(false);
+    memoSaveOperation.current = null;
+    memoOpenGeneration.current += 1;
+  }, [user?.id]);
   const [agentRuns, setAgentRuns] = useState<AgentRunSummary[]>([]);
   const [agentRunsLoading, setAgentRunsLoading] = useState(false);
   const [agentRunCreating, setAgentRunCreating] = useState(false);
@@ -1374,20 +1383,6 @@ export function TaskletPraxisWorkbench({
   }, [activeCapsuleStack, activeContextHydrated, capsuleId, currentCapsuleId, initialPanel, initialFactoryLane, inspectorOpen]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-    try {
-      const pendingPrompt = window.localStorage.getItem(PENDING_TASKLET_PROMPT_KEY);
-      const pendingAgentId = window.localStorage.getItem(PENDING_POLICY_AGENT_ID_KEY);
-      if (pendingPrompt?.trim()) setPrompt(pendingPrompt.trim());
-      if (pendingAgentId && PRAXIS_POLICY_AGENTS.some((agent) => agent.id === pendingAgentId)) {
-        setSelectedAgentId(pendingAgentId);
-      }
-    } catch {
-      // The public-to-auth handoff is a convenience only.
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
     if (prompt.trim()) return undefined;
     const timer = window.setInterval(() => {
       setAskPlaceholderIndex((index) => (index + 1) % askComposerPlaceholderPrompts.length);
@@ -1412,9 +1407,9 @@ export function TaskletPraxisWorkbench({
   }, [recentlyAppliedCapsuleId]);
 
   function sendPublicToLogin(nextPrompt: string, agent: PolicyAgentDefinition = selectedAgent) {
-    window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, nextPrompt);
-    window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, agent.id);
-    window.location.href = policyAgentLoginHref(agent.id, nextPrompt);
+    try {
+      window.location.href = saveQuestionHandoff(window.sessionStorage, { text: nextPrompt, target: `/app?${new URLSearchParams({ policyAgentId: agent.id })}` }).loginUrl;
+    } catch { window.alert('Your question is still in the editor. Enable tab storage or sign in and paste it yourself.'); }
   }
 
   function requireAuthForAction(nextPrompt: string, agent: PolicyAgentDefinition = selectedAgent) {
@@ -1485,6 +1480,8 @@ export function TaskletPraxisWorkbench({
   }
 
   async function openMemoArtifactById(memoId: string, fallback?: MemoArtifactState | null, tab: MemoArtifactTab = 'editor') {
+    const operationOwner = memoOwner.current;
+    const openGeneration = ++memoOpenGeneration.current;
     const cleanMemoId = memoId.trim();
     if (!cleanMemoId) return;
     setMemoArtifactTab(tab);
@@ -1496,10 +1493,12 @@ export function TaskletPraxisWorkbench({
         credentials: 'include',
       });
       const payload = await response.json().catch(() => ({}));
+      if (memoOwner.current !== operationOwner || memoOpenGeneration.current !== openGeneration) return;
       if (!response.ok) throw new Error(typeof payload?.error === 'string' ? payload.error : `status ${response.status}`);
       setMemoArtifact(memoArtifactFromMemoPayload(payload, fallback));
       setStatus('Memo side artifact opened. Improve it, check sourceability, or keep it as working notes.');
     } catch (err) {
+      if (memoOwner.current !== operationOwner || memoOpenGeneration.current !== openGeneration) return;
       if (!fallback) {
         setStatus(err instanceof Error ? `Memo could not be loaded: ${err.message}` : 'Memo could not be loaded.');
         return;
@@ -1507,7 +1506,7 @@ export function TaskletPraxisWorkbench({
       setMemoArtifact(fallback);
       setStatus('Memo side artifact opened from local metadata. Some saved draft details could not be loaded.');
     } finally {
-      setMemoArtifactLoading(false);
+      if (memoOwner.current === operationOwner && memoOpenGeneration.current === openGeneration) setMemoArtifactLoading(false);
     }
   }
 
@@ -1873,12 +1872,6 @@ export function TaskletPraxisWorkbench({
       void refreshCapsules();
       void refreshSavedConversations();
       void refreshCreatedWork();
-      try {
-        window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY);
-        window.localStorage.removeItem(PENDING_POLICY_AGENT_ID_KEY);
-      } catch {
-        // Non-critical cleanup.
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'unknown error';
       const guidance = describeAskFailure(message);
@@ -2041,25 +2034,30 @@ export function TaskletPraxisWorkbench({
   async function saveMemoArtifactDraft() {
     if (!memoArtifact || memoArtifactSaving) return;
     if (requireAuthForAction(`Save this PRAXIS memo side artifact:\n\n${memoArtifact.title}`)) return;
+    const operationOwner = memoOwner.current;
     setMemoArtifactSaving(true);
     try {
       const draftToSave = { ...memoArtifact, bodyHash: await memoOutputBodyHash(memoArtifact.body).catch(() => null) };
+      if (memoOwner.current !== operationOwner) return;
+      const saveBody = {
+        caseId: memoArtifact.caseId || currentCapsuleId || 'default',
+        templateId: 'policy-memo', title: memoArtifact.title.trim() || 'PRAXIS memo draft',
+        graphSnapshotId: `${memoArtifact.caseId || currentCapsuleId || 'default'}:memo-artifact:${memoArtifact.memoId ?? 'new'}`,
+        expectedVersionId: memoArtifact.currentVersionId ?? null,
+        status: memoArtifact.outputReview !== undefined ? 'review' : 'draft',
+        changeNote: 'Saved from PRAXIS memo side artifact.', blocks: memoArtifactBodyToBlocks(draftToSave),
+        ...memoArtifactContextSaveFields(memoArtifact),
+      };
+      const serialized = JSON.stringify(saveBody);
+      if (memoSaveOperation.current?.body !== serialized) memoSaveOperation.current = { body: serialized, id: crypto.randomUUID() };
       const response = await fetch('/api/memos', {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          caseId: memoArtifact.caseId || currentCapsuleId || 'default',
-          templateId: 'policy-memo',
-          title: memoArtifact.title.trim() || 'PRAXIS memo draft',
-          graphSnapshotId: `${memoArtifact.caseId || currentCapsuleId || 'default'}:memo-artifact:${memoArtifact.memoId ?? Date.now()}`,
-          status: memoArtifact.outputReview !== undefined ? 'review' : 'draft',
-          changeNote: 'Saved from PRAXIS memo side artifact.',
-          blocks: memoArtifactBodyToBlocks(draftToSave),
-          ...memoArtifactContextSaveFields(memoArtifact),
-        }),
+        body: JSON.stringify({ ...saveBody, operationId: memoSaveOperation.current.id }),
       });
       const payload = await response.json().catch(() => ({}));
+      if (memoOwner.current !== operationOwner) return;
       if (!response.ok) throw new Error(typeof payload?.error === 'string' ? payload.error : `status ${response.status}`);
       const saved = memoArtifactFromMemoPayload(payload, draftToSave);
       setMemoArtifact((current) => current && current.memoId === memoArtifact.memoId && current.runId === memoArtifact.runId && current.caseId === memoArtifact.caseId
@@ -2078,9 +2076,9 @@ export function TaskletPraxisWorkbench({
       setStatus(saved.savedBody !== null && saved.currentVersionId ? 'Memo draft saved. Review this version before sharing.' : 'This draft has not been saved to your workspace. Sign in to save and review it.');
       await refreshCreatedWork();
     } catch (err) {
-      setStatus(err instanceof Error ? `Memo save failed: ${err.message}` : 'Memo save failed.');
+      if (memoOwner.current === operationOwner) setStatus(err instanceof Error ? `Memo save failed: ${err.message}` : 'Memo save failed.');
     } finally {
-      setMemoArtifactSaving(false);
+      if (memoOwner.current === operationOwner) setMemoArtifactSaving(false);
     }
   }
 
@@ -5126,7 +5124,7 @@ export function TaskletPraxisWorkbench({
             saving={memoArtifactSaving}
             onTab={setMemoArtifactTab}
             onChange={setMemoArtifact}
-            onClose={() => setMemoArtifact(null)}
+            onClose={() => { memoOpenGeneration.current += 1; setMemoArtifact(null); }}
             onSave={() => void saveMemoArtifactDraft()}
             onReviewApproved={(payload) => {
               const reviewed = memoArtifactFromMemoPayload(payload);

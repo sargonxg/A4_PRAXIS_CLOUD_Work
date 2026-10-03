@@ -33,7 +33,7 @@ describe('Session 5 public surface and billing contract', () => {
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
   });
 
-  it('routes hero prompts directly into capsule creation through capsulePrompt', () => {
+  it('keeps hero questions in a tab-bound handoff through sign-in and preserves capsule creation', () => {
     const marketingHome = read('src/components/marketing/praxis-marketing-home.tsx');
     const appHome = read('src/app/app/page.tsx');
     const praxisChat = read('src/components/app/praxis-chat.tsx');
@@ -41,13 +41,15 @@ describe('Session 5 public surface and billing contract', () => {
 
     expect(marketingHome).toContain('mode="public"');
     expect(appHome).toContain('mode="authenticated"');
-    expect(praxisChat).toContain('name="capsulePrompt"');
+    expect(praxisChat).not.toContain('name="capsulePrompt"');
     expect(praxisChat).toContain('fetch(\'/api/ai/chat\'');
-    expect(praxisChat).toContain('params.set(\'prompt\'');
-    expect(praxisChat).toContain('router.push(`/login?${params.toString()}`)');
+    expect(praxisChat).not.toContain('params.set(\'prompt\'');
+    expect(praxisChat).toContain('saveQuestionHandoff(window.sessionStorage');
+    expect(praxisChat).toContain('router.push(handoff.loginUrl)');
     expect(builder).toContain('useSearchParams');
-    expect(builder).toContain('PENDING_CONTEXT_CAPSULE_PROMPT_KEY');
-    expect(builder).toContain("from '@/lib/product/context-capsule-pending'");
+    expect(builder).not.toContain('PENDING_CONTEXT_CAPSULE_PROMPT_KEY');
+    expect(builder).toContain('readConversationCapsuleHandoff(window.sessionStorage, user.id)');
+    expect(builder).toContain("action: 'save-builder-draft'");
   });
 
   it('offers free entry and gates Practitioner checkout by runtime availability', () => {

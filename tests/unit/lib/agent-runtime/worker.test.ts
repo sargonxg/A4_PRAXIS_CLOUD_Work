@@ -710,20 +710,21 @@ describe('agent runtime no-op worker', () => {
       getRun: async () => makeRun('queued', { policyAgentId: 'research-memo' }),
       updateStatus: async (input) => {
         transitions.push(input.toStatus);
-        return makeRun(input.toStatus, { policyAgentId: 'research-memo' });
+        return makeRun(input.toStatus, { policyAgentId: 'research-memo', capsuleVersion: 99,
+          capsuleAgentExecutionContext: { version: 1, capsuleId: payload.capsuleId, capsuleVersion: 99 } });
       },
       appendToolCall: async (toolCall) => {
         toolCalls.push(`${toolCall.toolId}:${toolCall.status}`);
         return toolCall;
       },
       appendApproval: async (approval) => approval,
-      buildEvidencePack: async () => ({
+      buildEvidencePack: async (input) => ({
         packId: 'evidence-1',
         ownerUid: 'user-1',
         capsuleId: 'cap-1',
         objective: 'No-op run',
         builtAt: '2026-05-15T12:00:00.000Z',
-        activeCapsule: { capsuleId: 'cap-1', version: 1 } as never,
+        activeCapsule: { ownerUid: 'user-1', capsuleId: 'cap-1', version: input.capsuleVersion ?? 2 } as never,
         knowledgeDocuments: [{ documentId: 'doc-1', title: 'Doc' } as never],
         sourceReceiptIds: ['src-1'],
         sourcedParagraphs: [{
@@ -753,6 +754,7 @@ describe('agent runtime no-op worker', () => {
         },
       }),
       appendEvent: async (event) => {
+        if (event.data.phase === 'capsule.read_receipt_created') expect(event.data.capsuleReadReceipt).toMatchObject({ capsuleVersion: 1 });
         mirrored.push(event);
         return event;
       },
@@ -760,6 +762,7 @@ describe('agent runtime no-op worker', () => {
         throw new Error('live model disabled for ADK dry-run test');
       },
       saveMemoDraft: async (_uid, input) => {
+        expect(input.capsuleVersion).toBe(1);
         expect(input.templateId).toBe('policy-memo');
         expect(input.blocks.some((block) => block.id === 'source-receipt')).toBe(true);
         expect(input.blocks.some((block) => block.id === 'sourced-paragraphs')).toBe(true);
@@ -886,7 +889,7 @@ describe('agent runtime no-op worker', () => {
         capsuleId: 'cap-1',
         objective: 'No-op run',
         builtAt: '2026-05-15T12:00:00.000Z',
-        activeCapsule: { capsuleId: 'cap-1', version: 2 } as never,
+        activeCapsule: { ownerUid: 'user-1', capsuleId: 'cap-1', version: 1 } as never,
         knowledgeDocuments: [],
         sourceReceiptIds: [],
         sourcedParagraphs: [{

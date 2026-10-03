@@ -27,6 +27,9 @@ const adminTabRedirects = [
 ];
 
 const nextConfig: NextConfig = {
+  // Keep the synthetic persistence harness separate from other active dev sessions.
+  distDir: process.env.PRAXIS_LOCAL_EMULATORS === 'true' ? '.next-local-persistence' : process.env.PRAXIS_LOCAL_VALIDATION === 'true' ? '.next-local-validation' : '.next',
+  typescript: process.env.PRAXIS_LOCAL_EMULATORS === 'true' ? { tsconfigPath: 'tsconfig.local-persistence.json' } : process.env.PRAXIS_LOCAL_VALIDATION === 'true' ? { tsconfigPath: 'tsconfig.local-validation.json' } : undefined,
   // Cloud Run: standalone output bundles only what's needed for Docker
   output: 'standalone',
   turbopack: {

@@ -62,9 +62,9 @@ describe('PRAXIS policy agent registry', () => {
 
     expect(url.pathname).toBe('/login');
     expect(url.searchParams.get('mode')).toBe('signup');
-    expect(url.searchParams.get('redirect')).toBe('/app');
-    expect(url.searchParams.get('policyAgentId')).toBe('research-memo');
-    expect(url.searchParams.get('capsulePrompt')).toBe('Draft a sourced options memo.');
+    expect(url.searchParams.get('redirect')).toBe('/app?policyAgentId=research-memo');
+    expect(href).not.toContain('capsulePrompt');
+    expect(decodeURIComponent(href)).not.toContain('Draft a sourced options memo.');
   });
 
   it('defines the simple Home launcher and approval gate contracts', () => {

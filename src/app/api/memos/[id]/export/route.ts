@@ -6,6 +6,7 @@ import { loadMemoById, primaryMemoBody } from '@/lib/firebase/memo-service';
 import { memoOutputBodyHash } from '@/lib/memo/output-review';
 import { isCurrentMemoHumanApproval } from '@/lib/memo/human-review';
 import { verifyMemoHumanApproval } from '@/lib/memo/human-review-server';
+import { memoEvidenceAppendix } from '@/lib/memo/evidence-appendix';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,14 +35,15 @@ export const GET = withAuth<{ params: Promise<{ id: string }> }>(async (request,
     const scope = { 'internal-analysis': 'Internal analysis', 'external-sharing': 'External sharing', publication: 'Publication' }[approval.intendedUse];
     const title = String(record.memo.title ?? 'Policy memo');
     const reviewNote = `Human review for: ${scope}\nReviewed: ${approval.approvedAt}\nSaved version: ${versionId}\nLimitations: ${approval.limitations || 'No additional limitations recorded.'}\nThis records the owner\u2019s review for the stated use; it is not an independent verification of the claims.`;
-    const markdown = `# ${title}\n\n${reviewNote}\n\n${body}\n`;
+    const appendix = memoEvidenceAppendix(version && 'contextSnapshot' in version ? version.contextSnapshot : null);
+    const markdown = `# ${title}\n\n${reviewNote}\n\n${body}\n\n${appendix}\n`;
     const filename = title.replace(/[^\p{L}\p{N} _-]/gu, '').trim().slice(0, 80) || 'policy-memo';
     const headers = { 'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(filename)}.${format}`,
       'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff' };
     if (format === 'md') return new NextResponse(markdown, { headers: { ...headers, 'Content-Type': 'text/markdown; charset=utf-8' } });
     const doc = new Document({ sections: [{ children: [
       new Paragraph({ children: [new TextRun({ text: title, bold: true, size: 32 })] }),
-      ...`${reviewNote}\n\n${body}`.split('\n').map((text) => new Paragraph({ children: [new TextRun(text)] })),
+      ...`${reviewNote}\n\n${body}\n\n${appendix}`.split('\n').map((text) => new Paragraph({ children: [new TextRun(text)] })),
     ] }] });
     const bytes = await Packer.toBuffer(doc);
     return new NextResponse(new Uint8Array(bytes), { headers: { ...headers,

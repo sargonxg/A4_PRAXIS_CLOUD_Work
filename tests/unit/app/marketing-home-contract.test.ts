@@ -49,8 +49,10 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(chatSource).toContain('data-testid="simple-home-chat"');
     expect(chatSource).toContain('data-testid="context-toggle"');
     expect(chatSource).toContain('fetch(\'/api/ai/chat\'');
-    expect(chatSource).toContain("params.set('mode', 'signup')");
-    expect(chatSource).toContain("params.set('prompt'");
+    expect(chatSource).toContain('saveQuestionHandoff(window.sessionStorage');
+    expect(chatSource).toContain('router.push(handoff.loginUrl)');
+    expect(chatSource).not.toContain("params.set('prompt'");
+    expect(chatSource).not.toContain('name="capsulePrompt"');
     expect(chatSource).toContain('sourceCards');
     for (const required of [
       'data-testid="praxis-chat-first-shell"',

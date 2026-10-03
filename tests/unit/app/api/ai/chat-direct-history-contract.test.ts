@@ -19,7 +19,7 @@ describe('Direct Ask server continuity and retry integration', () => {
 
   it('restores the composer for HTTP/network/stream failure and preserves real stream error detail', () => {
     expect(chat.includes('const restoreFailedPrompt = () =>')).toBe(true);
-    expect(chat.includes('previous.ownerScope === draftOwnerScope && !previous.text.trim()')).toBe(true);
+    expect(chat.includes('!requestController.signal.aborted && currentDraft.current.ownerScope === draftOwnerScope && !currentDraft.current.text.trim()')).toBe(true);
     expect(chat.includes('const streamError = parseDataStreamError(line)')).toBe(true);
     expect(chat.includes('describeAskFailure(streamError)')).toBe(true);
     expect(chat.match(/restoreFailedPrompt\(\);/g)?.length).toBeGreaterThanOrEqual(3);

@@ -435,13 +435,11 @@ export function policyAgentRunIntent(agentId: string | null | undefined): Policy
   }
 }
 
-export function policyAgentLoginHref(agentId: string, prompt: string): string {
+export function policyAgentLoginHref(agentId: string, _prompt: string): string {
   const params = new URLSearchParams({
     mode: 'signup',
-    redirect: '/app',
-    policyAgentId: agentId,
+    redirect: `/app?${new URLSearchParams({ policyAgentId: agentId })}`,
   });
-  if (prompt.trim()) params.set('capsulePrompt', prompt.trim());
   return `/login?${params.toString()}`;
 }
 

@@ -19,6 +19,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PraxisRouteTransition } from '@/components/ui/praxis-motion';
 import { SignedInChrome } from '@/components/app/signed-in-chrome';
 import { canLeaveWorkspaceEditor } from '@/lib/navigation/unsaved-work';
+import { safeWorkspaceReturnTarget } from '@/lib/auth/post-login-redirect';
+import { saveQuestionHandoff } from '@/lib/auth/question-handoff';
 
 type SearchOpenEvent = CustomEvent<{ query?: string }>;
 
@@ -45,7 +47,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (loading || user) return;
-    const destination = `${window.location.pathname}${window.location.search}`;
+    const destination = safeWorkspaceReturnTarget(`${window.location.pathname}${window.location.search}`) ?? '/app';
     router.replace(`/login?${new URLSearchParams({ redirect: destination })}`);
   }, [loading, user, router]);
 
@@ -77,10 +79,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const closeSearch = useCallback(() => { setSearchOpen(false); setSearchInitialQuery(''); }, []);
   const openAsk = useCallback((prompt?: string) => {
     if ((prompt || pathname !== '/app') && !canLeaveWorkspaceEditor()) return;
-    if (prompt) router.push(`/app?${new URLSearchParams({ prompt })}`);
+    if (prompt && user) {
+      try { router.push(saveQuestionHandoff(window.sessionStorage, { text: prompt, target: '/app', ownerUid: user.id }).destination); }
+      catch { window.alert('Tab storage is unavailable. Keep your question and paste it into Ask after opening it.'); }
+    }
     else if (pathname !== '/app') router.push('/app');
     else document.querySelector<HTMLTextAreaElement>('[data-testid="marketing-hero-prompt"]')?.focus();
-  }, [pathname, router]);
+  }, [pathname, router, user]);
 
   useEffect(() => {
     const search = (event: Event) => openSearch((event as SearchOpenEvent).detail?.query);
@@ -104,6 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Header isMobile={isMobile} onOpenSearch={openSearch} />
           <main id="workspace-main" className="praxis-workspace-main min-h-0 flex-1 overflow-y-auto pb-24 md:pb-6">
             <div className="mx-auto min-w-0 max-w-[1440px] px-3 py-5 sm:px-6 sm:py-7 lg:px-8">
+              {process.env.NEXT_PUBLIC_PRAXIS_LOCAL_EMULATORS === 'true' ? <p role="status" className="mb-4 rounded border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950">Local persistence test · synthetic accounts and evidence. Model execution, external intake and queued tasks are unavailable.</p> : null}
               <ErrorBoundary><ToolErrorBoundary><PraxisRouteTransition>{children}</PraxisRouteTransition></ToolErrorBoundary></ErrorBoundary>
             </div>
           </main>

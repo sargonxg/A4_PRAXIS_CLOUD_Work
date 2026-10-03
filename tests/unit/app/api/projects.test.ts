@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { projectFirestore } from '../../../helpers/project-firestore';
 import dossier from '../../../fixtures/example-advisory-dossier.json';
+import { sanitizeCapsule } from '@/lib/context/capsule-service';
+let fixture: ReturnType<typeof projectFirestore>;
 
 const state = vi.hoisted(() => ({ cookie: undefined as string | undefined, db: null as unknown }));
 vi.mock('next/headers', () => ({ cookies: async () => ({ get: () => state.cookie ? { value: state.cookie } : undefined }) }));
@@ -20,7 +22,7 @@ const session = (token: string) => { state.cookie = signCookie(JSON.stringify({ 
 const createRequest = (input: unknown) => new Request('http://localhost/api/projects', { method: 'POST', body: JSON.stringify(input) });
 describe('project APIs retain existing session enforcement and scoped server storage', () => {
   beforeEach(() => {
-    const fixture = projectFirestore(); state.db = fixture.db; state.cookie = undefined;
+    fixture = projectFirestore(); state.db = fixture.db; state.cookie = undefined;
     fixture.records.set('users/owner', { uid: 'owner' }); fixture.records.set('users/outsider', { uid: 'outsider' });
   });
   it('requires a signed verified session and rejects sample writes before any project creation', async () => {
@@ -50,5 +52,17 @@ describe('project APIs retain existing session enforcement and scoped server sto
     expect((await POST(createRequest({ scope: dossier.scope, operationId: 'create-001', permissions: ['admin'] }))).status).toBe(400);
     expect((await POST(new Request('http://localhost/api/projects', { method: 'POST', body: 'not-json' }))).status).toBe(400);
     expect((await POST(new Request('http://localhost/api/projects', { method: 'POST', body: 'x'.repeat(30_001) }))).status).toBe(413);
+  });
+  it('returns resolved newer revision status immediately after attaching an earlier pin', async () => {
+    session('owner');
+    const capsule = sanitizeCapsule({ capsuleId: 'dossier', ownerUid: 'owner', version: 1, label: 'Synthetic dossier' });
+    fixture.records.set('users/owner/capsules/dossier/versions/v1', capsule);
+    fixture.records.set('users/owner/capsules/dossier', { ...capsule, version: 2 });
+    const { project } = await (await POST(createRequest({ scope: dossier.scope, operationId: 'create-001' }))).json();
+    const response = await PATCH(new Request('http://localhost/api/projects', { method: 'PATCH', body: JSON.stringify({ action: 'attach', capsuleId: 'dossier', version: 1, role: 'situation', expectedRevision: 1, operationId: 'attach-001' }) }), { params: Promise.resolve({ projectId: project.projectId }) });
+    expect(response.status).toBe(200);
+    const saved = await response.json();
+    expect(saved.project.context[0].version).toBe(1);
+    expect(saved.project.contextStatus).toEqual([{ capsuleId: 'dossier', status: 'available', latestVersion: 2 }]);
   });
 });

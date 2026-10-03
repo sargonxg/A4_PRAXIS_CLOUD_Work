@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { Pool, type QueryResultRow } from 'pg';
+import { serverFirebaseEmulators } from '@/lib/firebase/emulator-config';
 import {
   type AgentApproval,
   type AgentRun,
@@ -43,6 +44,7 @@ function getDatabaseUrl(): string | null {
 }
 
 function getPool(): Pool {
+  if (serverFirebaseEmulators()) throw new Error('Agent run Postgres is unavailable in the Auth/Firestore-only local lane.');
   const connectionString = getDatabaseUrl();
   if (!connectionString) {
     throw new Error('Agent run ledger is not configured: set AGENT_RUNTIME_DATABASE_URL, PRAXIS_DATABASE_URL, or DATABASE_URL for Cloud SQL Postgres.');

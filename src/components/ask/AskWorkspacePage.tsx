@@ -3,7 +3,6 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowRight,
   BookOpenText,
   CheckCircle2,
   Clock,
@@ -30,15 +29,9 @@ import { PUBLIC_USER_MODELS } from '@/lib/user-models/seeds';
 import type { UserModelRecord } from '@/lib/user-models/types';
 import { getActiveUserModelId, listPrivateUserModels, setActiveUserModel } from '@/lib/users/api';
 import {
-  CONTEXT_CAPSULE_TEMPLATES,
   CAPSULE_ATTACHMENT_ROLES,
   CAPSULE_SLOT_DEFINITIONS,
   capsuleAttachmentCounts,
-  PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
-  PENDING_CONTEXT_CAPSULE_PATH_KEY,
-  PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
-  PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
-  POLICY_PATH_PROFILES,
 } from '@/lib/product/context-capsules-client';
 import { cn } from '@/lib/utils/cn';
 import { useSituationStore } from '@/stores/situation-store';
@@ -113,28 +106,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
   ));
   const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
   const [composerOpen, setComposerOpen] = useState(true);
-  const [pendingCapsulePrompt, setPendingCapsulePrompt] = useState(() => (
-    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY) ?? '' : ''
-  ));
-  const [pendingCapsuleTemplateId, setPendingCapsuleTemplateId] = useState(() => (
-    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY) ?? '' : ''
-  ));
-  const [pendingCapsulePathId, setPendingCapsulePathId] = useState(() => (
-    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PATH_KEY) ?? '' : ''
-  ));
-  const [pendingCapsuleOutput, setPendingCapsuleOutput] = useState(() => (
-    typeof window !== 'undefined' ? window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY) ?? '' : ''
-  ));
   const { stack, hydrated: stackHydrated, saveStack } = useActiveContextStack();
-
-  const pendingCapsuleTemplateLabel = useMemo(
-    () => CONTEXT_CAPSULE_TEMPLATES.find((t) => t.id === pendingCapsuleTemplateId)?.label ?? '',
-    [pendingCapsuleTemplateId],
-  );
-  const pendingCapsulePathLabel = useMemo(
-    () => POLICY_PATH_PROFILES.find((path) => path.id === pendingCapsulePathId)?.label ?? '',
-    [pendingCapsulePathId],
-  );
 
   const availableModels = useMemo(() => [...privateModels, ...PUBLIC_USER_MODELS], [privateModels]);
   const workspaceCases = useMemo(() => buildWorkspaceCases(situations, exampleCases), [exampleCases, situations]);
@@ -201,8 +173,8 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     timeCoreId: capsuleTimeHorizon !== 'Set horizon' ? capsuleTimeHorizon : null,
     outputCoreIds: stack.outputGoal ? [stack.outputGoal] : [],
     toolCoreIds: marketplaceToolCount > 0 ? ['capsule-aware-tool-registry'] : [],
-    objectiveCoreIds: pendingCapsulePrompt ? ['landing-scaffold-objective'] : [],
-    productCoreIds: pendingCapsuleOutput ? [pendingCapsuleOutput] : [],
+    objectiveCoreIds: [],
+    productCoreIds: [],
     memoryCoreId: stack.capsuleId ?? null,
   };
   const capsuleCounts = capsuleAttachmentCounts(canonicalCoreRefs);
@@ -211,7 +183,7 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     situationStage: selectedCase?.tags.join(' ') ?? 'intake',
   }).slice(0, 3);
   const headerLine = `${activeUserModel.identity} / ${activeContextName} / ${evidenceCount} sources and documents / ${stack.outputGoal ?? 'Memo goal'} / ${contextHealth.score}/100 health`;
-  const outputGoal = stack.outputGoal ?? pendingCapsuleOutput ?? 'Memo goal';
+  const outputGoal = stack.outputGoal ?? 'Memo goal';
 
   function handleUserModelChange(modelId: string) {
     setActiveUserModel(window.localStorage, modelId);
@@ -234,19 +206,6 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
     });
   }
 
-  function openPendingCapsulePrompt() {
-    if (!pendingCapsulePrompt.trim()) return;
-    window.dispatchEvent(new CustomEvent('open-praxis-chat', { detail: { prompt: pendingCapsulePrompt } }));
-    window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY);
-    window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY);
-    window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_PATH_KEY);
-    window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY);
-    setPendingCapsulePrompt('');
-    setPendingCapsuleTemplateId('');
-    setPendingCapsulePathId('');
-    setPendingCapsuleOutput('');
-  }
-
   return (
     <main className="flex min-h-[calc(100vh-9rem)] flex-col gap-4" data-testid="ask-workspace-page">
       <AppPageHeader
@@ -255,44 +214,6 @@ export function AskWorkspacePage({ exampleCases, marketplaceToolCount }: AskWork
         subtitle={headerLine}
         primaryAction={{ label: 'Manage context', href: '/app/contexts', icon: FolderKanban }}
       />
-
-      {pendingCapsulePrompt ? (
-        <section className="rounded-lg border border-gold-200 bg-gold-50 p-4 shadow-sm shadow-navy-950/5">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="max-w-3xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-gold-800">
-                ContextCapsule scaffold from landing{pendingCapsuleTemplateLabel ? ` · ${pendingCapsuleTemplateLabel}` : ''}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-navy-900">{pendingCapsulePrompt}</p>
-              {pendingCapsulePathLabel || pendingCapsuleOutput ? (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {pendingCapsulePathLabel ? (
-                    <span className="rounded-full border border-gold-200 bg-white px-2 py-1 text-[11px] font-semibold text-gold-800">
-                      Path: {pendingCapsulePathLabel}
-                    </span>
-                  ) : null}
-                  {pendingCapsuleOutput ? (
-                    <span className="rounded-full border border-gold-200 bg-white px-2 py-1 text-[11px] font-semibold text-gold-800">
-                      Output: {pendingCapsuleOutput}
-                    </span>
-                  ) : null}
-                </div>
-              ) : null}
-              <p className="mt-1 text-xs leading-5 text-navy-600">
-                Start thin, then add sources, episodes, power dynamics, rules, tools, and an output target in the sidebar.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={openPendingCapsulePrompt}
-              className="inline-flex items-center gap-2 rounded-md bg-navy-950 px-3 py-2 text-sm font-semibold text-white hover:bg-navy-900"
-            >
-              Continue in Ask
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </div>
-        </section>
-      ) : null}
 
       <section className={cn('grid min-h-[42rem] gap-4', composerOpen ? 'xl:grid-cols-[minmax(0,1fr)_360px]' : 'xl:grid-cols-1')}>
         <div className="flex min-w-0 flex-col rounded-lg border border-slate-200 bg-white shadow-sm shadow-navy-950/5">

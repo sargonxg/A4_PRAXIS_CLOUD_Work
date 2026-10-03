@@ -44,7 +44,8 @@ import {
   defaultActiveContextStack,
   type ActiveContextStackState,
 } from '@/lib/context/active-context-stack';
-import { PENDING_TASKLET_PROMPT_KEY } from '@/lib/product/policy-agents';
+import { saveQuestionHandoff, pendingQuestionHandoff, claimQuestionHandoff, consumeQuestionHandoff, readPublicQuestionHandoff } from '@/lib/auth/question-handoff';
+import { readAskDraft, saveAskDraft } from '@/lib/auth/ask-draft';
 import { POLICY_MISSION_EXAMPLES } from '@/lib/product/policy-missions';
 import { cn } from '@/lib/utils/cn';
 import { parseDataStreamChunk } from '@/lib/utils/stream';
@@ -86,6 +87,7 @@ export interface PraxisChatProps {
   demoMode?: boolean;
   greeting?: string;
   initialPrompt?: string;
+  questionHandoffId?: string;
   onToggleContext?: () => void;
   storageKey?: string;
   showHomeHeading?: boolean;
@@ -110,6 +112,7 @@ export function PraxisChat({
   demoMode = false,
   greeting,
   initialPrompt = '',
+  questionHandoffId,
   onToggleContext,
   storageKey,
   showHomeHeading = true,
@@ -118,22 +121,33 @@ export function PraxisChat({
 }: PraxisChatProps) {
   const router = useRouter();
   const { user } = useAuth();
-  const draftOwnerScope = mode === 'public' ? 'public' : `authenticated:${user?.id ?? 'pending'}:${threadId ?? 'home'}`;
+  const stack = useMemo(() => activeContextStack ?? defaultActiveContextStack(), [activeContextStack]);
+  const activeCapsuleId = stack.capsuleRefs[0]?.capsuleId ?? stack.capsuleId ?? activeSituation?.id ?? null;
+  const conversationThreadId = threadId ?? `home-${activeCapsuleId ?? stack.contextPackageId ?? stack.userModelId ?? 'direct'}`;
+  const draftOwnerScope = mode === 'public' ? 'public' : `authenticated:${user?.id ?? 'pending'}:${conversationThreadId}`;
   const [draft, setDraft] = useState({ ownerScope: draftOwnerScope, text: initialPrompt });
   const input = scopedAskChatDraft(draft, draftOwnerScope);
-  const setInput = useCallback((text: string) => setDraft({ ownerScope: draftOwnerScope, text }), [draftOwnerScope]);
+  const currentDraft = useRef(draft);
+  currentDraft.current = draft;
+  const setInput = useCallback((text: string) => {
+    currentDraft.current = { ownerScope: draftOwnerScope, text };
+    setDraft(currentDraft.current);
+    if (mode === 'authenticated' && user?.id) {
+      try { saveAskDraft(window.sessionStorage, user.id, conversationThreadId, text); }
+      catch { setError('Tab recovery is unavailable. Keep this page open until your question is saved.'); }
+    }
+  }, [conversationThreadId, draftOwnerScope, mode, user?.id]);
   const [messageCache, setMessageCache] = useState<AskChatCacheState<ChatMessage>>({ cacheKey: null, messages: [] });
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingQuestion, setPendingQuestion] = useState<{ id: string; owner: string } | null>(null);
+  const navigatingToLogin = useRef(false);
   const [deepResearch, setDeepResearch] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeRequestRef = useRef<AbortController | null>(null);
   const consumedAutoSendNonce = useRef(0);
   const locallyEdited = useRef(false);
-  const stack = useMemo(() => activeContextStack ?? defaultActiveContextStack(), [activeContextStack]);
-  const activeCapsuleId = stack.capsuleRefs[0]?.capsuleId ?? stack.capsuleId ?? activeSituation?.id ?? null;
-  const conversationThreadId = threadId ?? `home-${activeCapsuleId ?? stack.contextPackageId ?? stack.userModelId ?? 'direct'}`;
   const localStorageKey = askChatCacheKey({ mode, ownerId: user?.id, capsuleId: activeCapsuleId, threadId: conversationThreadId, namespace: storageKey });
   const messages = useMemo(() => scopedAskChatMessages(messageCache, localStorageKey), [messageCache, localStorageKey]);
   const messagesRef = useRef(messages);
@@ -152,8 +166,40 @@ export function PraxisChat({
   }, [messages]);
 
   useEffect(() => {
-    setDraft({ ownerScope: draftOwnerScope, text: initialPrompt });
-  }, [draftOwnerScope, initialPrompt]);
+    let recovered: string | null = null;
+    if (mode === 'authenticated' && user?.id) {
+      try { recovered = readAskDraft(window.sessionStorage, user.id, conversationThreadId); } catch { /* Current draft remains editable. */ }
+    }
+    if (mode === 'public' && !user && !initialPrompt) {
+      try { recovered = readPublicQuestionHandoff(window.sessionStorage); } catch { /* Keep the visible question when storage is blocked. */ }
+    }
+    setDraft({ ownerScope: draftOwnerScope, text: recovered ?? initialPrompt });
+  }, [conversationThreadId, draftOwnerScope, initialPrompt, mode, user?.id]);
+
+  useEffect(() => {
+    setPendingQuestion(null);
+    if (isPublic || !user?.id || !questionHandoffId) return;
+    try {
+      if (pendingQuestionHandoff(window.sessionStorage, questionHandoffId, user.id, Date.now(), currentPath ?? '/app')) setPendingQuestion({ id: questionHandoffId, owner: user.id });
+      else setError('The saved question has expired or is unavailable in this tab for this account.');
+    } catch { setError('Tab storage is unavailable. Your current question has not been changed.'); }
+  }, [currentPath, isPublic, questionHandoffId, user?.id]);
+
+  const restoreQuestion = () => {
+    if (!pendingQuestion || pendingQuestion.owner !== user?.id || input.trim()) return;
+    try {
+      const record = claimQuestionHandoff(window.sessionStorage, pendingQuestion.id, user.id, Date.now(), currentPath ?? '/app');
+      if (record) { setInput(record.text); setError(null); inputRef.current?.focus(); }
+      else setError('The saved question is no longer available.');
+    } catch { setError('Could not restore from tab storage. Your current question has not been changed.'); }
+  };
+  const dismissQuestion = () => {
+    if (!pendingQuestion || pendingQuestion.owner !== user?.id) return;
+    try {
+      if (claimQuestionHandoff(window.sessionStorage, pendingQuestion.id, user.id)) consumeQuestionHandoff(window.sessionStorage, pendingQuestion.id, user.id);
+      setPendingQuestion(null);
+    } catch { setError('Could not dismiss the saved question. Try again when tab storage is available.'); }
+  };
 
   useEffect(() => {
     if (!autoFocus) return;
@@ -228,16 +274,17 @@ export function PraxisChat({
       setError(null);
 
       if (isPublic) {
-        try { window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, text); } catch { /* URL handoff still works. */ }
-        const params = new URLSearchParams();
-        params.set('mode', 'signup');
-        params.set('redirect', '/app');
-        params.set('prompt', text);
-        params.set('capsulePrompt', text);
-        router.push(`/login?${params.toString()}`);
+        if (navigatingToLogin.current) return;
+        try {
+          const handoff = saveQuestionHandoff(window.sessionStorage, { text, target: '/app', ...(user?.id ? { ownerUid: user.id } : {}) });
+          navigatingToLogin.current = true;
+          router.push(handoff.loginUrl);
+        } catch {
+          navigatingToLogin.current = false;
+          setError('Your question is still here. Enable tab storage to carry it through sign-in, or sign in and paste it yourself.');
+        }
         return;
       }
-      try { window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY); } catch { /* Storage can be blocked. */ }
 
       // A late history response must never replace turns submitted in this session.
       locallyEdited.current = true;
@@ -252,10 +299,8 @@ export function PraxisChat({
       const requestController = new AbortController();
       activeRequestRef.current = requestController;
       const restoreFailedPrompt = () => {
-        if (!requestController.signal.aborted) {
-          setDraft((previous) => previous.ownerScope === draftOwnerScope && !previous.text.trim()
-            ? { ...previous, text }
-            : previous);
+        if (!requestController.signal.aborted && currentDraft.current.ownerScope === draftOwnerScope && !currentDraft.current.text.trim()) {
+          setInput(text);
         }
       };
 
@@ -440,6 +485,7 @@ export function PraxisChat({
       setInput,
       setMessages,
       stack,
+      user?.id,
     ],
   );
 
@@ -583,9 +629,6 @@ export function PraxisChat({
                 onClick={() => {
                   setInput(mission.prompt);
                   inputRef.current?.focus();
-                  if (typeof window !== 'undefined') {
-                    if (isPublic) window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt);
-                  }
                 }}
                 className="praxis-prompt-suggestion min-h-11 rounded-lg px-3 py-3 text-left text-sm transition"
               >
@@ -595,17 +638,21 @@ export function PraxisChat({
           </div>
         ) : null}
 
-        <form onSubmit={submit} className={cn(
+        {pendingQuestion?.owner === user?.id ? <aside className="mt-3 rounded-lg border p-3 text-sm" aria-label="Saved question recovery">
+          <p>A question is saved in this tab for {user?.email ?? 'this account'}. Restore it only if it belongs in this workspace. It expires after 30 minutes.</p>
+          {input.trim() ? <p>Keep or clear your current draft before restoring; recovery will not replace it.</p> : null}
+          <button type="button" disabled={Boolean(input.trim()) || isStreaming} onClick={restoreQuestion} className="min-h-11 px-3 underline">Restore saved question</button>
+          <button type="button" onClick={dismissQuestion} className="min-h-11 px-3 underline">Dismiss saved question</button>
+        </aside> : null}
+        <form method="post" onSubmit={submit} className={cn(
           'praxis-chat-composer mt-3 p-3 sm:p-4',
           isPublic || showExamples ? 'order-first mb-4' : '',
           variant === 'floating' ? 'border-slate-700 bg-slate-950 shadow-none' : 'border-[var(--color-app-border)]',
         )}>
-          <input type="hidden" name="capsulePrompt" value={input} />
           <label className="sr-only" htmlFor={`praxis-chat-input-${variant}`}>Ask PRAXIS</label>
           <textarea
             ref={inputRef}
             id={`praxis-chat-input-${variant}`}
-            name="capsulePrompt"
             data-testid="marketing-hero-prompt"
             value={input}
             onChange={(event) => setInput(event.target.value)}

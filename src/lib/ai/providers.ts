@@ -23,6 +23,7 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { createVertex } from '@ai-sdk/google-vertex';
 import { AI_PLATFORM_POSTURE, getModelMatrixEntry } from './model-matrix';
 import { getAskPraxisModelRuntimePolicy } from './model-runtime-policy';
+import { serverFirebaseEmulators } from '@/lib/firebase/emulator-config';
 
 export type ProviderName = 'google' | 'vertex';
 
@@ -50,6 +51,7 @@ const MODEL_EMBED = getModelMatrixEntry('embeddings_text').model;
 // ---------------------------------------------------------------------------
 
 function createVertexProvider(modelId: string) {
+  if (serverFirebaseEmulators()) throw new Error('Model execution is unavailable in the local persistence lane.');
   const location = modelId.startsWith('gemini-3')
     ? (process.env.GOOGLE_VERTEX_GEMINI_LOCATION || 'global')
     : (process.env.GOOGLE_VERTEX_LOCATION || AI_PLATFORM_POSTURE.defaultRegion || 'us-central1');
@@ -64,6 +66,7 @@ function createVertexModel(modelId: string): LanguageModel {
 }
 
 function createGoogleModel(modelId: string): LanguageModel {
+  if (serverFirebaseEmulators()) throw new Error('Model execution is unavailable in the local persistence lane.');
   return createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_AI_API_KEY || '' })(modelId);
 }
 

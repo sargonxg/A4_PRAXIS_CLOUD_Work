@@ -627,6 +627,8 @@ async function executeResearchMemoAgentRun(
   let running = run;
   let executionStage = 'starting';
   try {
+    const memoContext = await memoContextFromValidatedRun(run, deps);
+    if (memoContext.capsuleVersion === null) throw new Error('Research memo execution requires an exact saved capsule version. Save context and create a new run.');
     if (run.status !== 'running') {
       const next = await updateStatus({
         ownerUid: run.ownerUid,
@@ -644,6 +646,11 @@ async function executeResearchMemoAgentRun(
     }
 
     executionStage = 'context-build';
+    running = { ...running, metadata: {
+      ...running.metadata,
+      capsuleAgentExecutionContext: run.metadata.capsuleAgentExecutionContext,
+      capsuleVersion: memoContext.capsuleVersion,
+    } };
     const workerContext = buildCapsuleWorkerContext(running);
     const loop = buildResearchMemoReasoningLoop(running);
     await mirrorAdkResearchMemoDryRun({
@@ -737,9 +744,15 @@ async function executeResearchMemoAgentRun(
     const evidencePack = await getEvidencePack({
       ownerUid: running.ownerUid,
       capsuleId: running.capsuleId,
+      capsuleVersion: memoContext.capsuleVersion,
       objective: running.objective,
       maxParagraphs: 8,
     });
+    if (evidencePack.ownerUid !== run.ownerUid || evidencePack.capsuleId !== run.capsuleId
+      || evidencePack.activeCapsule.capsuleId !== run.capsuleId
+      || evidencePack.activeCapsule.version !== memoContext.capsuleVersion) {
+      throw new Error('Evidence does not match the captured capsule version. No draft was generated; restart with available context.');
+    }
     executionStage = 'sourceability-ledger';
     const capsuleReadReceipt = buildCapsuleReadReceiptFromEvidencePack(evidencePack, {
       selectedTools: initialWorkflowProof.workflowPlan.selectedTools,
@@ -911,9 +924,7 @@ async function executeResearchMemoAgentRun(
       outputReview,
       graphSnapshotId: running.selectedCoreIds.graphCoreId ?? `capsule:${running.capsuleId}:graph-gap`,
       changeNote: `Created by Research Memo Agent run ${running.id}.`,
-      capsuleId: running.capsuleId,
-      capsuleVersion: evidencePack.activeCapsule.version ?? null,
-      runId: running.id,
+      ...memoContext,
       outputTarget: 'policy-memo',
       sourceReceiptIds: combinedSourceReceiptIds,
       sourceReceipts: liveSearchEvidence.sourceReceipts,

@@ -1996,7 +1996,7 @@ describe('context capsule product contract', () => {
     }
   });
 
-  it('preserves prompt, template, path, and output in the login handoff URL', () => {
+  it('preserves catalog routing without analytical text in the login URL', () => {
     const href = contextCapsuleLoginHref(
       'Review a sanctions compliance memo.',
       'sanctions-compliance',
@@ -2006,9 +2006,10 @@ describe('context capsule product contract', () => {
     const url = new URL(href, 'https://praxis.local');
 
     expect(url.pathname).toBe('/login');
-    expect(url.searchParams.get('capsulePrompt')).toBe('Review a sanctions compliance memo.');
-    expect(url.searchParams.get('capsuleTemplate')).toBe('sanctions-compliance');
-    expect(url.searchParams.get('capsulePath')).toBe('legal-compliance');
-    expect(url.searchParams.get('capsuleOutput')).toBe('Compliance note');
+    const target = new URL(url.searchParams.get('redirect')!, 'https://praxis.local');
+    expect(target.searchParams.get('capsuleTemplate')).toBe('sanctions-compliance');
+    expect(target.searchParams.get('capsulePath')).toBe('legal-compliance');
+    expect(decodeURIComponent(href)).not.toContain('Review a sanctions');
+    expect(decodeURIComponent(href)).not.toContain('Compliance note');
   });
 });

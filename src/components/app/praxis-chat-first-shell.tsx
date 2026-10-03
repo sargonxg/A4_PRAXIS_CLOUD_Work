@@ -72,7 +72,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
   const requestedCapsuleId = searchParams.get('capsuleId')?.trim() ?? '';
   const ownerId = user?.id;
   const handoffKey = !isPublic && requestedCapsuleId ? JSON.stringify([ownerId ?? null, requestedCapsuleId]) : null;
-  const initialPrompt = searchParams.get('prompt') ?? searchParams.get('capsulePrompt') ?? '';
+  const questionHandoffId = searchParams.get('handoff') ?? undefined;
   const requestedThread = searchParams.get('thread') ?? '';
   const threadId = /^[a-zA-Z0-9_-]{3,96}$/.test(requestedThread) ? requestedThread : undefined;
   const { stack, saveStack, persisted, hydrated } = useActiveContextStack({ remote: !isPublic });
@@ -258,7 +258,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
               contextLabel={contextLabel}
               contextOpen={contextOpen}
               currentPath={isPublic ? '/' : '/app'}
-              initialPrompt={initialPrompt}
+              questionHandoffId={questionHandoffId}
               threadId={threadId}
               onToggleContext={() => setContextOpen((value) => !value)}
               storageKey={isPublic ? 'praxis-public-home-draft' : 'praxis-authenticated-home-chat'}

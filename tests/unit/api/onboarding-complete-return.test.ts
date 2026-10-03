@@ -11,8 +11,12 @@ vi.mock('@/lib/auth/cookie-signer', () => ({ signCookie: vi.fn(), verifyCookie: 
 beforeEach(() => vi.clearAllMocks());
 describe('onboarding completion return target', () => {
   it.each([false, true])('retains an explicit destination when createFirstSituation is %s', async (createFirstSituation) => {
-    const response = await POST(new Request('https://praxis.tacitus.me/api/onboarding/complete', { method: 'POST', body: JSON.stringify({ createFirstSituation, redirect: '/app/capsules/builder?capsulePrompt=Compare%20positions' }) }) as never);
-    expect((await response.json()).redirectTo).toBe('/app/capsules/builder?capsulePrompt=Compare%20positions');
+    const handoff = 'a7fc6ad8-73f0-4b83-a55d-7602777e02c4';
+    const response = await POST(new Request('https://praxis.tacitus.me/api/onboarding/complete', { method: 'POST', body: JSON.stringify({ createFirstSituation, redirect: `/app/capsules/builder?handoff=${handoff}&capsulePrompt=Compare%20positions#Private` }) }) as never);
+    const result = await response.json();
+    expect(result.redirectTo).toBe(`/app/capsules/builder?handoff=${handoff}`);
+    expect(JSON.stringify(result)).not.toContain('Compare');
+    expect(JSON.stringify(result)).not.toContain('Private');
   });
   it('falls back to the chosen workspace action for an external destination', async () => {
     const response = await POST(new Request('https://praxis.tacitus.me/api/onboarding/complete', { method: 'POST', body: JSON.stringify({ createFirstSituation: true, redirect: '//evil.test' }) }) as never);

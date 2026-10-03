@@ -16,6 +16,7 @@ import { parseCorePackage } from '@/lib/context/core-package';
 import { CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 import { CapsuleBuilderDraftError, CapsuleBuilderDraftSchema, saveCapsuleBuilderDraft } from '@/lib/context/capsule-builder-draft';
 import { CapsulePaginationError, capsulePageLimit } from '@/lib/context/capsule-pagination';
+import { serverFirebaseEmulators } from '@/lib/firebase/emulator-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -125,6 +126,9 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json({ error: 'Sample mode cannot create private capsules' }, { status: 403 });
     }
     const raw = await request.json().catch(() => ({}));
+    if (serverFirebaseEmulators() && raw?.action !== 'save-builder-draft') {
+      return NextResponse.json({ error: 'Local persistence lane supports purpose-only builder saves.', code: 'local_persistence_only' }, { status: 503 });
+    }
 
     if (raw?.action === 'save-builder-draft') {
       const parsed = CapsuleBuilderDraftSchema.safeParse(raw);

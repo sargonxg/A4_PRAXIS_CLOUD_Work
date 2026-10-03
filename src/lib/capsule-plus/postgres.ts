@@ -1,4 +1,5 @@
 import { Pool, type QueryResultRow } from 'pg';
+import { serverFirebaseEmulators } from '@/lib/firebase/emulator-config';
 import {
   CapsulePlusGraphEdgeSchema,
   CapsulePlusGraphNodeSchema,
@@ -18,6 +19,7 @@ function getDatabaseUrl(): string | null {
 }
 
 function getPool(): Pool {
+  if (serverFirebaseEmulators()) throw new Error('Capsule+ Postgres is unavailable in the Auth/Firestore-only local lane.');
   const connectionString = getDatabaseUrl();
   if (!connectionString) {
     throw new Error('Capsule+ graph store is not configured: set CAPSULE_PLUS_DATABASE_URL, PRAXIS_DATABASE_URL, or DATABASE_URL.');

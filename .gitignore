@@ -105,4 +105,8 @@ graphify-out/cache/
 .next-start*.log
 artifacts/*.log
 output/
+.next-local-persistence/
+.next-local-validation/
+firebase-debug.log
+firestore-debug.log
 .playwright-cli/

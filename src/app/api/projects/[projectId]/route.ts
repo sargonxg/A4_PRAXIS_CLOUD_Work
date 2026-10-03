@@ -13,6 +13,12 @@ export const GET = withAuth<Context>(async (_request, user, context) => {
 });
 export const PATCH = withAuth<Context>(async (request, user, context) => {
   if (user.isDemo) return NextResponse.json({ error: 'Sign in to save work.' }, { status: 403 });
-  try { return NextResponse.json({ project: await mutateProject(user.uid, (await context.params).projectId, await projectBody(request)), persisted: true }); }
+  try {
+    const projectId = (await context.params).projectId;
+    await mutateProject(user.uid, projectId, await projectBody(request));
+    const project = await getProject(user.uid, projectId);
+    if (!project) return NextResponse.json({ error: 'Project unavailable.' }, { status: 404 });
+    return NextResponse.json({ project, persisted: true });
+  }
   catch (error) { return projectRouteError(error); }
 });

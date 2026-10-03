@@ -15,7 +15,6 @@ import { CAPSULE_EVAL_JUDGE_MODEL } from '@/lib/ai/model-matrix';
 import { ContextCapsuleSchema } from '@/lib/ai/schemas/context-capsule';
 import { TACITUS_CORE_PRIMITIVES } from '@/lib/graph/core-primitives';
 import { ONTOLOGY_IDS } from '@/lib/ontology/types';
-import { PENDING_CONTEXT_CAPSULE_PROMPT_KEY } from '@/lib/product/context-capsule-pending';
 import { DOMAIN_SEEDS } from '@/lib/domain/seeds';
 import type { ContextCapsule } from '@/types/context-capsule';
 import { builderDraftFingerprint, clearBuilderWorkingDraft, readBuilderWorkingDraft, saveBuilderWorkingDraft, saveCurrentBuilderForUse, type BuilderWorkingDraft } from '@/lib/context/capsule-builder-session';
@@ -110,7 +109,7 @@ export function CapsuleBuilderWizard() {
 
   useEffect(() => {
     if (!user?.id && draftOwnerId) { try { clearBuilderWorkingDraft(window.sessionStorage); } catch { /* No private draft is rendered after logout. */ } }
-    const explicitStart = searchParams.has('capsulePrompt') || searchParams.has('prompt') || searchParams.get('from') === 'conversation';
+    const explicitStart = searchParams.get('from') === 'conversation';
     let recovered: ReturnType<typeof readBuilderWorkingDraft> = null;
     try { recovered = explicitStart || !user?.id ? null : readBuilderWorkingDraft(window.sessionStorage, user.id); } catch { /* Saving remains available if tab storage is blocked. */ }
     const restored = recovered?.capsule ?? makeDraftCapsule({ job: 'Help analysts produce a sourced policy briefing with explicit uncertainty and next evidence gaps.', frameworks: 'ach, stakeholder-salience', allowedDomains: '', blockedDomains: '', selectedTools: ['sourceability', 'deep_research'] });
@@ -156,40 +155,6 @@ export function CapsuleBuilderWizard() {
     window.addEventListener('beforeunload', warn);
     return () => window.removeEventListener('beforeunload', warn);
   }, [hasUnsavedChanges]);
-
-  useEffect(() => {
-    const prompt = searchParams.get('capsulePrompt') ?? searchParams.get('prompt');
-    let storedPrompt: string | null = null;
-    try { storedPrompt = window.localStorage.getItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY); } catch { /* URL and pasted material still work. */ }
-    const plainLanguagePrompt = (prompt ?? storedPrompt ?? '').trim().slice(0, 4000);
-    if (!plainLanguagePrompt) return;
-    const inferredDomain = inferDomainFromPrompt(plainLanguagePrompt);
-
-    setJob(plainLanguagePrompt);
-    setSampleQuestions([
-      plainLanguagePrompt,
-      'Which claims need stronger source receipts before this becomes a memo?',
-    ].join('\n'));
-    setCapsule((current) => deepMerge(current, {
-      persona: {
-        systemFrame: plainLanguagePrompt,
-        domain: inferredDomain,
-      },
-      ontologyBinding: {
-        domainId: inferredDomain,
-        taxonomyPath: ['generic', inferredDomain],
-      },
-      embeddedGraph: graphLiteProjectionForCapsule(current.id, inferredDomain, {
-        timelineAnchor: current.temporality.timelineAnchors[0],
-        causalLink: current.causality.causalLinks[0],
-      }),
-      market: {
-        category: inferredDomain,
-        tags: ['builder-draft', ...inferTagsFromPrompt(plainLanguagePrompt)],
-      },
-    }) as ContextCapsule);
-    if (user?.id) { try { window.localStorage.removeItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY); } catch { /* optional handoff */ } }
-  }, [searchParams, user?.id]);
 
   useEffect(() => {
     if (!user?.id || searchParams.get('from') !== 'conversation' || handoffLoaded.current === user.id) return;
@@ -1295,26 +1260,6 @@ function csv(value: string): string[] {
     .split(',')
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-function inferDomainFromPrompt(prompt: string): string {
-  const normalized = prompt.toLowerCase();
-  if (normalized.includes('sanction')) return 'economic-sanctions';
-  if (normalized.includes('treaty') || normalized.includes('diplom')) return 'diplomacy-negotiation';
-  if (normalized.includes('humanitarian')) return 'humanitarian';
-  if (normalized.includes('crisis') || normalized.includes('stakeholder')) return 'governance-rule-of-law';
-  return 'generic';
-}
-
-function inferTagsFromPrompt(prompt: string): string[] {
-  return Array.from(new Set(
-    prompt
-      .toLowerCase()
-      .replace(/[^a-z0-9\s-]/g, ' ')
-      .split(/\s+/)
-      .filter((token) => token.length >= 5)
-      .slice(0, 5),
-  ));
 }
 
 function humanizeId(value: string): string {

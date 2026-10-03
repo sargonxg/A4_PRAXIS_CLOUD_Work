@@ -5,6 +5,7 @@ import { verifyCookie } from '@/lib/auth/cookie-signer';
 import { shouldBypassMinuteRateLimit } from '@/lib/billing/usage-policy';
 import { logApiCall } from '@/lib/observability/logger';
 import { authenticationFailure } from '@/lib/auth/session-failure';
+import { serverFirebaseEmulators, emulatorApiAllowed } from '@/lib/firebase/emulator-config';
 
 export interface AuthenticatedUser {
   uid: string;
@@ -64,6 +65,10 @@ export function withAuth<TContext>(
     let errorMsg: string | undefined;
 
     try {
+      if (serverFirebaseEmulators() && !emulatorApiAllowed(route, req.method, new URL(req.url).searchParams)) {
+        status = 503;
+        return NextResponse.json({ error: 'This local lane supports persistence only. External execution is unavailable.', code: 'local_persistence_only' }, { status });
+      }
       const cookieStore = await cookies();
       const sessionCookie = cookieStore.get('tacitus-auth-session');
 

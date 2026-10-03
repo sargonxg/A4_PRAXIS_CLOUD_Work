@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { resolvePostLoginRedirect, safeWorkspaceReturnTarget } from '@/lib/auth/post-login-redirect';
+import { resolvePostLoginRedirect, safeWorkspaceReturnTarget, safeWorkspaceSearchParams, safeLoginSearchParams } from '@/lib/auth/post-login-redirect';
+import { serverFirebaseEmulators, emulatorApiAllowed } from '@/lib/firebase/emulator-config';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 const LEGACY_APP_ROUTE_TARGETS: Record<string, string> = {
@@ -63,7 +64,7 @@ const LEGACY_APP_ROUTE_TARGETS: Record<string, string> = {
 
 function redirectWithSearch(request: NextRequest, nonce: string, target: string): NextResponse {
   const url = new URL(target, request.url);
-  request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+  safeWorkspaceSearchParams(request.nextUrl.searchParams).forEach((value, key) => url.searchParams.set(key, value));
   return addSecurityHeaders(NextResponse.redirect(url), nonce);
 }
 
@@ -123,6 +124,16 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const session = request.cookies.get(SESSION_COOKIE);
   const nonce = generateNonce();
+  if (serverFirebaseEmulators() && pathname.startsWith('/api/') && !emulatorApiAllowed(pathname, request.method, request.nextUrl.searchParams)) return NextResponse.json({ error: 'Local persistence lane: external execution is unavailable.', code: 'local_persistence_only' }, { status: 503 });
+
+  if (pathname === '/login') {
+    const cleanSearch = safeLoginSearchParams(request.nextUrl.searchParams).toString();
+    if (request.nextUrl.searchParams.toString() !== cleanSearch) {
+      const clean = new URL('/login', request.url);
+      clean.search = cleanSearch;
+      return addSecurityHeaders(NextResponse.redirect(clean), nonce);
+    }
+  }
 
   const sessionData = session?.value ? parseSessionForRouting(session.value) : null;
 
@@ -151,7 +162,7 @@ export function proxy(request: NextRequest) {
     if (!slug) return redirectWithSearch(request, nonce, '/app');
     const url = new URL('/app', request.url);
     url.searchParams.set('situationId', slug);
-    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    safeWorkspaceSearchParams(request.nextUrl.searchParams).forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
   if (pathname === '/methods') {
@@ -161,7 +172,7 @@ export function proxy(request: NextRequest) {
     const methodId = pathname.split('/').filter(Boolean).at(1);
     const url = new URL('/app', request.url);
     if (methodId) url.searchParams.set('method', methodId);
-    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    safeWorkspaceSearchParams(request.nextUrl.searchParams).forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
   if (pathname === '/ontologies') {
@@ -171,7 +182,7 @@ export function proxy(request: NextRequest) {
     const ontologyId = pathname.split('/').filter(Boolean).at(1);
     const url = new URL('/app', request.url);
     if (ontologyId) url.searchParams.set('ontology', ontologyId);
-    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    safeWorkspaceSearchParams(request.nextUrl.searchParams).forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
   if (pathname === '/users') {
@@ -181,7 +192,7 @@ export function proxy(request: NextRequest) {
     const modelId = pathname.split('/').filter(Boolean).at(1);
     const url = new URL('/app', request.url);
     if (modelId) url.searchParams.set('model', modelId);
-    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    safeWorkspaceSearchParams(request.nextUrl.searchParams).forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
@@ -195,7 +206,7 @@ export function proxy(request: NextRequest) {
       const situationId = pathname.split('/').filter(Boolean).at(2);
       if (situationId) url.searchParams.set('situationId', situationId);
     }
-    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    safeWorkspaceSearchParams(request.nextUrl.searchParams).forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
@@ -247,7 +258,7 @@ export function proxy(request: NextRequest) {
     } else if (pathname === '/app/assistant') {
       url.searchParams.set('panel', 'ask');
     }
-    request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+    safeWorkspaceSearchParams(request.nextUrl.searchParams).forEach((value, key) => url.searchParams.set(key, value));
     return addSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
@@ -282,8 +293,8 @@ export function proxy(request: NextRequest) {
     if (isDemo) return nextWithNonce(request, nonce);
     if (!hasFirebaseToken) {
       const loginUrl = new URL('/login', request.url);
-      const redirectUrl = request.nextUrl.clone();
-      loginUrl.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`);
+      const destination = safeWorkspaceReturnTarget(`${request.nextUrl.pathname}${request.nextUrl.search}`) ?? '/app';
+      loginUrl.searchParams.set('redirect', destination);
       return addSecurityHeaders(NextResponse.redirect(loginUrl), nonce);
     }
     return nextWithNonce(request, nonce);
@@ -293,6 +304,9 @@ export function proxy(request: NextRequest) {
 }
 
 function addSecurityHeaders(response: NextResponse, nonce?: string): NextResponse {
+  const emulators = serverFirebaseEmulators();
+  const localConnections = emulators ? ` http://${emulators.authHost} http://${emulators.firestoreHost}` : '';
+  const localDevEvaluation = emulators && process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : '';
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
@@ -332,12 +346,12 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
   response.headers.set(
     'Content-Security-Policy',
     "default-src 'self'; " +
-      `script-src ${scriptSrc}; ` +
+      `script-src ${scriptSrc}${localDevEvaluation}; ` +
       `script-src-elem ${scriptSrcElem}; ` +
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
       "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com www.googletagmanager.com www.google-analytics.com *.google-analytics.com api.maptiler.com demotiles.maplibre.org; " +
       "font-src 'self' fonts.gstatic.com; " +
-      "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com firebaseappcheck.googleapis.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com www.google.com api.maptiler.com demotiles.maplibre.org; " +
+      `connect-src 'self'${localConnections} *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com firebaseappcheck.googleapis.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com www.google.com api.maptiler.com demotiles.maplibre.org; ` +
       "frame-src 'self' *.firebaseapp.com accounts.google.com *.google.com;",
   );
 
@@ -357,7 +371,7 @@ export const config = {
     '/terms',
     '/app/:path*',
     '/agents/:path*',
-    '/api/health',
+    '/api/:path*',
     '/api/health/:path*',
     '/contexts/:path*',
     '/methods/:path*',

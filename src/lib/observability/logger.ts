@@ -5,7 +5,7 @@ const isProd = process.env.NODE_ENV === 'production';
 function createLogger() {
   const transports: winston.transport[] = [];
 
-  if (isProd && process.env.GCP_PROJECT_ID) {
+  if (isProd && process.env.GCP_PROJECT_ID && process.env.PRAXIS_LOCAL_EMULATORS !== 'true') {
     // Dynamic require to avoid breaking builds when package is not installed
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports

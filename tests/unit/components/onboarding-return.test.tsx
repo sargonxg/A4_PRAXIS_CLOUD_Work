@@ -46,10 +46,10 @@ const profile = (): AnalystProfile => structuredClone(DEFAULT_ANALYST_PROFILE);
 const json = (body: unknown, status = 200) => Response.json(body, { status });
 beforeEach(() => {
   runtime.hooks.clear(); runtime.pending = []; runtime.cursor = 0; runtime.owner = 'owner-a'; runtime.authLoading = false;
-  runtime.query = 'redirect=%2Fapp%2Fcapsules%2Fbuilder%3FcapsulePrompt%3DCompare%2520positions';
+  runtime.query = 'redirect=%2Fapp%3Fhandoff%3Da7fc6ad8-73f0-4b83-a55d-7602777e02c4';
   runtime.push.mockReset(); runtime.assign.mockReset(); vi.mocked(loadAnalystProfile).mockReset().mockResolvedValue(profile()); vi.mocked(initAnalystProfileIfMissing).mockReset().mockResolvedValue(profile());
   vi.stubGlobal('window', { location: { assign: runtime.assign } });
-  vi.stubGlobal('fetch', vi.fn(async (url) => json(url === '/api/onboarding/draft' ? {} : { redirectTo: '/app/capsules/builder?capsulePrompt=Compare%20positions' })));
+  vi.stubGlobal('fetch', vi.fn(async (url) => json(url === '/api/onboarding/draft' ? {} : { redirectTo: '/app?handoff=a7fc6ad8-73f0-4b83-a55d-7602777e02c4' })));
 });
 afterEach(() => { for (const value of runtime.hooks.values()) if (value && typeof value === 'object' && 'cleanup' in value) (value as { cleanup?: () => void }).cleanup?.(); vi.useRealTimers(); vi.unstubAllGlobals(); });
 
@@ -57,14 +57,14 @@ describe('onboarding return actions', () => {
   it('Finish later keeps the user destination and drafted question', async () => {
     await action(await ready(), 'onSkip')();
     expect(vi.mocked(fetch).mock.calls.filter(([url]) => url === '/api/onboarding/skip')).toEqual([['/api/onboarding/skip', expect.objectContaining({ method: 'POST' })]]);
-    expect(runtime.assign).toHaveBeenCalledWith('/app/capsules/builder?capsulePrompt=Compare%20positions');
+    expect(runtime.assign).toHaveBeenCalledWith('/app?handoff=a7fc6ad8-73f0-4b83-a55d-7602777e02c4');
   });
   it('Complete sends the safe destination and uses full navigation across the changed cookie boundary', async () => {
     await ready(); for (let step = 1; step < 4; step++) await action(render(), 'onNext')();
     await action(render(), 'onComplete')(true);
     const completeCall = vi.mocked(fetch).mock.calls.find(([url]) => url === '/api/onboarding/complete');
-    expect(JSON.parse(completeCall?.[1]?.body as string)).toEqual({ createFirstSituation: true, redirect: '/app/capsules/builder?capsulePrompt=Compare%20positions' });
-    expect(runtime.assign).toHaveBeenCalledWith('/app/capsules/builder?capsulePrompt=Compare%20positions'); expect(runtime.push).not.toHaveBeenCalled();
+    expect(JSON.parse(completeCall?.[1]?.body as string)).toEqual({ createFirstSituation: true, redirect: '/app?handoff=a7fc6ad8-73f0-4b83-a55d-7602777e02c4' });
+    expect(runtime.assign).toHaveBeenCalledWith('/app?handoff=a7fc6ad8-73f0-4b83-a55d-7602777e02c4'); expect(runtime.push).not.toHaveBeenCalled();
   });
   it('rejects external destinations on Finish later and a malformed completion response', async () => {
     runtime.query = 'redirect=https%3A%2F%2Fevil.test'; await action(await ready(), 'onSkip')(); expect(runtime.assign).toHaveBeenCalledWith('/app');
@@ -84,7 +84,7 @@ describe('onboarding return actions', () => {
   it('keeps Finish later retryable after a failed reminder save', async () => {
     await ready(); vi.mocked(fetch).mockResolvedValueOnce(json({ error: 'Temporary failure' }, 503));
     await action(render(), 'onSkip')(); expect(runtime.assign).not.toHaveBeenCalled();
-    await action(render(), 'onSkip')(); expect(runtime.assign).toHaveBeenCalledWith('/app/capsules/builder?capsulePrompt=Compare%20positions');
+    await action(render(), 'onSkip')(); expect(runtime.assign).toHaveBeenCalledWith('/app?handoff=a7fc6ad8-73f0-4b83-a55d-7602777e02c4');
   });
 });
 

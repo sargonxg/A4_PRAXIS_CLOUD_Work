@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { BookOpenText, CheckSquare, FileQuestion, FolderKanban, GitBranch, Search, SquareArrowOutUpRight } from 'lucide-react';
 import type { CoreKind } from '@/lib/tools/contract';
@@ -61,6 +61,7 @@ export function ResponseActions({
 }: ResponseActionsProps) {
   const router = useRouter();
   const [status, setStatus] = useState<string | null>(null);
+  const saveOperation = useRef<string | null>(null);
   const situationId = situation?.id ?? 'user-case';
   const actions = useMemo(() => {
     const inferred = message.availableActions?.length ? message.availableActions : inferResponseActionKinds(message.content);
@@ -73,11 +74,14 @@ export function ResponseActions({
     setStatus(null);
     try {
       if (kind === 'save_to_write') {
+        saveOperation.current ??= crypto.randomUUID();
         const response = await fetch('/api/memos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            caseId: situationId,
+            caseId: `${situationId}-ask-${message.id ?? saveOperation.current}`.slice(0, 180),
+            expectedVersionId: null,
+            operationId: saveOperation.current,
             templateId: 'policy-memo',
             title: `Ask PRAXIS note: ${situation?.name ?? 'Situation'}`,
             graphSnapshotId: `ask-praxis-${message.id ?? 'response'}`,
@@ -88,9 +92,10 @@ export function ResponseActions({
             ],
           }),
         });
-        const data = response.ok ? await response.json().catch(() => ({})) : {};
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.memo?.id) throw new Error('The note was not saved. Keep the response and retry.');
         setStatus('Saved to Write');
-        router.push(`/app/write?draftId=${encodeURIComponent(data.memo?.id ?? 'policy-memo')}&situationId=${encodeURIComponent(situationId)}`);
+        router.push(`/app?panel=memo&memoId=${encodeURIComponent(data.memo.id)}`);
         return;
       }
 

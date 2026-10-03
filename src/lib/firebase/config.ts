@@ -1,6 +1,7 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { resolveFirebaseEmulators } from './emulator-config';
 import type { Analytics } from 'firebase/analytics';
 import {
   initializeAppCheck,
@@ -35,6 +36,13 @@ const storageBucket = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || DEFAULT
 const messagingSenderId = process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || DEFAULT_FIREBASE_CONFIG.messagingSenderId;
 const appId = process.env.NEXT_PUBLIC_FIREBASE_APP_ID || DEFAULT_FIREBASE_CONFIG.appId;
 const measurementId = process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID || DEFAULT_FIREBASE_CONFIG.measurementId;
+const emulators = resolveFirebaseEmulators({
+  enabled: process.env.NEXT_PUBLIC_PRAXIS_LOCAL_EMULATORS,
+  projectId,
+  authHost: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST,
+  firestoreHost: process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST,
+  browserHost: typeof window === 'undefined' ? undefined : window.location.hostname,
+});
 // App Check site keys — reCAPTCHA Enterprise preferred; reCAPTCHA v3 as fallback.
 const appCheckEnterpriseKey = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY;
 const appCheckV3Key = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_V3_KEY;
@@ -57,16 +65,17 @@ assertPresent('NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID', messagingSenderId);
 assertPresent('NEXT_PUBLIC_FIREBASE_APP_ID', appId);
 
 const firebaseConfig = {
-  apiKey,
-  authDomain,
+  apiKey: emulators ? 'local-synthetic-api-key' : apiKey,
+  authDomain: emulators ? 'localhost' : authDomain,
   projectId,
-  storageBucket,
+  storageBucket: emulators ? `${projectId}.appspot.com` : storageBucket,
   messagingSenderId,
   appId,
   measurementId, // optional
 };
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+if (emulators && app.options.projectId !== emulators.projectId) throw new Error('Refusing a non-emulator Firebase client app.');
 
 // ----------------------------------------------------------------------------
 // Firebase App Check — prevents abuse of the public API key by asserting that
@@ -80,7 +89,7 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 // if enforcement is accidentally on server-side.
 const appCheckEnabled = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_ENABLED === 'true';
 
-if (typeof window !== 'undefined' && appCheckEnabled) {
+if (typeof window !== 'undefined' && appCheckEnabled && !emulators) {
   try {
     if (appCheckDebugToken) {
       (window as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN =
@@ -104,6 +113,15 @@ if (typeof window !== 'undefined' && appCheckEnabled) {
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+if (emulators) {
+  // Survive module hot reload without reconnecting an already-used SDK.
+  const connected = app as typeof app & { praxisEmulatorsConnected?: boolean };
+  if (!connected.praxisEmulatorsConnected) {
+    connectAuthEmulator(auth, `http://${emulators.authHost}`, { disableWarnings: true });
+    connectFirestoreEmulator(db, emulators.firestoreHost.split(':')[0], emulators.firestorePort);
+    connected.praxisEmulatorsConnected = true;
+  }
+}
 
 // App initialization and sign-in must not initialize optional visit analytics.
 // Keep this export compatible for callers; a future consent flow may opt in.

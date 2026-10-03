@@ -239,6 +239,8 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   const [trustPosture, setTrustPosture] = useState<TrustPostureSummary | null>(null);
   const [contextLoading, setContextLoading] = useState(false);
   const [serverSaveState, setServerSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const savedMemoBase = useRef<{ caseId: string; versionId: string } | null>(null);
+  const memoSaveOperation = useRef<{ body: string; id: string } | null>(null);
   const [exportOpen, setExportOpen] = useState(false);
   const [mobilePane, setMobilePane] = useState<'library' | 'ask' | null>(null);
   const [memoCheckResults, setMemoCheckResults] = useState<Array<MemoClaimCheckResult | MemoLanguageCheckResult>>([]);
@@ -746,23 +748,28 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
   }
 
   async function saveDraftToServer() {
-    if (!editor) return;
+    if (!editor || serverSaveState === 'saving') return;
     setServerSaveState('saving');
     try {
       const html = editor.getHTML();
       const blocks = memoHtmlToBlocks(html);
+      const caseId = activeSituation?.id ?? 'memo-studio';
+      const contentKey = JSON.stringify([caseId, title, blocks, activeCapsule?.capsuleId, activeCapsule?.version, sources]);
+      if (memoSaveOperation.current?.body !== contentKey) memoSaveOperation.current = { body: contentKey, id: crypto.randomUUID() };
       const res = await fetch('/api/memos', {
         method: 'POST',
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          caseId: activeSituation?.id ?? 'memo-studio',
+          caseId,
+          expectedVersionId: savedMemoBase.current?.caseId === caseId ? savedMemoBase.current.versionId : null,
+          operationId: memoSaveOperation.current.id,
           templateId: 'policy-memo',
           title,
           blocks,
           graphSnapshotId: activeCapsule
             ? `${activeCapsule.capsuleId}-v${activeCapsule.version}`
-            : `memo-studio-${Date.now().toString(36)}`,
+            : 'memo-studio-unbound',
           status: 'draft',
           capsuleId: activeCapsule?.capsuleId ?? null,
           capsuleVersion: activeCapsule?.version ?? null,
@@ -772,7 +779,10 @@ export function MemoDesk({ documentId = 'default' }: MemoDeskProps) {
           changeNote: 'Saved from Memo Studio with the current context selection and source references.',
         }),
       });
-      if (!res.ok) throw new Error(`status ${res.status}`);
+      if (!res.ok) throw new Error(res.status === 409 ? 'A different version is saved. Keep your draft and open saved work before applying it.' : `status ${res.status}`);
+      const saved = await res.json();
+      if (!saved.memo?.currentVersionId) throw new Error('No canonical saved memo was returned. Keep your draft.');
+      savedMemoBase.current = { caseId, versionId: saved.memo.currentVersionId };
       setServerSaveState('saved');
       setSavedAt(new Date().toISOString());
     } catch (err) {

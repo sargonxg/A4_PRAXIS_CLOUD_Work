@@ -29,11 +29,14 @@ describe('PraxisChat owner-scoped cache integration', () => {
     expect(source).toContain('localStorageKey, setMessages]);');
   });
 
-  it('keeps unowned prompt handoffs restricted to the public sign-in journey', () => {
+  it('uses opaque same-tab handoffs and never reads global unowned prompts', () => {
+    const legacyAsk = readFileSync(join(process.cwd(), 'src/components/ask/AskWorkspacePage.tsx'), 'utf8');
+    expect(legacyAsk).not.toContain('PENDING_CONTEXT_CAPSULE_PROMPT_KEY');
+    expect(legacyAsk).not.toContain('pendingCapsulePrompt');
     const publicBranch = source.indexOf('if (isPublic) {', source.indexOf('const sendWithText'));
-    const handoffWrite = source.indexOf('window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, text)', source.indexOf('const sendWithText'));
+    const handoffWrite = source.indexOf('saveQuestionHandoff(window.sessionStorage', source.indexOf('const sendWithText'));
     expect(handoffWrite).toBeGreaterThan(publicBranch);
-    expect(source).toContain('window.localStorage.removeItem(PENDING_TASKLET_PROMPT_KEY)');
-    expect(source).toContain('if (isPublic) window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, mission.prompt)');
+    expect(source).not.toContain('PENDING_TASKLET_PROMPT_KEY');
+    expect(source).not.toContain("params.set('prompt', text)");
   });
 });

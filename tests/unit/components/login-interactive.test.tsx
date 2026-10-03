@@ -70,13 +70,12 @@ describe('login readiness', () => {
     expect(html).toContain('autoComplete="email"');
     expect(html).toContain('autoComplete="current-password"');
   });
-  it('shows the actual question only when one is supplied', () => {
+  it('never displays a legacy question from an auth URL', () => {
     runtime.query += '&capsulePrompt=Compare%20the%20two%20positions';
     const html = renderToStaticMarkup(<LoginPage />);
-    expect(html).toContain('Your question is saved for sign-in');
-    expect(html).toContain('Compare the two positions');
+    expect(html).not.toContain('Compare the two positions');
   });
-  it('carries the question in the safe return URL when browser storage is blocked', async () => {
+  it('drops legacy question parameters even when browser storage is blocked', async () => {
     runtime.query = 'capsulePrompt=Keep%20this%20question';
     vi.stubGlobal('window', { localStorage: { setItem: () => { throw new Error('Storage blocked'); } } });
     form();
@@ -86,7 +85,7 @@ describe('login readiness', () => {
     (find(tree, (node) => node.props.id === 'password').props.onChange as (event: unknown) => void)({ target: { value: 'safe-test-password' } });
     tree = form();
     await (find(tree, (node) => typeof node.props.onSubmit === 'function').props.onSubmit as (event: unknown) => Promise<void>)({ preventDefault: vi.fn() });
-    expect(runtime.push).toHaveBeenCalledWith('/app?capsulePrompt=Keep+this+question');
+    expect(runtime.push).toHaveBeenCalledWith('/app');
   });
   it('renders submit and identity inputs disabled before hydration', () => {
     const html = renderToStaticMarkup(<LoginPage />);

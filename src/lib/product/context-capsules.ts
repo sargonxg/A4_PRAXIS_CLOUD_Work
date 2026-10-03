@@ -12105,18 +12105,18 @@ export const CAPSULE_CAPABILITY_AREAS = [
 ];
 
 export function contextCapsuleLoginHref(
-  prompt: string,
+  _prompt: string,
   templateId?: string,
   pathId?: string,
-  outputGoal?: string,
+  _outputGoal?: string,
 ): string {
   const params = new URLSearchParams({
     mode: 'signup',
     redirect: '/app?panel=ask',
   });
-  if (prompt.trim()) params.set('capsulePrompt', prompt.trim());
-  if (templateId) params.set('capsuleTemplate', templateId);
-  if (pathId) params.set('capsulePath', pathId);
-  if (outputGoal?.trim()) params.set('capsuleOutput', outputGoal.trim());
+  const target = new URL('/app?panel=ask', 'https://praxis.invalid');
+  if (templateId && /^[a-zA-Z0-9_-]{1,96}$/.test(templateId)) target.searchParams.set('capsuleTemplate', templateId);
+  if (pathId && /^[a-zA-Z0-9_-]{1,96}$/.test(pathId)) target.searchParams.set('capsulePath', pathId);
+  params.set('redirect', `${target.pathname}${target.search}`);
   return `/login?${params.toString()}`;
 }

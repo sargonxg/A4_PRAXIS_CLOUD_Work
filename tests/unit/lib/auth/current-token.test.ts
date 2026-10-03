@@ -19,6 +19,12 @@ describe('current Firebase identity verification', () => {
     expect(verify).toHaveBeenCalledWith('signed-token', true);
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it('never sends an emulator token to public verification if Admin is unavailable', async () => {
+    verify.mockRejectedValue(unavailable);
+    await expect(verifyCurrentIdentity('local-token', { verify, fetcher, apiKey: 'public-key', emulator: true })).rejects.toMatchObject({ code: 'auth/verification-unavailable' });
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(verify).toHaveBeenCalledTimes(1);
+  });
 
   it.each(['auth/id-token-revoked', 'auth/id-token-expired', 'auth/user-disabled', 'auth/user-not-found'])('never falls back after %s', async (code) => {
     verify.mockRejectedValue(Object.assign(new Error('identity rejected'), { code }));

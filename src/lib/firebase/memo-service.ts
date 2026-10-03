@@ -1,4 +1,5 @@
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { createHash } from 'node:crypto';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
 import { omitUndefinedMetadata } from '@/lib/firebase/ask-thread-service';
 import { createMemoVersion } from '@/lib/memo/export';
@@ -28,6 +29,8 @@ export interface SaveMemoDraftInput {
   outputCapsuleId?: string | null;
   outputReview?: MemoOutputReviewReceipt | null;
   operationId?: string;
+  /** null means create-only; a string pins the editor's saved base. Trusted workers may omit. */
+  expectedVersionId?: string | null;
 }
 
 export interface MemoDraftRecord {
@@ -50,10 +53,7 @@ export async function loadMemoDraft(uid: string, caseId: string, templateId: Mem
   if (!memoSnap.exists) return null;
 
   const versionsSnap = await memoRef.collection('versions').orderBy('versionNumber', 'asc').get();
-  return {
-    memo: memoSnap.data() as Memo,
-    versions: versionsSnap.docs.map((doc) => doc.data() as MemoVersion),
-  };
+  return normalizeLoadedMemo(memoDocumentId(caseId, templateId), memoSnap.data() ?? {}, versionsSnap.docs.map((doc) => doc.data()));
 }
 
 export async function loadMemoById(uid: string, memoId: string, db: Firestore = getAdminDbOrThrow()): Promise<LoadedMemoByIdRecord | null> {
@@ -125,10 +125,14 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
   const memoId = memoDocumentId(input.caseId, input.templateId);
   const memoRef = memoRefFor(db, uid, input.caseId, input.templateId);
   const existing = await loadMemoDraft(uid, input.caseId, input.templateId, db);
-  if (input.operationId && existing?.versions.some((version) => (version as MemoVersion & { operationId?: string }).operationId === input.operationId)) {
+  const inputHash = input.operationId ? memoSaveInputHash(input) : null;
+  const priorOperation = input.operationId ? existing?.versions.find((version) => (version as MemoVersion & { operationId?: string }).operationId === input.operationId) as (MemoVersion & { inputHash?: string }) | undefined : undefined;
+  if (priorOperation) {
+    if (priorOperation.inputHash && priorOperation.inputHash !== inputHash) throw new MemoReviewConflictError('This submission operation already belongs to different memo content.');
     // A recovered delivery must not replace later human edits or add a second version.
-    return existing;
+    return existing!;
   }
+  if (input.expectedVersionId !== undefined && input.expectedVersionId !== (existing?.memo.currentVersionId ?? null)) throw new MemoReviewConflictError('A different memo version is saved. Keep your edits and reopen the saved version before applying them.');
   const primaryBlock = input.blocks.find((block) => block.id === 'live-memo-draft')
     ?? input.blocks.find((block) => Object.prototype.hasOwnProperty.call(block.metadata, 'outputReview')
       || Object.prototype.hasOwnProperty.call(artifactMetadata(block.metadata), 'outputReview'))
@@ -172,7 +176,7 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
     ownerUid: uid,
     templateId: input.templateId,
     title: input.title,
-    status: hasOutputReview ? 'review' : input.status ?? existing?.memo.status ?? 'draft',
+    status: input.status === 'archived' ? 'archived' : hasOutputReview || input.status === 'review' || input.status === 'final' || ['review', 'final'].includes(existing?.memo.status ?? '') ? 'review' : 'draft',
     currentVersionId: version.id,
     createdAt: existing?.memo.createdAt ?? now,
     updatedAt: now,
@@ -192,25 +196,47 @@ export async function saveMemoDraft(uid: string, input: SaveMemoDraftInput, db: 
   // Preserve native values and array positions; never invent missing evidence.
   const savedMemo = omitUndefinedMetadata({ ...memo, ...memoMetadata });
   const savedVersion = omitUndefinedMetadata({ ...version, contextSnapshot,
-    ...(input.operationId ? { operationId: input.operationId } : {}), ...(outputReview ? { outputReview } : {}) });
+    ...(input.operationId ? { operationId: input.operationId, inputHash } : {}), ...(outputReview ? { outputReview } : {}) });
+  let replayed = false;
   await db.runTransaction(async (transaction) => {
     const owner = await transaction.get(db.collection('users').doc(uid));
     if (!owner.exists || ['deleting', 'deleted'].includes(String(owner.data()?.accountDeletionStatus))) {
       throw new MemoReviewConflictError('Account cleanup has started; this memo cannot be saved.');
     }
     const current = await transaction.get(memoRef);
+    if (input.operationId && current.data()?.lastSaveOperationId === input.operationId) {
+      if (current.data()?.lastSaveInputHash !== inputHash) throw new MemoReviewConflictError('This submission operation already belongs to different memo content.');
+      replayed = true;
+      return;
+    }
     if ((current.data()?.currentVersionId ?? null) !== (existing?.memo.currentVersionId ?? null)) {
       throw new MemoReviewConflictError('Another memo version was saved. Reopen it before applying your changes.');
     }
-    transaction.set(memoRef, { ...savedMemo, updatedAtServer: FieldValue.serverTimestamp() }, { merge: true });
-    transaction.set(memoRef.collection('versions').doc(version.id), savedVersion);
+    const versionRef = memoRef.collection('versions').doc(version.id);
+    if ((await transaction.get(versionRef)).exists) throw new MemoReviewConflictError('This memo version already exists. Reopen saved work before retrying.');
+    transaction.set(memoRef, { ...savedMemo, updatedAtServer: FieldValue.serverTimestamp(),
+      lastSaveOperationId: input.operationId ?? null, lastSaveInputHash: inputHash }, { merge: true });
+    transaction.set(versionRef, savedVersion);
   });
+  if (replayed) {
+    const canonical = await loadMemoDraft(uid, input.caseId, input.templateId, db);
+    if (!canonical) throw new MemoReviewConflictError('The saved memo is unavailable. Keep your edits and retry.');
+    return canonical;
+  }
   return { memo: savedMemo, versions: [...(existing?.versions ?? []), savedVersion] };
 }
 
 function artifactMetadata(metadata: Record<string, unknown> | undefined): Record<string, unknown> {
   const value = metadata?.artifactMetadata;
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+}
+
+function memoSaveInputHash(input: SaveMemoDraftInput): string {
+  const { operationId: _operation, expectedVersionId: _expected, ...content } = input;
+  // Canonical key ordering for plain JSON; preserve array order and native JSON encodings.
+  const json = JSON.stringify(content, (_key, value) => value && Object.getPrototypeOf(value) === Object.prototype
+    ? Object.fromEntries(Object.keys(value).sort().filter((key) => value[key] !== undefined).map((key) => [key, value[key]])) : value);
+  return createHash('sha256').update(json).digest('hex');
 }
 
 function validateMemoDraft(input: SaveMemoDraftInput): void {
@@ -300,11 +326,11 @@ async function normalizeLoadedMemo(memoId: string, data: Record<string, unknown>
       ownerUid: stringField(data.ownerUid) ?? 'unknown',
       templateId,
       title: stringField(data.title) ?? stringField(data.memoTitle) ?? memoId,
-      status,
       currentVersionId: stringField(data.currentVersionId) ?? normalizedVersions.at(-1)?.id ?? 'version-1',
       createdAt: stringField(data.createdAt) ?? stringField(data.ts) ?? now,
       updatedAt: stringField(data.updatedAt) ?? stringField(data.ts) ?? now,
       ...data,
+      status: status === 'final' && !humanApproval ? 'review' : status,
       humanApproval,
     },
     versions: normalizedVersions,

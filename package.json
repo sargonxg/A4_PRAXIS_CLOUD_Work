@@ -226,6 +226,7 @@
     "vitest": "^4.1.1"
   },
   "overrides": {
+    "@fastify/busboy": "3.2.1",
     "protobufjs": "8.4.2",
     "uuid": "14.0.0",
     "@google-cloud/firestore": "8.6.0",

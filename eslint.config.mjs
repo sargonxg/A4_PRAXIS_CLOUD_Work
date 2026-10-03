@@ -51,6 +51,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".next-local-persistence/**",
+    ".next-local-validation/**",
     "out/**",
     "build/**",
     "output/**",

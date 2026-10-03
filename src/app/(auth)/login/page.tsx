@@ -7,16 +7,6 @@ import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { resolvePostLoginRedirect } from '@/lib/auth/post-login-redirect';
 import { PraxisBrandChip } from '@/components/brand/praxis-brand-chip';
-import {
-  PENDING_POLICY_AGENT_ID_KEY,
-  PENDING_TASKLET_PROMPT_KEY,
-} from '@/lib/product/policy-agents';
-import {
-  PENDING_CONTEXT_CAPSULE_OUTPUT_KEY,
-  PENDING_CONTEXT_CAPSULE_PATH_KEY,
-  PENDING_CONTEXT_CAPSULE_PROMPT_KEY,
-  PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY,
-} from '@/lib/product/context-capsule-pending';
 
 function getPasswordStrength(password: string): { score: number; label: string; color: string } {
   if (!password) return { score: 0, label: '', color: '' };
@@ -39,19 +29,10 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const queryMode = searchParams.get('mode');
   const planParam = searchParams.get('plan'); // e.g. ?plan=analyst from billing or invite links
-  const capsulePromptParam = searchParams.get('capsulePrompt');
-  const capsuleTemplateParam = searchParams.get('capsuleTemplate');
-  const capsulePathParam = searchParams.get('capsulePath');
-  const capsuleOutputParam = searchParams.get('capsuleOutput');
-  const policyAgentParam = searchParams.get('policyAgentId');
   const requestedRedirect = planParam === 'analyst' || planParam === 'team'
     ? '/app/settings?tab=billing'
     : resolvePostLoginRedirect(searchParams, false);
-  const returnUrl = new URL(requestedRedirect, 'https://praxis.invalid');
-  if (capsulePromptParam?.trim() && (returnUrl.pathname === '/app' || returnUrl.pathname === '/app/capsules/builder')) {
-    if (!returnUrl.searchParams.has('prompt') && !returnUrl.searchParams.has('capsulePrompt')) returnUrl.searchParams.set('capsulePrompt', capsulePromptParam.trim());
-  }
-  const appRedirect = `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`;
+  const appRedirect = requestedRedirect;
   const {
     user,
     loading,
@@ -101,30 +82,6 @@ function LoginForm() {
   const controlsDisabled = !interactive || loading || isLoading;
   useEffect(() => { setInteractive(true); }, []);
   const passwordStrength = useMemo(() => getPasswordStrength(password), [password]);
-
-  useEffect(() => {
-    try {
-    const prompt = capsulePromptParam?.trim();
-    if (prompt) {
-      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PROMPT_KEY, prompt);
-      window.localStorage.setItem(PENDING_TASKLET_PROMPT_KEY, prompt);
-    }
-    if (capsuleTemplateParam) {
-      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, capsuleTemplateParam);
-    }
-    if (capsulePathParam) {
-      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_PATH_KEY, capsulePathParam);
-    }
-    if (capsuleOutputParam) {
-      window.localStorage.setItem(PENDING_CONTEXT_CAPSULE_OUTPUT_KEY, capsuleOutputParam);
-    }
-    if (policyAgentParam) {
-      window.localStorage.setItem(PENDING_POLICY_AGENT_ID_KEY, policyAgentParam);
-    }
-    } catch {
-      // The safe workspace URL also carries the question when browser storage is unavailable.
-    }
-  }, [capsulePromptParam, capsuleTemplateParam, capsulePathParam, capsuleOutputParam, policyAgentParam]);
 
   useEffect(() => {
     if (authError) {
@@ -245,12 +202,7 @@ function LoginForm() {
           <p className="mt-2 text-sm leading-6 text-[var(--color-graphite)]">
             {mode === 'reset' ? 'Enter your email to request a reset link.' : 'Ask a question. Attach saved context when you need it.'}
           </p>
-          {capsulePromptParam?.trim() ? (
-            <div className="mt-4 rounded-lg border border-[var(--color-praxis-emerald-300)] bg-[var(--color-praxis-emerald-50)] p-3">
-              <p className="text-xs font-semibold text-[var(--color-praxis-emerald-700)]">Your question is saved for sign-in</p>
-              <p className="mt-1 line-clamp-3 break-words text-sm">{capsulePromptParam.trim()}</p>
-            </div>
-          ) : null}
+          {appRedirect.includes('handoff=') ? <p className="mt-4 text-sm">A question may be available in this tab. After sign-in, choose whether to restore it for your account. It expires after 30 minutes.</p> : null}
           {mode !== 'reset' ? <>
             <button type="button" onClick={handleGoogleSignIn} disabled={controlsDisabled} className="mt-6 flex min-h-11 w-full items-center justify-center gap-3 rounded-lg border border-[var(--color-mineral)] bg-white px-4 py-3 text-sm font-semibold hover:bg-[var(--color-archive-paper)] disabled:opacity-60">
               <Chrome className="h-5 w-5" aria-hidden="true" /> Continue with Google

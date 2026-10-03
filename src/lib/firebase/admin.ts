@@ -4,6 +4,9 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 import { readFileSync } from 'node:fs';
 import { verifyCurrentIdentity } from '@/lib/auth/current-token';
+import { serverFirebaseEmulators } from '@/lib/firebase/emulator-config';
+
+const emulators = serverFirebaseEmulators();
 
 let _app: App | null = null;
 let _auth: Auth | null = null;
@@ -38,6 +41,15 @@ function readServiceAccountJson(): string | null {
 
 function ensureInitialized() {
   if (_app) return;
+
+  if (emulators) {
+    const existing = getApps()[0];
+    if (existing && existing.options.projectId !== emulators.projectId) throw new Error('Refusing to reuse a non-emulator Firebase Admin app.');
+    _app = existing ?? initializeApp({ projectId: emulators.projectId });
+    _auth = getAuth(_app);
+    _db = getFirestore(_app);
+    return;
+  }
 
   // Already initialized by another import
   if (getApps().length > 0) {
@@ -115,6 +127,7 @@ export function getAdminDbOrThrow(): Firestore {
  * FIREBASE_STORAGE_BUCKET).
  */
 export function getAdminStorage(): Storage {
+  if (emulators) throw new Error('Source-byte storage is unavailable in the Auth/Firestore persistence lane.');
   if (!_app) {
     throw new Error('[firebase-admin] App not initialized; cannot return Storage.');
   }
@@ -145,6 +158,7 @@ export async function verifyIdToken(token: string): Promise<{
   const decoded = await verifyCurrentIdentity(token, {
     verify: (value, checkRevoked) => _auth!.verifyIdToken(value, checkRevoked),
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    emulator: Boolean(emulators),
   });
   return {
     uid: decoded.uid,

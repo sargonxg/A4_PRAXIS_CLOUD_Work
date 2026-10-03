@@ -272,6 +272,30 @@ describe('memo service helpers', () => {
     expect(replay.versions).toHaveLength(2);
     expect(replay.versions.at(-1)?.blocks[0].content).toBe('Reviewed edit.');
   });
+  it('rejects a stale caller version and a create-only save over existing work', async () => {
+    const fixture = createMemoDb({});
+    const first = await saveMemoDraft('user-1', { ...contextDraft, expectedVersionId: null }, fixture.db as never);
+    const next = await saveMemoDraft('user-1', { ...contextDraft, expectedVersionId: first.memo.currentVersionId, blocks: [{ ...contextDraft.blocks[0], content: 'Funding remains undecided.' }] }, fixture.db as never);
+    await expect(saveMemoDraft('user-1', { ...contextDraft, expectedVersionId: first.memo.currentVersionId }, fixture.db as never)).rejects.toThrow(/version/i);
+    await expect(saveMemoDraft('user-1', { ...contextDraft, expectedVersionId: null }, fixture.db as never)).rejects.toThrow(/version/i);
+    expect((await loadMemoById('user-1', next.memo.id, fixture.db as never))?.versions.at(-1)?.blocks[0].content).toBe('Funding remains undecided.');
+    expect(fixture.writePayloads).toHaveLength(4);
+  });
+  it('rejects reuse of an operation ID for different text', async () => {
+    const fixture = createMemoDb({});
+    const input = { ...contextDraft, operationId: 'human-save-001', expectedVersionId: null };
+    await saveMemoDraft('user-1', input, fixture.db as never);
+    await expect(saveMemoDraft('user-1', { ...input, blocks: [{ ...contextDraft.blocks[0], content: 'Different text' }] }, fixture.db as never)).rejects.toThrow(/submission|operation/i);
+    expect(fixture.writePayloads).toHaveLength(2);
+  });
+  it('downgrades an unsigned legacy final label without rewriting its stored history', async () => {
+    const fixture = createMemoDb({});
+    const record = await saveMemoDraft('user-1', contextDraft, fixture.db as never);
+    const path = `users/user-1/situations/case-1/memos/${record.memo.id}`;
+    fixture.records[path].status = 'final';
+    expect((await loadMemoById('user-1', record.memo.id, fixture.db as never))?.memo.status).toBe('review');
+    expect(fixture.records[path].status).toBe('final');
+  });
   it('round-trips the same generated review receipt through memo, version, and primary block', async () => {
     const body = 'The policy was approved.';
     const outputReview = await buildMemoOutputReview({ body, report: null, verifierStatus: 'disabled' });

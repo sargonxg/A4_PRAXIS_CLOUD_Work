@@ -26,7 +26,7 @@ describe('post-login redirect', () => {
   });
 
   it('keeps incomplete onboarding users in onboarding before the app shell', () => {
-    expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/capsules/builder?question=Compare%20positions'), false, false)).toBe('/onboarding?redirect=%2Fapp%2Fcapsules%2Fbuilder%3Fquestion%3DCompare%2520positions');
+    expect(resolvePostLoginRedirect(new URLSearchParams('redirect=/app/capsules/builder?question=Compare%20positions'), false, false)).toBe('/onboarding?redirect=%2Fapp%2Fcapsules%2Fbuilder');
   });
 
   it('keeps legacy sample users on the user-owned dashboard', () => {
@@ -34,7 +34,7 @@ describe('post-login redirect', () => {
   });
 
   it('preserves query-backed Home destinations through login and onboarding', () => {
-    const target = '/app?panel=memo&question=Compare%20positions';
+    const target = '/app?panel=memo&handoff=a7fc6ad8-73f0-4b83-a55d-7602777e02c4';
     expect(resolvePostLoginRedirect(new URLSearchParams({ redirect: target }), false)).toBe(target);
     const onboarding = resolvePostLoginRedirect(new URLSearchParams({ redirect: target }), false, false);
     expect(resolveOnboardingReturnTarget(new URLSearchParams(onboarding.split('?')[1]), false)).toBe(target);
