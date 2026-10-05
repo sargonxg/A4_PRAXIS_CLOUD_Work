@@ -296118,7 +296118,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/components/signal/signal-globe-scene.tsx",
-      "source_location": "L29",
+      "source_location": "L22",
       "weight": 1.0
     },
     {
@@ -781090,5 +781090,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "44823ff4b7944cce4e2dab6322a044495cdbbc86"
+  "built_at_commit": "013e9342b480e0912d19a5b40ea0cfd4b71cad4b"
 }

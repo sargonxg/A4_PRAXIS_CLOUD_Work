@@ -19,7 +19,7 @@ export default function SignalGlobeScene({coverage,selectedCode,command,onSelect
   const container=host.current;if(!container)return;let renderer:THREE.WebGLRenderer;
   try{renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'low-power'});}catch{callbacks.current.onUnavailable();return;}
   renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));renderer.setClearColor(0xf8fafc);renderer.domElement.setAttribute('aria-hidden','true');renderer.domElement.style.touchAction='none';container.appendChild(renderer.domElement);
-  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,0.1,3000);const initial=new THREE.Vector3(100,75,340);camera.position.copy(initial);
+  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(40,1,0.1,3000);const defaultPosition=new THREE.Vector3(100,75,340);const anchor=coverage.countries.find(country=>country.activeSourceCount>0&&country.coordinateAvailable&&country.latitude!==null&&country.longitude!==null)??coverage.countries.find(country=>country.selected&&country.coordinateAvailable&&country.latitude!==null&&country.longitude!==null);const initial=anchor?location(anchor.latitude!,anchor.longitude!,defaultPosition.length()):defaultPosition;camera.position.copy(initial);
   const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=false;controls.enablePan=false;controls.minDistance=140;controls.maxDistance=750;controls.update();
   let disposed=false,frame:number|null=null;const render=()=>{if(disposed||frame!==null)return;frame=requestAnimationFrame(()=>{frame=null;if(!disposed)renderer.render(scene,camera);});};controls.addEventListener('change',render);
   const geometries:THREE.BufferGeometry[]=[],materials:THREE.Material[]=[];

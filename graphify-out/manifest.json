@@ -14748,9 +14748,9 @@
     "semantic_hash": ""
   },
   "src/components/signal/signal-media-landscape.tsx": {
-    "mtime": 1791238106.4872346,
-    "seen": 1791238140.72945,
-    "ast_hash": "fa3057b77e7737973d4357b4eb610488",
+    "mtime": 1791238655.326578,
+    "seen": 1791238780.8579032,
+    "ast_hash": "1ab18900848ea5db276dccb45f66d9f2",
     "semantic_hash": ""
   },
   "src/components/signal/signal-network-scene.tsx": {
@@ -14772,9 +14772,9 @@
     "semantic_hash": ""
   },
   "tests/e2e/signal-visualizations.spec.ts": {
-    "mtime": 1791238432.524461,
-    "seen": 1791238524.5064538,
-    "ast_hash": "68aad341ab964207b7071a5232159747",
+    "mtime": 1791238655.326895,
+    "seen": 1791238780.8763855,
+    "ast_hash": "d79a99fcf1d29d0f79a195444311da5a",
     "semantic_hash": ""
   },
   "tests/unit/lib/signal/feedback.test.ts": {
@@ -14802,9 +14802,9 @@
     "semantic_hash": ""
   },
   "docs/signal/REFINEMENT_REVIEW.md": {
-    "mtime": 1791238495.6784277,
-    "seen": 1791238524.5074496,
-    "ast_hash": "4c99f815c0b24aedbae45d0b97668158",
+    "mtime": 1791238734.822601,
+    "seen": 1791238780.8783972,
+    "ast_hash": "7e7e4fe0549349a0b3f292c369d666ca",
     "semantic_hash": ""
   },
   "src/components/signal/signal-coverage-globe.tsx": {
@@ -14814,9 +14814,9 @@
     "semantic_hash": ""
   },
   "src/components/signal/signal-globe-scene.tsx": {
-    "mtime": 1791237945.7802207,
-    "seen": 1791238140.7294462,
-    "ast_hash": "6a75ee780cfd9e58e28578f6f07238d7",
+    "mtime": 1791238655.3263714,
+    "seen": 1791238780.8579004,
+    "ast_hash": "6e89da993c31008a520e4aad7e0c627c",
     "semantic_hash": ""
   },
   "src/lib/signal/coverage-globe.ts": {
