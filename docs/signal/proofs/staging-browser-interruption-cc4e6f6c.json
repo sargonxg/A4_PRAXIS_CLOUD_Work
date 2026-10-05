@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-10-05T22:41:17.097215+00:00",
+  "candidateCommit": "cc4e6f6cac87c4dd30a8da5c23e16dad9479c452",
+  "candidateRevision": "praxis-frontend-01136-quh",
+  "firstVisualizationJourney": "passed",
+  "failure": "GPU fallback fixture API received non-JSON upstream transport error before GPU assertions; More navigation hit timeout during same outage",
+  "readonlyChecks": {
+    "taggedRuntimeHealth": 503,
+    "publicBaselineRuntimeHealth": 503,
+    "githubZen": 503
+  },
+  "sourceEdits": false,
+  "mutationRetries": false,
+  "pending": "Require fresh no-cache exact-commit tagged health; then authenticated owner-only fixture reconciliation and unchanged five-test browser rerun.",
+  "completedSuite": {
+    "passed": 2,
+    "failed": 3,
+    "duration": "6.9min",
+    "exitCode": 1
+  },
+  "failureLocations": {
+    "gpuFallback": "API propose after desk create and three captures; non-JSON upstream transport error",
+    "moreNavigation": "timeout during login/navigation infrastructure outage",
+    "completeSignalFlow": "timeout before email field appeared; no fixture created"
+  },
+  "fixtureCleanup": {
+    "knownCreatedDesks": 2,
+    "afterAllCleanupFailed": false,
+    "assertedOwnedReadAndDelete": "Both recorded desk IDs were processed by audited afterAll hook with no cleanup failure reported.",
+    "exactIdsPersisted": false,
+    "reason": "The test process completed before this recovery instruction; helper kept IDs in memory only. No identifiers are fabricated.",
+    "followup": "Fresh authenticated owner list after proxy recovery will confirm no synthetic visualization fixture created within this interrupted-run window remains; save any exact matching IDs locally before scoped cleanup.",
+    "independentAbsenceVerified": false,
+    "reconciliationAttempted": true
+  },
+  "handoffAt": "2026-10-05T22:50:00.063241+00:00",
+  "intermittentRecovery": {
+    "freshTaggedExactCommitChecks": [
+      "2026-10-05T22:47:14.948Z",
+      "2026-10-05T22:48:06.965Z"
+    ],
+    "followup": "Reconciliation timed out before login email field, then secure wrapper Secret Manager read returned 503 before browser launch. No followup mutations occurred.",
+    "stableRecovery": false
+  },
+  "resumePlan": [
+    "Require stable fresh no-cache tagged runtime health exact cc4e and secure canary secret access.",
+    "Authenticate dedicated canary owner; reconcile only exact synthetic visualization fixture names/timestamps from interrupted stage run, plus exact question/audience/BR-JP scope/languages/window/three owned synthetic source metadata. Save remaining IDs privately before any scoped CAS deletion.",
+    "Rerun frozen five-test suite against exact tagged candidate; do not promote until all pass.",
+    "After parent-authorized publication, verify exact public runtime and rerun all five without app forwarding."
+  ],
+  "publication": "Held; public remains cad3 baseline. No further attempts authorized in this lane."
+}

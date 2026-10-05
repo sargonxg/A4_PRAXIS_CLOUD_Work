@@ -42,9 +42,14 @@
       "reason": "managed workspace proxy HTTP503 before remaining app assertions",
       "completeSuitePassed": false
     },
-    "browserFixtureCleanup": "pending verification after workspace egress recovers; fixtures are explicitly synthetic and unwatched"
+    "browserFixtureCleanup": {
+      "scopedReadDeleteAssertionsPassed": true,
+      "knownCreatedDesks": 2,
+      "independentAbsenceReconciliation": "pending stable egress",
+      "exactIdsPersisted": false
+    }
   },
-  "lastCheckedAt": "2026-10-05T22:46:04.043939+00:00",
+  "lastCheckedAt": "2026-10-05T22:50:28.951068+00:00",
   "publicSourceUnchanged": "cad3eb2b5ec355052607bf528a4e23d3fc5a3c72",
   "publicRevisionUnchanged": "praxis-frontend-01117-68m",
   "remainingSteps": [
@@ -53,5 +58,6 @@
     "Fetch current main and preserve ancestry; publish exact tested application commit through canonical main pipeline",
     "Verify correct production worker target and all seven dependency checks before traffic promotion",
     "Repeat all five plain-public browser tests and private-feedback second-identity proof; retain cleanup receipts"
-  ]
+  ],
+  "networkRecovery": "Brief fresh health and GitHub recovery at 22:46\u201322:48 UTC; subsequent stage and Secret Manager requests returned proxy HTTP503 again. No main push or public promotion."
 }
