@@ -10,7 +10,7 @@ Coverage includes a geographic globe and a media landscape. Capture an optional 
 
 Narratives also includes an orbitable evidence network with search, language/kind/state filters and exact source, reading and interpretation inspection. Its coordinates are a reading layout without geographical or influence meaning.
 
-Open **Private feedback** below any desk view to record a rating and observation, mark synthetic tests, and export notes yourself. Notes stay in the private desk and never accept evidence or change approved briefs. See [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md) for actual QA observations and [IMPROVEMENT_BACKLOG.md](IMPROVEMENT_BACKLOG.md) for follow-up acceptance criteria. This refinement is a cloud staging candidate: all five local browser tests and staged runtime/privacy checks pass, while complete tagged/public acceptance and publication are held by a managed workspace egress outage. The public release status below describes the initial text pilot.
+Open **Private feedback** below any desk view to record a rating and observation, mark synthetic tests, and export notes yourself. Notes stay in the private desk and never accept evidence or change approved briefs. See [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md) for actual QA observations and [IMPROVEMENT_BACKLOG.md](IMPROVEMENT_BACKLOG.md) for follow-up acceptance criteria. This refinement is published from exact source `cc4e6f6c`: all five staged and all five plain-public browser tests pass, with real second-identity feedback isolation and scoped cleanup. See the current release in PROGRESS. The simpler default world explorer and shared public-source panel are a separate candidate.
 
 ## Initial text-pilot verification status
 

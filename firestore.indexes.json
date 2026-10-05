@@ -423,6 +423,11 @@
       "collectionGroup": "signalDesks",
       "fieldPath": "feedback",
       "indexes": []
+    },
+    {
+      "collectionGroup": "signalRuntime",
+      "fieldPath": "payload",
+      "indexes": []
     }
   ]
 }

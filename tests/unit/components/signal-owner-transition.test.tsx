@@ -1,6 +1,6 @@
 import { isValidElement, type ReactElement, type ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { SignalWorkspace } from '@/components/signal/signal-workspace';
+import { SignalEvidenceWorkspace as SignalWorkspace } from '@/components/signal/signal-workspace';
 import { createDesk } from '@/lib/signal/domain';
 import type { SignalDesk } from '@/lib/signal/schema';
 

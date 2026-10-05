@@ -2,11 +2,13 @@
 
 Public application: https://praxis.tacitus.me/signal. Existing Cloud Run service `praxis-frontend`, project `praxisbytacitus`, region `us-central1`. PRAXIS sign-in is required for private desks.
 
-## Geographic refinement candidate
+## Published geographic refinement
 
-The tested application source is `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452`, available on GitHub branch `signal-coverage-refinement`. Its exact tagged cloud build `4ea6bc55-5b47-4a67-864d-29aa59e49d7e` succeeded; revision `praxis-frontend-01136-quh`, digest `sha256:a33bacc3656b1064c8f1979112ba205cfbab9ca01c70c221bc0013b47ff383b0`. Full source gate, 2,990 unit tests, five local browser tests, seven staged runtime checks and actual staged private-feedback isolation pass. A broad managed workspace egress outage interrupted the complete staged browser gate; this candidate has not been pushed to main or promoted publicly. Read [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md) and `proofs/refinement-candidate-cc4e6f6c.json` before resuming. Preserve the initial release below until all five frozen staged browser tests and cleanup pass. Application source and later documentation-only handoff commits have distinct hashes.
+Exact application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` passed the full source gate, 2,990 unit tests and all five actual staged browser tests. Canonical main Cloud Build `d8d1d36f-b697-4913-9993-fb9315b0bc35` succeeded in `us-central1`; revision `praxis-frontend-01119-c5g`, digest `sha256:9ce973ba0504589433a1e143ba6959b6dcc4dc90778c9a137ecd9116cbd2f215`, serves 100% of public traffic. All seven runtime checks, worker URLs, resources, secret bindings and unrelated tags passed readback. Plain-public Cloud Build `691fab0c-0589-4095-a0f5-0ec6e52c5441` passed all five tests without forwarding. Actual public second-identity feedback isolation and full scoped cleanup passed. Hourly watched-desk scheduling is unchanged and successful. Rollback is `praxis-frontend-01117-68m`. Safe current receipt: `proofs/release-refinement-cc4e6f6c.json`.
 
-## Published initial text-pilot release
+The simpler default world explorer and twelve-hour public-source panel are a separate candidate; their first live collection/model/browser/scheduler checks remain pending. Earlier blocked candidate receipts describe the earlier transport outage, not current production. Source and later documentation-only handoff hashes remain distinct.
+
+## Historical initial text-pilot release
 
 | Field | Verified value |
 | --- | --- |

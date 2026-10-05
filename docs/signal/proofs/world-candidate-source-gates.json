@@ -1,0 +1,33 @@
+{
+  "status": "full-source-gates-passed-live-world-acceptance-pending",
+  "unitFiles": 498,
+  "unitTests": 3032,
+  "lintErrors": 0,
+  "existingLintWarningsOutsideSignal": 5,
+  "configuredGate": "passed",
+  "aiRoutes": 63,
+  "calibratedAiRoutes": 63,
+  "graphify": {
+    "nodes": 20560,
+    "edges": 45932,
+    "communities": 969,
+    "modelTokens": 0
+  },
+  "fileSha256": {
+    "src/app/api/ai/signal-world/route.ts": "fee8bd6e4fead3d79cfceb84bcc2acab61501d95f3cf31701cf5dc111ca74f5d",
+    "src/app/api/signal/world/refresh/route.ts": "e9adaf78422813292e7bc58aaea81dd82ff52cfc60c9b948c3e046b3a2969fdc",
+    "src/app/api/signal/world/route.ts": "a6b840db8966047ea5886c40c1d562e3276b1333ef5d7253a8dfd3181ff9713e",
+    "src/components/signal/signal-workspace.tsx": "e4f7c184129b47b3f3d7c672a3c7ecd28844c9a620dde7707147fb1ecdadbce6",
+    "src/components/signal/signal-world-chat.tsx": "0e21d5494469774a70f585b6704ceb6a9ffe98c5b3393bf618c278057b2ab53a",
+    "src/components/signal/signal-world-explorer.tsx": "ad1d516a540f111d77bed4e006dc4b460f87f1fde5f7d4bfc2830250c4c2e526",
+    "src/components/signal/signal-world-landscape.tsx": "36372fdea528445d2ecdd88592c0f8754dddd158d2d6060d28d2ebbb8c84f5a7",
+    "src/components/signal/signal-world-scene.tsx": "f284e7c6ce51a1273310e0ec5be0476384263b0fd0540f6c59602d48739c496a",
+    "src/lib/ai/capability-registry.ts": "75041606800f1daa14083619d274f57d250059fe6050ac35d8820461b049b251",
+    "src/lib/signal/world-catalog.ts": "f284b08c0c73669a3a1645ed6c23b37aa9d8f8df0286b5915b3e644fd915fdb6",
+    "src/lib/signal/world-geography.ts": "d725303281611aef6f8285f1aacad67655f66d80f41583f51bff48340323dfca",
+    "src/lib/signal/world-research.ts": "1a9edeffd6e4e1a9e91b4792ab68c475927156d5724721e9574541ce51206b74",
+    "src/lib/signal/world-schema.ts": "c861ccd8433fa148987f6f989aead89e1b35ea7d94b7ef7ad9186526760e5305",
+    "src/lib/signal/world-service.ts": "4eec7ae7edcb8fa9dd4afb1bebb685a217ecdfd98f65488933f7eb6771059832",
+    "src/lib/signal/world-topics.ts": "fb6f35e39d8e9d15a872de5dcec51136543c2e57ed7436fe486e25b6b0adc745"
+  }
+}

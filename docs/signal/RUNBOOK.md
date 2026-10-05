@@ -51,3 +51,14 @@ Whole-account erasure is a separate existing platform operation, currently guard
 Release operator owns identity, queue/index/rules readiness and rollback; reviewer owns source rights, exact readings and interpretation acceptance; pilot owner owns panel coverage and gold evaluation. Preserve the prior production revision on rollback and additive evidence/index data. Record unresolved live checks in PROGRESS; never close an incident solely because `/signal` returns HTTP 200.
 
 GDELT discovery is gated by `SIGNAL_GDELT_ENABLED` and disabled for this release following the observed provider HTTP 503. Enable it only after a bounded successful live discovery check; supplied text and permissioned RSS are available.
+
+
+## Shared public world observations
+
+The world explorer has a separate public-source snapshot, independent of owner desks and watched collection. Authenticated browsing and country selection only read that snapshot. Asking the AI uses the existing calibrated media-compass gateway with a bounded copy of actual available records; the answer remains an unreviewed research draft and does not write accepted evidence or capsules.
+
+The collector is `POST /api/signal/world/refresh`, authenticated with the existing cron secret. Its fixed registry, SSRF-safe fetches, three-request concurrency bound, twelve-hour bucket, three-attempt cap and transaction lease prevent arbitrary URL collection and stale-worker commits. It stores only latest bounded public observations under the existing default-deny `signalRuntime` root. Annual economic values keep actual years/provider statistical entities. Failed providers retain last-good values, titles and retrieval clocks with explicit failure notices.
+
+Apply the separate job only after exact public world-route/runtime/source verification and actual successful cache collection. `python scripts/signal/world-scheduler.py` prints a plan; `--apply` provisions/readbacks `praxis-signal-world-refresh` with `0 */12 * * *`, public HTTPS target, existing secret held in memory, and bounded retries. Never print a Scheduler HTTP header map or credentials. Verify an actual manually dispatched HTTP 200 in Cloud Logging, then read back enabled schedule/target/authentication and the authenticated latest snapshot. Provisioning/readback alone is not proof that collection ran. Current publication and live scheduler receipts belong in PROGRESS/RELEASE_PLAN.
+
+`praxis-signal-watch-sweep` remains a separate hourly job for explicitly watched private desks. World browsing never starts that job or copies private evidence. On rollback retain existing public observations and indexes; pause the world job if the rollback revision lacks the world refresh route. Do not claim continuous realtime or comprehensive media coverage: the current registry is a sampled panel, and twelve-hour fetch cadence does not change annual data publication cadence.

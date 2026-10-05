@@ -1,10 +1,12 @@
 # SIGNAL build and release progress
 
-## Visualization refinement candidate — publication held
+## Published geographic visualization and feedback refinement
 
-Application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` implements the requested geographic coverage globe, media landscape, additional evidence network and private feedback. All 492 test files / 2,990 tests, the full configured gate and all five local authenticated browser tests pass. Exact cloud staging build `4ea6bc55-5b47-4a67-864d-29aa59e49d7e` succeeded; revision `praxis-frontend-01136-quh` passed all seven runtime checks and actual private-feedback second-identity isolation. Its privacy-smoke fixtures were fully cleaned.
+Application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` is published at https://praxis.tacitus.me/signal. Canonical main build `d8d1d36f-b697-4913-9993-fb9315b0bc35` created revision `praxis-frontend-01119-c5g`, serving 100% of public traffic with all seven runtime checks passing. Existing resources, secret bindings, unrelated tags and hourly watched-desk scheduling are preserved. Rollback is `praxis-frontend-01117-68m`.
 
-The complete staged browser gate remains incomplete because the workspace's managed egress proxy began returning HTTP503 across GitHub, public/staged Cloud Run and Google APIs. Main has not been pushed and public traffic has not changed. Resume with fresh staged provenance, scoped browser-fixture cleanup and all five staged tests before canonical main publication and plain-public acceptance. See [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md), [IMPROVEMENT_BACKLOG.md](IMPROVEMENT_BACKLOG.md) and `proofs/refinement-candidate-cc4e6f6c.json`. Real customer feedback and the human gold benchmark remain open.
+All 492 test files / 2,990 tests and the full configured source gate pass. An official Playwright Cloud Build completed all five exact-source staged browser tests, followed by plain-public build `691fab0c-0589-4095-a0f5-0ec6e52c5441`: five passed, none skipped, failed or flaky, without forwarding. Actual public second-identity feedback isolation and complete scoped cleanup passed. Safe receipt: `proofs/release-refinement-cc4e6f6c.json`. Earlier blocked/partial receipts remain dated historical evidence; they no longer describe the active publication status.
+
+The simpler default world explorer, AI question box and twelve-hour public-source panel are a separate frozen candidate. Its full configured gate, lint (zero errors / five existing unrelated warnings) and all 498 unit files / 3,032 tests pass. The initial real cache, calibrated AI, eight-browser-test staging/public gates and twelve-hour scheduling proofs remain pending. These features are not included in this published revision. Real customer feedback and the human gold benchmark remain open.
 
 ## Verified initial text-pilot release
 

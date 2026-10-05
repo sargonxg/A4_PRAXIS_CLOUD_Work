@@ -1,0 +1,111 @@
+{
+  "applicationCommit": "cc4e6f6cac87c4dd30a8da5c23e16dad9479c452",
+  "target": "https://praxis.tacitus.me/signal",
+  "canonicalBuild": "d8d1d36f-b697-4913-9993-fb9315b0bc35",
+  "revision": "praxis-frontend-01119-c5g",
+  "imageDigest": "us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend@sha256:9ce973ba0504589433a1e143ba6959b6dcc4dc90778c9a137ecd9116cbd2f215",
+  "runtimeChecks": 7,
+  "publicTrafficPercent": 100,
+  "plainPublicBrowserBuild": "691fab0c-0589-4095-a0f5-0ec6e52c5441",
+  "browser": {
+    "gate": "frozen-five-browser-tests",
+    "commit": "cc4e6f6cac87c4dd30a8da5c23e16dad9479c452",
+    "passed": true,
+    "stats": {
+      "startTime": "2026-10-05T23:22:49.740Z",
+      "duration": 109685.98400000001,
+      "expected": 5,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "tests": [
+      {
+        "name": "actual 3D network: empty, camera, raycast, exact evidence, filters, landscape and withdrawal",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration": 46267
+          }
+        ]
+      },
+      {
+        "name": "GPU unavailable: honest interactive 2D and accessible-list fallback",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration": 12810
+          }
+        ]
+      },
+      {
+        "name": "SIGNAL protects the API without a signed-in session",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration": 398
+          }
+        ]
+      },
+      {
+        "name": "More navigation opens the actual authenticated SIGNAL root",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration": 5291
+          }
+        ]
+      },
+      {
+        "name": "authenticated synthetic desk: capture, exact denial, review, capsule, approval, correction and portable exports",
+        "status": "expected",
+        "results": [
+          {
+            "status": "passed",
+            "duration": 39482
+          }
+        ]
+      }
+    ]
+  },
+  "feedback": {
+    "target": "https://praxis.tacitus.me",
+    "mode": "production",
+    "proof": {
+      "provenance": {
+        "commit": "cc4e6f6cac87c4dd30a8da5c23e16dad9479c452",
+        "repository": "sargonxg/A4_PRAXIS_CLOUD_Work",
+        "branch": "main"
+      },
+      "realCanarySession": true,
+      "ownerFeedback": {
+        "serverActorVerified": true,
+        "serverTimestampVerified": true,
+        "deskVersionVerified": true,
+        "synthetic": true,
+        "persisted": true
+      },
+      "secondIdentityReadRejected": 404,
+      "secondIdentityWriteRejected": 404,
+      "forgedActorRejected": 422,
+      "staleVersionRejected": 409,
+      "canonicalSourcesClaimsReviewsApprovedBriefUnchanged": true,
+      "noModelCallsOrWatchedJobs": true
+    },
+    "cleanup": {
+      "ownedDeskDeleted": true,
+      "deletedDeskUnavailable": true,
+      "temporaryIdentityDeleted": true,
+      "temporaryProfileAndSignupUnavailable": true,
+      "temporaryRateLimitsUnavailable": true
+    },
+    "passed": true
+  },
+  "rollback": "praxis-frontend-01117-68m",
+  "existingResourcesAndSecretBindingsPreserved": true,
+  "worldExplorerStatus": "separate candidate, not included in this release"
+}

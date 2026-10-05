@@ -195,6 +195,7 @@ export const LEGACY_AI_ROUTE_CAPABILITY_MAP: Record<string, CapabilityId> = {
   'media-analyze': 'narrative-media',
   'media-compass': 'narrative-media',
   signal: 'narrative-media',
+  'signal-world': 'narrative-media',
   'media-roundup': 'narrative-media',
   'media-scan': 'narrative-media',
   'mediation-design': 'negotiation-design',

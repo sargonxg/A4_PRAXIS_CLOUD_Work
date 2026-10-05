@@ -89,6 +89,8 @@ test('More navigation opens the actual authenticated SIGNAL root', async ({ page
   const signalLink = page.getByRole('navigation', { name: 'More workspace tools' }).getByRole('link', { name: 'SIGNAL', exact: true });
   await expect(signalLink).toHaveAttribute('href', '/signal');
   await signalLink.click();
+  await expect(page.getByTestId('signal-world-explorer')).toBeVisible({ timeout: 30000 });
+  await page.getByRole('button', { name: 'Evidence & briefs', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'SIGNAL', exact: true })).toBeVisible({ timeout: 30000 });
 });
 
@@ -121,6 +123,8 @@ test('authenticated synthetic desk: capture, exact denial, review, capsule, appr
   try { await authenticateFirebaseCanary(page, undefined, '/app', { expectComposer: false }); } catch (error) { console.log('Authentication network failure summary:', networkErrors); throw error; }
   cleanupCookieHeader = (await page.context().cookies(browserOrigin)).map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
   await page.goto('/signal');
+  await expect(page.getByTestId('signal-world-explorer')).toBeVisible({ timeout: 30000 });
+  await page.getByRole('button', { name: 'Evidence & briefs', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'SIGNAL', exact: true })).toBeVisible({ timeout: 30000 });
   const createAction = page.getByRole('button', { name: 'Create desk', exact: true }).first();
   await expect(createAction).toBeEnabled({ timeout: 30000 });

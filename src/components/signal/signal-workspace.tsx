@@ -9,6 +9,7 @@ import { SignalEvidenceNetwork } from './signal-evidence-network';
 import { SignalMediaLandscape } from './signal-media-landscape';
 import { SignalCoverageGlobe } from './signal-coverage-globe';
 import { SignalFeedbackPanel } from './signal-feedback-panel';
+import { SignalWorldExplorer } from './signal-world-explorer';
 const tabs = ['Overview', 'Coverage', 'Narratives', 'Evidence', 'Context', 'Briefs'] as const;
 type Tab = typeof tabs[number];
 type Source = SignalSource;
@@ -38,7 +39,29 @@ function Card({ title, children }: {
 function fields(event: FormEvent<HTMLFormElement>) { event.preventDefault(); return new FormData(event.currentTarget); }
 function text(data: FormData, key: string) { return String(data.get(key) ?? '').trim(); }
 function csv(value: string) { return value.split(',').map(item => item.trim()).filter(Boolean); }
+/** Start with exploration and an AI question; retain the complete reviewed-evidence workspace. */
 export function SignalWorkspace() {
+    const { user, loading } = useAuth();
+    const [surface, setSurface] = useState<'world' | 'evidence'>(() =>
+        typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('desk') ? 'evidence' : 'world');
+    useEffect(() => {
+        const navigate = () => setSurface(new URLSearchParams(window.location.search).has('desk') ? 'evidence' : 'world');
+        window.addEventListener('popstate', navigate);
+        return () => window.removeEventListener('popstate', navigate);
+    }, []);
+    if (loading) return <main className="p-6" aria-busy="true">Loading SIGNAL…</main>;
+    if (!user) return <SignalEvidenceWorkspace key="signed-out" />;
+    if (surface === 'world') return <SignalWorldExplorer key={user.id} ownerKey={user.id} onOpenEvidence={() => setSurface('evidence')} />;
+    const explore = () => {
+        const url = new URL(window.location.href);
+        for (const name of ['desk', 'view', 'revision']) url.searchParams.delete(name);
+        window.history.replaceState(null, '', url);
+        setSurface('world');
+    };
+    return <><div className="mx-auto max-w-7xl px-4 pt-4 sm:px-6"><button className={buttonClass} onClick={explore}>Explore the world</button></div><SignalEvidenceWorkspace key={user.id} /></>;
+}
+
+export function SignalEvidenceWorkspace() {
     const { firebaseUser, user, loading: authLoading } = useAuth();
     const [gdeltEnabled, setGdeltEnabled] = useState(false);
     const [desks, setDesks] = useState<Desk[]>([]);

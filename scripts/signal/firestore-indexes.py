@@ -17,7 +17,7 @@ def call(method,path,body=None):
 manifest=json.loads(Path(args.manifest).read_text())
 rows=[]
 for field in manifest.get('fieldOverrides',[]):
-    if field['collectionGroup'] not in ('signalDesks','signalJobs'): continue
+    if field['collectionGroup'] not in ('signalDesks','signalJobs','signalRuntime'): continue
     path=field['collectionGroup']+'/fields/'+urllib.parse.quote(field['fieldPath'],safe='')
     current=call('GET',path)
     desired=field['indexes']
