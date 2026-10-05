@@ -2,7 +2,11 @@
 
 Public application: https://praxis.tacitus.me/signal. Existing Cloud Run service `praxis-frontend`, project `praxisbytacitus`, region `us-central1`. PRAXIS sign-in is required for private desks.
 
-## Published release
+## Geographic refinement candidate
+
+The tested application source is `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452`, available on GitHub branch `signal-coverage-refinement`. Its exact tagged cloud build `4ea6bc55-5b47-4a67-864d-29aa59e49d7e` succeeded; revision `praxis-frontend-01136-quh`, digest `sha256:a33bacc3656b1064c8f1979112ba205cfbab9ca01c70c221bc0013b47ff383b0`. Full source gate, 2,990 unit tests, five local browser tests, seven staged runtime checks and actual staged private-feedback isolation pass. A broad managed workspace egress outage interrupted the complete staged browser gate; this candidate has not been pushed to main or promoted publicly. Read [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md) and `proofs/refinement-candidate-cc4e6f6c.json` before resuming. Preserve the initial release below until all five frozen staged browser tests and cleanup pass. Application source and later documentation-only handoff commits have distinct hashes.
+
+## Published initial text-pilot release
 
 | Field | Verified value |
 | --- | --- |
@@ -69,7 +73,7 @@ It checks exact public runtime repository/branch/commit before secrets or mutati
 
 ## Indexes and scheduling
 
-All 13 additive SIGNAL field overrides have been applied/read back, including payload index suppression. Six retained/new watched/status indexes are READY. Existing deployed rules deny browser direct owner-path access 403. No source security-rule edit or customer evidence migration was required.
+All 14 additive SIGNAL field overrides have been applied/read back, including payload and new private-feedback index suppression. Six retained/new watched/status indexes are READY. Existing deployed rules deny browser direct owner-path access 403. No source security-rule edit or customer evidence migration was required.
 
 ```bash
 python scripts/signal/firestore-indexes.py

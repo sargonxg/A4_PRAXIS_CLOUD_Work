@@ -1,6 +1,12 @@
 # SIGNAL build and release progress
 
-## Verified release
+## Visualization refinement candidate — publication held
+
+Application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` implements the requested geographic coverage globe, media landscape, additional evidence network and private feedback. All 492 test files / 2,990 tests, the full configured gate and all five local authenticated browser tests pass. Exact cloud staging build `4ea6bc55-5b47-4a67-864d-29aa59e49d7e` succeeded; revision `praxis-frontend-01136-quh` passed all seven runtime checks and actual private-feedback second-identity isolation. Its privacy-smoke fixtures were fully cleaned.
+
+The complete staged browser gate remains incomplete because the workspace's managed egress proxy began returning HTTP503 across GitHub, public/staged Cloud Run and Google APIs. Main has not been pushed and public traffic has not changed. Resume with fresh staged provenance, scoped browser-fixture cleanup and all five staged tests before canonical main publication and plain-public acceptance. See [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md), [IMPROVEMENT_BACKLOG.md](IMPROVEMENT_BACKLOG.md) and `proofs/refinement-candidate-cc4e6f6c.json`. Real customer feedback and the human gold benchmark remain open.
+
+## Verified initial text-pilot release
 
 - Public application: https://praxis.tacitus.me/signal, using existing PRAXIS sign-in.
 - Deployed source: cad3eb2b5ec355052607bf528a4e23d3fc5a3c72, canonical GitHub main frontend pipeline.

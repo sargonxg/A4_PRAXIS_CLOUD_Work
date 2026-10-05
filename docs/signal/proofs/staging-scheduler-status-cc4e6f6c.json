@@ -1,0 +1,12 @@
+{
+  "httpTarget": {
+    "httpMethod": "POST",
+    "uri": "https://praxis.tacitus.me/api/signal/sweep"
+  },
+  "lastAttemptTime": "2026-10-05T22:00:38.694541Z",
+  "name": "projects/praxisbytacitus/locations/us-central1/jobs/praxis-signal-watch-sweep",
+  "schedule": "0 * * * *",
+  "state": "ENABLED",
+  "status": {},
+  "timeZone": "Etc/UTC"
+}

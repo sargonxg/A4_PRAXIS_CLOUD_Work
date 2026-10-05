@@ -1,0 +1,164 @@
+{
+  "revision": "praxis-frontend-01136-quh",
+  "imageDigest": "us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend@sha256:a33bacc3656b1064c8f1979112ba205cfbab9ca01c70c221bc0013b47ff383b0",
+  "runtime": {
+    "status": "ok",
+    "summary": "Systems ready",
+    "checkedAt": "2026-10-05T22:35:55.839Z",
+    "debugHref": "/app/settings?tab=system",
+    "build": {
+      "source": "signal-staging",
+      "repository": "sargonxg/A4_PRAXIS_CLOUD_Work",
+      "branch": "signal-coverage-refinement",
+      "commit": "cc4e6f6cac87c4dd30a8da5c23e16dad9479c452",
+      "buildId": "4ea6bc55-5b47-4a67-864d-29aa59e49d7e",
+      "revision": "praxis-frontend-01136-quh",
+      "service": "praxis-frontend"
+    },
+    "checks": [
+      {
+        "id": "frontend",
+        "label": "Frontend runtime",
+        "status": "ok",
+        "latencyMs": 145
+      },
+      {
+        "id": "firestore",
+        "label": "Firestore",
+        "status": "ok"
+      },
+      {
+        "id": "backend",
+        "label": "Private backend",
+        "status": "ok"
+      },
+      {
+        "id": "agent_ledger",
+        "label": "Deep work queue",
+        "status": "ok"
+      },
+      {
+        "id": "agent_queue",
+        "label": "Agent task queue",
+        "status": "ok",
+        "latencyMs": 145
+      },
+      {
+        "id": "agent_worker",
+        "label": "Agent worker dispatch",
+        "status": "ok"
+      },
+      {
+        "id": "agent_platform",
+        "label": "Agent platform",
+        "status": "ok"
+      }
+    ]
+  },
+  "resources": {
+    "limits": {
+      "cpu": "1",
+      "memory": "2Gi"
+    }
+  },
+  "containerConcurrency": 8,
+  "serviceAccount": "praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com",
+  "scaling": {
+    "autoscaling.knative.dev/maxScale": "10",
+    "autoscaling.knative.dev/minScale": "1"
+  },
+  "workerUrls": {
+    "AGENT_RUN_WORKER_BASE_URL": "https://praxis.tacitus.me",
+    "AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL": "praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com",
+    "AGENT_RUN_WORKER_OIDC_AUDIENCE": "https://praxis.tacitus.me",
+    "SIGNAL_WORKER_BASE_URL": "https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app"
+  },
+  "secretBindings": {
+    "FIREBASE_SERVICE_ACCOUNT_KEY": {
+      "key": "latest",
+      "name": "praxis-firebase-sa"
+    },
+    "GOOGLE_AI_API_KEY": {
+      "key": "latest",
+      "name": "praxis-google-ai-key"
+    },
+    "CRON_SECRET": {
+      "key": "latest",
+      "name": "praxis-cron-secret"
+    },
+    "COOKIE_SIGNING_SECRET": {
+      "key": "latest",
+      "name": "praxis-cookie-secret"
+    },
+    "SESSION_SECRET": {
+      "key": "latest",
+      "name": "praxis-cookie-secret"
+    },
+    "USER_KEY_MASTER": {
+      "key": "latest",
+      "name": "praxis-user-key-master"
+    },
+    "VERTEX_AGENT_ENGINE_ID": {
+      "key": "latest",
+      "name": "praxis-vertex-adk-engine-id"
+    },
+    "PUBSUB_PUSH_SHARED_SECRET": {
+      "key": "latest",
+      "name": "praxis-pubsub-push-secret"
+    },
+    "AGENT_RUNTIME_DATABASE_URL": {
+      "key": "latest",
+      "name": "praxis-agent-runtime-database-url"
+    },
+    "EXA_API_KEY": {
+      "key": "latest",
+      "name": "praxis-exa-api-key"
+    },
+    "POLAR_ACCESS_TOKEN": {
+      "key": "1",
+      "name": "polar-access-token"
+    },
+    "POLAR_WEBHOOK_SECRET": {
+      "key": "1",
+      "name": "praxis-polar-webhook-secret"
+    }
+  },
+  "traffic": [
+    {
+      "revisionName": "praxis-frontend-01050-kaj",
+      "tag": "canary",
+      "url": "https://canary---praxis-frontend-pgoyqovcza-uc.a.run.app"
+    },
+    {
+      "revisionName": "praxis-frontend-01102-piy",
+      "tag": "workspace-release",
+      "url": "https://workspace-release---praxis-frontend-pgoyqovcza-uc.a.run.app"
+    },
+    {
+      "revisionName": "praxis-frontend-01104-85z",
+      "tag": "cognitive-release",
+      "url": "https://cognitive-release---praxis-frontend-pgoyqovcza-uc.a.run.app"
+    },
+    {
+      "revisionName": "praxis-frontend-01105-nov",
+      "tag": "followup-release",
+      "url": "https://followup-release---praxis-frontend-pgoyqovcza-uc.a.run.app"
+    },
+    {
+      "revisionName": "praxis-frontend-01112-6x6",
+      "tag": "cognitive-continuation",
+      "url": "https://cognitive-continuation---praxis-frontend-pgoyqovcza-uc.a.run.app"
+    },
+    {
+      "percent": 100,
+      "revisionName": "praxis-frontend-01117-68m",
+      "tag": "signal-release",
+      "url": "https://signal-release---praxis-frontend-pgoyqovcza-uc.a.run.app"
+    },
+    {
+      "revisionName": "praxis-frontend-01136-quh",
+      "tag": "signal",
+      "url": "https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app"
+    }
+  ]
+}

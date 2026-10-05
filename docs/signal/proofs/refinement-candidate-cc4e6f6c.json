@@ -1,0 +1,57 @@
+{
+  "sourceCommit": "cc4e6f6cac87c4dd30a8da5c23e16dad9479c452",
+  "aliasBranch": "signal-coverage-refinement",
+  "localValidation": {
+    "testFiles": 492,
+    "tests": 2990,
+    "fullGate": "passed",
+    "lintErrors": 0,
+    "existingLintWarnings": 5,
+    "authenticatedBrowserTests": 5,
+    "browserMinutes": 3.7,
+    "actualWebGL2": true,
+    "geographicGlobe": true,
+    "mediaInventory": true,
+    "privateFeedback": true,
+    "forcedFallback": true,
+    "runtimeExceptions": 0,
+    "mobileOverflow": false,
+    "ownedFixturesCleaned": true,
+    "primaryCtaContrast": 7.61122539315828,
+    "forwardingFailures": []
+  },
+  "stagingBuildId": "4ea6bc55-5b47-4a67-864d-29aa59e49d7e",
+  "publicationStatus": "held before main push: managed workspace egress returns HTTP503 across GitHub, public and staged URLs; source frozen",
+  "stagingValidation": {
+    "buildStatus": "SUCCESS",
+    "revision": "praxis-frontend-01136-quh",
+    "imageDigest": "us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend@sha256:a33bacc3656b1064c8f1979112ba205cfbab9ca01c70c221bc0013b47ff383b0",
+    "runtimeChecksPassed": 7,
+    "feedbackIsolationPassed": true,
+    "feedbackCleanup": {
+      "ownedDeskDeleted": true,
+      "deletedDeskUnavailable": true,
+      "temporaryIdentityDeleted": true,
+      "temporaryProfileAndSignupUnavailable": true,
+      "temporaryRateLimitsUnavailable": true
+    },
+    "allBrowserTests": "pending infrastructure recovery",
+    "browserTests": {
+      "passed": 2,
+      "interrupted": 3,
+      "reason": "managed workspace proxy HTTP503 before remaining app assertions",
+      "completeSuitePassed": false
+    },
+    "browserFixtureCleanup": "pending verification after workspace egress recovers; fixtures are explicitly synthetic and unwatched"
+  },
+  "lastCheckedAt": "2026-10-05T22:46:04.043939+00:00",
+  "publicSourceUnchanged": "cad3eb2b5ec355052607bf528a4e23d3fc5a3c72",
+  "publicRevisionUnchanged": "praxis-frontend-01117-68m",
+  "remainingSteps": [
+    "Restore workspace egress and verify exact fresh staging provenance",
+    "Finish scoped synthetic-browser cleanup and rerun all five staged browser tests",
+    "Fetch current main and preserve ancestry; publish exact tested application commit through canonical main pipeline",
+    "Verify correct production worker target and all seven dependency checks before traffic promotion",
+    "Repeat all five plain-public browser tests and private-feedback second-identity proof; retain cleanup receipts"
+  ]
+}

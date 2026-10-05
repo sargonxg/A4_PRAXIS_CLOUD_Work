@@ -1,0 +1,33 @@
+{
+  "target": "https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app",
+  "mode": "tagged-staging",
+  "proof": {
+    "provenance": {
+      "commit": "cc4e6f6cac87c4dd30a8da5c23e16dad9479c452",
+      "repository": "sargonxg/A4_PRAXIS_CLOUD_Work",
+      "branch": "signal-coverage-refinement"
+    },
+    "realCanarySession": true,
+    "ownerFeedback": {
+      "serverActorVerified": true,
+      "serverTimestampVerified": true,
+      "deskVersionVerified": true,
+      "synthetic": true,
+      "persisted": true
+    },
+    "secondIdentityReadRejected": 404,
+    "secondIdentityWriteRejected": 404,
+    "forgedActorRejected": 422,
+    "staleVersionRejected": 409,
+    "canonicalSourcesClaimsReviewsApprovedBriefUnchanged": true,
+    "noModelCallsOrWatchedJobs": true
+  },
+  "cleanup": {
+    "ownedDeskDeleted": true,
+    "deletedDeskUnavailable": true,
+    "temporaryIdentityDeleted": true,
+    "temporaryProfileAndSignupUnavailable": true,
+    "temporaryRateLimitsUnavailable": true
+  },
+  "passed": true
+}

@@ -10,9 +10,9 @@ Coverage includes a geographic globe and a media landscape. Capture an optional 
 
 Narratives also includes an orbitable evidence network with search, language/kind/state filters and exact source, reading and interpretation inspection. Its coordinates are a reading layout without geographical or influence meaning.
 
-Open **Private feedback** below any desk view to record a rating and observation, mark synthetic tests, and export notes yourself. Notes stay in the private desk and never accept evidence or change approved briefs. See [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md) for actual QA observations and [IMPROVEMENT_BACKLOG.md](IMPROVEMENT_BACKLOG.md) for follow-up acceptance criteria. Publication status for this refinement is recorded there after cloud verification; the text-pilot release record above is historical.
+Open **Private feedback** below any desk view to record a rating and observation, mark synthetic tests, and export notes yourself. Notes stay in the private desk and never accept evidence or change approved briefs. See [REFINEMENT_REVIEW.md](REFINEMENT_REVIEW.md) for actual QA observations and [IMPROVEMENT_BACKLOG.md](IMPROVEMENT_BACKLOG.md) for follow-up acceptance criteria. This refinement is a cloud staging candidate: all five local browser tests and staged runtime/privacy checks pass, while complete tagged/public acceptance and publication are held by a managed workspace egress outage. The public release status below describes the initial text pilot.
 
-## Verification status
+## Initial text-pilot verification status
 
 Published at [praxis.tacitus.me/signal](https://praxis.tacitus.me/signal) using existing PRAXIS sign-in. Exact deployed code, revision/image, scheduler and safe live receipts are recorded in [RELEASE_PLAN.md](RELEASE_PLAN.md) and [PROGRESS.md](PROGRESS.md). Final source gates passed: 487 test files / 2,945 tests, typecheck, production build, lint and required audits. Three tagged staging and three public browser tests exercise real authentication, evidence/context/assessment/approval/export/correction recovery/deletion and existing capsule inspection. Public model, Cloud Tasks, two-tenant isolation and context-only withdrawal gates passed. A human-labelled 200-item quality benchmark remains unmeasured; image/audio/video and GDELT are disabled.
 
@@ -51,7 +51,7 @@ Existing model-gateway configuration remains authoritative. External setup helpe
 
 The worker is part of the Next.js server, not a second process. Cloud Tasks calls `POST /api/signal/worker` with verified OIDC. An hourly UTC scheduler calls `POST /api/signal/sweep` with the separate cron secret. Watched collection requires approved source inputs, ready Firestore indexes, queue permissions and a configured HTTPS worker target. Keep automatic collection paused until live dispatch and recovery are verified.
 
-SIGNAL adds owner-scoped desks, jobs and allowance controls, plus additive collection-group field indexes and index suppression for large payloads. SIGNAL uses the existing default-deny security rules without source changes. Its14 additive field overrides have been applied and required indexes are READY; read back indexes before future releases. No bulk migration of existing capsules or customer evidence is required. Native capsule adaptation creates private versioned copies and preserves external originals.
+SIGNAL adds owner-scoped desks, jobs and allowance controls, plus additive collection-group field indexes and index suppression for large payloads. SIGNAL uses the existing default-deny security rules without source changes. Its 14 additive field overrides have been applied and required indexes are READY; read back indexes before future releases. No bulk migration of existing capsules or customer evidence is required. Native capsule adaptation creates private versioned copies and preserves external originals.
 
 Before release run the full root `AGENTS.md` gate: typecheck, build, lint, repository-shape/gate/architecture-reference/GCP audits, AI-route audit and all Vitest tests. For independent kit contract checks:
 
