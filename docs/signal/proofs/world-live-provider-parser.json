@@ -1,0 +1,81 @@
+{
+  "clock": "2026-10-05T23:49:06.709Z",
+  "parserSource": "frozen corrected world-service",
+  "sourceBodiesPersisted": false,
+  "firestoreWrites": 0,
+  "results": [
+    {
+      "id": "FP.CPI.TOTL.ZG",
+      "http": 200,
+      "observations": 20,
+      "years": [
+        2025,
+        2024
+      ],
+      "reportedSourceId": null
+    },
+    {
+      "id": "IT.NET.USER.ZS",
+      "http": 200,
+      "observations": 20,
+      "years": [
+        2024,
+        2025,
+        2023
+      ],
+      "reportedSourceId": null
+    },
+    {
+      "id": "NY.GDP.PCAP.CD",
+      "http": 200,
+      "observations": 20,
+      "years": [
+        2025
+      ],
+      "reportedSourceId": null
+    },
+    {
+      "id": "govuk-public-communications",
+      "http": 200,
+      "uniqueHeadlines": 7,
+      "countryAssociations": 9,
+      "countryCodes": [
+        "GB",
+        "UA",
+        "RU"
+      ],
+      "requiredAuthorComplete": true
+    },
+    {
+      "id": "SP.POP.TOTL",
+      "http": 200,
+      "observations": 20,
+      "years": [
+        2025
+      ],
+      "reportedSourceId": null
+    },
+    {
+      "id": "european-commission-press",
+      "http": 200,
+      "uniqueHeadlines": 1,
+      "countryAssociations": 1,
+      "countryCodes": [
+        "UA"
+      ],
+      "requiredAuthorComplete": true
+    },
+    {
+      "id": "global-voices",
+      "http": 200,
+      "uniqueHeadlines": 3,
+      "countryAssociations": 3,
+      "countryCodes": [
+        "CN",
+        "BR",
+        "UA"
+      ],
+      "requiredAuthorComplete": true
+    }
+  ]
+}

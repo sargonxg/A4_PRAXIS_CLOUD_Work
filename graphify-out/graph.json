@@ -69770,7 +69770,7 @@
       "file_type": "code",
       "norm_label": "boundedmap()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L78"
+      "source_location": "L79"
     },
     {
       "id": "src_lib_signal_world_service_cancommitsignalworld",
@@ -69818,7 +69818,7 @@
       "file_type": "code",
       "norm_label": "feedtext()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L29"
+      "source_location": "L30"
     },
     {
       "id": "src_lib_signal_world_service_getsignalworld",
@@ -69830,7 +69830,7 @@
       "file_type": "code",
       "norm_label": "getsignalworld()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L77"
+      "source_location": "L78"
     },
     {
       "id": "src_lib_signal_world_service_hash",
@@ -69854,7 +69854,7 @@
       "file_type": "code",
       "norm_label": "mergesignalworldheadlines()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L66"
+      "source_location": "L67"
     },
     {
       "id": "src_lib_signal_world_service_parsesignalworldheadlines",
@@ -69866,7 +69866,7 @@
       "file_type": "code",
       "norm_label": "parsesignalworldheadlines()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L35"
+      "source_location": "L36"
     },
     {
       "id": "src_lib_signal_world_service_parsesignalworldmetrics",
@@ -69902,7 +69902,7 @@
       "file_type": "code",
       "norm_label": "refreshsignalworld()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L79"
+      "source_location": "L80"
     },
     {
       "id": "src_lib_signal_world_service_signalworldrepository_acquire",
@@ -69914,7 +69914,7 @@
       "file_type": "code",
       "norm_label": ".acquire()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71"
+      "source_location": "L72"
     },
     {
       "id": "src_lib_signal_world_service_signalworldrepository_commit",
@@ -69926,7 +69926,7 @@
       "file_type": "code",
       "norm_label": ".commit()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71"
+      "source_location": "L72"
     },
     {
       "id": "src_lib_signal_world_service_signalworldrepository_read",
@@ -69938,7 +69938,7 @@
       "file_type": "code",
       "norm_label": ".read()",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71"
+      "source_location": "L72"
     },
     {
       "id": "src_lib_signal_world_service_signalworldwindow",
@@ -155926,7 +155926,7 @@
       "file_type": "code",
       "norm_label": "signalworldrepository",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L72"
+      "source_location": "L73"
     },
     {
       "id": "src_lib_signal_world_topics",
@@ -372426,7 +372426,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L32",
+      "source_location": "L33",
       "weight": 1.0
     },
     {
@@ -372438,7 +372438,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L77",
+      "source_location": "L78",
       "weight": 1.0
     },
     {
@@ -372450,7 +372450,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L77",
+      "source_location": "L78",
       "weight": 1.0
     },
     {
@@ -372462,7 +372462,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L42",
+      "source_location": "L43",
       "weight": 1.0
     },
     {
@@ -372474,7 +372474,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L80",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -372486,7 +372486,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L80",
+      "source_location": "L81",
       "weight": 1.0
     },
     {
@@ -372498,7 +372498,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L84",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -372510,7 +372510,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L84",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -372522,7 +372522,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L84",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -372534,7 +372534,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L84",
+      "source_location": "L85",
       "weight": 1.0
     },
     {
@@ -372546,7 +372546,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L86",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -372558,7 +372558,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L86",
+      "source_location": "L87",
       "weight": 1.0
     },
     {
@@ -372570,7 +372570,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L87",
+      "source_location": "L88",
       "weight": 1.0
     },
     {
@@ -372582,7 +372582,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L88",
+      "source_location": "L89",
       "weight": 1.0
     },
     {
@@ -395917,7 +395917,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -395929,7 +395929,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -395941,7 +395941,7 @@
       "confidence_score": 1.0,
       "context": "generic_arg",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -566420,7 +566420,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -566432,7 +566432,7 @@
       "confidence_score": 1.0,
       "context": "parameter_type",
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -735651,7 +735651,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L29",
+      "source_location": "L30",
       "weight": 1.0
     },
     {
@@ -735662,7 +735662,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L35",
+      "source_location": "L36",
       "weight": 1.0
     },
     {
@@ -735673,7 +735673,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L66",
+      "source_location": "L67",
       "weight": 1.0
     },
     {
@@ -735684,7 +735684,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -735695,23 +735695,12 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L77",
-      "weight": 1.0
-    },
-    {
-      "source": "src_lib_signal_world_service",
-      "target": "src_lib_signal_world_service_boundedmap",
-      "relation": "contains",
-      "_origin": "ast",
-      "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
-      "source_file": "src/lib/signal/world-service.ts",
       "source_location": "L78",
       "weight": 1.0
     },
     {
       "source": "src_lib_signal_world_service",
-      "target": "src_lib_signal_world_service_refreshsignalworld",
+      "target": "src_lib_signal_world_service_boundedmap",
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
@@ -735729,6 +735718,17 @@
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
       "source_location": "L8",
+      "weight": 1.0
+    },
+    {
+      "source": "src_lib_signal_world_service",
+      "target": "src_lib_signal_world_service_refreshsignalworld",
+      "relation": "contains",
+      "_origin": "ast",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/signal/world-service.ts",
+      "source_location": "L80",
       "weight": 1.0
     },
     {
@@ -763180,7 +763180,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -763191,7 +763191,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -763202,7 +763202,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/lib/signal/world-service.ts",
-      "source_location": "L71",
+      "source_location": "L72",
       "weight": 1.0
     },
     {
@@ -787939,5 +787939,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "f183ee6d2537d7e6e5a14620c99bee7779195966"
+  "built_at_commit": "4ce89c00689cfddb0006da67510484485c077a6c"
 }

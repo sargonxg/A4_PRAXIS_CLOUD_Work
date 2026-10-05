@@ -1,7 +1,7 @@
 {
   "status": "full-source-gates-passed-live-world-acceptance-pending",
   "unitFiles": 498,
-  "unitTests": 3032,
+  "unitTests": 3033,
   "lintErrors": 0,
   "existingLintWarningsOutsideSignal": 5,
   "configuredGate": "passed",
@@ -27,7 +27,15 @@
     "src/lib/signal/world-geography.ts": "d725303281611aef6f8285f1aacad67655f66d80f41583f51bff48340323dfca",
     "src/lib/signal/world-research.ts": "1a9edeffd6e4e1a9e91b4792ab68c475927156d5724721e9574541ce51206b74",
     "src/lib/signal/world-schema.ts": "c861ccd8433fa148987f6f989aead89e1b35ea7d94b7ef7ad9186526760e5305",
-    "src/lib/signal/world-service.ts": "4eec7ae7edcb8fa9dd4afb1bebb685a217ecdfd98f65488933f7eb6771059832",
+    "src/lib/signal/world-service.ts": "a681672dfe5e2b2537c34d13572269bd326436c8a2c7834d35cedc339e1dbbd6",
     "src/lib/signal/world-topics.ts": "fb6f35e39d8e9d15a872de5dcec51136543c2e57ed7436fe486e25b6b0adc745"
+  },
+  "liveReadOnlyProviderParser": {
+    "economicObservations": 80,
+    "uniqueEligibleHeadlines": 11,
+    "countryAssociations": 13,
+    "endpointsHttp200": 7,
+    "cacheWrites": 0,
+    "reportedNullSourceIdsNotInvented": true
   }
 }

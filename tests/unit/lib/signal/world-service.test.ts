@@ -41,6 +41,10 @@ describe('permission-cleared metadata attribution',()=>{
   const old={...fresh,author:'Old attribution',retrievedAt:'2026-10-01T00:00:00Z'};
   expect(mergeSignalWorldHeadlines([fresh],[old])).toEqual([{...fresh,retrievedAt:old.retrievedAt}]);
  });
+ it('accepts the actual pinned-provider null source ID without inventing a reported dataset ID',()=>{
+  const text=JSON.stringify([{pages:1,sourceid:null,lastupdated:'2026-07-13'},[{countryiso3code:'USA',indicator:{id:'SP.POP.TOTL'},date:'2025',value:12.5}]]);
+  expect(parseSignalWorldMetrics(text,'SP.POP.TOTL',new Date(time).toISOString()).get('USA')).toEqual({value:12.5,year:2025,providerLastUpdated:'2026-07-13'});
+ });
  it('rejects a different World Bank dataset instead of assuming WDI reuse rights',()=>{
   expect(()=>parseSignalWorldMetrics(JSON.stringify([{pages:1,sourceid:'99'},[]]),'SP.POP.TOTL',new Date(time).toISOString())).toThrow('pinned World Development Indicators');
  });
