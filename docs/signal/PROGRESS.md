@@ -6,7 +6,7 @@
 - Environment: Codex cloud /workspace/A4_PRAXIS_CLOUD_Work; Node 24.19.0, npm 11.9.0, gcloud 587.0.0.
 - Kit: v0.2.0 with BOOTSTRAP and twelve phases, explicitly accepted by user. Integrity and all 29 reference tests passed.
 - Production deployment pending final corrected staging. Rollback frontend revision praxis-frontend-01112-6x6 remains at 100% traffic.
-- Current action: stage the browser-discovered root-navigation fix, verify all browser gates, then publish and verify production.
+- Current action: stage the final native-capsule inspector link correction, verify its actual click-through and all browser gates, then publish and verify production.
 
 | Phase | Status | Evidence / remaining gate |
 | --- | --- | --- |
@@ -73,3 +73,15 @@ The final context fixes are frozen:92 focused SIGNAL tests across10 files, typec
 - Final read-only review confirms active-context guards, epochs, owner/version/source preflight before calibration and precise pinned-context withdrawal export denial. No remaining material source blocker identified in reviewed paths.
 - Graphify AST/report refreshed after frozen source;20,287 nodes,45,212 clustered edges,963 communities, zero model tokens.
 - Final corrected cloud staging, browser/worker acceptance, production publication and scheduler/live public verification remain the next release gates.
+
+## Final cloud acceptance checkpoint
+
+- Final core build7091db49-f853-4853-8e7a-521bf69097cc succeeded, commit0f20eac89c2891bc5020eae288076e9c37100190, revisionpraxis-frontend-01131-luq, digestsha256:c3a71c8c289b2db7c453e70a8b647414a50e85bb1d89c44b24831eeb5323dc5d, zero public traffic. Cloud preflight retains one optional scheduler-list visibility warning; local authenticated GCP audit has zero warnings and actual scheduler readback is separate.
+- Real AI/Tasks/isolation/invalid-auth proof passed: actual model4786tokens, one proposed/unaccepted claim, first-attempt dispatched worker persisted10 NASA RSS sources; all scoped cleanup passed.
+- Actual context-only withdrawal proof passed: B-only approved brief pins A through the native compiler receipt; withdrawing A suspends MD and JSON exports403 without changing historical text/digest/manifest. Generated capsules/jobs/desk cleanup passed.
+- All3 staged browser tests passed: More /signal, anonymous401, exact review/context/assessment/exports, correction→stale analysis409 without desk allowance/run/version changes→explicit rebuild→fresh reviewed correction, mobile bounds, contrast7.611:1, zero runtime exceptions. Initial retry needed restoration of the browser's platform CA trust grant; no TLS bypass.
+- Safe console review uncovered the separate native-context inspection link pointing to nonexistent /app/capsules/<id>. The canonical /app/capsules?starter=<id>&lane=inspect link and actual inspector click-through are being corrected before publication. Full core behavior is proved; final link-corrected candidate still requires gates.
+
+## Native-inspector correction release gate
+
+The final link correction and actual inspector click/back assertions are frozen. Full required gate passed again: 487 isolated test files / 2,945 tests, full lint zero errors / five existing warnings, TypeScript, production build, audit:gate, repo-shape, architecture-reference and AI route audit. All 38 local authenticated GCP checks pass with zero hard failures or soft warnings. Graphify refreshed the two changed files: 20,270 nodes / 45,188 edges / 949 communities, zero model tokens. Safe core staging worker and pinned-context withdrawal receipts are versioned in proofs/. Exact final corrected staging/browser and canonical main/public acceptance remain outstanding.

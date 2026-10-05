@@ -1,0 +1,34 @@
+{
+  "commit": "0f20eac89c2891bc5020eae288076e9c37100190",
+  "proof": {
+    "exactTaggedRuntime": true,
+    "configuredFirebaseClient": true,
+    "realCanaryLogin": true,
+    "realCanarySession": true,
+    "sessionCookiePresent": true,
+    "ownedSyntheticDesk": true,
+    "compilerReceiptPinsSourceA": true,
+    "sourceAReadingStaleAfterCompile": true,
+    "directBriefCitesOnlyB": true,
+    "briefPinnedContextSelectsA": true,
+    "initialExportsAllowed": true,
+    "withdrawalInvalidatesCompiledContextAndBrief": true,
+    "historicalArtifactUnchanged": true,
+    "contextOnlyWithdrawalBlocksBothExports": true,
+    "directSourceBStillAvailable": true
+  },
+  "cleanup": {
+    "ownedDeskDeleted": true,
+    "deletedDeskUnavailable": true,
+    "generatedCapsulesRemoved": true,
+    "ownedJobsRemoved": true
+  },
+  "initialExportStatuses": {
+    "markdown": 200,
+    "bundle": 200
+  },
+  "withdrawnExportStatuses": {
+    "markdown": 403,
+    "bundle": 403
+  }
+}

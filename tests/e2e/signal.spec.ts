@@ -176,7 +176,18 @@ test('authenticated synthetic desk: capture, exact denial, review, capsule, appr
   await page.getByRole('tab', { name: 'Context', exact: true }).click();
   desk = await saved(page, () => page.getByRole('button', { name: 'Build or attach context capsule', exact: true }).click());
   expect(desk.capsuleId).toMatch(/^signal-/);
-  await expect(page.getByText('Inspect attached context capsule', { exact: true })).toBeVisible();
+  const inspectContext = page.getByRole('link', { name: 'Inspect attached context capsule', exact: true });
+  const capsuleInspectorHref = `/app/capsules?starter=${encodeURIComponent(desk.capsuleId!)}&lane=inspect`;
+  await expect(inspectContext).toHaveAttribute('href', capsuleInspectorHref);
+  await inspectContext.click();
+  await expect(page).toHaveURL(`${browserOrigin}${capsuleInspectorHref}`);
+  const inspector = page.getByTestId('capsule-inspection-experience');
+  await expect(inspector.getByRole('heading', { level: 2, name: desk.name, exact: true })).toBeVisible({ timeout: 30000 });
+  await inspector.getByText('Technical capsule contract', { exact: true }).click();
+  await expect(inspector.locator('pre').filter({ hasText: desk.capsuleId! })).toBeVisible();
+  await page.goBack();
+  await expect(page.getByRole('heading', { level: 1, name: 'SIGNAL', exact: true })).toBeVisible({ timeout: 30000 });
+  await expect(page.getByRole('heading', { level: 2, name: desk.name, exact: true })).toBeVisible();
   // Context changes reopen the old proposal; pin a renewed exact source reading to the new context.
   await page.getByRole('tab', { name: 'Evidence', exact: true }).click();
   await page.getByLabel('Attributed proposition', { exact: true }).fill('The minister explicitly denied adopting the proposal.');

@@ -1,0 +1,60 @@
+{
+  "target": "https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app",
+  "mode": "tagged-staging",
+  "proof": {
+    "provenance": {
+      "commit": "0f20eac89c2891bc5020eae288076e9c37100190",
+      "repository": "sargonxg/A4_PRAXIS_CLOUD_Work",
+      "branch": "signal-text-pilot-final",
+      "source": "signal-staging"
+    },
+    "realCanarySession": true,
+    "ownedDeskCreated": true,
+    "secondRealIdentityIsolated": [
+      {
+        "surface": "desk",
+        "status": 404
+      },
+      {
+        "surface": "graph",
+        "status": 404
+      },
+      {
+        "surface": "export",
+        "status": 404
+      }
+    ],
+    "unauthenticatedWorkerRejected": true,
+    "invalidWorkerIdentityRejected": true,
+    "invalidSweepSecretRejected": true,
+    "liveCalibratedAnalysis": {
+      "status": 200,
+      "runStatus": "succeeded",
+      "model": "gemini-3.5-flash",
+      "tokens": 4786,
+      "proposalCount": 1,
+      "allProposalsUnaccepted": true
+    },
+    "explicitWatchEnabled": true,
+    "sweep": {
+      "status": 200,
+      "scanned": 1,
+      "enqueued": 1,
+      "recovered": 0,
+      "errors": 0
+    },
+    "actualCloudTasksWorker": {
+      "status": "succeeded",
+      "attempts": 1,
+      "dispatched": true,
+      "receiptStatus": "succeeded",
+      "collectedSources": 10
+    },
+    "watchPauseVerified": true
+  },
+  "cleanup": {
+    "ownedDeskDeleted": true,
+    "deletedDeskUnavailable": true,
+    "temporaryIdentityDeleted": true
+  }
+}
