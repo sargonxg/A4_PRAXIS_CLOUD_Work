@@ -3,7 +3,7 @@ import { z, ZodError } from 'zod';
 import { withAuth } from '@/lib/api/with-auth';
 import { signalStore } from '@/lib/signal/store';
 import { pointer, DeskInputSchema } from '@/lib/signal/schema';
-import { approveBrief, capture, digest, draftBrief, editBrief, graph, invalidate, metrics, propose, review, SignalError } from '@/lib/signal/domain';
+import { approveBrief, capture, digest, draftBrief, editBrief, graph, invalidate, markSignalContextStale, metrics, propose, review, signalBriefHasWithdrawnEvidence, SignalError } from '@/lib/signal/domain';
 import { attachSignalContext } from '@/lib/signal/capsules';
 import { collectSignalDesk } from '@/lib/signal/collectors';
 import { setSignalWatch } from '@/lib/signal/jobs';
@@ -29,7 +29,7 @@ export const GET = withAuth(async (req, user) => {
       const brief = desk.briefs.find(b => b.id === params.get('briefId'));
       if (!brief || brief.status !== 'approved') throw new SignalError(404, 'Approved brief unavailable.');
       if (!brief.manifest.exportAllowed) throw new SignalError(403, 'Source entitlements restrict this export. Review permitted export rights first.');
-      if (brief.manifest.claims.some(c => desk.sources.find(s => s.id === c.sourceRevisionId)?.withdrawn)) throw new SignalError(403, 'An underlying source was withdrawn. This historical artifact is retained for review but export is suspended.');
+      if (signalBriefHasWithdrawnEvidence(desk, brief)) throw new SignalError(403, 'An underlying source was withdrawn. This historical artifact is retained for review but export is suspended.');
       if (params.get('export') === 'brief') return new Response(`${brief.text}\n\nApproval: ${brief.approvedAt}; pinned digest: ${brief.digest}${brief.stale ? '\nWarning: subsequent evidence or review changed; this historical approved artifact needs reassessment.' : ''}`, { headers: { ...headers, 'Content-Type': 'text/markdown; charset=utf-8', 'Content-Disposition': `attachment; filename="signal-${brief.id}.md"` } });
       if (!brief.manifest.snapshots) throw new SignalError(409, 'This artifact lacks a pinned export snapshot. Prepare a new draft.');
       return NextResponse.json({ profile: 'praxis-signal-approved-brief/1', desk: brief.manifest.snapshots.desk, brief,
@@ -39,7 +39,7 @@ export const GET = withAuth(async (req, user) => {
         currentStatus: { stale: brief.stale ?? false, sources: brief.manifest.claims.map(c => ({ id: c.sourceRevisionId, withdrawn: desk.sources.find(s => s.id === c.sourceRevisionId)?.withdrawn ?? false })) },
       }, { headers: { ...headers, 'Content-Disposition': `attachment; filename="signal-${brief.id}.json"` } });
     }
-    return NextResponse.json({ desk, capabilities: capabilities(), graph: graph(desk), metrics: metrics(desk), context: desk.contextReceipt ? { text: desk.contextText, receipt: desk.contextReceipt, capsuleId: desk.capsuleId } : null }, { headers });
+    return NextResponse.json({ desk, capabilities: capabilities(), graph: graph(desk), metrics: metrics(desk), context: desk.contextReceipt ? { stale: desk.contextStale ?? false, text: desk.contextText, receipt: desk.contextReceipt, capsuleId: desk.capsuleId } : null }, { headers });
   } catch (error) { return signalResponseError(error); }
 });
 export const POST = withAuth(async (req, user) => {
@@ -62,11 +62,11 @@ export const POST = withAuth(async (req, user) => {
       const requested = fields.capsuleId ? pointer.parse(fields.capsuleId) : undefined;
       const result = await attachSignalContext(user.uid, { ...current, ...(requested ? { capsuleId: requested } : {}) });
       const desk = await signalStore.mutate(user.uid, id, expected, d => {
-        if (digest(d.contextReceipt ?? null) !== digest(result.receipt)) {
+        if (d.contextStale || digest(d.contextReceipt ?? null) !== digest(result.receipt) || d.claims.length > 0) {
           d.briefs.forEach(b => { b.stale = true; }); d.claims.forEach(c => { c.stale = true; });
           d.assessments?.forEach(a => { a.stale = true; }); d.narratives?.forEach(n => { n.stale = true; });
         }
-        d.capsuleId = result.capsuleId; d.contextExportAllowed = result.exportAllowed; d.contextCapsuleIds = [...new Set([...(d.contextCapsuleIds ?? []), result.capsuleId])]; d.contextReceipt = result.receipt; d.contextText = result.text;
+        d.contextEpoch = (d.contextEpoch ?? 0) + 1; d.contextStale = false; d.capsuleId = result.capsuleId; d.contextExportAllowed = result.exportAllowed; d.contextCapsuleIds = [...new Set([...(d.contextCapsuleIds ?? []), result.capsuleId])]; d.contextReceipt = result.receipt; d.contextText = result.text;
       }); return NextResponse.json({ desk }, { headers });
     }
     const desk = await signalStore.mutate(user.uid, id, expected, d => {
@@ -85,7 +85,7 @@ export const POST = withAuth(async (req, user) => {
           const panelChanged = digest(d.sourcePack) !== digest(next.sourcePack);
           if (panelChanged) next.sourcePack.version = d.sourcePack.version + 1;
           if (digest({ scope: d.scope, question: d.question, audience: d.audience, languages: d.languages, windowDays: d.windowDays }) !== digest({ scope: next.scope, question: next.question, audience: next.audience, languages: next.languages, windowDays: next.windowDays }) || panelChanged) d.briefs.forEach(b => { b.stale = true; });
-          if (panelChanged || digest({ scope: d.scope, question: d.question, audience: d.audience, languages: d.languages, windowDays: d.windowDays }) !== digest({ scope: next.scope, question: next.question, audience: next.audience, languages: next.languages, windowDays: next.windowDays })) { d.assessments?.forEach(a => { a.stale = true; }); d.narratives?.forEach(n => { n.stale = true; }); }
+          if (panelChanged || digest({ scope: d.scope, question: d.question, audience: d.audience, languages: d.languages, windowDays: d.windowDays }) !== digest({ scope: next.scope, question: next.question, audience: next.audience, languages: next.languages, windowDays: next.windowDays })) { markSignalContextStale(d); d.assessments?.forEach(a => { a.stale = true; }); d.narratives?.forEach(n => { n.stale = true; }); }
           Object.assign(d, next); break;
         }
         case 'withdraw': {

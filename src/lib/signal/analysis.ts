@@ -3,7 +3,7 @@ import { generateText, Output } from 'ai';
 import { getModel } from '@/lib/ai/providers';
 import { getAskPraxisModelRuntimePolicy } from '@/lib/ai/model-runtime-policy';
 import { ProposalSchema, type SignalSource, type SignalDesk } from './schema';
-import { digest, hash, newId, propose, reserve, SignalError, signalSourceHead, validateSpan } from './domain';
+import { assertCurrentSignalContext, digest, hash, newId, propose, reserve, SignalError, signalSourceHead, validateSpan } from './domain';
 import { signalStore, type SignalStore } from './store';
 
 export const ExtractionSchema = z.object({ claims: z.array(ProposalSchema.omit({ sourceRevisionId: true })).max(10), limitations: z.array(z.string().max(500)).max(10) }).strict();
@@ -13,6 +13,7 @@ export function validateExtraction(source: SignalSource, raw: unknown) {
   return parsed;
 }
 export function validateAnalysisSource(desk: SignalDesk, sourceRevisionId: string): SignalSource {
+  assertCurrentSignalContext(desk);
   const source = desk.sources.find(s => s.id === sourceRevisionId);
   if (!source || source.withdrawn || source.kind !== 'original_text') throw new SignalError(422, 'Choose a captured original-text revision, not a discovery headline.');
   if (signalSourceHead(desk, source.sourceId)?.revisionId !== source.id) throw new SignalError(409, 'Choose the current source revision before using analysis allowance.');
@@ -20,7 +21,7 @@ export function validateAnalysisSource(desk: SignalDesk, sourceRevisionId: strin
   return source;
 }
 export function analysisInputDigest(desk: SignalDesk, source: SignalSource): string {
-  return digest({ revisionId: source.id, hash: source.hash, activation: signalSourceHead(desk, source.sourceId), question: desk.question, scope: desk.scope, languages: desk.languages, panel: desk.sourcePack, contextReceipt: desk.contextReceipt ?? null, contextText: desk.contextText ?? '' });
+  return digest({ revisionId: source.id, hash: source.hash, activation: signalSourceHead(desk, source.sourceId), question: desk.question, scope: desk.scope, languages: desk.languages, panel: desk.sourcePack, contextEpoch: desk.contextEpoch ?? 0, contextStale: desk.contextStale ?? false, contextReceipt: desk.contextReceipt ?? null, contextText: desk.contextText ?? '' });
 }
 export async function analyzeSignalSource(uid: string, deskId: string, expectedVersion: number, sourceRevisionId: string, calibratedSystem: string, store: SignalStore = signalStore) {
   const before = await store.get(uid, deskId);

@@ -1,0 +1,19 @@
+import { describe, expect, it, vi, beforeEach } from 'vitest';
+const gate = vi.hoisted(() => ({ credits: vi.fn(), calibrated: vi.fn(async (_req: Request) => new Response('{}', { status: 200 })) }));
+vi.mock('@/lib/firebase/admin', () => ({ getAdminDbOrThrow: vi.fn() }));
+vi.mock('@/lib/api/with-auth', () => ({ withAuth: (handler: (req: Request, user: { uid: string }) => Promise<Response>) => (req: Request) => handler(req, { uid: 'owner' }) }));
+vi.mock('@/lib/api/with-calibration', () => ({ withCalibration: () => () => async (req: Request) => { gate.credits(); return gate.calibrated(req); } }));
+vi.mock('@/lib/signal/store', async importOriginal => { const actual = await importOriginal<typeof import('@/lib/signal/store')>(); return { ...actual, signalStore: actual.memorySignalStore() }; });
+vi.mock('@/lib/signal/analysis', async importOriginal => { const actual = await importOriginal<typeof import('@/lib/signal/analysis')>(); return { ...actual, analyzeSignalSource: vi.fn() }; });
+import { POST } from '@/app/api/ai/signal/route';
+import { signalStore } from '@/lib/signal/store';
+import { capture } from '@/lib/signal/domain';
+beforeEach(() => { gate.credits.mockClear(); gate.calibrated.mockClear(); });
+async function setup() { const desk = await signalStore.create('owner', { name: 'Synthetic test', question: 'What is reported?', audience: 'Analyst', scope: { kind: 'country', label: 'Brazil', countries: ['BR'] }, languages: ['en'] }); let sourceRevisionId = ''; const d = await signalStore.mutate('owner', desk.id, null, current => { sourceRevisionId = capture(current, { title: 'Synthetic statement', text: 'No policy was adopted.', language: 'en', synthetic: true, rights: { basis: 'Owned fixture', allowExport: true } }, new Date().toISOString()).id; }); return { desk: d, sourceRevisionId }; }
+const request = (deskId: string, expectedVersion: number, sourceRevisionId: string) => new Request('https://praxis.tacitus.me/api/ai/signal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ deskId, expectedVersion, sourceRevisionId }) });
+describe('SIGNAL preflight before calibrated credit gate', () => {
+ it.each(['stale-context', 'withdrawn', 'headline'] as const)('blocks %s before calibrated handler and global credit deduction', async mode => { const { desk, sourceRevisionId } = await setup(); const updated = await signalStore.mutate('owner', desk.id, null, d => { if (mode === 'stale-context') d.contextStale = true; else if (mode === 'withdrawn') d.sources[0].withdrawn = true; else d.sources[0].kind = 'headline'; }); const result = await POST(request(desk.id, updated.version, sourceRevisionId)); expect(result.status).toBe(mode === 'stale-context' ? 409 : 422); expect(gate.calibrated).not.toHaveBeenCalled(); expect(gate.credits).not.toHaveBeenCalled(); expect((await signalStore.get('owner', desk.id)).usage.analyses).toBe(0); });
+ it('blocks stale desk versions before calibration and keeps fresh requests on the normal gate', async () => { const { desk, sourceRevisionId } = await setup(); const stale = await POST(request(desk.id, desk.version - 1, sourceRevisionId)); expect(stale.status).toBe(409); expect(gate.credits).not.toHaveBeenCalled(); const valid = await POST(request(desk.id, desk.version, sourceRevisionId)); expect(valid.status).toBe(200); expect(gate.calibrated).toHaveBeenCalledTimes(1); expect(gate.credits).toHaveBeenCalledTimes(1); });
+ it('preserves downstream gateway errors instead of converting them into input errors', async () => { const { desk, sourceRevisionId } = await setup(); gate.calibrated.mockRejectedValueOnce(new Error('Gateway unavailable')); await expect(POST(request(desk.id, desk.version, sourceRevisionId))).rejects.toThrow('Gateway unavailable'); expect(gate.credits).toHaveBeenCalledTimes(1); });
+
+});

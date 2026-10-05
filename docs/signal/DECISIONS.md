@@ -11,3 +11,5 @@
 - User authorized publication after tests. Existing main push auto-deploys frontend; stage and inspect changes before any main push. Preserve existing main history and live rollback revision.
 
 GDELT discovery is gated by `SIGNAL_GDELT_ENABLED` and disabled for this release following the observed provider HTTP 503. Enable it only after a bounded successful live discovery check; supplied text and permissioned RSS are available.
+
+- Active context is explicitly marked stale after source revision/withdrawal, accepted-reading revocation or semantic desk/panel reconfiguration. Analysis and new interpretation/review operations require explicit recompilation; history remains immutable. Successful compilation increments a context epoch independently of the actual native receipt digest, preventing old proposals from deduplicating into the new active context. Owner/source/context/version preflight runs through the existing authentication wrapper before entering the unchanged calibration/credit gateway.

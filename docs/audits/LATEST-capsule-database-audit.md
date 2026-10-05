@@ -1,7 +1,7 @@
 # Capsule Database Audit
 
 Catalog version: 2026-07-02-canonical-four-category-v19
-Generated at: 2026-10-05T20:12:49.467Z
+Generated at: 2026-10-05T20:32:42.400Z
 Result: pass
 Canonical store: Firestore ContextCapsules
 Audited scope: local starter catalog definitions and seedable GraphLite advisory projection metadata

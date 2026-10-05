@@ -58,3 +58,18 @@ Read this file, INTEGRATION_MAP and DECISIONS. Preserve working changes. Complet
 ## Corrected candidate verification
 
 Full isolated repository suite485 files /2927 tests passed after the final navigation changes. Primary root routing and capsule menu regression tests10/10 passed. Full lint has zero errors; an unused smoke-helper initialization was removed and focused changed-file lint passes with zero warnings, leaving the five pre-existing repository warnings. The configured full audit gate passed, including production build, all route/capsule/agent/architecture/surface/runtime/simplification audits; separate repo-shape, architecture-reference and AI route audits passed. GCP completed38 checks with zero errors/warnings. Corrected cold cloud build/browser acceptance remains required.
+
+## Final integrity review
+
+The corrected96efc06e staging build7f965938-985a-4e2a-bcc3-09705918e618 was deliberately cancelled before deployment after review found active compiled context could retain withdrawn/corrected or rejected source readings. Production remains unchanged. A context-staleness guard and explicit rebuild recovery are being implemented, with pre-calibration validation preventing rejected requests from consuming global credits. Successful native recompilation already excludes rejected/proposed/unresolved cognition records; immutable historical snapshots remain retained. The final candidate requires fresh focused/full gates and cloud/browser acceptance.
+
+The final context fixes are frozen:92 focused SIGNAL tests across10 files, typecheck and changed-file lint passed. Coverage includes same-content context rebuild activation, pre-credit/pre-provider rejection, correction/withdrawal/review revocation, recovery and both Markdown/JSON denial for withdrawn context-only evidence even after later compilation. Full repository gates and final cloud acceptance are running.
+
+## Final source gate passed (2026-10-05)
+
+- Full isolated repository suite487 files /2945 tests passed.
+- Full lint0 errors and five pre-existing warnings; typecheck and production build passed.
+- Full audit:gate, repo-shape, architecture-reference and AI route audit passed;38 GCP checks, zero errors/warnings.
+- Final read-only review confirms active-context guards, epochs, owner/version/source preflight before calibration and precise pinned-context withdrawal export denial. No remaining material source blocker identified in reviewed paths.
+- Graphify AST/report refreshed after frozen source;20,287 nodes,45,212 clustered edges,963 communities, zero model tokens.
+- Final corrected cloud staging, browser/worker acceptance, production publication and scheduler/live public verification remain the next release gates.

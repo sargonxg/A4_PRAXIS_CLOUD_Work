@@ -1,22 +1,24 @@
 import { z } from 'zod';
 import { pointer, type SignalDesk, type SignalNarrative, type SignalAssessment } from './schema';
-import { digest, isCurrentSignalClaim, newId, SignalError, validateSpan } from './domain';
+import { assertCurrentSignalContext, digest, isCurrentSignalClaim, newId, SignalError, validateSpan } from './domain';
 
 const linkedClaims = z.array(pointer).min(1).max(30);
 const alternatives = z.array(z.string().trim().min(1).max(1000)).min(1).max(8);
 export const NarrativeInputSchema = z.object({ title: z.string().trim().min(3).max(240), frame: z.string().trim().min(5).max(2000), claimIds: linkedClaims, alternatives, previousId: pointer.optional() }).strict();
 export const AssessmentInputSchema = z.object({ conclusion: z.string().trim().min(10).max(3000), changeReason: z.string().trim().min(5).max(2000), claimIds: linkedClaims, alternatives, uncertainty: z.string().trim().min(5).max(2000), invalidators: alternatives }).strict();
 function checkClaims(desk: SignalDesk, ids: string[]) {
+  assertCurrentSignalContext(desk);
   const contextDigest = desk.contextReceipt ? digest(desk.contextReceipt) : null;
   if (new Set(ids).size !== ids.length || ids.some(id => {
     const claim = desk.claims.find(c => c.id === id);
     const review = [...desk.reviews].reverse().find(r => r.targetId === id);
-    if (!claim || claim.status !== 'accepted' || !isCurrentSignalClaim(desk, claim) || (claim.contextDigest ?? null) !== contextDigest || !review || review.decision !== 'accepted' || review.digest !== claim.digest || review.evidenceHash !== claim.evidenceHash || review.contextDigest !== contextDigest || !review.reviewerUid) return true;
+    if (!claim || claim.status !== 'accepted' || (claim.contextEpoch ?? 0) !== (desk.contextEpoch ?? 0) || !isCurrentSignalClaim(desk, claim) || (claim.contextDigest ?? null) !== contextDigest || !review || review.decision !== 'accepted' || review.digest !== claim.digest || review.evidenceHash !== claim.evidenceHash || review.contextDigest !== contextDigest || !review.reviewerUid) return true;
     const source = desk.sources.find(s => s.id === claim.sourceRevisionId)!;
     try { validateSpan(source, claim); return false; } catch { return true; }
   })) throw new SignalError(422, 'Choose distinct current accepted source readings for this interpretation.');
 }
 export function proposeNarrative(desk: SignalDesk, input: unknown, now: string) {
+  assertCurrentSignalContext(desk);
   const parsed = NarrativeInputSchema.parse(input); checkClaims(desk, parsed.claimIds);
   const previous = parsed.previousId ? desk.narratives?.find(n => n.id === parsed.previousId) : undefined;
   if (parsed.previousId && !previous) throw new SignalError(404, 'Narrative predecessor unavailable.');
@@ -25,6 +27,7 @@ export function proposeNarrative(desk: SignalDesk, input: unknown, now: string) 
   records.push(record); return record;
 }
 export function proposeAssessment(desk: SignalDesk, input: unknown, now: string) {
+  assertCurrentSignalContext(desk);
   const parsed = AssessmentInputSchema.parse(input); checkClaims(desk, parsed.claimIds);
   const records = desk.assessments ??= []; if (records.length >= 30) throw new SignalError(413, 'Assessment history capacity reached.');
   const previous = [...records].reverse().find(a => a.status === 'accepted');
@@ -32,6 +35,7 @@ export function proposeAssessment(desk: SignalDesk, input: unknown, now: string)
   records.push(record); return record;
 }
 export function reviewInterpretation(desk: SignalDesk, uid: string, input: { targetId: string; digest: string; decision: 'accepted' | 'rejected' | 'unresolved'; rationale: string }, now: string) {
+  assertCurrentSignalContext(desk);
   const target = desk.assessments?.find(a => a.id === input.targetId) ?? desk.narratives?.find(n => n.id === input.targetId);
   if (!target) throw new SignalError(404, 'Interpretation unavailable.');
   if (target.digest !== input.digest || target.stale) throw new SignalError(409, 'Interpretation changed. Reopen it for review.');

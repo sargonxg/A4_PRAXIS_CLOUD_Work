@@ -5,6 +5,32 @@ export class SignalError extends Error { constructor(public status: number, mess
 export const hash = (text: string) => createHash('sha256').update(text).digest('hex');
 export const digest = (value: unknown) => hash(JSON.stringify(value));
 export const newId = () => randomUUID().replaceAll('-', '');
+/** Preserve immutable context snapshots, but never apply one after its reviewed inputs change. */
+export function assertCurrentSignalContext(desk: SignalDesk): void {
+  if (desk.contextStale) throw new SignalError(409, 'Reviewed SIGNAL context is stale. Rebuild context before analysis, proposals, reviews or new briefs.');
+}
+export function markSignalContextStale(desk: SignalDesk): void {
+  if (desk.contextReceipt || desk.contextText) {
+    desk.contextStale = true;
+    desk.briefs.filter(b => b.manifest.contextReceipt != null).forEach(b => { b.stale = true; });
+    desk.assessments?.forEach(a => { a.stale = true; }); desk.narratives?.forEach(n => { n.stale = true; });
+  }
+}
+/** Export checks pinned direct and compiled-context evidence, independently of the current context snapshot. */
+export function signalBriefHasWithdrawnEvidence(desk: SignalDesk, brief: SignalBrief): boolean {
+  if (brief.manifest.claims.some(c => desk.sources.find(s => s.id === c.sourceRevisionId)?.withdrawn)) return true;
+  const receipt = brief.manifest.contextReceipt;
+  const spans = receipt && typeof receipt === 'object' && 'evidenceSpans' in receipt ? receipt.evidenceSpans : undefined;
+  if (!Array.isArray(spans)) return false;
+  return spans.some(value => {
+    if (!value || typeof value !== 'object' || typeof value.id !== 'string' || !value.id.startsWith('signal-span-')) return false;
+    const claim = desk.claims.find(c => value.id === `signal-span-${c.id}`);
+    if (claim && desk.sources.find(s => s.id === claim.sourceRevisionId)?.withdrawn) return true;
+    const revision = desk.sources.find(s => value.id === `signal-span-${s.id}`);
+    if (revision?.withdrawn) return true;
+    return typeof value.sourceId === 'string' && typeof value.sourceVersion === 'string' && desk.sources.some(s => s.withdrawn && s.sourceId === value.sourceId && s.hash === value.sourceVersion.replace(/^sha256:/, ''));
+  });
+}
 /** Activation history is separate from immutable source content revisions. */
 export function signalSourceHead(desk: SignalDesk, sourceId: string): { revisionId: string; epoch: number } | undefined {
   const saved = desk.sourceHeads?.[sourceId];
@@ -72,6 +98,7 @@ export function capture(desk: SignalDesk, raw: unknown, now: string, discoveredA
   return source;
 }
 export function invalidate(desk: SignalDesk, revisionId: string) {
+  markSignalContextStale(desk);
   desk.claims.filter(c => c.sourceRevisionId === revisionId).forEach(c => { c.stale = true; });
   desk.briefs.filter(b => b.manifest.claims.some(c => c.sourceRevisionId === revisionId)).forEach(b => { b.stale = true; });
   const changed = new Set(desk.claims.filter(c => c.sourceRevisionId === revisionId).map(c => c.id));
@@ -79,24 +106,26 @@ export function invalidate(desk: SignalDesk, revisionId: string) {
   desk.assessments?.filter(a => a.claimIds.some(id => changed.has(id))).forEach(a => { a.stale = true; });
 }
 export function propose(desk: SignalDesk, raw: unknown, now: string, derivation?: Record<string, unknown>): SignalClaim {
+  assertCurrentSignalContext(desk);
   const input = ProposalSchema.parse(raw);
   const source = desk.sources.find(s => s.id === input.sourceRevisionId);
   if (!source) throw new SignalError(404, 'Source revision unavailable.');
   const head = signalSourceHead(desk, source.sourceId);
   if (head?.revisionId !== source.id) throw new SignalError(409, 'Choose the current source revision before proposing a reading.');
   validateSpan(source, input);
-  const claimDigest = digest({ ...input, evidenceHash: source.hash, activationEpoch: head.epoch, contextReceipt: desk.contextReceipt ?? null });
+  const claimDigest = digest({ ...input, evidenceHash: source.hash, activationEpoch: head.epoch, contextEpoch: desk.contextEpoch ?? 0, contextReceipt: desk.contextReceipt ?? null });
   const existing = desk.claims.find(c => c.digest === claimDigest);
   if (existing) return existing;
   if (desk.claims.length >= 160) throw new SignalError(413, 'Proposal capacity reached.');
-  const claim: SignalClaim = { ...input, id: claimDigest.slice(0, 40), digest: claimDigest, evidenceHash: source.hash, activationEpoch: head.epoch, contextDigest: desk.contextReceipt ? digest(desk.contextReceipt) : null, offsetUnit: 'utf16_code_unit', status: 'proposed', createdAt: now, ...(derivation ? { derivation } : {}) };
+  const claim: SignalClaim = { ...input, id: claimDigest.slice(0, 40), digest: claimDigest, evidenceHash: source.hash, activationEpoch: head.epoch, contextEpoch: desk.contextEpoch ?? 0, contextDigest: desk.contextReceipt ? digest(desk.contextReceipt) : null, offsetUnit: 'utf16_code_unit', status: 'proposed', createdAt: now, ...(derivation ? { derivation } : {}) };
   desk.claims.push(claim); return claim;
 }
 export function review(desk: SignalDesk, uid: string, input: { claimId: string; digest: string; decision: 'accepted' | 'rejected' | 'unresolved'; rationale: string }, now: string) {
+  assertCurrentSignalContext(desk);
   const claim = desk.claims.find(c => c.id === input.claimId);
   if (!claim) throw new SignalError(404, 'Proposal unavailable.');
   const source = desk.sources.find(s => s.id === claim.sourceRevisionId);
-  if (claim.digest !== input.digest || !isCurrentSignalClaim(desk, claim) || !source || source.hash !== claim.evidenceHash || (claim.contextDigest ?? null) !== (desk.contextReceipt ? digest(desk.contextReceipt) : null)) throw new SignalError(409, 'Evidence, context or proposal changed. Review the current source revision.');
+  if (claim.digest !== input.digest || (claim.contextEpoch ?? 0) !== (desk.contextEpoch ?? 0) || !isCurrentSignalClaim(desk, claim) || !source || source.hash !== claim.evidenceHash || (claim.contextDigest ?? null) !== (desk.contextReceipt ? digest(desk.contextReceipt) : null)) throw new SignalError(409, 'Evidence, context or proposal changed. Review the current source revision.');
   validateSpan(source, claim);
   if (!input.rationale.trim()) throw new SignalError(422, 'Explain the review decision.');
   if (desk.reviews.length >= 400) throw new SignalError(413, 'Review history capacity reached.');
@@ -106,9 +135,11 @@ export function review(desk: SignalDesk, uid: string, input: { claimId: string; 
     desk.narratives?.filter(n => n.claimIds.includes(claim.id)).forEach(n => { n.stale = true; });
     desk.assessments?.filter(a => a.claimIds.includes(claim.id)).forEach(a => { a.stale = true; });
   }
+  if (claim.status === 'accepted' && input.decision !== 'accepted') markSignalContextStale(desk);
   claim.status = input.decision;
 }
 export function draftBrief(desk: SignalDesk, now: string): SignalBrief {
+  assertCurrentSignalContext(desk);
   const accepted = desk.claims.filter(c => c.status === 'accepted' && isCurrentSignalClaim(desk, c));
   if (!accepted.length) throw new SignalError(422, 'Accept at least one current source reading before drafting a brief.');
   const previous = [...desk.briefs].reverse().find(b => b.status === 'approved');
@@ -135,6 +166,7 @@ export function draftBrief(desk: SignalDesk, now: string): SignalBrief {
   desk.briefs.push(brief); return brief;
 }
 export function approveBrief(desk: SignalDesk, uid: string, input: { briefId: string; digest: string; rationale: string }, now: string) {
+  assertCurrentSignalContext(desk);
   const brief = desk.briefs.find(b => b.id === input.briefId);
   if (!brief) throw new SignalError(404, 'Brief unavailable.');
   if (brief.status !== 'draft' || brief.digest !== input.digest || hash(brief.text) !== input.digest || brief.stale || brief.manifest.sourcePackVersion !== desk.sourcePack.version || digest(brief.manifest.contextReceipt) !== digest(desk.contextReceipt ?? null)) throw new SignalError(409, 'Brief inputs changed. Create and review a new draft.');
@@ -147,6 +179,7 @@ export function approveBrief(desk: SignalDesk, uid: string, input: { briefId: st
   brief.manifest.snapshots?.reviews.push(structuredClone(desk.reviews[desk.reviews.length - 1]));
 }
 export function editBrief(desk: SignalDesk, briefId: string, text: string, now: string) {
+  assertCurrentSignalContext(desk);
   const prior = desk.briefs.find(b => b.id === briefId);
   if (!prior) throw new SignalError(404, 'Brief unavailable.');
   if (text.length > 24000 || !text.trim()) throw new SignalError(422, 'Brief text must be nonempty and bounded.');

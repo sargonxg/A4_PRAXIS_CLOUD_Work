@@ -1,6 +1,6 @@
 {
   "ok": true,
-  "generatedAt": "2026-10-05T20:12:49.467Z",
+  "generatedAt": "2026-10-05T20:32:42.400Z",
   "catalogVersion": "2026-07-02-canonical-four-category-v19",
   "auditedScope": {
     "canonicalStore": "Firestore ContextCapsules",
