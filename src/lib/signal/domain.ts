@@ -74,8 +74,9 @@ export function capture(desk: SignalDesk, raw: unknown, now: string, discoveredA
   }
   const sourceId = hash(normalizedUrl || `supplied:${input.title}`).slice(0, 32);
   const contentHash = hash(input.text);
-  // Language/rights/clock changes are revisions too: never silently broaden an old entitlement.
-  const revisionId = digest({ sourceId, contentHash, language: input.language, kind: input.kind, rights: input.rights, publicationTime: input.publicationTime, synthetic: input.synthetic }).slice(0, 40);
+  // Language/rights/clock/geography changes are immutable metadata revisions.
+  // Omit absent geography so legacy unmapped sources retain their exact revision IDs.
+  const revisionId = digest({ sourceId, contentHash, language: input.language, kind: input.kind, rights: input.rights, publicationTime: input.publicationTime, synthetic: input.synthetic, ...(input.coverageCountry !== undefined ? { coverageCountry: input.coverageCountry } : {}) }).slice(0, 40);
   const previousHead = signalSourceHead(desk, sourceId);
   const captureId = digest({ revisionId, now }).slice(0, 40);
   let source = desk.sources.find(s => s.id === revisionId);

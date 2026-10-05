@@ -213,7 +213,8 @@
     "vis-timeline": "8.5.0",
     "winston": "^3.17.0",
     "zod": "^4.4.3",
-    "zustand": "^5.0.11"
+    "zustand": "^5.0.11",
+    "three": "0.186.1"
   },
   "devDependencies": {
     "@modelcontextprotocol/sdk": "1.32.0",
@@ -230,7 +231,8 @@
     "tailwindcss": "^4",
     "tsx": "^4.19.2",
     "typescript": "5.9.3",
-    "vitest": "^4.1.1"
+    "vitest": "^4.1.1",
+    "@types/three": "0.186.0"
   },
   "overrides": {
     "protobufjs": "8.6.6",

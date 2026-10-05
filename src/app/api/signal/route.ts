@@ -9,6 +9,7 @@ import { collectSignalDesk } from '@/lib/signal/collectors';
 import { setSignalWatch } from '@/lib/signal/jobs';
 import { proposeNarrative, proposeAssessment, reviewInterpretation } from '@/lib/signal/assessments';
 import { deleteSignalDesk, revokeSignalSnapshotExports } from '@/lib/signal/deletion';
+import { appendSignalFeedback } from '@/lib/signal/feedback';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -71,6 +72,7 @@ export const POST = withAuth(async (req, user) => {
     }
     const desk = await signalStore.mutate(user.uid, id, expected, d => {
       switch (action) {
+        case 'feedback': appendSignalFeedback(d, user.uid, fields, now); break;
         case 'capture': capture(d, fields, now); break;
         case 'propose': propose(d, fields, now, { kind: 'analyst', actorUid: user.uid }); break;
         case 'review': review(d, user.uid, z.object({ claimId: pointer, digest: z.string().length(64), decision: z.enum(['accepted', 'rejected', 'unresolved']), rationale }).strict().parse(fields), now); break;
