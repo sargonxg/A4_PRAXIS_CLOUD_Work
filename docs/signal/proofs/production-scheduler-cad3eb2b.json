@@ -1,0 +1,90 @@
+{
+  "scheduler": {
+    "mutation": true,
+    "name": "projects/praxisbytacitus/locations/us-central1/jobs/praxis-signal-watch-sweep",
+    "schedule": "0 * * * *",
+    "state": "ENABLED",
+    "uri": "https://praxis.tacitus.me/api/signal/sweep",
+    "authenticationHeaderReadbackVerified": true
+  },
+  "safeReadback": {
+    "httpTarget": {
+      "httpMethod": "POST",
+      "uri": "https://praxis.tacitus.me/api/signal/sweep"
+    },
+    "lastAttemptTime": "2026-10-05T21:29:01.138701Z",
+    "name": "projects/praxisbytacitus/locations/us-central1/jobs/praxis-signal-watch-sweep",
+    "schedule": "0 * * * *",
+    "state": "ENABLED",
+    "status": {},
+    "timeZone": "Etc/UTC"
+  },
+  "manualRun": {
+    "commandExitCode": 0,
+    "httpStatus": 200,
+    "finishedAt": "2026-10-05T21:29:08.038777875Z"
+  },
+  "production": {
+    "revision": "praxis-frontend-01117-68m",
+    "traffic": [
+      {
+        "revision": "praxis-frontend-01050-kaj",
+        "percent": 0,
+        "tag": "canary"
+      },
+      {
+        "revision": "praxis-frontend-01102-piy",
+        "percent": 0,
+        "tag": "workspace-release"
+      },
+      {
+        "revision": "praxis-frontend-01104-85z",
+        "percent": 0,
+        "tag": "cognitive-release"
+      },
+      {
+        "revision": "praxis-frontend-01105-nov",
+        "percent": 0,
+        "tag": "followup-release"
+      },
+      {
+        "revision": "praxis-frontend-01112-6x6",
+        "percent": 0,
+        "tag": "cognitive-continuation"
+      },
+      {
+        "revision": "praxis-frontend-01117-68m",
+        "percent": 100,
+        "tag": "signal-release"
+      },
+      {
+        "revision": "praxis-frontend-01132-zib",
+        "percent": 0,
+        "tag": "signal"
+      }
+    ],
+    "resourceLimits": {
+      "limits": {
+        "cpu": "1",
+        "memory": "2Gi"
+      }
+    },
+    "concurrency": 8,
+    "serviceAccount": "praxis-frontend-sa@praxisbytacitus.iam.gserviceaccount.com",
+    "secretNames": [
+      "FIREBASE_SERVICE_ACCOUNT_KEY",
+      "GOOGLE_AI_API_KEY",
+      "CRON_SECRET",
+      "COOKIE_SIGNING_SECRET",
+      "SESSION_SECRET",
+      "USER_KEY_MASTER",
+      "VERTEX_AGENT_ENGINE_ID",
+      "PUBSUB_PUSH_SHARED_SECRET",
+      "AGENT_RUNTIME_DATABASE_URL",
+      "EXA_API_KEY",
+      "POLAR_ACCESS_TOKEN",
+      "POLAR_WEBHOOK_SECRET"
+    ]
+  },
+  "secretsPrintedOrPersisted": false
+}

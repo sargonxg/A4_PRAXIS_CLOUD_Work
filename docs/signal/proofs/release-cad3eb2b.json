@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-05",
+  "commit": "cad3eb2b5ec355052607bf528a4e23d3fc5a3c72",
+  "staging": {
+    "buildId": "d6af338b-6523-41d9-a732-2c2173d97a0c",
+    "buildRegion": "global",
+    "status": "SUCCESS",
+    "revision": "praxis-frontend-01132-zib",
+    "digest": "sha256:7d007e9057771ac138c11782ac8cd6e1ec450df5b53a0fed085aea7f564ae565",
+    "url": "https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app",
+    "workerBaseVerified": true,
+    "noPublicTraffic": true,
+    "browserTests": 3,
+    "browserPassed": 3,
+    "nativeInspectorActualClickVerified": true,
+    "runtimeExceptions": 0,
+    "primaryContrast": 7.611
+  },
+  "sourceGate": {
+    "testFiles": 487,
+    "tests": 2945,
+    "lintErrors": 0,
+    "existingLintWarnings": 5,
+    "gcpChecks": 38,
+    "gcpHardFailures": 0,
+    "gcpSoftWarnings": 0,
+    "fullGate": true
+  },
+  "rollbackRevision": "praxis-frontend-01112-6x6",
+  "mainPush": {
+    "commit": "cad3eb2b5ec355052607bf528a4e23d3fc5a3c72",
+    "sourceGatePassed": true,
+    "stagingPassedBeforePush": true
+  },
+  "productionBuild": {
+    "buildId": "8f6398b7-5303-477f-860c-d50614c3e36e",
+    "buildRegion": "us-central1",
+    "trigger": "frontend-main-on-push",
+    "invocation": "Exact SHA; explicit truthful main metadata after verifying remote main",
+    "status": "SUCCESS"
+  },
+  "releaseAttemptNotes": [
+    {
+      "buildId": "d4f810b0-ad76-44ce-9d99-ae7cefa93cd9",
+      "status": "FAILURE",
+      "stage": "before source build",
+      "reason": "GitHub compare ListChangedFiles HTTP422 diff unavailable/timeout",
+      "productionChanged": false
+    },
+    {
+      "buildId": "c6c9eaba-6772-47e3-893b-2e6768bec501",
+      "status": "CANCELLED",
+      "stage": "all source steps queued",
+      "reason": "Direct SHA trigger defaults branch metadata local; cancelled before build/deploy and restarted with verified main metadata",
+      "productionChanged": false
+    }
+  ],
+  "production": {
+    "revision": "praxis-frontend-01117-68m",
+    "digest": "sha256:b96bdebefed2e142c533e07b73f7efcbc97f5c291cb8e712f0fce48ebbaf974b",
+    "publicTrafficPercent": 100,
+    "allDependencyChecks": "ok",
+    "browserTests": 3,
+    "browserPassed": 3,
+    "nativeInspectorActualClickVerified": true,
+    "workerProofPassed": true,
+    "contextWithdrawalProofPassed": true,
+    "schedulerHeaderReadbackVerified": true,
+    "schedulerManualHttpStatus": 200
+  }
+}

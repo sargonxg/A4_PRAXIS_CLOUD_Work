@@ -1,0 +1,41 @@
+{
+  "target": "https://praxis.tacitus.me",
+  "checks": [
+    {
+      "path": "/",
+      "method": "GET",
+      "status": 200,
+      "finalUrl": "https://praxis.tacitus.me/"
+    },
+    {
+      "path": "/login",
+      "method": "GET",
+      "status": 200,
+      "finalUrl": "https://praxis.tacitus.me/login"
+    },
+    {
+      "path": "/signal",
+      "method": "GET",
+      "status": 200,
+      "finalUrl": "https://praxis.tacitus.me/login?redirect=%2Fsignal"
+    },
+    {
+      "path": "/api/signal",
+      "method": "GET",
+      "status": 401,
+      "finalUrl": "https://praxis.tacitus.me/api/signal"
+    },
+    {
+      "path": "/api/signal/worker",
+      "method": "POST",
+      "status": 401,
+      "finalUrl": "https://praxis.tacitus.me/api/signal/worker"
+    },
+    {
+      "path": "/api/signal/sweep",
+      "method": "POST",
+      "status": 401,
+      "finalUrl": "https://praxis.tacitus.me/api/signal/sweep"
+    }
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "commit": "cad3eb2b5ec355052607bf528a4e23d3fc5a3c72",
+  "mode": "production",
+  "target": "https://praxis.tacitus.me",
+  "tests": 3,
+  "passed": 3,
+  "appOriginForwarding": false,
+  "nativeExactCapsuleInspectorClickAndBack": true,
+  "runtimeExceptions": 0,
+  "primaryCtaContrast": 7.61122539315828,
+  "consoleCounts": {
+    "warning": 1,
+    "error": 16
+  },
+  "consoleCategories": {
+    "warning:unclassified:unknown": 1,
+    "error:http-403:/v1/projects/praxisbytacitus/databases/(default)/documents/users/[test-tenant]/signalDesks/[synthetic-desk]": 1,
+    "error:http-409:/api/signal": 1,
+    "error:http-422:/api/signal": 1,
+    "error:http-409:/api/ai/signal": 1,
+    "error:http-401:/api/backend/notifications/stream": 6,
+    "error:http-401:/api/backend/notifications": 6
+  },
+  "intentionalNegativeProbeStatuses": [
+    403,
+    409,
+    422,
+    409
+  ],
+  "legacyNotificationBff401Observed": true,
+  "forwardingFailures": []
+}

@@ -1,6 +1,6 @@
 # SIGNAL operator runbook
 
-Use [RELEASE_PLAN.md](RELEASE_PLAN.md) for the actual staged revision, worker target, index readiness and production status. Authenticated staging, scheduler and production browser proof remain pending until recorded there. Use disposable test tenants for operational exercises.
+Use [RELEASE_PLAN.md](RELEASE_PLAN.md) for the actual staged revision, worker target, index readiness and production status. The recorded release has passed authenticated staging/public browser, model/worker and hourly scheduler proof. Future revisions require their own exact provenance and live acceptance. Use disposable test tenants for operational exercises.
 
 ## Observe first
 

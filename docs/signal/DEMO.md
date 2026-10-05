@@ -1,6 +1,6 @@
 # Five-minute private SIGNAL demo
 
-Use a private disposable demo tenant on a verified deployment or local server with approved sign-in origin. This is a scripted synthetic demonstration, not evidence of real country events. Mark every capture **synthetic**, include `SYNTHETIC DEMO` in titles and give the demo's own rights basis. Keep the watch paused; no external provider or model call is required. Production/staging browser execution remains pending until recorded in PROGRESS.
+Use a private disposable demo tenant on a verified deployment or local server with approved sign-in origin. This is a scripted synthetic demonstration, not evidence of real country events. Mark every capture **synthetic**, include `SYNTHETIC DEMO` in titles and give the demo's own rights basis. Keep the watch paused; no external provider or model call is required. Actual staged and public synthetic acceptance journeys are recorded in PROGRESS; the script below is a prepared reviewer-led demo, not a human analytical quality benchmark.
 
 Prepare a reviewed native language capsule through the existing PRAXIS capsule workflow if demonstrating expert context. It should contain an explicitly human-reviewed distinction between a conditional offer and a commitment, with its own review provenance. Do not fabricate an expert identity or turn an unreviewed rule into accepted expertise.
 
