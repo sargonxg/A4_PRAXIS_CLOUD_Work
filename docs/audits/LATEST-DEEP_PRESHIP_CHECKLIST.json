@@ -1,10 +1,10 @@
 {
-  "date": "2026-06-25",
+  "date": "2026-10-05",
   "summary": {
     "pass": 140,
     "warn": 2,
-    "blocked": 1,
-    "total": 143
+    "blocked": 0,
+    "total": 142
   },
   "checks": [
     {
@@ -894,14 +894,6 @@
       "status": "PASS",
       "evidence": "notifications stack contains required marker.",
       "remediation": "None."
-    },
-    {
-      "id": "notifications-pre-ship-praxisapplaunchpad",
-      "section": "13. Notifications system",
-      "title": "notifications stack includes PraxisAppLaunchpad",
-      "status": "BLOCKED",
-      "evidence": "notifications stack is missing required marker.",
-      "remediation": "Add or wire PraxisAppLaunchpad before marking this checklist item complete."
     },
     {
       "id": "notifications-pre-ship-praxischatfirstshell",

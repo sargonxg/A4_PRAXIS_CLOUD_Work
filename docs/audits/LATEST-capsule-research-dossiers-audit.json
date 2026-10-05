@@ -1,7 +1,7 @@
 {
   "catalogVersion": "2026-07-02-canonical-four-category-v19",
   "starterCount": 221,
-  "averagePromptLength": 9457,
+  "averagePromptLength": 9456,
   "maxPromptLength": 11818,
   "findings": []
 }

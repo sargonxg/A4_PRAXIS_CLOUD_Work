@@ -76,9 +76,24 @@
       "evidence": "diagnostic backfill script is registered"
     },
     {
+      "id": "ui-dossier-entry",
+      "status": "PASS",
+      "evidence": "workbench opens shared capsule inspection"
+    },
+    {
+      "id": "ui-dossier-depth",
+      "status": "PASS",
+      "evidence": "inspection exposes progressive research depth"
+    },
+    {
       "id": "ui-dossier-panel",
       "status": "PASS",
-      "evidence": "workbench inspector surfaces research dossier proof"
+      "evidence": "advanced inspection renders the actual research model"
+    },
+    {
+      "id": "ui-dossier-signals",
+      "status": "PASS",
+      "evidence": "research inspection renders source spine records"
     },
     {
       "id": "ui-vnext-proof",

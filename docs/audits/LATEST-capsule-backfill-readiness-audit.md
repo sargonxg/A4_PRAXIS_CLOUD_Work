@@ -15,5 +15,8 @@
 - PASS runtime-audit-refresh: runtime data-plane audit samples starter refresh dockets
 - PASS runtime-audit-graphlite: runtime data-plane audit samples GraphLite projection records
 - PASS script-registered: diagnostic backfill script is registered
-- PASS ui-dossier-panel: workbench inspector surfaces research dossier proof
+- PASS ui-dossier-entry: workbench opens shared capsule inspection
+- PASS ui-dossier-depth: inspection exposes progressive research depth
+- PASS ui-dossier-panel: advanced inspection renders the actual research model
+- PASS ui-dossier-signals: research inspection renders source spine records
 - PASS ui-vnext-proof: capsule cards show catalog vNext proof

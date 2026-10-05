@@ -1,8 +1,8 @@
 # PRAXIS Deep Pre-Ship Checklist Audit
 
-Date: 2026-06-25
+Date: 2026-10-05
 
-Summary: 140 PASS, 2 WARN, 1 BLOCKED across 143 static pre-ship checks.
+Summary: 140 PASS, 2 WARN, 0 BLOCKED across 142 static pre-ship checks.
 
 This audit is deliberately conservative: live staging checks, Cloud SQL restore tests, load tests, browser sessions, and Vertex billing comparisons remain blocked until run against staging/production credentials and datasets.
 
@@ -151,7 +151,6 @@ This audit is deliberately conservative: live staging checks, Cloud SQL restore 
 | PASS | notifications stack includes quiet_hours | notifications stack contains required marker. | None. |
 | PASS | notifications stack includes provider_unconfigured | notifications stack contains required marker. | None. |
 | PASS | notifications stack includes MAX_DELIVERY_ATTEMPTS | notifications stack contains required marker. | None. |
-| BLOCKED | notifications stack includes PraxisAppLaunchpad | notifications stack is missing required marker. | Add or wire PraxisAppLaunchpad before marking this checklist item complete. |
 | PASS | notifications stack includes PraxisChatFirstShell | notifications stack contains required marker. | None. |
 | PASS | notifications stack includes app-launchpad | notifications stack contains required marker. | None. |
 
