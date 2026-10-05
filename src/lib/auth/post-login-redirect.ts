@@ -14,7 +14,7 @@ export function safeWorkspaceReturnTarget(value: unknown): string | null {
     }
     const url = new URL(value, 'https://praxis.invalid');
     if (url.origin !== 'https://praxis.invalid') return null;
-    if (url.pathname !== '/app' && !url.pathname.startsWith('/app/') && !url.pathname.startsWith('/agents/')) return null;
+    if (url.pathname !== '/app' && !url.pathname.startsWith('/app/') && !url.pathname.startsWith('/agents/') && url.pathname !== '/signal') return null;
     if (url.pathname === '/app/repository') {
       url.pathname = '/app/capsules';
       url.searchParams.set('lane', 'repository');

@@ -1,0 +1,4 @@
+# Additive example only: this is not automatically loaded by Codex.
+# Merge into an existing trusted config; preserve its other settings.
+[mcp_servers.openaiDeveloperDocs]
+url = "https://developers.openai.com/mcp"

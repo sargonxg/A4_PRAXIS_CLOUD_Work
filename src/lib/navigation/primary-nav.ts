@@ -59,6 +59,7 @@ export const NAV_GROUPS: readonly PrimaryNavGroup[] = [
     label: 'More',
     defaultOpen: false,
     items: [
+      { id: 'signal', label: 'SIGNAL', icon: 'Network', href: '/signal', hint: 'Review source evidence and prepare approved situation briefs' },
       { id: 'boardroom', label: 'Boardroom', icon: 'ShieldCheck', href: '/app/boardroom', shortcut: 'g b', hint: 'Compare perspectives in a chaired discussion' },
       { id: 'recent-work', label: 'Saved work', icon: 'FileText', href: '/app/recent-work', shortcut: 'g r', hint: 'Reopen briefs and saved artifacts' },
       {

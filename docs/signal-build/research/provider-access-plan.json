@@ -1,0 +1,146 @@
+{
+  "profile": "praxis-signal-provider-access-plan/1",
+  "checkedOn": "2026-10-05",
+  "description": "Implementation planning only; runtime activation requires account-level verification.",
+  "providers": [
+    {
+      "id": "customer_upload",
+      "role": "primary_evidence",
+      "requiredAccess": [
+        "authenticated tenant upload",
+        "declared retention and export basis"
+      ],
+      "countryCodeSystem": "product ISO registry plus explicit desk relevance",
+      "defaultPlan": "first implementation",
+      "rightsState": "per_upload_declaration",
+      "references": [],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    },
+    {
+      "id": "curated_direct",
+      "role": "primary_evidence",
+      "requiredAccess": [
+        "source-specific capture permission",
+        "permitted retention/export",
+        "bounded fetch allowlist"
+      ],
+      "countryCodeSystem": "source pack explicit relevance mapping",
+      "defaultPlan": "enable source by source",
+      "rightsState": "per_source_review_required",
+      "references": [],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    },
+    {
+      "id": "gdelt_doc",
+      "role": "discovery",
+      "requiredAccess": [
+        "current endpoint probe",
+        "bounded recent query",
+        "provider country-code map"
+      ],
+      "countryCodeSystem": "publisher source-country uses GDELT provider scheme, not direct product ISO passthrough",
+      "defaultPlan": "first discovery connector; separate capture adapter",
+      "rightsState": "discovery_does_not_authorize_full_text_retention",
+      "references": [
+        "R21",
+        "R22"
+      ],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    },
+    {
+      "id": "reliefweb",
+      "role": "humanitarian_context",
+      "requiredAccess": [
+        "approved appname",
+        "original-document capture basis"
+      ],
+      "countryCodeSystem": "adapter must map current API taxonomy IDs",
+      "defaultPlan": "optional early connector",
+      "rightsState": "verify_document_basis",
+      "references": [
+        "R11"
+      ],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    },
+    {
+      "id": "media_cloud",
+      "role": "discovery_and_panel_research",
+      "requiredAccess": [
+        "account/API key",
+        "current quota",
+        "permitted separate original-source capture"
+      ],
+      "countryCodeSystem": "collection/source taxonomy mapped explicitly",
+      "defaultPlan": "optional",
+      "rightsState": "no_actual_story_text_provided",
+      "references": [
+        "R10"
+      ],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    },
+    {
+      "id": "ucdp",
+      "role": "versioned_event_context",
+      "requiredAccess": [
+        "access token",
+        "dataset/version pin",
+        "commercial and redistribution entitlement review"
+      ],
+      "countryCodeSystem": "Gleditsch-Ward identifiers; explicit ISO mapping required",
+      "defaultPlan": "optional disabled until verified",
+      "rightsState": "commercial_use_not_established_here",
+      "references": [
+        "R08",
+        "R09"
+      ],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    },
+    {
+      "id": "acled",
+      "role": "event_context",
+      "requiredAccess": [
+        "commercial licence",
+        "AI analysis/output entitlement",
+        "retention/redistribution scope"
+      ],
+      "countryCodeSystem": "current provider taxonomy requires versioned mapping",
+      "defaultPlan": "optional disabled until verified",
+      "rightsState": "commercial_entitlement_not_obtained",
+      "references": [
+        "R06",
+        "R07"
+      ],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    },
+    {
+      "id": "social_platforms",
+      "role": "selective_public_samples",
+      "requiredAccess": [
+        "approved provider API",
+        "retention/export conditions",
+        "budget and sampling plan"
+      ],
+      "countryCodeSystem": "platform location and subject geography must be distinguished",
+      "defaultPlan": "deferred until paid desk need",
+      "rightsState": "not_configured",
+      "references": [],
+      "liveValidated": false,
+      "credentialsIncluded": false,
+      "enabledByThisKit": false
+    }
+  ]
+}

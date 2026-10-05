@@ -109,6 +109,14 @@ export const V3_PRIMARY_ROUTE_CLASSIFICATIONS: readonly V3PrimaryRouteClassifica
     note: 'Boardroom is useful runtime proof, but should not compete with the core Ask/Library loop.',
   },
   {
+    currentNavId: 'signal',
+    currentLabel: 'SIGNAL',
+    currentHref: '/signal',
+    classification: 'LABS',
+    targetLabel: 'Labs',
+    note: 'The authenticated text pilot connects source review, native capsule context and approved briefs under More.',
+  },
+  {
     currentNavId: 'recent-work',
     currentLabel: 'Recent work',
     currentHref: '/app/recent-work',

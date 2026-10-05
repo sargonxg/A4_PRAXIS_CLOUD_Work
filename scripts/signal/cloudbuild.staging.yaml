@@ -1,0 +1,206 @@
+steps:
+  # Fast path for frontend-only product/UI/tool-surface iterations.
+  # Use the full cloudbuild.yaml when backend, worker, Cloud Function, IAM,
+  # secrets, or infrastructure behavior changes.
+  # Deploy trigger marker: capsule context capture production rollout.
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        if grep -rE "gemini-2\.0|gemini-3-flash-preview|gemini-3\.1-pro-preview|gemini-3-pro-preview|claude-|gpt-|firecrawl|tavily|parallel-web|@ai-sdk/anthropic" src/ backend/ --include="*.ts" --include="*.tsx" --include="*.py" --exclude="providers.ts" --exclude="providers.py" --exclude="model-matrix-data.ts" 2>/dev/null; then
+          echo "ERROR: Forbidden retired/unavailable model strings found. Use src/lib/ai/providers.ts (frontend) or backend/config.py (backend)."
+          exit 1
+        fi
+        echo "OK: no forbidden model strings"
+    id: 'check-model-strings'
+
+  - name: 'node:22-slim'
+    entrypoint: 'node'
+    args: ['scripts/audit-ai-routes.mjs']
+    id: 'preflight-audit-routes'
+    waitFor: ['check-model-strings']
+
+  # Match the full pipeline: verify required resources with Cloud Build's
+  # service account before building or changing production traffic.
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        set -e
+        apt-get update -qq && apt-get install -y -qq nodejs >/dev/null
+        GCP_PROJECT_ID=$PROJECT_ID node scripts/audit-gcp.mjs
+    id: 'preflight-audit-gcp'
+    waitFor: ['check-model-strings']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-c'
+      - >-
+        gcloud run services describe praxis-backend
+        --region=us-central1
+        --format="value(status.url)"
+        > /workspace/backend_url.txt
+    id: 'get-backend-url'
+    waitFor: ['check-model-strings']
+
+  # Publish the checked Firestore source through Rules REST with existing build
+  # ADC. Permission/config failures are explicit pending evidence; account
+  # deletion remains disabled until Storage and live rule checks also pass.
+  - name: 'node:22-slim'
+    entrypoint: bash
+    args:
+      - '-ceu'
+      - |
+        mkdir -p /workspace/output/firebase-rules
+        if [ '${_DEPLOY_FIRESTORE_RULES}' = 'true' ]; then
+          if timeout 180s npm install --prefix /tmp/praxis-rules-runtime --ignore-scripts --no-audit --no-fund --package-lock=false google-auth-library@10.6.2 > /tmp/praxis-rules-dependencies.log 2>&1; then
+            if NODE_PATH=/tmp/praxis-rules-runtime/node_modules timeout 120s node scripts/deploy-firebase-rules.mjs --project=$PROJECT_ID --bucket=praxisbytacitus.firebasestorage.app --only=firestore --expected-firestore-sha256=${_FIRESTORE_RULES_SHA256} --apply --receipt=/workspace/output/firebase-rules/firestore-release.json; then
+              echo 'RULES_STATUS: Firestore source publication/readback verified; Storage and live propagation proof remain separate.'
+            else
+              echo 'RULES_STATUS: pending - existing build credentials/permissions or source checks did not complete Firestore publication. Account deletion remains disabled.'
+            fi
+          else
+            echo 'RULES_STATUS: pending - bounded isolated Rules dependency install failed. Account deletion remains disabled.'
+          fi
+        else
+          echo 'RULES_STATUS: pending - Firestore publication was disabled for this build. Account deletion remains disabled.'
+        fi
+        node -e 'const fs = require("node:fs"); const p = "/workspace/output/firebase-rules/firestore-release.json"; if (!fs.existsSync(p)) fs.writeFileSync(p, JSON.stringify({schemaVersion: 1, status: "pending", reason: "rules_step_unavailable_or_disabled", accountErasureEnabled: false}, null, 2)); console.log("FIREBASE_RULES_RECEIPT " + fs.readFileSync(p, "utf8"));'
+    id: 'verify-publish-firestore-rules'
+    waitFor: ['preflight-audit-routes', 'preflight-audit-gcp', 'get-backend-url']
+    timeout: '360s'
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_PRAXIS_BACKEND_URL=https://praxis-backend-pgoyqovcza-uc.a.run.app'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=${_GOOGLE_MAPS_KEY}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID'
+      - '.'
+    id: 'build-frontend'
+    waitFor: ['preflight-audit-routes', 'preflight-audit-gcp', 'get-backend-url']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}']
+    id: 'push-frontend-commit'
+    waitFor: ['build-frontend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:latest']
+    id: 'push-frontend-latest'
+    waitFor: ['build-frontend']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - praxis-frontend
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}'
+      - '--region'
+      - us-central1
+      - '--no-traffic'
+      - '--tag'
+      - signal
+      - '--allow-unauthenticated'
+      - '--memory'
+      - 2Gi
+      # Bound concurrent large capsule reads; pagination remains a follow-up.
+      - '--concurrency'
+      - '8'
+      - '--cpu'
+      - '1'
+      - '--min-instances'
+      - '1'
+      - '--max-instances'
+      - '10'
+      - '--update-env-vars'
+      - '^|^AI_PROVIDER=vertex|PRAXIS_ENABLE_PAID_CHECKOUT=false|PRAXIS_ACCOUNT_ERASURE_RULES_VERIFIED=false|GOOGLE_VERTEX_PROJECT=praxisbytacitus|GOOGLE_VERTEX_LOCATION=us-central1|VERTEX_AGENT_LOCATION=us-central1|GOOGLE_CLOUD_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_PROJECT=praxisbytacitus|AGENT_RUN_TASKS_LOCATION=us-central1|AGENT_RUN_TASKS_QUEUE=agent-runs|AGENT_RUN_WORKER_BASE_URL=https://praxis.tacitus.me|SIGNAL_WORKER_BASE_URL=https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app|AGENT_RUN_WORKER_SERVICE_ACCOUNT_EMAIL=praxis-agents-sa@praxisbytacitus.iam.gserviceaccount.com|AGENT_RUN_WORKER_OIDC_AUDIENCE=https://praxis.tacitus.me|VERTEX_GROUNDING_GOOGLE_SEARCH_ENABLED=true|RESEARCH_GRAPH_ENABLED=true|ADMIN_EMAIL_ALLOWLIST=giulio@tacitus.me,giuliocatanzariti@gmail.com|PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|PRAXIS_BUILD_ID=$BUILD_ID|NEXT_PUBLIC_PRAXIS_BACKEND_URL=https://praxis-backend-pgoyqovcza-uc.a.run.app|NEXT_PUBLIC_SITE_URL=https://praxis.tacitus.me|NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyAHNn4zJdMaxJXziRNa9SmHRFKUvO1q9uA|NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=praxisbytacitus.firebaseapp.com|NEXT_PUBLIC_FIREBASE_PROJECT_ID=praxisbytacitus|NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=praxisbytacitus.firebasestorage.app|NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=852128226674|NEXT_PUBLIC_FIREBASE_APP_ID=1:852128226674:web:535f771c7a3568462c11eb|NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-7R44KT7CDY|NEXT_PUBLIC_FIREBASE_APPCHECK_RECAPTCHA_ENTERPRISE_KEY=AQ.Ab8RN6IXTdhsDEQPADTuABwbGTCSfvNt16sMuy0Xc95Anrh6Pw|NEXT_PUBLIC_PRAXIS_BUILD_SOURCE=${_BUILD_SOURCE}|NEXT_PUBLIC_PRAXIS_SOURCE_REPO=${_SOURCE_REPO}|NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=${_SOURCE_BRANCH}|NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=${_SOURCE_COMMIT}|NEXT_PUBLIC_PRAXIS_BUILD_ID=$BUILD_ID'
+      - '--labels'
+      - 'source=${_BUILD_SOURCE},repo=a4-praxis-cloud-work,branch=${_SOURCE_BRANCH},commit=${_SOURCE_COMMIT}'
+      - '--update-secrets'
+      - 'FIREBASE_SERVICE_ACCOUNT_KEY=praxis-firebase-sa:latest,GOOGLE_AI_API_KEY=praxis-google-ai-key:latest,CRON_SECRET=praxis-cron-secret:latest,COOKIE_SIGNING_SECRET=praxis-cookie-secret:latest,SESSION_SECRET=praxis-cookie-secret:latest,USER_KEY_MASTER=praxis-user-key-master:latest,VERTEX_AGENT_ENGINE_ID=praxis-vertex-adk-engine-id:latest,PUBSUB_PUSH_SHARED_SECRET=praxis-pubsub-push-secret:latest,AGENT_RUNTIME_DATABASE_URL=praxis-agent-runtime-database-url:latest,EXA_API_KEY=praxis-exa-api-key:latest'
+      - '--add-cloudsql-instances'
+      - 'praxisbytacitus:us-east4:praxisbytacitus-instance'
+      - '--network'
+      - default
+      - '--subnet'
+      - default
+      - '--vpc-egress'
+      - private-ranges-only
+    id: 'deploy-frontend'
+    waitFor: ['push-frontend-commit', 'push-frontend-latest']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: bash
+    args:
+      - '-ceu'
+      - |
+        python3 - <<'PYCODE'
+        import json, urllib.request
+        base = 'https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app'
+        req = urllib.request.Request(base + '/api/health/runtime', headers={'Cache-Control': 'no-cache'})
+        with urllib.request.urlopen(req, timeout=30) as response:
+          data = json.load(response)
+        commit = data.get('build', {}).get('commit') or data.get('commit')
+        if commit != '${_SOURCE_COMMIT}':
+          raise SystemExit('Tagged staging commit mismatch')
+        print('Tagged SIGNAL revision provenance verified: ' + commit)
+        PYCODE
+    id: 'verify-signal-staging'
+    waitFor: ['deploy-frontend']
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:${_SOURCE_COMMIT}'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/praxis/praxis-frontend:latest'
+
+substitutions:
+  _BUILD_SOURCE: '${TRIGGER_NAME:-local-submit}'
+  _SOURCE_REPO: 'sargonxg/A4_PRAXIS_CLOUD_Work'
+  _SOURCE_BRANCH: '${BRANCH_NAME:-local}'
+  _SOURCE_COMMIT: '${COMMIT_SHA:-manual}'
+  _GOOGLE_MAPS_KEY: ''
+  _DEPLOY_FIRESTORE_RULES: 'false'
+  _FIRESTORE_RULES_SHA256: '9fd0eef2c060227a6a67453b4e6213afc3d8b48572461c43a9f75b14a1a3950b'
+
+options:
+  dynamicSubstitutions: true
+  logging: CLOUD_LOGGING_ONLY
+  machineType: E2_HIGHCPU_8

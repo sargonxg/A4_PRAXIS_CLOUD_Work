@@ -1,0 +1,7 @@
+signal.sqlite*
+*.db
+node_modules/
+.env
+.env.*
+!.env.example
+qa/

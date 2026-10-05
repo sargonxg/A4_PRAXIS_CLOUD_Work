@@ -1,0 +1,3 @@
+Diagnose and fix the failing SIGNAL acceptance gate. Read the repository instructions, `docs/signal/PROGRESS.md`, the current phase and `docs/signal-build/docs/ACCEPTANCE.md`. Reproduce the reported failure before changing code. Trace the relevant UI request, authorization, storage/job boundary and source/context revision.
+
+Fix the cause with the smallest coherent change. Add or update a regression test that would have failed before the fix. Do not remove tenant checks, change a fixture to conceal a bug, disable a required test or replace production behavior with a mock. Run the repaired gate and applicable neighboring checks. Update progress with cause, changed paths, commands and results. Keep unrelated baseline failures separate.

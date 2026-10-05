@@ -1,0 +1,115 @@
+{
+  "profile": "signal-synthetic-seeds/0.1",
+  "synthetic": true,
+  "notAGoldEvaluationSet": true,
+  "cases": [
+    {
+      "id": "proposal-v1",
+      "synthetic": true,
+      "countryCode": "BR",
+      "language": "pt",
+      "rights": "owned_synthetic_fixture",
+      "representationId": "fixture:proposal-v1",
+      "body": "Neste exercício fictício, o conselho acolheu a proposta. A proposta ainda não foi adotada.",
+      "representationHash": "eed457650d9472523f625443c0ca4d42c2935777fdee258f0ce7c57987d000f2",
+      "locator": {
+        "quote": "A proposta ainda não foi adotada.",
+        "start": 57,
+        "end": 90,
+        "offsetUnit": "utf16_code_unit"
+      },
+      "intendedReading": "The fictional council welcomed the proposal; it has not been adopted.",
+      "forbiddenInference": "Welcome proves adoption or implementation."
+    },
+    {
+      "id": "proposal-v2",
+      "synthetic": true,
+      "countryCode": "BR",
+      "language": "pt",
+      "rights": "owned_synthetic_fixture",
+      "representationId": "fixture:proposal-v2",
+      "body": "Neste exercício fictício, o conselho adotou a proposta. A implementação depende de uma votação posterior.",
+      "representationHash": "560b6d1ac43210997a4f7a291155de9ffc2bff1189d316a7ba49d11011cdf847",
+      "locator": {
+        "quote": "A implementação depende de uma votação posterior.",
+        "start": 56,
+        "end": 105,
+        "offsetUnit": "utf16_code_unit"
+      },
+      "intendedReading": "In this fictional revision the council adopted the proposal, while implementation remains conditional.",
+      "forbiddenInference": "Adoption proves completed implementation."
+    },
+    {
+      "id": "negation",
+      "synthetic": true,
+      "countryCode": "SD",
+      "language": "ar",
+      "rights": "owned_synthetic_fixture",
+      "representationId": "fixture:negation",
+      "body": "في هذا المثال الخيالي، أعلن المجلس مقترحا لوقف إطلاق النار. لم يدخل الاتفاق حيز التنفيذ.",
+      "representationHash": "3083cf6a41dd19ec264d4e41ada9b6ebeff88023f31462977fcfed8ce175fc0c",
+      "locator": {
+        "quote": "لم يدخل الاتفاق حيز التنفيذ.",
+        "start": 60,
+        "end": 88,
+        "offsetUnit": "utf16_code_unit"
+      },
+      "intendedReading": "The fictional agreement has not entered into force.",
+      "forbiddenInference": "The ceasefire is implemented."
+    },
+    {
+      "id": "attributed-allegation",
+      "synthetic": true,
+      "countryCode": "JP",
+      "language": "en",
+      "rights": "owned_synthetic_fixture",
+      "representationId": "fixture:attributed-allegation",
+      "body": "In this fictional exercise, Outlet A reports that Party B alleged the document was altered. No original document was supplied.",
+      "representationHash": "838962c0f583480368428e7f2f6fd58c0dddd6e3a6fe7dd068d341314e230c7d",
+      "locator": {
+        "quote": "Party B alleged the document was altered.",
+        "start": 50,
+        "end": 91,
+        "offsetUnit": "utf16_code_unit"
+      },
+      "intendedReading": "Outlet A reports Party B's allegation; alteration is not verified.",
+      "forbiddenInference": "The document was altered or the publisher intended deception."
+    },
+    {
+      "id": "ambiguous-place",
+      "synthetic": true,
+      "countryCode": "GE",
+      "language": "en",
+      "rights": "owned_synthetic_fixture",
+      "representationId": "fixture:ambiguous-place",
+      "body": "In this fictional exercise, a headline mentions Georgia without naming a country, state or institution.",
+      "representationHash": "f2a22f1b3aed3f0b8ca4620fcda5e09711d6845a866f1576fadffaf48b6d5aa0",
+      "locator": {
+        "quote": "Georgia",
+        "start": 48,
+        "end": 55,
+        "offsetUnit": "utf16_code_unit"
+      },
+      "intendedReading": "Geographic relevance is unresolved from this representation alone.",
+      "forbiddenInference": "The mentioned place is certainly the country of Georgia."
+    },
+    {
+      "id": "conditional-cross-border",
+      "synthetic": true,
+      "countryCode": "BR",
+      "language": "en",
+      "rights": "owned_synthetic_fixture",
+      "representationId": "fixture:conditional-cross-border",
+      "body": "In this fictional multi-country exercise, the committee said the corridor may reopen if access guarantees are agreed.",
+      "representationHash": "109e1fa38952319a99e8f1c28b6992a622c4805ef6ef0e62c49b2933e4d3b93e",
+      "locator": {
+        "quote": "may reopen if access guarantees are agreed.",
+        "start": 74,
+        "end": 117,
+        "offsetUnit": "utf16_code_unit"
+      },
+      "intendedReading": "Reopening is conditional and uncertain.",
+      "forbiddenInference": "The corridor has reopened or a condition has been satisfied."
+    }
+  ]
+}

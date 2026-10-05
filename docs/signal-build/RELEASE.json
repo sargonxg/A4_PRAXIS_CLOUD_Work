@@ -1,0 +1,37 @@
+{
+  "name": "PRAXIS SIGNAL complete Codex build kit",
+  "version": "0.2.0",
+  "preparedOn": "2026-10-05",
+  "target": "https://praxis.tacitus.me/signal",
+  "portableEntry": "BOOTSTRAP.md",
+  "markdownFileCount": 46,
+  "phaseCount": 12,
+  "additionalPrimarySourceCount": 23,
+  "referenceTestCount": 29,
+  "referenceRuntime": "Node 24.19.0",
+  "verification": {
+    "deterministicReferenceTestsPassed": true,
+    "kitIntegrityChecked": true,
+    "cleanArchiveExtractionChecked": true,
+    "pdfVisuallyReviewed": true,
+    "productionIntegration": false,
+    "windowsScriptsExecuted": false,
+    "browserInteractionQa": false,
+    "liveCollectors": false,
+    "realModelInference": false,
+    "nativeCapsuleImport": false,
+    "cloudEnvironmentCreated": false,
+    "productionDeployed": false
+  },
+  "boundaries": "Verification flags describe this prepared artifact. They do not establish deployed product capabilities, buyer validation, source licences or external uptime.",
+  "excluded": [
+    "credentials",
+    "runtime databases",
+    "customer evidence",
+    "private production repository",
+    "dependency directories",
+    "third-party model weights",
+    "third-party benchmark datasets"
+  ],
+  "pdfPageCount": 26
+}

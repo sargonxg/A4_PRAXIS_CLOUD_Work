@@ -327,6 +327,97 @@
         { "order": "DESCENDING", "queryScope": "COLLECTION" },
         { "arrayConfig": "CONTAINS", "queryScope": "COLLECTION" }
       ]
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "watched",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "signalJobs",
+      "fieldPath": "status",
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION_GROUP"
+        },
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "sources",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "captures",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "claims",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "reviews",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "briefs",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "runs",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "contextText",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "contextReceipt",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "narratives",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "assessments",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "signalDesks",
+      "fieldPath": "sourceHeads",
+      "indexes": []
     }
   ]
 }

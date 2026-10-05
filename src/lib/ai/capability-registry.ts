@@ -194,6 +194,7 @@ export const LEGACY_AI_ROUTE_CAPABILITY_MAP: Record<string, CapabilityId> = {
   'legal-tracker': 'legal-compliance',
   'media-analyze': 'narrative-media',
   'media-compass': 'narrative-media',
+  signal: 'narrative-media',
   'media-roundup': 'narrative-media',
   'media-scan': 'narrative-media',
   'mediation-design': 'negotiation-design',

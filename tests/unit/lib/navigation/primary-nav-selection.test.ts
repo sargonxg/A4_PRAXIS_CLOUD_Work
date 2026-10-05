@@ -16,6 +16,7 @@ describe('primary navigation selection', () => {
     expect(NAV_GROUPS.find((group) => group.id === 'workspace')?.items.map(({ id }) => id)).toEqual(['home', 'capsules']);
     expect(NAV_GROUPS.find((group) => group.id === 'advanced')).toMatchObject({ label: 'More', defaultOpen: false });
     expect(primaryNavForPath('/app/boardroom')?.id).toBe('boardroom');
+    expect(primaryNavForPath('/signal')?.id).toBe('signal');
     expect(primaryNavForPath('/app/conversations/saved-a?capsuleId=case-a')?.id).toBe('home');
     expect(itemMatchesPath({ href: '/app?panel=memo' }, '/app?panel=memo')).toBe(true);
     expect(itemMatchesPath({ href: '/app?panel=memo' }, '/app?panel=builder')).toBe(false);

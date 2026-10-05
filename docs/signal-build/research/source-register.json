@@ -1,0 +1,216 @@
+{
+  "profile": "praxis-signal-research-register/1",
+  "checkedOn": "2026-10-05",
+  "scope": "Additional research supplement; original project references remain in docs/PROJECT.md.",
+  "liveEndpointsValidated": false,
+  "modelsOrDatasetsBundled": false,
+  "sources": [
+    {
+      "id": "R01",
+      "title": "SemEval-2023 Task 3 overview",
+      "publisher": "ACL Anthology",
+      "url": "https://aclanthology.org/2023.semeval-1.317/",
+      "kind": "research_paper",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Genre, framing and persuasion are distinct tasks; not a truth or intent test."
+    },
+    {
+      "id": "R02",
+      "title": "Google text embedding model documentation",
+      "publisher": "Google Cloud",
+      "url": "https://docs.cloud.google.com/gemini-enterprise-agent-platform/models/embeddings/get-text-embeddings",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Check current multilingual models and pin the model/task/index configuration."
+    },
+    {
+      "id": "R03",
+      "title": "multilingual-e5-base model card",
+      "publisher": "intfloat",
+      "url": "https://huggingface.co/intfloat/multilingual-e5-base",
+      "kind": "model_card",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Optional MIT retrieval baseline; benchmark separately before adoption."
+    },
+    {
+      "id": "R04",
+      "title": "BERTopic online topic modeling",
+      "publisher": "BERTopic",
+      "url": "https://maartengr.github.io/BERTopic/getting_started/online/online.html",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Incremental topic modeling; stable narrative identity remains an application responsibility."
+    },
+    {
+      "id": "R05",
+      "title": "BERTopic topics over time",
+      "publisher": "BERTopic",
+      "url": "https://maartengr.github.io/BERTopic/getting_started/topicsovertime/topicsovertime.html",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Topic evolution is an exploratory component, not verified political interpretation."
+    },
+    {
+      "id": "R06",
+      "title": "ACLED end user licence agreement",
+      "publisher": "ACLED",
+      "url": "https://acleddata.com/eula",
+      "kind": "provider_terms",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Commercial entitlement is required; optional connector remains disabled."
+    },
+    {
+      "id": "R07",
+      "title": "ACLED content usage terms",
+      "publisher": "ACLED",
+      "url": "https://acleddata.com/contentusage",
+      "kind": "provider_terms",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "AI-related processing and derived outputs must fit the actual entitlement."
+    },
+    {
+      "id": "R08",
+      "title": "UCDP API documentation",
+      "publisher": "Uppsala University",
+      "url": "https://ucdp.uu.se/apidocs/index.html",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Token, dataset version, pagination and provider-specific filters require explicit handling."
+    },
+    {
+      "id": "R09",
+      "title": "UCDP dataset downloads",
+      "publisher": "Uppsala University",
+      "url": "https://ucdp.uu.se/downloads/",
+      "kind": "official_dataset_page",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Dataset cadence/definitions are separate from media evidence and commercial rights."
+    },
+    {
+      "id": "R10",
+      "title": "Media Cloud frequently asked questions",
+      "publisher": "Media Cloud",
+      "url": "https://www.mediacloud.org/documentation/faqs",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "URL discovery does not provide distributable actual story text; quotas are account-dependent."
+    },
+    {
+      "id": "R11",
+      "title": "ReliefWeb API parameters",
+      "publisher": "ReliefWeb/OCHA",
+      "url": "https://apidoc.reliefweb.int/parameters",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Use the current approved-appname process and verify document capture terms."
+    },
+    {
+      "id": "R12",
+      "title": "NLLB-200 distilled 600M model card",
+      "publisher": "Meta",
+      "url": "https://huggingface.co/facebook/nllb-200-distilled-600M",
+      "kind": "model_card",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Non-commercial checkpoint is excluded from the default commercial model plan."
+    },
+    {
+      "id": "R13",
+      "title": "Arabic propaganda detection shared-task overview",
+      "publisher": "ACL Anthology/WANLP",
+      "url": "https://aclanthology.org/2022.wanlp-1.11/",
+      "kind": "research_paper",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Arabic technique/span evaluation reference; not an authorization to redistribute its data."
+    },
+    {
+      "id": "R14",
+      "title": "MIRACL multilingual retrieval benchmark",
+      "publisher": "ACL Anthology/TACL",
+      "url": "https://aclanthology.org/2023.tacl-1.63/",
+      "kind": "research_paper",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Multilingual retrieval reference; does not measure geopolitical judgment."
+    },
+    {
+      "id": "R15",
+      "title": "Codex developer commands",
+      "publisher": "OpenAI",
+      "url": "https://learn.chatgpt.com/docs/developer-commands?surface=cli",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Portable launcher uses documented working-directory and additional-directory options."
+    },
+    {
+      "id": "R16",
+      "title": "Sentence Transformers semantic search",
+      "publisher": "Sentence Transformers",
+      "url": "https://sbert.net/examples/sentence_transformer/applications/semantic-search/README.html",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Query/document encodings and retrieval task configuration must be compatible."
+    },
+    {
+      "id": "R17",
+      "title": "Web Annotation Data Model",
+      "publisher": "W3C",
+      "url": "https://www.w3.org/TR/annotation-model/",
+      "kind": "standard",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Quote/position selectors inform evidence locators; SIGNAL explicitly declares its offset units."
+    },
+    {
+      "id": "R18",
+      "title": "Inline bidirectional text markup",
+      "publisher": "W3C",
+      "url": "https://www.w3.org/International/articles/inline-bidi-markup/",
+      "kind": "official_guidance",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Original multilingual evidence needs correct direction and inline isolation."
+    },
+    {
+      "id": "R19",
+      "title": "PostgreSQL range types",
+      "publisher": "PostgreSQL",
+      "url": "https://www.postgresql.org/docs/current/rangetypes.html",
+      "kind": "official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Optional interval storage if the current evidence plane uses PostgreSQL."
+    },
+    {
+      "id": "R20",
+      "title": "geoBoundaries",
+      "publisher": "geoBoundaries",
+      "url": "https://www.geoboundaries.org/",
+      "kind": "official_dataset_page",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Versioned, attribution-bearing geometry; pin release and geopolitical policy."
+    },
+    {
+      "id": "R21",
+      "title": "GDELT DOC 2.0 API announcement",
+      "publisher": "GDELT",
+      "url": "https://blog.gdeltproject.org/gdelt-doc-2-0-api-debuts/",
+      "kind": "historical_official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Discovery caps and publisher-country operators need adapter handling; probe the live endpoint."
+    },
+    {
+      "id": "R22",
+      "title": "GDELT DOC/GEO search update",
+      "publisher": "GDELT",
+      "url": "https://blog.gdeltproject.org/doc-geo-2-0-api-updates-full-year-searching-and-more/",
+      "kind": "historical_official_documentation",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Historical search-window update is not a current availability guarantee."
+    },
+    {
+      "id": "R23",
+      "title": "DISARM framework",
+      "publisher": "DISARM Foundation",
+      "url": "https://www.disarm.foundation/framework",
+      "kind": "official_framework",
+      "checkedOn": "2026-10-05",
+      "implementationNote": "Optional technique vocabulary; matching a tactic does not identify an operator."
+    }
+  ]
+}

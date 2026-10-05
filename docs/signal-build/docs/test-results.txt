@@ -1,0 +1,42 @@
+PRAXIS SIGNAL build kit 0.2.0 | 5 October 2026
+Runtime: Node 24.19.0 | Linux
+Command: node --test code/domain.test.mjs code/http.test.mjs code/analysis-baselines.test.mjs
+Reference checks only. Windows scripts, browser interaction, live collectors, real model inference, native capsule import and production integration were not run.
+
+✔ locators pin the chosen repeated occurrence and preserve UTF-16 coordinates (1.208304ms)
+✔ stale revisions, wrong quotes and invalid bounds fail exact locator validation (0.451288ms)
+✔ locators cannot split surrogate pairs even when the slice matches (0.407992ms)
+✔ retrieval scopes candidates before ranking and respects explicit permission (0.866661ms)
+✔ same dimension with a different model/revision/chunking task is incompatible (0.339379ms)
+✔ nonfinite, zero and wrong-length embeddings fail instead of generating plausible ranks (0.209675ms)
+✔ attention reports counts and a descriptive comparable-window ratio (0.372339ms)
+✔ changed panels and failed windows cannot masquerade as changed attention (0.169905ms)
+✔ low volume/history and impossible counts are explicitly rejected or qualified (3.472241ms)
+✔ a zero baseline has no infinite or invented ratio (0.216145ms)
+✔ manifest comparisons distinguish revision, withdrawal, removal, addition and no change (0.541633ms)
+✔ dependency invalidation is transitive, scoped to reachable artifacts and cycle-safe (0.231558ms)
+✔ all 249 assigned codes plus separately identified Kosovo are selectable (2.438449ms)
+✔ country and region are separate stable scopes and queries (0.437586ms)
+✔ custom region is a literal phrase and operator injection is rejected (0.194302ms)
+✔ tracking URL variants deduplicate without changing origin (0.298218ms)
+✔ discovery time is retained separately from publication and event time (1.723867ms)
+✔ a headline cannot become full-text evidence (1.817718ms)
+✔ quote anchoring preserves negation and rejects invented quotations (0.90591ms)
+✔ review requires exact source revision and a rationale (0.667462ms)
+✔ repeat ingestion is idempotent and semantic edits create distinct revisions (0.824928ms)
+✔ review history persists and latest decision does not overwrite prior history (0.890547ms)
+✔ scope lookups refuse evidence from a different desk (0.529325ms)
+✔ state survives database close and reopen (1.879691ms)
+✔ collector flags saturation and never infers publication date (12.192157ms)
+✔ provider failure retains prior evidence and an honest failure record (1.320082ms)
+✔ non-JSON responses fail without manufacturing coverage (0.948523ms)
+✔ capsule preserves evidence, temporal limits and synthetic status; unreviewed claims stay out of brief (0.836505ms)
+✔ HTTP journey captures, anchors, reviews, reopens and exports a pinned synthetic reading (128.290017ms)
+ℹ tests 29
+ℹ suites 0
+ℹ pass 29
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.952028

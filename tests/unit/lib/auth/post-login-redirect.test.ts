@@ -2,6 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { resolvePostLoginRedirect, safeWorkspaceReturnTarget, resolveOnboardingReturnTarget } from '@/lib/auth/post-login-redirect';
 
 describe('post-login redirect', () => {
+  it('preserves SIGNAL destinations without accepting similarly prefixed or external URLs', () => {
+    expect(safeWorkspaceReturnTarget('/signal?desk=abc&view=Evidence')).toBe('/signal?desk=abc&view=Evidence');
+    expect(resolvePostLoginRedirect(new URLSearchParams({ redirect: '/signal' }), false, true)).toBe('/signal');
+    expect(safeWorkspaceReturnTarget('/signal.evil.test')).toBeNull();
+    expect(safeWorkspaceReturnTarget('/signal/../../evil')).toBeNull();
+    expect(safeWorkspaceReturnTarget('//evil.test/signal')).toBeNull();
+  });
+
   it('lands normal users on the Tasklet-style Home when no explicit app redirect is present', () => {
     expect(resolvePostLoginRedirect(new URLSearchParams(), false, true)).toBe('/app');
   });

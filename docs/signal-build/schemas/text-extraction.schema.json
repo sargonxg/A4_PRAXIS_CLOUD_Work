@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:praxis:signal:text-extraction:0.1",
+  "title": "SIGNAL text extraction proposal",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputManifestId", "claims", "frameCandidates", "limits"],
+  "properties": {
+    "inputManifestId": {"type": "string", "minLength": 1},
+    "claims": {"type": "array", "maxItems": 30, "items": {"$ref": "#/$defs/claim"}},
+    "frameCandidates": {"type": "array", "maxItems": 10, "items": {"$ref": "#/$defs/frame"}},
+    "limits": {"type": "array", "maxItems": 20, "items": {"type": "string", "maxLength": 600}}
+  },
+  "$defs": {
+    "locator": {
+      "type": "object", "additionalProperties": false,
+      "required": ["representationId", "representationHash", "quote", "start", "end", "offsetUnit"],
+      "properties": {
+        "representationId": {"type": "string", "minLength": 1},
+        "representationHash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "quote": {"type": "string", "minLength": 1, "maxLength": 1600},
+        "start": {"type": "integer", "minimum": 0},
+        "end": {"type": "integer", "minimum": 1},
+        "offsetUnit": {"const": "utf16_code_unit"}
+      }
+    },
+    "claim": {
+      "type": "object", "additionalProperties": false,
+      "required": ["localId", "speakerText", "proposition", "polarity", "modality", "conditionText", "temporalText", "geographyText", "locators"],
+      "properties": {
+        "localId": {"type": "string", "minLength": 1, "maxLength": 80},
+        "speakerText": {"type": ["string", "null"], "maxLength": 300},
+        "proposition": {"type": "string", "minLength": 1, "maxLength": 1200},
+        "polarity": {"enum": ["positive", "negative", "unknown"]},
+        "modality": {"enum": ["asserted", "proposed", "conditional", "reported_allegation", "denied", "uncertain"]},
+        "conditionText": {"type": ["string", "null"], "maxLength": 500},
+        "temporalText": {"type": ["string", "null"], "maxLength": 300},
+        "geographyText": {"type": ["string", "null"], "maxLength": 300},
+        "locators": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"$ref": "#/$defs/locator"}}
+      }
+    },
+    "frame": {
+      "type": "object", "additionalProperties": false,
+      "required": ["label", "claimIds", "qualification"],
+      "properties": {
+        "label": {"type": "string", "minLength": 1, "maxLength": 300},
+        "claimIds": {"type": "array", "minItems": 1, "maxItems": 30, "items": {"type": "string"}},
+        "qualification": {"type": "string", "minLength": 1, "maxLength": 600}
+      }
+    }
+  }
+}
