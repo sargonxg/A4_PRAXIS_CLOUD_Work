@@ -32,7 +32,7 @@ describe('Capsules route consolidation', () => {
     const workspaceItems = NAV_GROUPS.find((group) => group.id === 'workspace')?.items ?? [];
 
     expect(workspaceItems.map((item) => item.id)).toEqual(['home', 'capsules']);
-    expect(NAV_GROUPS.find((group) => group.id === 'advanced')?.items.map((item) => item.id)).toEqual(['boardroom', 'recent-work', 'marketplace', 'settings']);
+    expect(NAV_GROUPS.find((group) => group.id === 'advanced')?.items.map((item) => item.id)).toEqual(['signal', 'boardroom', 'recent-work', 'marketplace', 'settings']);
     expect(PRIMARY_NAV.some((item) => item.id === 'repository')).toBe(false);
     expect(PRIMARY_NAV.find((item) => item.id === 'capsules')).toMatchObject({
       label: 'Capsules',

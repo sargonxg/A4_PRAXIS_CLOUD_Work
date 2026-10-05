@@ -2,11 +2,11 @@
 
 ## Current checkpoint
 
-- Baseline commit: 276d9cbb62c2cd6a212770c4fa78547c901ee82b; working branch `work`.
+- Baseline commit: 276d9cbb62c2cd6a212770c4fa78547c901ee82b; release branch `codex/signal-text-pilot-a096cefd`.
 - Environment: Codex cloud /workspace/A4_PRAXIS_CLOUD_Work; Node 24.19.0, npm 11.9.0, gcloud 587.0.0.
 - Kit: v0.2.0 with BOOTSTRAP and twelve phases, explicitly accepted by user. Integrity and all 29 reference tests passed.
-- Production deployment: NOT yet performed. Existing /signal returns 404. Existing rollback frontend revision praxis-frontend-01112-6x6.
-- Current action: commit validated text pilot, deploy zero-traffic tagged staging, prove worker/tenant isolation, then publish and verify production.
+- Production deployment pending final corrected staging. Rollback frontend revision praxis-frontend-01112-6x6 remains at 100% traffic.
+- Current action: stage the browser-discovered root-navigation fix, verify all browser gates, then publish and verify production.
 
 | Phase | Status | Evidence / remaining gate |
 | --- | --- | --- |
@@ -47,3 +47,14 @@ Read this file, INTEGRATION_MAP and DECISIONS. Preserve working changes. Complet
 - GDELT observed HTTP503 and is disabled by SIGNAL_GDELT_ENABLED for this release; media remains disabled. Human gold200/language/country quality comparison is not measured; offline versioned labeling/evaluation runner provided.
 - A forwarding-harness error exposed a disposable canary session in a test log. Artifacts sanitized and that account's sessions revoked with OAuth validSince readback. Fresh canary login/journey passed; no customer/signing credentials exposed.
 - Workspace startup configuration saved for future environment review/save/publish. This is separate from Google Cloud product release.
+
+## First cloud staging checkpoint (2026-10-05)
+
+- Build673b268f-fefb-4c55-8ea7-efd510441aeb succeeded; sourcea096cefd4438618f31cd82d7c6d81dd573f129ea, revisionpraxis-frontend-01130-dex, zero production traffic. Runtime provenance and all dependency health checks passed.
+- Actual calibrated analysis HTTP200, gemini-3.5-flash, 4529 tokens, one proposed/unaccepted claim. CloudTasks dispatched and succeeded on the first attempt; persisted permissioned NASA RSS receipt contains10 sources.
+- Actual second identity desk/graph/export requests404; missing worker identity401; explicit pause and scoped desk/job/temporary identity cleanup passed.
+- Full staged browser journey and anonymous protection passed. Primary button contrast>=4.5, mobile card bounds, zero page exceptions. More navigation found a real /app/signal link bug; corrected root routing and added query/hash/path-boundary unit tests. Corrected staging acceptance remains pending.
+
+## Corrected candidate verification
+
+Full isolated repository suite485 files /2927 tests passed after the final navigation changes. Primary root routing and capsule menu regression tests10/10 passed. Full lint has zero errors; an unused smoke-helper initialization was removed and focused changed-file lint passes with zero warnings, leaving the five pre-existing repository warnings. The configured full audit gate and cold cloud build remain required.

@@ -23,6 +23,9 @@ const PUBLIC_ROOT_PATHS = new Set([
 
 export function shouldPrefixPraxisHref(href: string): boolean {
   if (!href) return false;
+  // SIGNAL has its own authenticated root layout, outside the /app group.
+  const pathname = href.split(/[?#]/, 1)[0];
+  if (pathname === '/signal' || pathname.startsWith('/signal/')) return false;
   if (
     href.startsWith('/app') ||
     href.startsWith('http') ||

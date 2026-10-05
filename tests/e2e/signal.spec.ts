@@ -30,44 +30,7 @@ async function api(page: Page, body: Record<string, unknown>) {
   }, body);
 }
 
-let cleanupCookieHeader = '';
-test.afterAll(async () => {
-  if (!created.length) return;
-  const client = await playwrightRequest.newContext({ baseURL: localUpstream ?? browserOrigin, extraHTTPHeaders: { Cookie: cleanupCookieHeader } });
-  try {
-    for (const item of created) {
-      const current = await client.get(`/api/signal?deskId=${item.id}`);
-      if (current.status() === 404) continue;
-      expect(current.status(), 'Cleanup reads only this test-created desk').toBe(200);
-      const detail = await current.json();
-      const deleted = await client.delete(`/api/signal?deskId=${item.id}&expectedVersion=${detail.desk.version}`);
-      expect(deleted.status(), 'Owned cleanup uses the audited deletion API').toBeLessThan(300);
-    }
-  } catch (error) { if (error instanceof Error && error.message.startsWith('apiRequestContext.')) throw new Error('Local cleanup transport failed; saved test IDs remain available for scoped cleanup.'); throw error; } finally { await client.dispose(); }
-});
-
-test('SIGNAL protects the API without a signed-in session', async ({ request }) => {
-  const response = await request.get(localUpstream ? `${localUpstream}/api/signal` : '/api/signal');
-  expect(response.status()).toBe(401);
-});
-
-test('authenticated synthetic desk: capture, exact denial, review, capsule, approval, correction and portable exports', async ({ page }) => {
-  test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
-  test.setTimeout(240000);
-  let firebaseIdToken = '';
-  // Keep the actual browser-issued token in memory only for the client-rules check.
-  page.on('request', incoming => {
-    if (new URL(incoming.url()).pathname === '/api/auth/session' && incoming.method() === 'POST') {
-      try { const body = incoming.postDataJSON(); if (typeof body?.token === 'string') firebaseIdToken = body.token; } catch { /* Requests without JSON have no identity token. */ }
-    }
-  });
-  const consoleErrors: string[] = [];
-  const consoleCounts: Record<string, number> = {};
-  page.on('console', message => { consoleCounts[message.type()] = (consoleCounts[message.type()] ?? 0) + 1; });
-  const networkErrors: string[] = [];
-  const forwardingFailures: Array<{ method: string; path: string; reason: string }> = [];
-  page.on('requestfailed', request => networkErrors.push(`${new URL(request.url()).hostname}: ${request.failure()?.errorText}`));
-  page.on('pageerror', error => consoleErrors.push(error.message));
+async function forwardAppOrigin(page: Page, forwardingFailures: Array<{ method: string; path: string; reason: string }> = []) {
   if (localUpstream) {
     // Serve the local app under its already-authorized web origin. Firebase requests
     // remain real HTTPS requests and retain their actual production-origin referrer.
@@ -94,11 +57,82 @@ test('authenticated synthetic desk: capture, exact denial, review, capsule, appr
       }
     });
   }
+}
+
+let cleanupCookieHeader = '';
+test.afterAll(async () => {
+  if (!created.length) return;
+  const client = await playwrightRequest.newContext({ baseURL: localUpstream ?? browserOrigin, extraHTTPHeaders: { Cookie: cleanupCookieHeader } });
+  try {
+    for (const item of created) {
+      const current = await client.get(`/api/signal?deskId=${item.id}`);
+      if (current.status() === 404) continue;
+      expect(current.status(), 'Cleanup reads only this test-created desk').toBe(200);
+      const detail = await current.json();
+      const deleted = await client.delete(`/api/signal?deskId=${item.id}&expectedVersion=${detail.desk.version}`);
+      expect(deleted.status(), 'Owned cleanup uses the audited deletion API').toBeLessThan(300);
+    }
+  } catch (error) { if (error instanceof Error && error.message.startsWith('apiRequestContext.')) throw new Error('Local cleanup transport failed; saved test IDs remain available for scoped cleanup.'); throw error; } finally { await client.dispose(); }
+});
+
+test('SIGNAL protects the API without a signed-in session', async ({ request }) => {
+  const response = await request.get(localUpstream ? `${localUpstream}/api/signal` : '/api/signal');
+  expect(response.status()).toBe(401);
+});
+
+test('More navigation opens the actual authenticated SIGNAL root', async ({ page }) => {
+  test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
+  test.setTimeout(90000);
+  await forwardAppOrigin(page);
+  await authenticateFirebaseCanary(page, undefined, '/app', { expectComposer: false });
+  await page.getByRole('complementary', { name: 'PRAXIS navigation' }).getByRole('button', { name: 'More', exact: true }).click();
+  const signalLink = page.getByRole('navigation', { name: 'More workspace tools' }).getByRole('link', { name: 'SIGNAL', exact: true });
+  await expect(signalLink).toHaveAttribute('href', '/signal');
+  await signalLink.click();
+  await expect(page.getByRole('heading', { level: 1, name: 'SIGNAL', exact: true })).toBeVisible({ timeout: 30000 });
+});
+
+test('authenticated synthetic desk: capture, exact denial, review, capsule, approval, correction and portable exports', async ({ page }) => {
+  test.skip(!hasFirebaseCanaryCredentials(), canaryCredentialSkipReason());
+  test.setTimeout(240000);
+  let firebaseIdToken = '';
+  // Keep the actual browser-issued token in memory only for the client-rules check.
+  page.on('request', incoming => {
+    if (new URL(incoming.url()).pathname === '/api/auth/session' && incoming.method() === 'POST') {
+      try { const body = incoming.postDataJSON(); if (typeof body?.token === 'string') firebaseIdToken = body.token; } catch { /* Requests without JSON have no identity token. */ }
+    }
+  });
+  const consoleErrors: string[] = [];
+  const consoleCounts: Record<string, number> = {};
+  const consoleCategories: Record<string, number> = {};
+  page.on('console', message => {
+    const type = message.type(); consoleCounts[type] = (consoleCounts[type] ?? 0) + 1;
+    if (type !== 'error' && type !== 'warning') return;
+    const raw = message.text(); const status = raw.match(/status (?:of )?(\d{3})/i)?.[1];
+    const category = status ? `http-${status}` : raw.includes('permission-denied') || raw.includes('Missing or insufficient permissions') ? 'permission-denied' : raw.includes('Firestore') ? 'firestore' : raw.includes('auth/') ? 'authentication' : 'unclassified';
+    let sourcePath = 'unknown'; try { sourcePath = new URL(message.location().url).pathname; } catch { /* No source location supplied. */ }
+    const key = `${type}:${category}:${sourcePath}`; consoleCategories[key] = (consoleCategories[key] ?? 0) + 1;
+  });
+  const networkErrors: string[] = [];
+  const forwardingFailures: Array<{ method: string; path: string; reason: string }> = [];
+  page.on('requestfailed', request => networkErrors.push(`${new URL(request.url()).hostname}: ${request.failure()?.errorText}`));
+  page.on('pageerror', error => consoleErrors.push(error.message));
+  await forwardAppOrigin(page, forwardingFailures);
   try { await authenticateFirebaseCanary(page, undefined, '/app', { expectComposer: false }); } catch (error) { console.log('Authentication network failure summary:', networkErrors); throw error; }
   cleanupCookieHeader = (await page.context().cookies(browserOrigin)).map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
   await page.goto('/signal');
   await expect(page.getByRole('heading', { level: 1, name: 'SIGNAL', exact: true })).toBeVisible({ timeout: 30000 });
-  await page.getByRole('button', { name: 'Create desk', exact: true }).first().click();
+  const createAction = page.getByRole('button', { name: 'Create desk', exact: true }).first();
+  await expect(createAction).toBeEnabled({ timeout: 30000 });
+  const primaryContrast = await createAction.evaluate(element => {
+    const canvas = document.createElement('canvas'); const context = canvas.getContext('2d')!;
+    const rgb = (color: string) => { context.clearRect(0, 0, 1, 1); context.fillStyle = color; context.fillRect(0, 0, 1, 1); return Array.from(context.getImageData(0, 0, 1, 1).data).slice(0, 3); };
+    const luminance = (values: number[]) => values.map(value => { const channel = value / 255; return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4; }).reduce((total, value, index) => total + value * [0.2126, 0.7152, 0.0722][index], 0);
+    const style = getComputedStyle(element); const foreground = luminance(rgb(style.color)); const background = luminance(rgb(style.backgroundColor));
+    return (Math.max(foreground, background) + 0.05) / (Math.min(foreground, background) + 0.05);
+  });
+  expect(primaryContrast, 'Primary CTA text must be readable against its actual painted background').toBeGreaterThanOrEqual(4.5);
+  await createAction.click();
   await page.getByLabel('Desk name', { exact: true }).fill(`${prefix} Brazil`);
   await page.getByLabel('Audience', { exact: true }).fill('Synthetic acceptance reviewer');
   await page.getByLabel('Decision question', { exact: true }).fill('Did the fictional minister adopt the proposal, or only open consultation?');
@@ -218,7 +252,7 @@ test('authenticated synthetic desk: capture, exact denial, review, capsule, appr
   }
   await page.goto(`/signal?desk=${desk.id}&revision=1&view=Evidence`);
   await expect(page.getByRole('status').filter({ hasText: 'This link points to an earlier desk revision' })).toBeVisible({ timeout: 30000 });
-  const consoleSummary = JSON.stringify({ consoleCounts, runtimeExceptionCount: consoleErrors.length, networkFailureHosts: networkErrors, forwardingFailures }, null, 2);
+  const consoleSummary = JSON.stringify({ consoleCounts, consoleCategories, primaryCtaContrast: primaryContrast, runtimeExceptionCount: consoleErrors.length, networkFailureHosts: networkErrors, forwardingFailures }, null, 2);
   await writeFile('output/signal/browser-console-summary.json', consoleSummary);
   await test.info().attach('browser-console-summary', { body: consoleSummary, contentType: 'application/json' });
   expect(consoleErrors, 'No browser runtime exceptions').toEqual([]);

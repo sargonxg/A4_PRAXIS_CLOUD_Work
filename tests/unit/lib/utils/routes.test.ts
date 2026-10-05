@@ -2,6 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { shouldPrefixPraxisHref } from '@/lib/utils/routes';
 
 describe('shouldPrefixPraxisHref', () => {
+  it('keeps authenticated SIGNAL routes at the root', () => {
+    for (const href of ['/signal', '/signal?desk=example', '/signal#evidence', '/signal/desk']) {
+      expect(shouldPrefixPraxisHref(href)).toBe(false);
+    }
+    expect(shouldPrefixPraxisHref('/signal-other')).toBe(true);
+  });
   it('prefixes authenticated app-relative paths', () => {
     expect(shouldPrefixPraxisHref('/dashboard')).toBe(true);
     expect(shouldPrefixPraxisHref('dashboard')).toBe(true);

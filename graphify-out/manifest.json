@@ -7098,9 +7098,9 @@
     "semantic_hash": ""
   },
   "src/lib/utils/routes.ts": {
-    "mtime": 1791221334.9177723,
-    "seen": 1791227120.4803953,
-    "ast_hash": "5f3385420d301f7fb4d28089555ae3b3",
+    "mtime": 1791230456.9482973,
+    "seen": 1791230547.6706376,
+    "ast_hash": "99c10de9b5521a5d72c9929057d892dd",
     "semantic_hash": ""
   },
   "src/lib/utils/safe-number.ts": {
@@ -7854,9 +7854,9 @@
     "semantic_hash": ""
   },
   "tests/unit/app/capsule-factory-route-consolidation.test.ts": {
-    "mtime": 1791221334.9247296,
-    "seen": 1791227120.4805734,
-    "ast_hash": "eadbd6bd167119075201aebec1e52e02",
+    "mtime": 1791230694.6067421,
+    "seen": 1791231066.5157118,
+    "ast_hash": "d41ece0bf054f28c3e091e34e3b42a79",
     "semantic_hash": ""
   },
   "tests/unit/app/cron-agent-runs-sweep-route.test.ts": {
@@ -9348,9 +9348,9 @@
     "semantic_hash": ""
   },
   "tests/unit/lib/utils/routes.test.ts": {
-    "mtime": 1791221334.943894,
-    "seen": 1791227120.4809804,
-    "ast_hash": "a9823aa95a2950129ce944bf889c1ab6",
+    "mtime": 1791230458.0059183,
+    "seen": 1791230547.6732266,
+    "ast_hash": "ef9c53e4bf5674fc138b69f9f3cde80a",
     "semantic_hash": ""
   },
   "tests/unit/scripts/api-route-inventory.test.ts": {
@@ -13368,9 +13368,9 @@
     "semantic_hash": ""
   },
   "tests/e2e/signal.spec.ts": {
-    "mtime": 1791228076.5803514,
-    "seen": 1791228099.684605,
-    "ast_hash": "2d82ec1208f350d3444d07d92d39514b",
+    "mtime": 1791230584.2368898,
+    "seen": 1791231066.515477,
+    "ast_hash": "3c2d6bfdfd4b6c11ea49045da7c8168e",
     "semantic_hash": ""
   },
   "tests/e2e/signed-in-home.spec.ts": {
@@ -14562,15 +14562,15 @@
     "semantic_hash": ""
   },
   "docs/signal/PROGRESS.md": {
-    "mtime": 1791228462.1032948,
-    "seen": 1791228713.5489395,
-    "ast_hash": "b2b5f60c342bc997acd2f587ded5d0e1",
+    "mtime": 1791230589.772133,
+    "seen": 1791231066.5185697,
+    "ast_hash": "929548e42c08b72378c558c8ed3000b5",
     "semantic_hash": ""
   },
   "docs/signal/RELEASE_PLAN.md": {
-    "mtime": 1791228191.0377078,
-    "seen": 1791228713.5489419,
-    "ast_hash": "a3e56c0492825c7d0627af60b7ad2229",
+    "mtime": 1791230817.0610168,
+    "seen": 1791231066.5185745,
+    "ast_hash": "32330ee26f1a83a99698089bde47ad12",
     "semantic_hash": ""
   },
   "docs/signal-build/docs/PRAXIS_SIGNAL_Project.pdf": {
@@ -14622,9 +14622,9 @@
     "semantic_hash": ""
   },
   "docs/signal/README.md": {
-    "mtime": 1791228462.1037037,
-    "seen": 1791228713.5489407,
-    "ast_hash": "68c3f12b8ea3ebbf1e45889c6b821d73",
+    "mtime": 1791230597.5415628,
+    "seen": 1791231066.5185723,
+    "ast_hash": "6b9f2980f0d68a86ae72ae242478c247",
     "semantic_hash": ""
   },
   "docs/signal/RUNBOOK.md": {
@@ -14646,15 +14646,21 @@
     "semantic_hash": ""
   },
   "scripts/signal/staging-worker-smoke.mjs": {
-    "mtime": 1791228571.92951,
-    "seen": 1791228713.5456738,
-    "ast_hash": "24e35c886ab76f8a35925f7647cc4c2b",
+    "mtime": 1791230970.062769,
+    "seen": 1791231066.5118203,
+    "ast_hash": "185f3d52844d6d4ba17448b98e2a5ecd",
     "semantic_hash": ""
   },
   "scripts/signal/cloudbuild.staging.yaml": {
     "mtime": 1791228191.0060425,
     "seen": 1791228713.5489795,
     "ast_hash": "401c6530fe6a017bb989cfaf5ec60f20",
+    "semantic_hash": ""
+  },
+  "docs/signal/proofs/staging-worker-a096cefd.json": {
+    "mtime": 1791230776.3115816,
+    "seen": 1791231066.5114527,
+    "ast_hash": "cc25e27cebff15218686a64d2f2ee43c",
     "semantic_hash": ""
   }
 }

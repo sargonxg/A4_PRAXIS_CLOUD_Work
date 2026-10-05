@@ -1,0 +1,51 @@
+{
+  "target": "https://signal---praxis-frontend-pgoyqovcza-uc.a.run.app",
+  "proof": {
+    "realCanarySession": true,
+    "ownedDeskCreated": true,
+    "secondRealIdentityIsolated": [
+      {
+        "surface": "desk",
+        "status": 404
+      },
+      {
+        "surface": "graph",
+        "status": 404
+      },
+      {
+        "surface": "export",
+        "status": 404
+      }
+    ],
+    "unauthenticatedWorkerRejected": true,
+    "liveCalibratedAnalysis": {
+      "status": 200,
+      "runStatus": "succeeded",
+      "model": "gemini-3.5-flash",
+      "tokens": 4529,
+      "proposalCount": 1,
+      "allProposalsUnaccepted": true
+    },
+    "explicitWatchEnabled": true,
+    "sweep": {
+      "status": 200,
+      "scanned": 1,
+      "enqueued": 1,
+      "recovered": 0,
+      "errors": 0
+    },
+    "actualCloudTasksWorker": {
+      "status": "succeeded",
+      "attempts": 1,
+      "dispatched": true,
+      "receiptStatus": "succeeded",
+      "collectedSources": 10
+    },
+    "watchPauseVerified": true
+  },
+  "cleanup": {
+    "ownedDeskDeleted": true,
+    "deletedDeskUnavailable": true,
+    "temporaryIdentityDeleted": true
+  }
+}
