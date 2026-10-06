@@ -1,12 +1,30 @@
 # SIGNAL build and release progress
 
-## Published geographic visualization and feedback refinement
+## Published world explorer and calibrated research
 
-Application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` is published at https://praxis.tacitus.me/signal. Canonical main build `d8d1d36f-b697-4913-9993-fb9315b0bc35` created revision `praxis-frontend-01119-c5g`, serving 100% of public traffic with all seven runtime checks passing. Existing resources, secret bindings, unrelated tags and hourly watched-desk scheduling are preserved. Rollback is `praxis-frontend-01117-68m`.
+Application source `3638984229114df3237b4f5e129f5e52b4d7c156` is published at https://praxis.tacitus.me/signal. Canonical main build `1a9d316b-dc46-4ed2-974e-d35414204f86` in `us-central1` created revision `praxis-frontend-01122-ncs`, image digest `sha256:1ec94e07b6cb79ce752491572a8201ff13c151eab81bb86c3ae59151513a44aa`, serving 100% of public traffic. All seven runtime health checks passed; existing resources, twelve secret bindings, worker URLs and unrelated tags are preserved. Rollback is `praxis-frontend-01119-c5g`.
 
-All 492 test files / 2,990 tests and the full configured source gate pass. An official Playwright Cloud Build completed all five exact-source staged browser tests, followed by plain-public build `691fab0c-0589-4095-a0f5-0ec6e52c5441`: five passed, none skipped, failed or flaky, without forwarding. Actual public second-identity feedback isolation and complete scoped cleanup passed. Safe receipt: `proofs/release-refinement-cc4e6f6c.json`. Earlier blocked/partial receipts remain dated historical evidence; they no longer describe the active publication status.
+All 498 unit-test files / 3,034 tests and the full configured gate passed, with zero lint errors and five existing unrelated warnings. Fifteen additive field overrides were read back. Exact-source staging build `d19806f2-5bbb-4d20-849b-e80af2c66e6f` created revision `praxis-frontend-01141-xet`; browser build `3fb42f4b-6ec5-4924-8e5f-150d250fe6cc` passed all eight tests. Plain-public browser build `ab3ad9e9-dfed-40e7-9860-baeb9c9498e5` passed the same eight tests without forwarding. Both have zero skipped, failed or flaky tests; disposable test cleanup passed. Safe current receipt: [release-world-36389842.json](proofs/release-world-36389842.json).
 
-The simpler default world explorer, AI question box and twelve-hour public-source panel are a separate frozen candidate. Its full configured gate, lint (zero errors / five existing unrelated warnings) and all 498 unit files / 3,034 tests pass. The initial real cache, calibrated AI, eight-browser-test staging/public gates and twelve-hour scheduling proofs remain pending. These features are not included in this published revision. Real customer feedback and the human gold benchmark remain open.
+The default workflow is: sign in, select a country on the world globe, inspect sources and ask a question. **Evidence & briefs** opens the complete private review workflow; **Explore the world** returns to the simpler page. The twenty-country panel contains four WDI indicators and three permission-checked headline feeds: Global Voices, GOV.UK official communications and European Commission official communications. Country-title mentions identify discovery associations, not event locations or representative national media coverage. Government/media directory access checks do not verify officeholders, ownership, independence or reuse rights.
+
+The actual shared snapshot succeeded at `2026-10-06T00:06:58.673Z`, with eighty WDI values retaining reporting years 2023–2025, eleven unique headlines across thirteen country associations, three attributed Global Voices headlines and every configured provider available. Initial collection used the earlier `80ab84f8` candidate with identical collector code; final-source same-window refresh correctly returned `not-due-or-leased`. Twelve hours is the acquisition cadence, not realtime coverage or the publication cadence of annual statistics. Failed providers retain last-known observations with explicit notices.
+
+Real calibrated Gemini 3.5 Flash research returned HTTP 200 globally on exact-source staging (16,021 tokens) and for Brazil on the public URL (4,933 tokens), each citing two actual metrics and one actual headline. Citations, metric values and required source attribution were validated. Answers remain research drafts requiring human review; research questions and private desk evidence do not enter the shared cache or accepted capsule knowledge.
+
+The separate `praxis-signal-world-refresh` job is ENABLED at `0 */12 * * *` UTC, targeting authenticated POST `https://praxis.tacitus.me/api/signal/world/refresh`; its secret header was privately read back. Actual manual scheduler transport returned HTTP 200 at `2026-10-06T00:54:59.500Z`; the already-collected bucket remained fenced. The existing hourly private watch job remains ENABLED and unchanged, with actual post-publication HTTP 200 at `2026-10-06T01:00:50.277Z` (following the earlier `00:00:35Z` baseline success). Neither job needs a browser or laptop to remain open.
+
+Actual public second-identity feedback read/write returned 404; forged actor returned 422 and stale version 409. Sources, claims, reviews and approved briefs stayed unchanged; owned test desk and temporary identity/profile/rate-limit cleanup passed. Image/audio/video analysis and GDELT remain disabled. The independently human-labelled 200-item gold benchmark, customer pilot outcomes, wider licensed media coverage, verified current-government facts and polarization/audience measurements remain open and are not claimed.
+
+Graphify refreshed the source AST: 20,561 nodes, 45,935 edges and 950 communities, with zero new model calls/tokens; existing inferred evidence was retained.
+
+## Historical geographic visualization and feedback refinement
+
+Application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` was published at https://praxis.tacitus.me/signal. Canonical main build `d8d1d36f-b697-4913-9993-fb9315b0bc35` created revision `praxis-frontend-01119-c5g`, then serving 100% of public traffic with all seven runtime checks passing. Existing resources, secret bindings, unrelated tags and hourly watched-desk scheduling are preserved. Rollback is `praxis-frontend-01117-68m`.
+
+All 492 test files / 2,990 tests and the full configured source gate pass. An official Playwright Cloud Build completed all five exact-source staged browser tests, followed by plain-public build `691fab0c-0589-4095-a0f5-0ec6e52c5441`: five passed, none skipped, failed or flaky, without forwarding. Actual public second-identity feedback isolation and complete scoped cleanup passed. Historical receipt: `proofs/release-refinement-cc4e6f6c.json`. Earlier blocked/partial receipts remain dated historical evidence; they no longer describe the active publication status.
+
+
 
 ## Verified initial text-pilot release
 
@@ -46,7 +64,7 @@ The simpler default world explorer, AI question box and twelve-hour public-sourc
 
 ## Operational limits and follow-up
 
-Only explicitly watched desks collect; hourly UTC, 20 desks / 5 watches per owner, default 24 collections / 10 analyses per desk per UTC day. Coverage is the configured panel, not universal monitoring. GDELT and media remain disabled; human gold evaluation remains a reviewer-owned real pilot prerequisite. Counts/tokens are not dollar invoices. Full account erasure remains under the existing independent platform flag; actual desk/generated-capsule/job deletion was verified.
+Only explicitly watched desks collect; hourly UTC, 20 desks / 5 watches per owner, default 24 collections / 10 analyses per desk per UTC day. Coverage is the configured panel, not universal monitoring. GDELT and image/audio/video analysis remain disabled; human gold evaluation remains a reviewer-owned real pilot prerequisite. Counts/tokens are not dollar invoices. Full account erasure remains under the existing independent platform flag; actual desk/generated-capsule/job deletion was verified.
 
 Workspace startup configuration has been saved as an onboarding draft for future environment review/publishing; this is separate from the live product release.
 

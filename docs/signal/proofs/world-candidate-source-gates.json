@@ -39,5 +39,6 @@
     "reportedNullSourceIdsNotInvented": true
   },
   "correctedAiOutputBudget": 5000,
-  "safeFailureDiagnostics": "Fixed categorical metadata only; no question or provider response text"
+  "safeFailureDiagnostics": "Fixed categorical metadata only; no question or provider response text",
+  "scope": "Source-gate receipt captured before live acceptance; current published acceptance is release-world-36389842.json"
 }

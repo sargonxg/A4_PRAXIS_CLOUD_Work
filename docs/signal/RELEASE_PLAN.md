@@ -2,11 +2,27 @@
 
 Public application: https://praxis.tacitus.me/signal. Existing Cloud Run service `praxis-frontend`, project `praxisbytacitus`, region `us-central1`. PRAXIS sign-in is required for private desks.
 
-## Published geographic refinement
+## Published world explorer
 
-Exact application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` passed the full source gate, 2,990 unit tests and all five actual staged browser tests. Canonical main Cloud Build `d8d1d36f-b697-4913-9993-fb9315b0bc35` succeeded in `us-central1`; revision `praxis-frontend-01119-c5g`, digest `sha256:9ce973ba0504589433a1e143ba6959b6dcc4dc90778c9a137ecd9116cbd2f215`, serves 100% of public traffic. All seven runtime checks, worker URLs, resources, secret bindings and unrelated tags passed readback. Plain-public Cloud Build `691fab0c-0589-4095-a0f5-0ec6e52c5441` passed all five tests without forwarding. Actual public second-identity feedback isolation and full scoped cleanup passed. Hourly watched-desk scheduling is unchanged and successful. Rollback is `praxis-frontend-01117-68m`. Safe current receipt: `proofs/release-refinement-cc4e6f6c.json`.
+Application source `3638984229114df3237b4f5e129f5e52b4d7c156` is published at https://praxis.tacitus.me/signal. Canonical main build `1a9d316b-dc46-4ed2-974e-d35414204f86` in `us-central1` created revision `praxis-frontend-01122-ncs`, image digest `sha256:1ec94e07b6cb79ce752491572a8201ff13c151eab81bb86c3ae59151513a44aa`, serving 100% of public traffic. All seven runtime health checks passed; existing resources, twelve secret bindings, worker URLs and unrelated tags are preserved. Rollback is `praxis-frontend-01119-c5g`.
 
-The simpler default world explorer and twelve-hour public-source panel are a separate candidate; their first live collection/model/browser/scheduler checks remain pending. Earlier blocked candidate receipts describe the earlier transport outage, not current production. Source and later documentation-only handoff hashes remain distinct.
+All 498 unit-test files / 3,034 tests and the full configured gate passed, with zero lint errors and five existing unrelated warnings. Fifteen additive field overrides were read back. Exact-source staging build `d19806f2-5bbb-4d20-849b-e80af2c66e6f` created revision `praxis-frontend-01141-xet`; browser build `3fb42f4b-6ec5-4924-8e5f-150d250fe6cc` passed all eight tests. Plain-public browser build `ab3ad9e9-dfed-40e7-9860-baeb9c9498e5` passed the same eight tests without forwarding. Both have zero skipped, failed or flaky tests; disposable test cleanup passed. Safe current receipt: [release-world-36389842.json](proofs/release-world-36389842.json).
+
+The default workflow is: sign in, select a country on the world globe, inspect sources and ask a question. **Evidence & briefs** opens the complete private review workflow; **Explore the world** returns to the simpler page. The twenty-country panel contains four WDI indicators and three permission-checked headline feeds: Global Voices, GOV.UK official communications and European Commission official communications. Country-title mentions identify discovery associations, not event locations or representative national media coverage. Government/media directory access checks do not verify officeholders, ownership, independence or reuse rights.
+
+The actual shared snapshot succeeded at `2026-10-06T00:06:58.673Z`, with eighty WDI values retaining reporting years 2023–2025, eleven unique headlines across thirteen country associations, three attributed Global Voices headlines and every configured provider available. Initial collection used the earlier `80ab84f8` candidate with identical collector code; final-source same-window refresh correctly returned `not-due-or-leased`. Twelve hours is the acquisition cadence, not realtime coverage or the publication cadence of annual statistics. Failed providers retain last-known observations with explicit notices.
+
+Real calibrated Gemini 3.5 Flash research returned HTTP 200 globally on exact-source staging (16,021 tokens) and for Brazil on the public URL (4,933 tokens), each citing two actual metrics and one actual headline. Citations, metric values and required source attribution were validated. Answers remain research drafts requiring human review; research questions and private desk evidence do not enter the shared cache or accepted capsule knowledge.
+
+The separate `praxis-signal-world-refresh` job is ENABLED at `0 */12 * * *` UTC, targeting authenticated POST `https://praxis.tacitus.me/api/signal/world/refresh`; its secret header was privately read back. Actual manual scheduler transport returned HTTP 200 at `2026-10-06T00:54:59.500Z`; the already-collected bucket remained fenced. The existing hourly private watch job remains ENABLED and unchanged, with actual post-publication HTTP 200 at `2026-10-06T01:00:50.277Z` (following the earlier `00:00:35Z` baseline success). Neither job needs a browser or laptop to remain open.
+
+Actual public second-identity feedback read/write returned 404; forged actor returned 422 and stale version 409. Sources, claims, reviews and approved briefs stayed unchanged; owned test desk and temporary identity/profile/rate-limit cleanup passed. Image/audio/video analysis and GDELT remain disabled. The independently human-labelled 200-item gold benchmark, customer pilot outcomes, wider licensed media coverage, verified current-government facts and polarization/audience measurements remain open and are not claimed.
+
+## Historical geographic refinement
+
+Exact application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` passed the full source gate, 2,990 unit tests and all five actual staged browser tests. Canonical main Cloud Build `d8d1d36f-b697-4913-9993-fb9315b0bc35` succeeded in `us-central1`; revision `praxis-frontend-01119-c5g`, digest `sha256:9ce973ba0504589433a1e143ba6959b6dcc4dc90778c9a137ecd9116cbd2f215`, then served 100% of public traffic. All seven runtime checks, worker URLs, resources, secret bindings and unrelated tags passed readback. Plain-public Cloud Build `691fab0c-0589-4095-a0f5-0ec6e52c5441` passed all five tests without forwarding. Actual public second-identity feedback isolation and full scoped cleanup passed. Hourly watched-desk scheduling is unchanged and successful. Rollback is `praxis-frontend-01117-68m`. Historical receipt: `proofs/release-refinement-cc4e6f6c.json`.
+
+Earlier receipts remain historical evidence. Application source and later documentation-only handoff hashes remain distinct.
 
 ## Historical initial text-pilot release
 
@@ -66,7 +82,7 @@ Production worker proof is explicitly guarded:
 
 ```bash
 SIGNAL_SMOKE_BASE_URL=https://praxis.tacitus.me \
-SIGNAL_SMOKE_EXPECTED_COMMIT=cad3eb2b5ec355052607bf528a4e23d3fc5a3c72 \
+SIGNAL_SMOKE_EXPECTED_COMMIT=3638984229114df3237b4f5e129f5e52b4d7c156 \
 SIGNAL_SMOKE_SECOND_IDENTITY=1 \
 node --use-env-proxy scripts/signal/staging-worker-smoke.mjs --production
 ```
@@ -75,7 +91,7 @@ It checks exact public runtime repository/branch/commit before secrets or mutati
 
 ## Indexes and scheduling
 
-All 14 additive SIGNAL field overrides have been applied/read back, including payload and new private-feedback index suppression. Six retained/new watched/status indexes are READY. Existing deployed rules deny browser direct owner-path access 403. No source security-rule edit or customer evidence migration was required.
+All 15 additive SIGNAL field overrides have been applied/read back, including payload and new private-feedback index suppression. Six retained/new watched/status indexes are READY. Existing deployed rules deny browser direct owner-path access 403. No source security-rule edit or customer evidence migration was required.
 
 ```bash
 python scripts/signal/firestore-indexes.py
@@ -91,9 +107,13 @@ python scripts/signal/scheduler.py --apply
 gcloud scheduler jobs run praxis-signal-watch-sweep --project=praxisbytacitus --location=us-central1
 ```
 
+The separate world job is managed by `python scripts/signal/world-scheduler.py` (plan) and `--apply` (provision/readback). Its actual public transport proof and current schedule are recorded above; preserve the hourly private job.
+
 Verify actual scheduler attempt HTTP200 in Cloud Logging, not just CLI dispatch success. Never dump scheduler HTTP header values. Only explicitly watched desks collect; hourly UTC matches default 24 daily collections. Workers do not need the browser/laptop to remain open.
 
 ## Rollback and remaining limits
+
+Current rollback is `praxis-frontend-01119-c5g`. That revision lacks world routes: pause `praxis-signal-world-refresh` before switching traffic to it, retain the public snapshot/indexes, and leave the existing private watch job enabled because the rollback supports it. The commands below describe the older full-SIGNAL rollback and are historical examples, not the current revision target.
 
 Pause SIGNAL scheduling before rolling back to a revision without SIGNAL routes:
 
@@ -104,4 +124,4 @@ gcloud run services update-traffic praxis-frontend --project=praxisbytacitus --r
 
 Retain additive indexes and evidence; never delete customer data as rollback. On forward recovery verify public worker target/provenance, then resume the scheduler deliberately. Individual desk deletion and generated-copy/job cleanup are proved. Full account erasure remains guarded by the independent existing platform flag and is not enabled solely for SIGNAL.
 
-GDELT 503, optional media, human 200-record gold evaluation and customer pilot outcomes remain explicit limits. Coverage measures configured sources and captured time windows, not universal live geopolitical monitoring. Deterministic tests exercise crash/retry exhaustion/quotas; no live crash injection is claimed. See RUNBOOK and PILOT_CHECKLIST for owners and next evidence.
+GDELT discovery failure, disabled image/audio/video analysis, human 200-record gold evaluation and customer pilot outcomes remain explicit limits. Coverage measures configured sources and captured time windows, not universal live geopolitical monitoring. Deterministic tests exercise crash/retry exhaustion/quotas; no live crash injection is claimed. See RUNBOOK and PILOT_CHECKLIST for owners and next evidence.

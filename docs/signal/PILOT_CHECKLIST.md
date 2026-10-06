@@ -1,17 +1,21 @@
 # SIGNAL text pilot checklist
 
-Code implementation and focused fixture tests do not establish production readiness or customer demand. A release operator and a named reviewer must close the live gates before the founder runs a real pilot. The release operator gates below are backed by 487 files / 2,945 tests and actual tagged/public authentication, model, worker, rights, deletion and scheduler receipts. Human reviewer/customer evaluation remains pending. Media disabled; GDELT HTTP 503 observed; at least 200 human-labelled gold items remain required.
+Code implementation and focused fixture tests do not establish production readiness or customer demand. A release operator and a named reviewer must close the live gates before the founder runs a real pilot. The release operator gates below are backed by 498 files / 3,034 tests and actual tagged/public authentication, model, worker, rights, deletion and scheduler receipts. Human reviewer/customer evaluation remains pending. Image/audio/video analysis disabled; sampled licensed headline metadata is available. GDELT remains disabled after observed provider failures; at least 200 human-labelled gold items remain required.
 
 ## Release operator
 
 - [x] Record exact tested commit, image/revision and rollback revision from RELEASE_PLAN.
 - [x] Pass the full root AGENTS gate; distinguish baseline results from the new SIGNAL revision.
 - [x] Verify tagged staging sign-in on an approved Firebase browser origin.
-- [x] Read back all 13 additive field overrides and required READY indexes; deployed existing rules deny direct client access 403, with no rules source changes.
+- [x] Read back all 15 additive field overrides and required READY indexes; deployed existing rules deny direct client access 403, with no rules source changes.
 - [x] Run an authenticated two-tenant create/capture/review/context/assessment/approve/export/delete journey; verify owner isolation and rejected/stale evidence behavior.
 - [x] Verify worker rejects missing/wrong OIDC, cron rejects wrong secret and queue lease recovery is bounded and fenced.
 - [x] Demonstrate real watch pause and two-phase generated-capsule/job/desk deletion. Verify retry exhaustion, crash lease recovery and preservation of attached originals in deterministic tests; no live crash injection or real customer account deletion is claimed.
 - [x] Verify production worker target before traffic promotion, then public `/signal`, authenticated workflows and existing PRAXIS regression surfaces.
+
+- [x] Verify default world explorer and retained evidence workflow: eight exact-source staged and eight plain-public browser tests, with zero skipped/failed/flaky tests.
+- [x] Collect the actual bounded public snapshot and validate calibrated staged/global and public/Brazil AI citations, values and attribution without promoting evidence or sharing private questions.
+- [x] Read back the separate twelve-hour world schedule and observe actual HTTP 200 transport; preserve the hourly private watch job. Receipt: [release-world-36389842.json](proofs/release-world-36389842.json).
 
 ## Reviewer and source-panel owner
 

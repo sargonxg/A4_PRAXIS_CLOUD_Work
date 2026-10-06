@@ -20,7 +20,7 @@ Open **Private feedback** below a desk's active view. Record its area, category,
 
 No external reviewers have been contacted and no customer feedback is claimed. Browser QA observations and synthetic test notes are testing evidence, not customer research or the independently reviewed 200-record gold benchmark. Follow-up tasks and acceptance criteria are maintained in [IMPROVEMENT_BACKLOG.md](IMPROVEMENT_BACKLOG.md).
 
-## Verification and release
+## Historical refinement verification and release
 
 The frozen application source is `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452`, pushed to GitHub branch `signal-coverage-refinement`. After the final camera and mobile-label improvements, all 492 unit-test files / 2,990 tests passed. The complete configured gate passed, including TypeScript, production build, source/runtime/architecture audits and authenticated GCP checks. Full lint reported zero errors and five existing warnings outside SIGNAL. Graphify refreshed the actual code graph using AST extraction without model calls.
 
@@ -30,6 +30,10 @@ Cloud staging build `4ea6bc55-5b47-4a67-864d-29aa59e49d7e` (global) succeeded fo
 
 The workspace proxy interrupted an earlier staged browser attempt; its partial results and scoped cleanup receipts remain historical evidence. The complete staged gate subsequently passed in official Playwright Cloud Build `adbbbc24-efbe-4b5a-b295-68c9b2bed610`: five passed, none skipped, failed or flaky. No TLS bypass, replacement credentials or IAM changes were needed.
 
-Canonical main build `d8d1d36f-b697-4913-9993-fb9315b0bc35` succeeded. Public revision `praxis-frontend-01119-c5g` serves exact `cc4e6f6c` at 100%, with all seven runtime checks and preserved resource/worker/secret settings. Plain-public browser build `691fab0c-0589-4095-a0f5-0ec6e52c5441` passed all five frozen tests without forwarding. The separate actual public feedback test used a second Firebase identity: read/write 404, forged actor 422, stale version 409, unchanged accepted sources/reviews/approved brief, and full temporary desk/identity cleanup. Existing hourly scheduling remains enabled and successful. Safe current receipt: [release-refinement-cc4e6f6c.json](proofs/release-refinement-cc4e6f6c.json).
+Canonical main build `d8d1d36f-b697-4913-9993-fb9315b0bc35` succeeded. Public revision `praxis-frontend-01119-c5g` then served exact `cc4e6f6c` at 100%, with all seven runtime checks and preserved resource/worker/secret settings. Plain-public browser build `691fab0c-0589-4095-a0f5-0ec6e52c5441` passed all five frozen tests without forwarding. The separate actual public feedback test used a second Firebase identity: read/write 404, forged actor 422, stale version 409, unchanged accepted sources/reviews/approved brief, and full temporary desk/identity cleanup. Existing hourly scheduling remains enabled and successful. Historical receipt: [release-refinement-cc4e6f6c.json](proofs/release-refinement-cc4e6f6c.json).
 
-The newly requested simpler world/AI/public-source interface is a separate candidate. This receipt does not claim that candidate is published or that its AI/source refresh has been exercised.
+## Subsequent published world explorer
+
+The user’s direct feedback favored fewer fields, AI and visualization. The default now opens a geographic world explorer and question box, with **Evidence & briefs** retaining the deep private workflow. Exact source `3638984229114df3237b4f5e129f5e52b4d7c156` passed all eight staged and all eight plain-public browser tests, real calibrated world/Brazil AI, shared collection and separate twelve-hour scheduler transport. Current publication and safe receipts: [release-world-36389842.json](proofs/release-world-36389842.json), PROGRESS.md and RELEASE_PLAN.md. Earlier refinement results above remain dated historical evidence.
+
+Actual desktop/mobile QA verified country selection, source/topic graph inspection, attributed headline records, economic years/entities, government links, camera controls and WebGL fallback. A small mobile globe rim-fit refinement is an optional P2 cosmetic follow-up; the tested mobile layout remained usable without horizontal overflow. These are QA observations, not a customer study or measured analytical quality. Human gold and customer pilot evaluation remain open.

@@ -1,0 +1,351 @@
+{
+  "status": "published-and-verified",
+  "applicationSource": "3638984229114df3237b4f5e129f5e52b4d7c156",
+  "applicationUrl": "https://praxis.tacitus.me/signal",
+  "sourceGate": {
+    "passed": true,
+    "unitFiles": 498,
+    "unitTests": 3034,
+    "lintErrors": 0,
+    "existingLintWarnings": 5,
+    "allConfiguredAudits": true
+  },
+  "staging": {
+    "buildId": "d19806f2-5bbb-4d20-849b-e80af2c66e6f",
+    "region": "global",
+    "revision": "praxis-frontend-01141-xet",
+    "imageDigest": "us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend@sha256:24b8704a115320e97256dd63d42c146872835016f50492641dd694243ff2e885",
+    "runtimeChecksPassed": 7,
+    "browserBuildId": "3fb42f4b-6ec5-4924-8e5f-150d250fe6cc",
+    "browserStats": {
+      "startTime": "2026-10-06T00:37:30.936Z",
+      "duration": 207783.987,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "actualGlobalAi": {
+      "commit": "3638984229114df3237b4f5e129f5e52b4d7c156",
+      "target": "tagged-staging",
+      "scope": "world",
+      "proof": {
+        "exactRuntimeBeforeSecrets": true,
+        "configuredClientIdentity": true,
+        "realCanaryLogin": true,
+        "realCanarySession": true,
+        "sessionCookiePresent": true,
+        "invalidCronRefreshRejectedWithoutCollection": true,
+        "clientFirestoreSharedCacheDefaultDenied": true,
+        "unknownCountryPreflightRejected": true,
+        "authenticatedPublicSnapshot": true,
+        "worldGetPrivateNoStore": true,
+        "twentyUniquePanelCountryCodes": true,
+        "actualDatedSampledHeadlineGlobally": true,
+        "globalVoicesActualAuthorAndAttributionIfPresent": true,
+        "palestineSelectionRetainsProviderStatisticalEntity": true,
+        "actualGlobalEvidenceBuilderLoaded": true,
+        "actualGlobalPromptFitsPreCreditBound": true,
+        "actualMetricsBeforeModel": true,
+        "chosenScopeIncludesBrazilMetrics": true,
+        "actualCalibratedModelAnswer": true,
+        "usableReviewRequiredAnswer": true,
+        "modelAndSnapshotMetadata": true,
+        "boundedStructuredAnswer": true,
+        "serverOwnedSourceLinksAndTitles": true,
+        "citationsGroundedInActualRecords": true,
+        "exactHeadlineQuotesValidated": true,
+        "canonicalActualMetricValues": true,
+        "serverOwnedAttributionPreserved": true,
+        "noDeskEvidenceCapsuleOrSharedQueryWrites": true
+      },
+      "modelCallsRequested": 1,
+      "unauthorizedRefreshStatus": 401,
+      "directClientCacheStatus": 403,
+      "unknownCountryStatus": 422,
+      "publicSnapshot": {
+        "countryCodes": [
+          "BR",
+          "CA",
+          "CN",
+          "DE",
+          "FR",
+          "GB",
+          "ID",
+          "IL",
+          "IN",
+          "IR",
+          "IT",
+          "JP",
+          "KR",
+          "PS",
+          "RU",
+          "SA",
+          "TR",
+          "UA",
+          "US",
+          "ZA"
+        ],
+        "availableMetrics": 80,
+        "actualReportedYears": [
+          2023,
+          2024,
+          2025
+        ],
+        "uniqueHeadlines": 11,
+        "headlineCountryAssociations": 13,
+        "globalVoicesUniqueAttributedHeadlines": 3,
+        "providerStatuses": {
+          "worldbank": [
+            "available"
+          ],
+          "global-voices": [
+            "available"
+          ],
+          "govuk-public-communications": [
+            "available"
+          ],
+          "european-commission-press": [
+            "available"
+          ]
+        }
+      },
+      "globalPromptCharacters": 34204,
+      "globalPromptMetricRecords": 40,
+      "globalPromptHeadlineRecords": 4,
+      "aiHttpStatus": 200,
+      "tokens": 16021,
+      "model": "gemini-3.5-flash",
+      "actualMetricSources": 2,
+      "actualHeadlineSources": 1
+    }
+  },
+  "publication": {
+    "buildId": "1a9d316b-dc46-4ed2-974e-d35414204f86",
+    "region": "us-central1",
+    "revision": "praxis-frontend-01122-ncs",
+    "imageDigest": "us-central1-docker.pkg.dev/praxisbytacitus/praxis/praxis-frontend@sha256:1ec94e07b6cb79ce752491572a8201ff13c151eab81bb86c3ae59151513a44aa",
+    "trafficPercent": 100,
+    "runtimeChecksPassed": 7,
+    "source": {
+      "source": "frontend-main-on-push",
+      "repository": "sargonxg/A4_PRAXIS_CLOUD_Work",
+      "branch": "main",
+      "commit": "3638984229114df3237b4f5e129f5e52b4d7c156",
+      "buildId": "1a9d316b-dc46-4ed2-974e-d35414204f86",
+      "revision": "praxis-frontend-01122-ncs",
+      "service": "praxis-frontend"
+    },
+    "resources": {
+      "limits": {
+        "cpu": "1",
+        "memory": "2Gi"
+      }
+    },
+    "containerConcurrency": 8,
+    "scaling": {
+      "autoscaling.knative.dev/maxScale": "10",
+      "autoscaling.knative.dev/minScale": "1"
+    },
+    "secretBindingNamesAndVersionsPreserved": true,
+    "secretBindingCount": 12,
+    "unrelatedTagsPreserved": true,
+    "workerUrls": {
+      "SIGNAL_WORKER_BASE_URL": "https://praxis.tacitus.me",
+      "AGENT_RUN_WORKER_BASE_URL": "https://praxis.tacitus.me",
+      "AGENT_RUN_WORKER_OIDC_AUDIENCE": "https://praxis.tacitus.me"
+    },
+    "browserBuildId": "ab3ad9e9-dfed-40e7-9860-baeb9c9498e5",
+    "browserStats": {
+      "startTime": "2026-10-06T00:56:03.167Z",
+      "duration": 109684.62,
+      "expected": 8,
+      "skipped": 0,
+      "unexpected": 0,
+      "flaky": 0
+    },
+    "publicCalibratedAi": {
+      "commit": "3638984229114df3237b4f5e129f5e52b4d7c156",
+      "target": "public-production",
+      "scope": "BR",
+      "proof": {
+        "exactRuntimeBeforeSecrets": true,
+        "configuredClientIdentity": true,
+        "realCanaryLogin": true,
+        "realCanarySession": true,
+        "sessionCookiePresent": true,
+        "invalidCronRefreshRejectedWithoutCollection": true,
+        "clientFirestoreSharedCacheDefaultDenied": true,
+        "unknownCountryPreflightRejected": true,
+        "authenticatedPublicSnapshot": true,
+        "worldGetPrivateNoStore": true,
+        "twentyUniquePanelCountryCodes": true,
+        "actualDatedSampledHeadlineGlobally": true,
+        "globalVoicesActualAuthorAndAttributionIfPresent": true,
+        "palestineSelectionRetainsProviderStatisticalEntity": true,
+        "actualGlobalEvidenceBuilderLoaded": true,
+        "actualGlobalPromptFitsPreCreditBound": true,
+        "actualMetricsBeforeModel": true,
+        "chosenScopeIncludesBrazilMetrics": true,
+        "actualCalibratedModelAnswer": true,
+        "usableReviewRequiredAnswer": true,
+        "modelAndSnapshotMetadata": true,
+        "boundedStructuredAnswer": true,
+        "serverOwnedSourceLinksAndTitles": true,
+        "citationsGroundedInActualRecords": true,
+        "exactHeadlineQuotesValidated": true,
+        "canonicalActualMetricValues": true,
+        "serverOwnedAttributionPreserved": true,
+        "noDeskEvidenceCapsuleOrSharedQueryWrites": true
+      },
+      "modelCallsRequested": 1,
+      "unauthorizedRefreshStatus": 401,
+      "directClientCacheStatus": 403,
+      "unknownCountryStatus": 422,
+      "publicSnapshot": {
+        "updatedAt": "2026-10-06T00:06:58.673Z",
+        "refreshAttemptedAt": "2026-10-06T00:06:58.673Z",
+        "refreshStatus": "succeeded",
+        "countryCodes": [
+          "BR",
+          "CA",
+          "CN",
+          "DE",
+          "FR",
+          "GB",
+          "ID",
+          "IL",
+          "IN",
+          "IR",
+          "IT",
+          "JP",
+          "KR",
+          "PS",
+          "RU",
+          "SA",
+          "TR",
+          "UA",
+          "US",
+          "ZA"
+        ],
+        "availableMetrics": 80,
+        "actualReportedYears": [
+          2023,
+          2024,
+          2025
+        ],
+        "uniqueHeadlines": 11,
+        "headlineCountryAssociations": 13,
+        "globalVoicesUniqueAttributedHeadlines": 3,
+        "providerStatuses": {
+          "worldbank": [
+            "available"
+          ],
+          "global-voices": [
+            "available"
+          ],
+          "govuk-public-communications": [
+            "available"
+          ],
+          "european-commission-press": [
+            "available"
+          ]
+        }
+      },
+      "globalPromptCharacters": 34204,
+      "globalPromptMetricRecords": 40,
+      "globalPromptHeadlineRecords": 4,
+      "aiHttpStatus": 200,
+      "tokens": 4933,
+      "model": "gemini-3.5-flash",
+      "actualMetricSources": 2,
+      "actualHeadlineSources": 1
+    },
+    "actualPrivateFeedbackIsolation": {
+      "target": "https://praxis.tacitus.me",
+      "mode": "production",
+      "proof": {
+        "provenance": {
+          "commit": "3638984229114df3237b4f5e129f5e52b4d7c156",
+          "repository": "sargonxg/A4_PRAXIS_CLOUD_Work",
+          "branch": "main"
+        },
+        "realCanarySession": true,
+        "ownerFeedback": {
+          "serverActorVerified": true,
+          "serverTimestampVerified": true,
+          "deskVersionVerified": true,
+          "synthetic": true,
+          "persisted": true
+        },
+        "secondIdentityReadRejected": 404,
+        "secondIdentityWriteRejected": 404,
+        "forgedActorRejected": 422,
+        "staleVersionRejected": 409,
+        "canonicalSourcesClaimsReviewsApprovedBriefUnchanged": true,
+        "noModelCallsOrWatchedJobs": true
+      },
+      "cleanup": {
+        "ownedDeskDeleted": true,
+        "deletedDeskUnavailable": true,
+        "temporaryIdentityDeleted": true,
+        "temporaryProfileAndSignupUnavailable": true,
+        "temporaryRateLimitsUnavailable": true
+      },
+      "passed": true
+    }
+  },
+  "scheduler": {
+    "world": {
+      "mutation": true,
+      "name": "projects/praxisbytacitus/locations/us-central1/jobs/praxis-signal-world-refresh",
+      "schedule": "0 */12 * * *",
+      "timeZone": "Etc/UTC",
+      "state": "ENABLED",
+      "uri": "https://praxis.tacitus.me/api/signal/world/refresh",
+      "authenticationHeaderReadbackVerified": true
+    },
+    "actualAttempt": {
+      "attempts": [
+        {
+          "timestamp": "2026-10-06T00:54:59.500348863Z",
+          "httpStatus": 200,
+          "url": "https://praxis.tacitus.me/api/signal/world/refresh"
+        }
+      ],
+      "successfulHttp200": true,
+      "scope": "Actual scheduler transport; same-window collection is fenced and may return not-due"
+    },
+    "privateWatch": {
+      "httpTarget": {
+        "httpMethod": "POST",
+        "uri": "https://praxis.tacitus.me/api/signal/sweep"
+      },
+      "lastAttemptTime": "2026-10-06T00:00:35.608134Z",
+      "name": "projects/praxisbytacitus/locations/us-central1/jobs/praxis-signal-watch-sweep",
+      "schedule": "0 * * * *",
+      "state": "ENABLED",
+      "status": {},
+      "timeZone": "Etc/UTC"
+    },
+    "privateWatchActualPostPublicationAttempt": {
+      "attempts": [
+        {
+          "timestamp": "2026-10-06T01:00:50.277139964Z",
+          "httpStatus": 200,
+          "url": "https://praxis.tacitus.me/api/signal/sweep"
+        }
+      ],
+      "successfulHttp200": true,
+      "scope": "Existing unchanged hourly private watched-desk scheduler after world publication"
+    }
+  },
+  "rollbackRevision": "praxis-frontend-01119-c5g",
+  "limits": [
+    "Twenty-country starting panel; sparse sampled licensed title metadata, not representative national media coverage",
+    "Reported economic years remain 2023\u20132025; acquisition cadence is twelve hours",
+    "No validated polarization/audience score, current officeholder dataset, human gold benchmark or customer feedback study",
+    "Image/audio/video analysis and GDELT acquisition remain disabled"
+  ],
+  "verifiedAt": "2026-10-06T01:04:04Z"
+}
