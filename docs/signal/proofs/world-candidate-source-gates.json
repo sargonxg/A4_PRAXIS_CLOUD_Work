@@ -1,16 +1,16 @@
 {
   "status": "full-source-gates-passed-live-world-acceptance-pending",
   "unitFiles": 498,
-  "unitTests": 3033,
+  "unitTests": 3034,
   "lintErrors": 0,
   "existingLintWarningsOutsideSignal": 5,
   "configuredGate": "passed",
   "aiRoutes": 63,
   "calibratedAiRoutes": 63,
   "graphify": {
-    "nodes": 20560,
-    "edges": 45932,
-    "communities": 969,
+    "nodes": 20561,
+    "edges": 45935,
+    "communities": 950,
     "modelTokens": 0
   },
   "fileSha256": {
@@ -25,7 +25,7 @@
     "src/lib/ai/capability-registry.ts": "75041606800f1daa14083619d274f57d250059fe6050ac35d8820461b049b251",
     "src/lib/signal/world-catalog.ts": "f284b08c0c73669a3a1645ed6c23b37aa9d8f8df0286b5915b3e644fd915fdb6",
     "src/lib/signal/world-geography.ts": "d725303281611aef6f8285f1aacad67655f66d80f41583f51bff48340323dfca",
-    "src/lib/signal/world-research.ts": "1a9edeffd6e4e1a9e91b4792ab68c475927156d5724721e9574541ce51206b74",
+    "src/lib/signal/world-research.ts": "38d4cf545c595971b5c46bd71aeb0726c3d0f72d5e04348ea0748c3645f7c574",
     "src/lib/signal/world-schema.ts": "c861ccd8433fa148987f6f989aead89e1b35ea7d94b7ef7ad9186526760e5305",
     "src/lib/signal/world-service.ts": "a681672dfe5e2b2537c34d13572269bd326436c8a2c7834d35cedc339e1dbbd6",
     "src/lib/signal/world-topics.ts": "fb6f35e39d8e9d15a872de5dcec51136543c2e57ed7436fe486e25b6b0adc745"
@@ -37,5 +37,7 @@
     "endpointsHttp200": 7,
     "cacheWrites": 0,
     "reportedNullSourceIdsNotInvented": true
-  }
+  },
+  "correctedAiOutputBudget": 5000,
+  "safeFailureDiagnostics": "Fixed categorical metadata only; no question or provider response text"
 }

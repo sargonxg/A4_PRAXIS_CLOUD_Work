@@ -1,0 +1,104 @@
+{
+  "commit": "80ab84f8f84066842cfce55451a30a63a614967d",
+  "target": "local-calibrated-diagnostic",
+  "proof": {
+    "exactRuntimeBeforeSecrets": true,
+    "configuredClientIdentity": true,
+    "realCanaryLogin": true,
+    "realCanarySession": true,
+    "sessionCookiePresent": true,
+    "invalidCronRefreshRejectedWithoutCollection": true,
+    "clientFirestoreSharedCacheDefaultDenied": true,
+    "unknownCountryPreflightRejected": true,
+    "authenticatedPublicSnapshot": true,
+    "worldGetPrivateNoStore": true,
+    "twentyUniquePanelCountryCodes": true,
+    "actualDatedSampledHeadlineGlobally": true,
+    "globalVoicesActualAuthorAndAttributionIfPresent": true,
+    "palestineSelectionRetainsProviderStatisticalEntity": true,
+    "actualGlobalEvidenceBuilderLoaded": true,
+    "actualGlobalPromptFitsPreCreditBound": true,
+    "actualMetricsBeforeModel": true,
+    "actualCalibratedModelAnswer": true,
+    "usableReviewRequiredAnswer": true,
+    "modelAndSnapshotMetadata": true,
+    "boundedStructuredAnswer": true,
+    "serverOwnedSourceLinksAndTitles": true,
+    "citationsGroundedInActualRecords": true,
+    "exactHeadlineQuotesValidated": true,
+    "canonicalActualMetricValues": true,
+    "serverOwnedAttributionPreserved": true,
+    "noDeskEvidenceCapsuleOrSharedQueryWrites": true
+  },
+  "modelCallsRequested": 1,
+  "unauthorizedRefreshStatus": 401,
+  "directClientCacheStatus": 403,
+  "unknownCountryStatus": 422,
+  "publicSnapshot": {
+    "countryCodes": [
+      "BR",
+      "CA",
+      "CN",
+      "DE",
+      "FR",
+      "GB",
+      "ID",
+      "IL",
+      "IN",
+      "IR",
+      "IT",
+      "JP",
+      "KR",
+      "PS",
+      "RU",
+      "SA",
+      "TR",
+      "UA",
+      "US",
+      "ZA"
+    ],
+    "availableMetrics": 80,
+    "actualReportedYears": [
+      2023,
+      2024,
+      2025
+    ],
+    "uniqueHeadlines": 11,
+    "headlineCountryAssociations": 13,
+    "globalVoicesUniqueAttributedHeadlines": 3,
+    "providerStatuses": {
+      "worldbank": [
+        "available"
+      ],
+      "global-voices": [
+        "available"
+      ],
+      "govuk-public-communications": [
+        "available"
+      ],
+      "european-commission-press": [
+        "available"
+      ]
+    }
+  },
+  "globalPromptCharacters": 34476,
+  "globalPromptMetricRecords": 40,
+  "globalPromptHeadlineRecords": 4,
+  "aiHttpStatus": 200,
+  "tokens": 5730,
+  "model": "gemini-3.5-flash",
+  "actualMetricSources": 2,
+  "actualHeadlineSources": 0,
+  "sourceState": "Local corrected working source based on 80ab84f8; not a staging or public release proof",
+  "fileSha256": {
+    "src/lib/signal/world-research.ts": "38d4cf545c595971b5c46bd71aeb0726c3d0f72d5e04348ea0748c3645f7c574"
+  },
+  "diagnosedFailure": {
+    "class": "structured-object-not-generated",
+    "cause": "structured-json-parse",
+    "finishReason": "length",
+    "previousOutputBudget": 2400,
+    "correctedOutputBudget": 5000
+  },
+  "metricRendering": "Server-owned values, units, years and statistical entity; model metric prose and optional quote discarded"
+}

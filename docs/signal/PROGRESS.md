@@ -6,7 +6,7 @@ Application source `cc4e6f6cac87c4dd30a8da5c23e16dad9479c452` is published at ht
 
 All 492 test files / 2,990 tests and the full configured source gate pass. An official Playwright Cloud Build completed all five exact-source staged browser tests, followed by plain-public build `691fab0c-0589-4095-a0f5-0ec6e52c5441`: five passed, none skipped, failed or flaky, without forwarding. Actual public second-identity feedback isolation and complete scoped cleanup passed. Safe receipt: `proofs/release-refinement-cc4e6f6c.json`. Earlier blocked/partial receipts remain dated historical evidence; they no longer describe the active publication status.
 
-The simpler default world explorer, AI question box and twelve-hour public-source panel are a separate frozen candidate. Its full configured gate, lint (zero errors / five existing unrelated warnings) and all 498 unit files / 3,033 tests pass. The initial real cache, calibrated AI, eight-browser-test staging/public gates and twelve-hour scheduling proofs remain pending. These features are not included in this published revision. Real customer feedback and the human gold benchmark remain open.
+The simpler default world explorer, AI question box and twelve-hour public-source panel are a separate frozen candidate. Its full configured gate, lint (zero errors / five existing unrelated warnings) and all 498 unit files / 3,034 tests pass. The initial real cache, calibrated AI, eight-browser-test staging/public gates and twelve-hour scheduling proofs remain pending. These features are not included in this published revision. Real customer feedback and the human gold benchmark remain open.
 
 ## Verified initial text-pilot release
 

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SignalWorldResearchRequestSchema, buildSignalWorldResearchEvidence, validateSignalWorldResearchOutput, researchSignalWorld } from '@/lib/signal/world-research';
+import { SignalWorldResearchRequestSchema, buildSignalWorldResearchEvidence, validateSignalWorldResearchOutput, researchSignalWorld, signalWorldResearchFailureDiagnostic } from '@/lib/signal/world-research';
 import type { SignalWorldSnapshot } from '@/lib/signal/world-schema';
 
 const gateway = vi.hoisted(() => ({ generate: vi.fn(), getModel: vi.fn((id: string) => id) }));
@@ -54,8 +54,8 @@ describe('source-grounded shared world research', () => {
     expect(() => validateSignalWorldResearchOutput(evidence, { observations: [{ ...observation, citationIds: ['invented'] }], limitations: [] })).toThrow('outside the supplied');
     expect(() => validateSignalWorldResearchOutput(evidence, { observations: [{ ...observation, citationIds: [] }], limitations: [] })).toThrow('lacks a supplied');
     expect(() => validateSignalWorldResearchOutput(evidence, { observations: [{ ...observation, text: 'See https://invented.example/facts' }], limitations: [] })).toThrow('source list');
-    const canonical = validateSignalWorldResearchOutput(evidence, { observations: [{ ...observation, text: 'The population is a fabricated 9999999 in 2026.' }], limitations: [] });
-    expect(canonical.observations[0].text).toContain('12345 people; reported year 2024'); expect(canonical.answer).not.toContain('9999999');
+    const canonical = validateSignalWorldResearchOutput(evidence, { observations: [{ ...observation, text: 'The population is a fabricated 9999999 in 2026.', exactQuote: 'Fabricated population quotation: 9999999' }], limitations: [] });
+    expect(canonical.observations[0].text).toContain('12345 people; reported year 2024'); expect(canonical.answer).not.toContain('9999999'); expect(canonical.observations[0]).not.toHaveProperty('exactQuote');
     expect(() => validateSignalWorldResearchOutput(evidence, { observations: [{ ...observation, kind: 'interpretation', text: 'Public opinion has a polarization score of 80.' }], limitations: [] })).toThrow('no verified audience');
   });
   it('keeps headline interpretations distinct from data facts and rejects fabricated exact quotations', () => {
@@ -64,6 +64,7 @@ describe('source-grounded shared world research', () => {
     const valid = validateSignalWorldResearchOutput(evidence, { observations: [interpreted, { text: 'The actual event outcome is unknown.', kind: 'unknown', citationIds: [] }], limitations: [] });
     expect(valid.answer).toContain('Interpretation:'); expect(valid.answer).toContain('Unknown:');
     expect(() => validateSignalWorldResearchOutput(evidence, { observations: [{ ...interpreted, exactQuote: 'Talks concluded successfully' }], limitations: [] })).toThrow('does not match');
+    expect(() => validateSignalWorldResearchOutput(evidence, { observations: [{ ...interpreted, kind: 'unknown', exactQuote: 'Talks concluded successfully' }], limitations: [] })).toThrow('does not match');
     expect(() => validateSignalWorldResearchOutput(evidence, { observations: [{ ...interpreted, kind: 'reported-data' }], limitations: [] })).toThrow('interpretation posture');
   });
   it('preserves actual author, publisher and licence in server citations and rejects model-forged attribution', () => {
@@ -80,12 +81,24 @@ describe('source-grounded shared world research', () => {
     const result = await researchSignalWorld(buildSignalWorldResearchEvidence(snapshot(), input), 'Existing calibrated block');
     expect(result.model).toBe('fallback'); expect(result.reviewRequired).toBe(true); expect(result.tokens).toBe(22);
     expect(gateway.generate).toHaveBeenCalledTimes(2);
-    const call = gateway.generate.mock.calls[0][0]; expect(call.tools).toBeUndefined(); expect(call.maxRetries).toBe(0); expect(call.system).toContain('untrusted quoted data');
+    const call = gateway.generate.mock.calls[0][0]; expect(call.tools).toBeUndefined(); expect(call.maxRetries).toBe(0); expect(call.maxOutputTokens).toBe(5000); expect(call.system).toContain('untrusted quoted data');
   });
   it('returns typed 503 on model/evidence failure without persisting anything or trying unlimited candidates', async () => {
     gateway.generate.mockRejectedValue({ statusCode: 404 });
     await expect(researchSignalWorld(buildSignalWorldResearchEvidence(snapshot(), input), '')).rejects.toMatchObject({ status: 503 }); expect(gateway.generate).toHaveBeenCalledTimes(3);
     gateway.generate.mockReset().mockResolvedValue({ output: { observations: [{ ...observation, citationIds: ['fake'] }], limitations: [] }, usage: { totalTokens: 22 } });
     await expect(researchSignalWorld(buildSignalWorldResearchEvidence(snapshot(), input), '')).rejects.toMatchObject({ status: 503 }); expect(gateway.generate).toHaveBeenCalledTimes(1);
+  });
+  it('logs only whitelisted failure metadata without credential, question or provider-output leakage', async () => {
+    const privateText = 'SECRET_TOKEN_AND_PRIVATE_QUESTION_AND_RAW_PROVIDER_RESPONSE';
+    const failure = { name: 'AI_NoObjectGeneratedError', finishReason: 'length', message: privateText, text: privateText, response: { body: privateText }, prompt: privateText, cause: { name: 'AI_JSONParseError', message: privateText, value: privateText, statusCode: 503 } };
+    expect(signalWorldResearchFailureDiagnostic(failure)).toEqual({ event: 'signal-world-research-failure', category: 'structured-object-not-generated', causeCategory: 'structured-json-parse', status: 503, finishReason: 'length' });
+    expect(signalWorldResearchFailureDiagnostic({ name: privateText, statusCode: 700, finishReason: privateText, cause: { name: privateText, response: privateText } })).toEqual({ event: 'signal-world-research-failure', category: 'unknown', causeCategory: 'unknown' });
+    const logged = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    gateway.generate.mockRejectedValueOnce(failure);
+    await expect(researchSignalWorld(buildSignalWorldResearchEvidence(snapshot(), input), privateText)).rejects.toMatchObject({ status: 503 });
+    expect(logged).toHaveBeenCalledWith('[signal-world-research]', signalWorldResearchFailureDiagnostic(failure));
+    expect(gateway.generate).toHaveBeenCalledTimes(1); expect(gateway.generate.mock.calls[0][0]).toMatchObject({ maxOutputTokens: 5000, maxRetries: 0 });
+    expect(JSON.stringify(logged.mock.calls)).not.toContain(privateText); logged.mockRestore();
   });
 });

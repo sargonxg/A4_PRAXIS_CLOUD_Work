@@ -1,25 +1,25 @@
-# Graph Report - A4_PRAXIS_CLOUD_Work  (2026-10-05)
+# Graph Report - A4_PRAXIS_CLOUD_Work  (2026-10-06)
 
 ## Corpus Check
 - cluster-only mode — file stats not available
 
 ## Summary
-- 20560 nodes · 45932 edges · 969 communities (817 shown, 152 thin omitted)
+- 20561 nodes · 45935 edges · 950 communities (800 shown, 150 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 1278 edges (avg confidence: 0.9)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `4ce89c00`
+- Built from commit: `80ab84f8`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
-- World explorer working-tree refresh: official graphifyy0.9.76 `graphify update . --no-cluster`, followed by official incremental AST rebuilds for final capability-registry and World Bank null-source-ID service/regression-test changes, then deterministic `graphify cluster-only . --no-label --no-viz`. Zero API calls/new LLM tokens; existing inferred evidence retained. Final service/test/capability AST manifest fingerprints match current source bytes; world routes, scheduler, provider services, UI and tests are represented. Research documentation records pinned source2 requests with unreported provider source IDs preserved.
+- World explorer working-tree refresh: official graphifyy0.9.76 AST update with final incremental rebuild of `world-research.ts`, its unit tests and the browser screenshot test, followed by deterministic `graphify cluster-only . --no-label --no-viz`. Zero API calls/new LLM tokens; existing inferred evidence retained. All three final source fingerprints and AST manifest hashes match current frozen bytes. World API/AI routes, scheduler, provider services, UI and tests remain represented.
 
 ## Community Hubs (Navigation)
 - next
 - saveToolOutput
 - tasklet-praxis-workbench.tsx
 - context-capsules.ts
-- capsule-board.tsx
+- ContextBuilderRoom.tsx
 - scripts
 - capsule-v3.ts
 - situation-initializer.ts
@@ -37,8 +37,8 @@
 - ai/chat/route.ts
 - react
 - world-service.ts
-- cognitive-capsule/schema.ts
-- sanitizeCapsule
+- cognitive-capsule/service.ts
+- getCapsule
 - types/domain.ts
 - CapsuleExpertisePanel.tsx
 - library.ts
@@ -51,24 +51,24 @@
 - auth.ts
 - agent-runtime/postgres.ts
 - cognitive-capsule/evaluation.ts
-- state.ts
+- createCapsuleReviewCard
 - agent-runtime/types.ts
 - CapsuleWorkbenchPanel.tsx
 - ask-answer-envelope.ts
 - CapsuleGraphViewer.tsx
 - ref_node_crypto
 - run-authenticated-runtime-lane.ts
-- memo-service.ts
+- output-review.ts
 - user-keys.ts
 - tenant_session
 - pytest
-- blackboard/index.ts
+- specialists.ts
 - runtime-data-plane.ts
-- model-matrix.ts
-- CognitiveCapsule
+- model-runtime-policy.ts
+- blackboard/index.ts
 - build_from_json
+- cognitive-capsule/schema.ts
 - signal/schema.ts
-- visualizations.ts
 - dependencies
 - PRAXIS — Architecture Bible
 - account-settings-page.tsx
@@ -79,8 +79,8 @@
 - CapsuleBuilderWizard.tsx
 - dialectica-capsule-import.ts
 - notifications/registry.py
-- analyst-profile-admin.ts
-- analyst-profile.ts
+- profile-events.ts
+- onboarding-return.test.tsx
 - profile-context.ts
 - handover-package/route.ts
 - runtime.ts
@@ -92,9 +92,9 @@
 - agent-context-salience.ts
 - active-context-stack.ts
 - AskQueuedAgentRunPanel.tsx
-- ContextBuilderRoom.tsx
-- provider/route.ts
-- praxis-chat-first-shell.tsx
+- CapsuleLibraryCard.tsx
+- model-matrix.ts
+- src/app/page.tsx
 - from-ask-pack/route.ts
 - capsule-details-service.ts
 - gcloud
@@ -103,41 +103,41 @@
 - audit-route-cleanup-map.ts
 - getModel
 - context-builder-plan.ts
-- briefing-generate/route.ts
+- feed-aggregator.ts
 - context-kernel.ts
 - boardroom-workspace.tsx
 - AGENTS.md
-- dataclasses
+- wikidata_sparql.py
 - research-graph/index.ts
 - context-injection.ts
-- workflow-plan.ts
+- ask-orchestrator.ts
 - ActiveContextStackState
 - flows.py
 - signal-workspace.tsx
-- [action]/route.ts
-- ask-conversation.ts
+- FastAPI
+- memo-service.ts
 - AskWorkspacePage.tsx
-- sourceability-ledger.ts
+- AnswerQualityStrip.tsx
 - draft-assembly-state.ts
 - graph-updates-service.ts
-- getCapsule
+- [token]/route.ts
 - library-service.ts
 - situations.ts
 - agent-runtime/tool-registry.ts
 - os
 - context-snapshot.ts
 - flows/capsule-factory.ts
-- ask-orchestrator.ts
+- work-intent-router.ts
 - polar-webhook.ts
-- backend/main.py
+- ontology_system.py
 - docling_parser.py
 - cleanString
-- situation_health.py
+- _healthy_snapshot
 - Changelog
 - useAgentRunSnapshots.ts
 - context/capsules/route.ts
 - documents-service.ts
-- session/route.ts
+- analyst-profile-admin.ts
 - CapsuleImportButton.tsx
 - common.py
 - agents/registry.ts
@@ -147,9 +147,9 @@
 - temporal-timeline.ts
 - audit-agent-runtime-proof.ts
 - config.ts
-- resolveCapsuleTaxonomy
+- PraxisCapsuleLibraryCard
 - normalizeCapsuleIntakeContract
-- OntologyId
+- case-scaffold.ts
 - with-credits.ts
 - coverage-globe.ts
 - typing
@@ -176,18 +176,18 @@
 - Evidence And Remediation
 - capsule-quality-review.ts
 - marketplace/registry.ts
-- PRAXIS — Context Capsule Excellence Plan
+- ContextCapsuleClaim
 - routers/pipeline.py
 - 10 Specific Things To Build
-- retrieval-orchestrator.ts
-- useOrchestratorEvents.ts
-- test_phase2_wiring.py
-- worker.test.ts
+- graph-layer.ts
+- tabs.py
+- extract.py
+- Cleanup & Infra Implementation Plan
 - PRAXIS anti-slop review, 30 September 2026
-- [Unreleased] — 2026-04-26 (tenth session — Claude Code multi-lane sprint)
+- Round 3 — 15-improvement sprint (Lanes M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z + LP1 + LP2)
 - emit.ts
 - app-search.ts
-- core-package.ts
+- capsule-gate.ts
 - graphops.ts
 - case-module.ts
 - PRAXIS authentication, account cleanup, and billing readiness
@@ -199,7 +199,7 @@
 - system-prompt-block.ts
 - run_recipe
 - types/context-capsule.ts
-- policy-agents.ts
+- memoArtifactFromMemoPayload
 - helpers.ts
 - hosted-registry.ts
 - notifications.tsx
@@ -209,20 +209,20 @@
 - proof-summary.ts
 - created-work/service.ts
 - trustgraph-contract.ts
-- starter
+- analyst-profile.ts
 - entity-extraction.ts
 - Evidence And Remediation
 - memo-handover-preview.test.tsx
 - shared-contracts.ts
 - test_jev_adapter.py
-- primary-nav.ts
+- consolidated-tools.ts
 - web-research.ts
 - graph-views.ts
 - with-firewall.ts
 - output-capsules.test.ts
 - connectors.ts
 - corpus-search.ts
-- tools/registry.ts
+- tasklet-workbench-conversation.ts
 - sourceability-request.ts
 - trust-posture.ts
 - ladybug-projection.ts
@@ -242,8 +242,8 @@
 - properties
 - agent-runtime/schema.ts
 - agent-packet/route.ts
-- human-gate.ts
-- FakeCollection
+- notifications.py
+- capsule-service.test.ts
 - output-capsules/types.ts
 - sats.ts
 - tasklet-workbench-contract.test.ts
@@ -252,16 +252,16 @@
 - ContextCapsule Policy Research Guide
 - situation-context-health.ts
 - audit-tasklet-mvp-foundation.ts
-- boardroom/runs/route.ts
+- boardroom/schema.ts
 - tool-context-blueprints.ts
-- getPolicyTeamCategory
+- resolveCapsuleTaxonomy
 - tool-package-readiness.ts
 - instrument-visual-contract.test.ts
 - PRAXIS Agentic Workflow Release Plan
 - Neo4jAdapter
 - PRAXIS Ask Same-Window Chat And Artifacts Plan
 - agentic-search-health.ts
-- status.ts
+- runtime-health.ts
 - v3-surface-classification.ts
 - uniqueStrings
 - memory.py
@@ -269,15 +269,15 @@
 - PRAXIS by TACITUS — Context-Capsule Marketplace & Agentic Workspace Improvement Plan
 - Textual Pitch Deck
 - PRAXIS SIGNAL global narrative intelligence project
-- ask-praxis-tools.ts
-- daily-brief/route.ts
+- workspace.py
+- situation_health.py
 - preferences.ts
-- runPraxisDoctor
+- yente_client.py
 - PRAXIS Testing
 - capsules/resolve.ts
 - capsule-architect.ts
 - evidence-review.ts
-- episodes.ts
+- evaluate-policy-narrative-quality.ts
 - context-core-map.ts
 - tool-path-taxonomy.ts
 - Per-Prompt Notes
@@ -285,7 +285,7 @@
 - PRAXIS anti-slop review, 2026-09-30
 - analysis-baselines.test.mjs
 - genkit/index.ts
-- [...path]/route.ts
+- PRAXIS Conflict Analyst Product Proposal
 - audit-launch-readiness.ts
 - dry-run-eval.ts
 - PraxisCapsule
@@ -294,15 +294,15 @@
 - PRAXIS Production Readiness Audit
 - Five-minute private SIGNAL demo
 - additionalProperties
-- account/route.ts
-- runAuthenticatedCanary
+- admin.ts
+- capsule-factory-flow.test.ts
 - drafting/export.ts
 - context-capsules.test.ts
 - sync-ecc-to-codex.mjs
 - case-registry.ts
-- run-timeline-view-model.ts
+- AskAnswerEnvelope
 - PRAXIS Context Injection Contract
-- run-artifact.ts
+- marketplace/run/route.ts
 - Actor
 - google-agent-platform/readiness.ts
 - audit-public-surface.ts
@@ -310,7 +310,7 @@
 - generate-tool-sprint-backlog.ts
 - dialectica-capsule-idempotency.test.ts
 - ref_node_child_process
-- TenantConnection
+- capsule-starters.ts
 - error-boundary.tsx
 - TrustGraph Context Substrate
 - GCP_OPERATIONS.md
@@ -318,10 +318,10 @@
 - capability-registry.ts
 - nodes/route.ts
 - context-kernel.test.ts
-- aco_adapter.py
+- parseDialecticaCapsulePackageFromParts
 - praxis_data_controller/agent.py
 - graphlite-contract.ts
-- server.mjs
+- capsule-list-picker.test.tsx
 - memory-layer.ts
 - source-receipt-normalizer.ts
 - firestore.ts
@@ -332,9 +332,9 @@
 - PRAXIS improvement analysis — 2026-09-30
 - audit-context-health.ts
 - audit-genkit-coverage.mjs
-- CAPSULE_STARTER_DEFINITIONS
+- backfill-capsule-research-dossiers.ts
 - diff/route.ts
-- jobs.ts
+- changes/route.ts
 - login/page.tsx
 - adk-bridge.ts
 - runner.ts
@@ -342,10 +342,10 @@
 - ontology/base.py
 - prompt-health.ts
 - PRAXIS Public Launch And Agentic Readiness Plan
-- domain.test.mjs
+- server.mjs
 - START_HERE.md
 - parseDataStreamError
-- audit-capsule-quality-ranking.ts
+- PRAXIS Deep Pre-Ship Checklist Audit
 - type
 - research-eval.ts
 - schemas/__init__.py
@@ -353,22 +353,22 @@
 - staging-worker-smoke.mjs
 - networkx
 - next-moves/route.ts
-- CapsuleRegistryPanel.test.tsx
+- postgres-execution.test.ts
 - core-objects.ts
-- FakeCollection
+- risk-indicators/route.ts
 - FakeCollection
 - compilerOptions
 - gliner_pre_pass.py
-- PRAXIS Codex Session Brief
+- readiness/route.ts
 - 100. IMPLEMENTATION MASTER PLAN
-- neo4j-drift-verifier.ts
+- clean
 - rights
-- CognitiveGraph
+- chat.ts
 - canonical-graph.ts
-- tool-output-layer.ts
+- RetrievalOrchestrator
 - context-enrichment-adapter.test.ts
 - FakeCollection
-- config
+- backend/main.py
 - vertex_rag.py
 - PRAXIS Document-Centric Agentic Research Plan
 - CapsuleAgentView.tsx
@@ -390,17 +390,17 @@
 - FakeCollection
 - core-library.test.ts
 - FakeCollection
-- .status
+- PRAXIS release record: September 30, 2026
 - constants/tool-registry.ts
 - Layout Grammar
 - PRAXIS Agent Runtime Architecture
-- PRAXIS release record: September 30, 2026
+- red_team_analyst/runner.py
 - verify-design-shipped.mjs
 - SIGNAL world explorer: source and catalog research
 - Ontology-First Capsule Workbench + Cohort Hardening — Design & Codex Brief
 - extract-docling/main.py
-- package.json
-- global-search.tsx
+- ExtractionCache
+- negotiation_mediation.py
 - audit-capsule-backfill-readiness.ts
 - Agent Context Serialization Research for PRAXIS Capsules
 - graph-service.ts
@@ -408,13 +408,13 @@
 - getAdminDbOrThrow
 - AgentsWorkingStrip.tsx
 - context-health-score.ts
-- red-team-annotations.ts
+- context_layers.py
 - manifest.json
-- DialecticaClient
-- [Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)
+- test_sync_creates_nodes
+- writer/ask/route.ts
+- audits/README.md
 - PRAXIS Deep Pre-Ship Checklist Audit
-- PRAXIS Deep Pre-Ship Checklist Audit
-- memo-desk.tsx
+- package.json
 - PRAXIS Compliance Tracker
 - Incorporated
 - PRAXIS tooling research — 2026-09-29
@@ -424,32 +424,32 @@
 - cognee_aco_models/base.py
 - truth_layers.py
 - 2. Gaps and recommendations (priority order)
-- source-passage.ts
+- collectors.ts
 - Raw Gate Output
-- Safe removal plan
+- [Unreleased] — 2026-04-26 (tenth session — Claude Code multi-lane sprint)
 - MCP Task Profiles
 - PRAXIS — CODEX Playbook & Improvement Roadmap
 - research/README.md
 - Dashboard
 - {{Tool Name}}
-- reports/[id]/export/route.ts
+- docx
 - properties
-- release-notes/page.tsx
+- pricing.ts
 - capsule-suggestions.ts
 - tasklet-style-runtime.ts
 - email-service.ts
 - Claim
 - migrate-user-api-keys.mjs
 - Constraint
-- useSituationGuard
-- sourceability/route.ts
+- 13. Codex execution backlog (Phases 0–1, file-level)
+- FakeCollection
 - PRAXIS Multi-Tenant Data Model
-- 3. Foundational invariants
+- document-postgres.ts
 - 56. WHERE STANDARD AI FALLS SHORT
 - Spec #1 — Cleanup & Infra
-- TurnCapsule
+- instant-context.ts
 - audit-capsule-depth.ts
-- audit-capsule-inspect-visibility.ts
+- ContextCapsule — Attachable Capsule & Dock: Technical Build Recommendation
 - audit-embedding-dim.ts
 - audit-release-notes.ts
 - circuit-breaker.ts
@@ -467,15 +467,15 @@
 - recent-policy-work-page.tsx
 - exa-agentic-search.ts
 - dialectica-backbone.ts
-- output-capsules/schemas.ts
-- cockpit-composition.ts
+- PRAXIS — Builder Handover (Architect Brief + CODEX Prompt Queue)
+- capsules.ts
 - human-review-panel.test.tsx
 - audit-runner.test.ts
-- context_genesis/pipeline.py
+- Round 4 — Visual fixes + dev backlog + clarifying questions + Wikipedia + analyst notes
 - Cognitive Capsule architecture
 - compose-capsules-demo.tsx
 - 101. FIRST CODEX EXECUTION PACK
-- with-calibration.ts
+- drafting-action/route.ts
 - Capsule and Agentic Workflow Review - 2026-06-24
 - Codex: start from this extracted folder
 - Temporal graph and continuing context
@@ -485,12 +485,12 @@
 - SOLO_FOUNDER_EXECUTION.md
 - PRAXIS Design Rules — locked
 - format.ts
-- audit-gcp.mjs
+- user-core-onboarding-card.tsx
 - audit-tool-contracts.ts
 - codegen-schema.ts
 - Context Preparer
 - Memo Drafter
-- eslint.config.mjs
+- deploy-firebase-rules.mjs
 - Output Refiner
 - Source Augmenter
 - Tool Skill Template
@@ -552,30 +552,30 @@
 - Posture Tracker
 - Simulate Policy ABM
 - PathPicker.tsx
-- usePendingAgentApprovals.ts
+- sources-preference.ts
 - auto-structure.ts
 - analyst-notes.ts
 - collectTextContrastFailures
 - ask-context-readiness.test.tsx
 - futurist-ai-lab-contract.test.ts
 - PRAXIS TODO
-- capsule_eval.py
+- forced_displacement.py
 - 6. The recalibrated symbolic firewall
 - strategic_competition.py
 - [Unreleased] — 2026-04-25 (sixth session — operational spine)
 - library-state.ts
-- ContextCapsuleClaim
+- Round 5 — Hero quadrant tour + 10 new bricks + Codex handoff doc
 - Capsule Database Audit
 - PRAXIS Ask + ContextCapsule Cockpit Plan
 - PRAXIS Foundation Coherence Check
 - PRAXIS implementation ledger — 2026-09-30
-- analyst-memory.ts
+- PRAXIS Audit Runner And TODO Triage
 - PRAXIS chat-first experience plan — 2026-09-30
 - audit-admin-only-internals.ts
 - audit-ai-provider-isolation.ts
 - audit-app-search-contract.ts
 - audit-no-normal-user-archive.ts
-- deploy-firebase-rules.mjs
+- PRAXIS Tool Catalogue
 - generate-tool-docs.ts
 - analysis.ach-hypothesis/SKILL.md
 - analysis.coalition-detector/SKILL.md
@@ -587,17 +587,17 @@
 - analysis.stakeholder-power-interest/SKILL.md
 - drafting.memo-drafter/SKILL.md
 - research.deep-research-agent/SKILL.md
-- getAnalystProfile
+- profile-weighted-retrieval.ts
 - capsule-factory-route-consolidation.test.ts
 - Google Agent Platform For PRAXIS
-- chat-service.ts
-- tool-preferences.ts
+- sanctions_economic_statecraft.py
+- context.py
 - Historical: PRAXIS Codex Night Pack — STATUS (2026-05-08)
 - Authenticated Runtime Test Lane
 - marketing-home-contract.test.ts
 - CapsuleReviewQueueSection.test.tsx
 - Agents
-- checkpointing.py
+- get_settings
 - Grafeo Context Graph Experiment
 - GraphLite Capsule Embedded Graph
 - 17. Decision tree — where does new code go?
@@ -618,14 +618,14 @@
 - CapsuleBuilderWizard.test.tsx
 - postgres-sweep.test.ts
 - PRAXIS Vertex AI Agent Engine — backend
-- 1. Activate paid / freemium data sources
-- run-timeline.tsx
+- Fable ↔ Codex Pair Protocol (MANDATORY)
+- scenario-forks.ts
 - 11. Tools (L4 part 2) — the marketplace
 - 18. Centralization, evolution, and discipline
 - audit-capsule-graphlite-projections.ts
 - PRAXIS KPI Pipeline
 - PRAXIS Agentic Workflow Explained
-- audit-repo-shape.ts
+- chat-pinned-evidence.test.ts
 - PRAXIS Agentic Search Diagnostic
 - 8. Simple-but-powerful UX — the pre/post-login simplification (CRITICAL)
 - PRAXIS Public Copy Contract - 2026-06-09
@@ -643,15 +643,15 @@
 - audit-graph-proposal-review-contract.ts
 - PRAXIS Security
 - un-terminology.ts
-- tiers.ts
+- ask-praxis-clean-routing.test.ts
 - ical-parser.ts
 - capsule-workspace-visual-diagnostics.spec.ts
 - 0022 - Red Team Analyst Subagent
 - 0036 - GCP Production Verification Discipline
 - ADR 0051: TrustGraph as an Optional Derived Context Substrate
-- PRAXIS Architecture
+- Ontology Backend Frontend Map
 - DIALECTICA PRAXIS Context Contract
-- PRAXIS, DIALECTICA, KAIROS, and AGON Alignment
+- Dead Surface Inventory
 - Lane: Cloud And Auth Operations
 - Lane: Dependencies And Toolchain
 - Lane: Frontend QA And Product Surface
@@ -664,7 +664,7 @@
 - Codex Cloud alternative
 - MCP and access: keep the first setup small
 - SIGNAL build and release progress
-- SIGNAL cloud release record and procedure
+- ok
 - Next 20 Improvements After Capsule Composer
 - 10. Coalition Detector
 - 11. Commitment Tracker
@@ -678,11 +678,11 @@
 - 7. Analysis of Competing Hypotheses
 - 8. Contradiction Finder
 - 9. Frame Narrative
-- 12. Agents (L3) — Vertex AI Agent Engine
+- sweep/route.ts
 - audit-architecture-chain.ts
 - audit-named-stack-contract.ts
 - audit-orchestrator-writes.ts
-- PRAXIS Corpus Architecture
+- AskTurnPlanPanel.tsx
 - audit-substrate-writers.ts
 - audit-workspace-tabs-chapters.ts
 - Red Team Analyst
@@ -690,13 +690,13 @@
 - PRAXIS v3 Surface Classification
 - PRAXIS Model Selection
 - slash-commands.ts
-- 13. Data (L2) — Firestore + Postgres + Cloud Storage
+- [3.7.0] — 2026-03-29
 - search-query.ts
-- 20. The Codex collaboration protocol
+- [3.9.6] — 2026-03-30
 - ask-context-bar-contract.test.ts
 - deletion.ts
 - [Unreleased] — 2026-04-25 (first session)
-- SIGNAL text pilot checklist
+- signal/README.md
 - Contributing to PRAXIS
 - Deep Research Route Consolidation
 - backfill-capsule-graph-stats.ts
@@ -738,7 +738,6 @@
 - agent_context.md
 - context-capsule-spans-route.test.ts
 - [Unreleased] — 2026-04-25 (seventh session — deploy hardening)
-- [Unreleased] — 2026-04-25 (fifth session — open-source pivot)
 - ADR 0049: Cognee Memory Layer Disabled-First
 - ADR 0050: Context Capsule Unified Schema
 - Conflict Data Sources
@@ -752,8 +751,6 @@
 - OpenSanctions Data Licensing
 - praxis-chat-onboarding-recovery-contract.test.ts
 - Runtime template - extract what the source says
-- SIGNAL improvement backlog
-- SIGNAL
 - kpis.sql
 - sanctions-opensearch/main.tf
 - audit-agent-process-contract.ts
@@ -769,8 +766,6 @@
 - analytical-methods.ts
 - capsule-cores.ts
 - aco-copy.ts
-- settings-page-contract.test.ts
-- [Unreleased] — 2026-04-27 (Codex docs cleanup and LangGraph readiness)
 - [Unreleased] — 2026-04-25 (fourth session — playbook + vision + cleanup)
 - cluster.py
 - PRAXIS Architecture Decision Records
@@ -803,8 +798,6 @@
 - subject
 - type
 - wordingRef
-- Fixed
-- 7. Frontend (L7) — Next.js workbench
 - praxis-backend.ts
 - redactMarketplaceFoundationJson
 - activity.ts
@@ -822,19 +815,14 @@
 - strategic-competition Ontology Changelog
 - [3.5.0] — 2026-03-26
 - [3.7.1] — 2026-03-29
-- [3.9.1] — 2026-03-30
-- generate-marketplace-skills.ts
 - [3.9.7] — 2026-03-30
 - [5.1.0] — 2026-04-01
 - [Unreleased] — 2026-04-25 (third session)
-- [Unreleased] — 2026-04-25 (third session, post-research integration)
-- [Unreleased] — 2026-04-27 (Landing-page + share-metadata refresh)
 - [Unreleased] — 2026-04-26 (eighth session — workspace personalization)
 - API Route Cleanup Map
 - Capsule Consolidation Audit
 - PRAXIS Tool Operating Contract Audit - 2026-05-31
 - 19. CAPSULE STUDIO MODES
-- 3. The Context Capsule, done right
 - `praxis_telemetry.events`
 - bootstrap-user-key-master.sh
 - cognee-kuzu-snapshot.sh
@@ -850,7 +838,6 @@
 - PRAXIS production acceptance — 2026-09-30
 - neo4j-sync.ts
 - context-capsule-source-gap-promotion-route.test.ts
-- context-capsules-route.test.ts
 - safety_deny_list.md
 - work/README.md
 - verification.md
@@ -907,13 +894,8 @@
 - praxis-backend
 - PRAXIS optional backend agent integrations
 - PRAXIS Documentation Map
-- SIGNAL visualization and feedback review
 - [3.8.0] — 2026-03-29
-- [3.9.4] — 2026-03-30
-- [3.9.5] — 2026-03-30
 - [4.2.0] — 2026-03-31
-- [4.3.0] — 2026-03-31
-- [5.0.0] — 2026-03-31
 - 0. READ THIS FIRST
 
 ## God Nodes (most connected - your core abstractions)
@@ -943,27 +925,27 @@
 ## Import Cycles
 - None detected.
 
-## Communities (969 total, 152 thin omitted)
+## Communities (950 total, 150 thin omitted)
 
 ### Community 0 - "next"
 Cohesion: 0.01
-Nodes (237): What I Reviewed, next, zod, runtime, dynamic, GET, POST, ArtifactEntry (+229 more)
+Nodes (204): What I Reviewed, next, zod, runtime, GET, POST, ArtifactEntry, IntentSchema (+196 more)
 
 ### Community 1 - "saveToolOutput"
 Cohesion: 0.03
-Nodes (210): ai, maxDuration, POST, ActorProfileSchema, ActorProfilesSchema, maxDuration, POST, AdvisorySchema (+202 more)
+Nodes (232): Lane B — Humanitarian calibrated route (NEW), ai, maxDuration, POST, ActorEnrichmentSchema, DEMO_RESPONSE, maxDuration, POST (+224 more)
 
 ### Community 2 - "tasklet-praxis-workbench.tsx"
 Cohesion: 0.02
-Nodes (139): CapsuleInspectionDialog(), actionIcons, AgentActionDrawer(), AgentApprovalSummary, AgentFailureForensicsPanel(), agentReadinessClass(), _AgentRegistryCard(), agentRiskClass() (+131 more)
+Nodes (118): CapsuleInspectionDialog(), actionIcons, AgentActionDrawer(), AgentApprovalSummary, agentReadinessClass(), _AgentRegistryCard(), agentRiskClass(), AgentRunDetail (+110 more)
 
 ### Community 3 - "context-capsules.ts"
 Cohesion: 0.02
-Nodes (136): ACO_CONTEXT_CAPTURE_PRIMITIVES, buildStarterGraphLiteProjection(), CANONICAL_FOUR_CATEGORY_CAPSULES, CAPSULE_CAPABILITY_AREAS, CAPSULE_PLUS_CONTEXT_CAPTURE_EDGE_TYPES, CAPSULE_PLUS_CONTEXT_CAPTURE_NODE_TYPES, CapsuleArtifactIndex, CapsuleArtifactIndexItem (+128 more)
+Nodes (173): ACO_CONTEXT_CAPTURE_PRIMITIVES, buildCapsuleCogneeSeedDocuments(), buildReasoningGuideSourcePack(), buildResearchDossierSourceSpine(), buildSourceOntologyBindings(), buildStarterClaimLedgerSeeds(), buildStarterCogneeProfile(), buildStarterContextCaptureProfile() (+165 more)
 
-### Community 4 - "capsule-board.tsx"
-Cohesion: 0.08
-Nodes (42): @dnd-kit/core, CapsuleBoard(), capsuleToSlots(), emptyBoard(), isMultiSlot(), SLOT_ORDER, CapsuleSlot(), CapsuleSlotData (+34 more)
+### Community 4 - "ContextBuilderRoom.tsx"
+Cohesion: 0.05
+Nodes (59): @dnd-kit/core, @dnd-kit/sortable, @dnd-kit/utilities, AdvancedExplanationPanel(), AdvancedExplanationPanelProps, CapsuleBoard(), capsuleToSlots(), emptyBoard() (+51 more)
 
 ### Community 5 - "scripts"
 Cohesion: 0.01
@@ -971,31 +953,31 @@ Nodes (142): scripts, admin:check, audit:admin-only-internals, audit:agent-proce
 
 ### Community 6 - "capsule-v3.ts"
 Cohesion: 0.04
-Nodes (97): ContextCapsuleOutputContract, average(), buildCapsuleV3AgentReviewCards(), buildClaimLedger(), buildClaimLedgerFromClaims(), buildCogneeAdvisoryReviewCard(), buildDefaultReviewCards(), buildEvaluation() (+89 more)
+Nodes (95): ContextCapsuleOutputContract, average(), buildCapsuleV3AgentReviewCards(), buildClaimLedger(), buildClaimLedgerFromClaims(), buildCogneeAdvisoryReviewCard(), buildDefaultReviewCards(), buildEvaluation() (+87 more)
 
 ### Community 7 - "situation-initializer.ts"
 Cohesion: 0.04
-Nodes (86): Conventions, 2. Hard rules (never violate without explicit human approval), CATEGORY_SEARCH_TERMS, maxDuration, POST, maxDuration, maxDuration, POST (+78 more)
+Nodes (81): Conventions, CATEGORY_SEARCH_TERMS, maxDuration, POST, maxDuration, maxDuration, POST, maxDuration (+73 more)
 
 ### Community 8 - "vitest"
 Cohesion: 0.03
-Nodes (68): vitest, failures, REMOVED_ROUTE_FILES, root, dbPath, tempRoot, version, EXPECTED_TOOLS (+60 more)
+Nodes (72): vitest, failures, REMOVED_ROUTE_FILES, root, EXPECTED_TOOLS, root, routeSource, chat (+64 more)
 
 ### Community 9 - "TaskletPraxisWorkbench"
 Cohesion: 0.03
-Nodes (110): Phase8WowLanding(), agentRunStatusFromEvent(), appendMemoSection(), AssistantMarkdown(), buildFactoryReviewDiff(), buildSelectedSpanNote(), buildVisibleCapsuleCards(), CapsuleLibraryStatsBand() (+102 more)
+Nodes (87): Current Diagnosis, Phase 1 - Stop Surface Drift, What already exists, What is hurting the experience, Phase8WowLanding(), agentRunStatusFromEvent(), appendMemoSection(), buildFactoryReviewDiff() (+79 more)
 
 ### Community 10 - "worker.ts"
 Cohesion: 0.05
-Nodes (126): resolveRunCognitiveAttachments(), buildCognitiveSpecialistPlan(), capsuleQualityReviewOutputHref(), countCapsuleQualityReviewProposalKinds(), summarizeCapsuleQualityReviewRun(), formatEvidencePackPromptBlock(), buildCapsuleWorkerContext(), mirrorWorkerEvent() (+118 more)
+Nodes (138): Safe Next Build, resolveRunCognitiveAttachments(), boundedGaps(), CapsuleFactoryDeps, CapsuleFactoryDraftOutput, createCapsuleFactoryReviewCards(), factoryEvidence(), runCapsuleFactoryDraft() (+130 more)
 
 ### Community 11 - "ontology/registry.ts"
-Cohesion: 0.04
-Nodes (89): args, backendFrontendMapDocPath, baseOwlPath, capsuleMarkers, capsuleService, contestationNodeIds, markers, missingCapsuleMarkers (+81 more)
+Cohesion: 0.03
+Nodes (95): args, backendFrontendMapDocPath, baseOwlPath, capsuleMarkers, capsuleService, contestationNodeIds, markers, missingCapsuleMarkers (+87 more)
 
 ### Community 12 - "auth-context.tsx"
-Cohesion: 0.04
-Nodes (62): Added, framer-motion, AppLayout(), metadata, AuthLayout(), OnboardingLayout(), AccountProfileButton(), Detail() (+54 more)
+Cohesion: 0.03
+Nodes (87): [5.2.0] — 2026-04-01, Added, Fixed, Security, cmdk, framer-motion, zustand, AppLayout() (+79 more)
 
 ### Community 13 - "capsule-workbench-view-model.ts"
 Cohesion: 0.05
@@ -1003,79 +985,79 @@ Nodes (123): CapsuleQualityBreakdownId, addGraphBoundaryLayer(), addGraphLitePro
 
 ### Community 14 - "capsule-service.ts"
 Cohesion: 0.03
-Nodes (160): CompositionConflict, CapsuleArchitectProposal, CapsuleEnvelopePatch, addInventoryBucket(), AdvisoryMemoryReviewCandidateInput, AppliedGraphProposal, applyCoreHealthToReadiness(), applyGraphEdgeProposal() (+152 more)
+Nodes (103): CompositionConflict, CapsuleArchitectProposal, CapsuleEnvelopePatch, AdvisoryMemoryReviewCandidateInput, AppliedGraphProposal, applyCoreHealthToReadiness(), applyReadinessToHealth(), buildStarterSnapshot() (+95 more)
 
 ### Community 15 - "cn"
 Cohesion: 0.03
-Nodes (77): Shared Primitives, capsuleParts, currentCapabilityAnchors, LearnPage(), metadata, AUDIENCE_LABEL, LANGUAGE_LABEL, LivePreview() (+69 more)
+Nodes (114): Shared Primitives, From `AnalystProfile`, class-variance-authority, @radix-ui/react-tooltip, capsuleParts, currentCapabilityAnchors, LearnPage(), metadata (+106 more)
 
 ### Community 16 - "COGNITIVE_CAPSULE_MASTER_PLAN_2026-10-02.md"
 Cohesion: 0.02
 Nodes (103): 102. ACCEPTANCE SCENARIO ONE — DIPLOMACY, 103. ACCEPTANCE SCENARIO TWO — ARMED GROUPS, 104. ACCEPTANCE SCENARIO THREE — PUBLIC FINANCE, 105. ACCEPTANCE SCENARIO FOUR — EXPERT HEURISTIC, 106. ACCEPTANCE SCENARIO FIVE — TEACH-BY-CORRECTION, 107. WHAT NOT TO DO, 108. DEFINITION OF SUCCESS, 109. FINAL PRODUCT VISION (+95 more)
 
 ### Community 17 - "signal/domain.ts"
-Cohesion: 0.07
-Nodes (82): AnalysisRequestSchema, calibratedHandler, maxDuration, POST, runtime, capabilities(), DELETE, GET (+74 more)
+Cohesion: 0.06
+Nodes (97): AnalysisRequestSchema, calibratedHandler, maxDuration, POST, runtime, capabilities(), DELETE, GET (+89 more)
 
 ### Community 18 - "path/types.ts"
-Cohesion: 0.06
-Nodes (42): AXES, axesFromReadiness(), clamp01(), cleanParam(), dynamic, GET(), RadarAxis, targetAxes() (+34 more)
+Cohesion: 0.04
+Nodes (60): failures, { PATH_IDS }, { PATH_SEEDS }, { PRAXIS_GENKIT_PATH_TOOL_IDS }, registeredPathToolIds, require, GET(), PathPickerProps (+52 more)
 
 ### Community 19 - "ai/chat/route.ts"
 Cohesion: 0.04
-Nodes (77): @ai-sdk/google, @ai-sdk/google-vertex, maxDuration, maxDuration, agentRunSnapshotFromAnswerEnvelope(), AiSettings, AskFrameworkStepReceipt, AskRuntimeReceipt (+69 more)
+Nodes (108): @ai-sdk/google, @ai-sdk/google-vertex, maxDuration, maxDuration, agentRunSnapshotFromAnswerEnvelope(), AiSettings, AskFrameworkStepReceipt, AskToolInvocationReceipt (+100 more)
 
 ### Community 20 - "react"
 Cohesion: 0.07
-Nodes (67): lucide-react, react, ChipStackProps, CapsuleAgentView, CapsuleGraphViewer, CapsuleInspectionExperience(), Tab, TABS (+59 more)
+Nodes (71): lucide-react, react, CapsuleAgentView, CapsuleGraphViewer, CapsuleInspectionExperience(), Tab, TABS, CapsuleGraphViewerProps (+63 more)
 
 ### Community 21 - "world-service.ts"
 Cohesion: 0.04
-Nodes (76): Agent Role Hints, Routes Still Using AI SDK Directly, Build, Diagnose, Modes, Ship, Extension surface, maxDuration (+68 more)
+Nodes (71): Routes Still Using AI SDK Directly, Extension surface, maxDuration, POST(), runtime, GET, runtime, externalUrl() (+63 more)
 
-### Community 22 - "cognitive-capsule/schema.ts"
-Cohesion: 0.03
-Nodes (117): Portable constraints, dynamic, GET, PATCH, POST, readBody(), RouteContext, routeError() (+109 more)
+### Community 22 - "cognitive-capsule/service.ts"
+Cohesion: 0.04
+Nodes (72): dynamic, GET, PATCH, POST, readBody(), RouteContext, routeError(), CapsuleExpertInterview() (+64 more)
 
-### Community 23 - "sanitizeCapsule"
+### Community 23 - "getCapsule"
 Cohesion: 0.11
-Nodes (57): DELETE, POST, fromV3(), activateCapsule(), applyCapsuleReviewCard(), archiveCapsule(), assertCognitiveCompositionParents(), assertReviewCardDecidable() (+49 more)
+Nodes (63): apply, main(), VersionBucket, DELETE, POST, POST, POST, saveCapsuleBuilderDraft() (+55 more)
 
 ### Community 24 - "types/domain.ts"
-Cohesion: 0.08
-Nodes (31): Layer 3 — `<domain-frame>`  *(what kind of work this is)*, GET, VersionEntry, buildFullLensWeights(), bustDomainCache(), cache, CachedEntry, listDomains() (+23 more)
+Cohesion: 0.07
+Nodes (38): DomainPickerProps, NextMove, NextMovesContext, LENS_CATALOG, LensDef, buildFullLensWeights(), bustDomainCache(), cache (+30 more)
 
 ### Community 25 - "CapsuleExpertisePanel.tsx"
 Cohesion: 0.05
-Nodes (66): Authorship(), CapsuleCognitiveGraphPanel(), Conditions(), describeCognitiveStatement(), EvidenceExcerpt(), filterCognitiveStatements(), GraphInventory, humanize() (+58 more)
+Nodes (63): Authorship(), CapsuleCognitiveGraphPanel(), Conditions(), describeCognitiveStatement(), EvidenceExcerpt(), filterCognitiveStatements(), GraphInventory, humanize() (+55 more)
 
 ### Community 26 - "library.ts"
-Cohesion: 0.05
+Cohesion: 0.06
 Nodes (73): CapsuleLibrary(), CapsuleLibraryProps, CapsuleLibraryWithTry(), handleTryCapsule(), CategoryChip(), FacetSelect(), readableDate(), reviewStateLabel() (+65 more)
 
 ### Community 27 - "praxis-doctor.ts"
-Cohesion: 0.08
-Nodes (31): ArtifactFreshnessSummary, AuditArtifactSnapshot, CANARY_ANALYST_PROFILE, CanaryArtifact, CanaryStepResult, DEFAULT_OPTIONS, DiagnosticsStatus, DoctorCheckResult (+23 more)
+Cohesion: 0.06
+Nodes (67): ArtifactFreshnessSummary, AuditArtifactSnapshot, buildArtifactFreshness(), buildCanaryPlan(), buildDoctorReport(), CANARY_ANALYST_PROFILE, CanaryArtifact, canaryHttpStatus() (+59 more)
 
 ### Community 28 - "AskStreamPanel.tsx"
-Cohesion: 0.05
-Nodes (70): AgentResultTurnHeader(), AnswerFollowUpPanel(), appendOrchestrationEvent(), appendTimelineContent(), appendTimelineStage(), AskCoreBrick, askGapPromotionKey(), AskGapPromotionState (+62 more)
+Cohesion: 0.06
+Nodes (66): AgentResultTurnHeader(), AnswerFollowUpPanel(), appendOrchestrationEvent(), appendTimelineContent(), appendTimelineStage(), AskCoreBrick, askGapPromotionKey(), AskGapPromotionState (+58 more)
 
 ### Community 29 - "json"
 Cohesion: 0.04
-Nodes (31): _fixture_path(), main(), content_hash(), ExtractionCache, estimate_reduction(), test_priority_ontology_golden_sets_are_versioned_and_well_formed(), test_document_pipeline_cost_benchmark_exceeds_target(), main() (+23 more)
+Nodes (30): _fixture_path(), main(), to_cypher(), estimate_reduction(), test_priority_ontology_golden_sets_are_versioned_and_well_formed(), test_document_pipeline_cost_benchmark_exceeds_target(), main(), main() (+22 more)
 
 ### Community 30 - "evidence-pack.ts"
-Cohesion: 0.05
-Nodes (54): buildAgentReadContractFromReceipt(), buildCapsuleReadReceiptFromAsk(), buildCapsuleReadReceiptFromEvidencePack(), buildCapsuleReadReceiptFromRun(), CapsuleReceiptGovernanceOptions, CapsuleReceiptOntologyStack, governanceFields(), nonnegativeInt() (+46 more)
+Cohesion: 0.04
+Nodes (71): buildAgentReadContractFromReceipt(), buildCapsuleReadReceiptFromAsk(), buildCapsuleReadReceiptFromEvidencePack(), buildCapsuleReadReceiptFromRun(), CapsuleReceiptGovernanceOptions, CapsuleReceiptOntologyStack, governanceFields(), nonnegativeInt() (+63 more)
 
 ### Community 31 - "praxis-chat.tsx"
-Cohesion: 0.07
-Nodes (45): JevReviewControl(), AnswerAgentActivity(), ChatBubble(), ChatMessage, ChatProposal, ConversationCapsuleButton(), ExportToEditorButton(), isProfileMutationIntent() (+37 more)
+Cohesion: 0.05
+Nodes (65): JevReviewControl(), AnswerAgentActivity(), ChatBubble(), ChatMessage, ChatProposal, ConversationCapsuleButton(), ExportToEditorButton(), isProfileMutationIntent() (+57 more)
 
 ### Community 32 - "datetime"
-Cohesion: 0.07
-Nodes (17): AgentEvent, AgentRun, AgentRunError, to_cypher(), _dataset(), _get_client(), get_usage_metrics(), _insert_analytics_row() (+9 more)
+Cohesion: 0.08
+Nodes (14): AgentEvent, AgentRun, AgentRunError, ACODataPoint, Actor, Claim, Commitment, Constraint (+6 more)
 
 ### Community 33 - "auth.ts"
 Cohesion: 0.05
@@ -1083,27 +1065,27 @@ Nodes (34): @playwright/test, assertProtectedRoute(), coreRoutes, expectSingleEx
 
 ### Community 34 - "agent-runtime/postgres.ts"
 Cohesion: 0.05
-Nodes (94): Safe Next Build, dynamic, nextDispatchAttempt(), POST, RouteContext, dynamic, POST, POST (+86 more)
+Nodes (99): 3. Direct and queued branches both exist, dynamic, nextDispatchAttempt(), POST, RouteContext, dynamic, POST, dynamic (+91 more)
 
 ### Community 35 - "cognitive-capsule/evaluation.ts"
 Cohesion: 0.05
-Nodes (69): Inventory and compatibility, Cognitive and document parser evaluation, Optional actual parser comparison, Parser-independent DocumentIR, main(), ABLATION_PROFILES, AblationProfile, BenchmarkContextLock (+61 more)
+Nodes (65): Cognitive and document parser evaluation, Optional actual parser comparison, Parser-independent DocumentIR, main(), ABLATION_PROFILES, AblationProfile, BenchmarkContextLock, BenchmarkProvider (+57 more)
 
-### Community 36 - "state.ts"
-Cohesion: 0.13
-Nodes (24): makeAgentRunDispatchPayload(), makeDeterministicDispatchId(), normalizeAskThreadRef(), ALLOWED_TRANSITIONS, assertAgentRunTransition(), canTransitionAgentRun(), clampInt(), makeAgentApproval() (+16 more)
+### Community 36 - "createCapsuleReviewCard"
+Cohesion: 0.09
+Nodes (71): addInventoryBucket(), applyGraphEdgeProposal(), applyGraphNodeProposal(), approveAdvisoryMemoryCandidate(), assertAiGraphRationale(), buildAppliedGraphProjectionPatch(), buildCapsuleInventorySummary(), buildGraphProposalMemoryPosturePatch() (+63 more)
 
 ### Community 37 - "agent-runtime/types.ts"
-Cohesion: 0.06
-Nodes (66): Acceptance Criteria, ADK Ownership, Capsule Factory Decision, Current ADK State, Current Genkit State, Executive Position, Genkit Ownership, Non-Goals For The Next Wave (+58 more)
+Cohesion: 0.05
+Nodes (69): Acceptance Criteria, ADK Ownership, Capsule Factory Decision, Current ADK State, Current Genkit State, Executive Position, Genkit Ownership, Non-Goals For The Next Wave (+61 more)
 
 ### Community 38 - "CapsuleWorkbenchPanel.tsx"
-Cohesion: 0.04
-Nodes (69): react-dom, capsulePlus, capsuleRoute, capsuleService, capsulesRoute, chatRoute, contextCapsules, contextInjection (+61 more)
+Cohesion: 0.03
+Nodes (78): react-dom, capsulePlus, capsuleRoute, capsuleService, capsulesRoute, chatRoute, contextCapsules, contextInjection (+70 more)
 
 ### Community 39 - "ask-answer-envelope.ts"
-Cohesion: 0.04
-Nodes (85): AnswerContextProvenanceChips(), ChipGroup(), fallbackChips(), ProvenanceChip(), ProvenanceIcon(), SourceTierBadge(), SourceabilitySupportLabel, answerContextReadiness() (+77 more)
+Cohesion: 0.05
+Nodes (73): handleCopy(), SourceabilitySupportLabel, answerContextReadiness(), AskAgenticDepthRecommendation, AskAnswerQualitySummary, AskContextDiagnostics, AskContextProvenanceChipKind, AskContextRepairAction (+65 more)
 
 ### Community 40 - "CapsuleGraphViewer.tsx"
 Cohesion: 0.05
@@ -1111,63 +1093,63 @@ Nodes (61): react-force-graph-2d, applyGraphStyling(), buildForceGraphData(), bu
 
 ### Community 41 - "ref_node_crypto"
 Cohesion: 0.07
-Nodes (53): createPraxisMcpServer(), cursor, id, PRAXIS_MCP_MUTATIONS, PraxisMcpSchemas, PraxisMcpToolName, PraxisMcpTools, registryRef (+45 more)
+Nodes (57): createPraxisMcpServer(), cursor, id, PRAXIS_MCP_MUTATIONS, PraxisMcpSchemas, PraxisMcpToolName, PraxisMcpTools, registryRef (+49 more)
 
 ### Community 42 - "run-authenticated-runtime-lane.ts"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (20): agentRuntime, args, AuthRuntimePreflightCheck, AuthRuntimePreflightResult, capture(), continueOnFailure, evaluateAuthenticatedRuntimePreflight(), Lane (+12 more)
 
-### Community 43 - "memo-service.ts"
-Cohesion: 0.07
-Nodes (57): Assigned local repairs and validation, dynamic, GET, runtime, GET, MemoQuerySchema, POST, SaveMemoSchema (+49 more)
+### Community 43 - "output-review.ts"
+Cohesion: 0.11
+Nodes (29): dynamic, GET, runtime, HumanReviewPanel(), AgentContextGroundingReport, normalizeLoadedMemo(), primaryMemoBody(), isCurrentMemoHumanApproval() (+21 more)
 
 ### Community 44 - "user-keys.ts"
-Cohesion: 0.06
-Nodes (55): GET, DELETE, maxDuration, PUT, RouteContext, runtime, maxDuration, POST (+47 more)
+Cohesion: 0.05
+Nodes (62): GET, maxDuration, runtime, DELETE, maxDuration, PUT, RouteContext, runtime (+54 more)
 
 ### Community 45 - "tenant_session"
 Cohesion: 0.08
 Nodes (61): get_graph(), get_graph_subgraph(), get_situation_frame(), list_briefings(), list_cases(), list_dialectica_runs(), list_drafts(), list_memos() (+53 more)
 
 ### Community 46 - "pytest"
-Cohesion: 0.04
-Nodes (29): FirewallDecision, _needle(), validate_cypher(), verify_claim(), clear_state(), FakeNeo4j, test_cypher_injection_is_blocked(), test_graph_grounded_claim_passes() (+21 more)
+Cohesion: 0.06
+Nodes (24): FirewallDecision, _needle(), validate_cypher(), verify_claim(), clear_state(), FakeNeo4j, test_cypher_injection_is_blocked(), test_graph_grounded_claim_passes() (+16 more)
 
-### Community 47 - "blackboard/index.ts"
-Cohesion: 0.07
-Nodes (63): appendWorkingObject(), assertRunContextReplay(), attachedReference(), attachmentHeader(), BlackboardSchema, CognitiveBlackboard, common, compileLockedRole() (+55 more)
+### Community 47 - "specialists.ts"
+Cohesion: 0.09
+Nodes (48): appendWorkingObject(), assertRunContextReplay(), attachedReference(), attachmentHeader(), compileLockedRole(), createBlackboard(), freezeRunContext(), RunContextLock (+40 more)
 
 ### Community 48 - "runtime-data-plane.ts"
-Cohesion: 0.05
-Nodes (62): collectCloudSqlIntrospection(), collectFirestoreSamples(), main(), outDir, root, samplePath(), stamp, GET (+54 more)
-
-### Community 49 - "model-matrix.ts"
-Cohesion: 0.05
-Nodes (72): failures, health, policy, warnings, auditModelMatrixCoverage(), AuditModelMatrixCoverageResult, checkForbiddenModelId(), findForbiddenSourceMatches() (+64 more)
-
-### Community 50 - "CognitiveCapsule"
 Cohesion: 0.08
-Nodes (40): CompilationSchema, digest, id, ids, ReceiptSchema, FrozenCognitiveAttachmentInput, ATTENTION_STOP_WORDS, attentionOrder() (+32 more)
+Nodes (42): collectCloudSqlIntrospection(), collectFirestoreSamples(), main(), outDir, root, samplePath(), stamp, AiProviderPosture (+34 more)
+
+### Community 49 - "model-runtime-policy.ts"
+Cohesion: 0.15
+Nodes (25): failures, health, policy, warnings, ASK_MODEL_POLICY, ASK_RUNTIME_OPTIONS, AskRuntimeMode, AskRuntimeStatus (+17 more)
+
+### Community 50 - "blackboard/index.ts"
+Cohesion: 0.04
+Nodes (71): CompilationSchema, digest, id, ids, ReceiptSchema, BlackboardSchema, CognitiveBlackboard, common (+63 more)
 
 ### Community 51 - "build_from_json"
 Cohesion: 0.07
 Nodes (36): escalation_assessment(), faction_map(), graph_diff(), hidden_linkages(), _infer_event_escalation_impact(), intelligence_gaps(), _is_concept_node(), _is_file_node() (+28 more)
 
-### Community 52 - "signal/schema.ts"
-Cohesion: 0.09
-Nodes (31): areas, categories, array(), collectSignalDesk(), fetchSignalRepresentation(), gdeltQuery(), parseSignalFeed(), pinnedRequest() (+23 more)
+### Community 52 - "cognitive-capsule/schema.ts"
+Cohesion: 0.06
+Nodes (49): Portable constraints, validDate(), decideKnowledge(), COGNITIVE_LAYERS, COGNITIVE_SCHEMA_VERSION, cognitiveJsonSchema(), CognitiveNodeSchema, CognitiveStatementSchema (+41 more)
 
-### Community 53 - "visualizations.ts"
-Cohesion: 0.08
-Nodes (40): Fixed, colors, descriptions, FallbackNetwork(), Scene, SignalEvidenceNetwork(), SignalInspectionSelection, Count() (+32 more)
+### Community 53 - "signal/schema.ts"
+Cohesion: 0.06
+Nodes (55): colors, descriptions, FallbackNetwork(), Scene, SignalEvidenceNetwork(), SignalInspectionSelection, areas, categories (+47 more)
 
 ### Community 54 - "dependencies"
 Cohesion: 0.03
 Nodes (69): dependencies, ai, @ai-sdk/google, @ai-sdk/google-vertex, @ai-sdk/react, class-variance-authority, clsx, cmdk (+61 more)
 
 ### Community 55 - "PRAXIS — Architecture Bible"
-Cohesion: 0.06
-Nodes (35): 0. How to read this document, 10.1 The types, 10.2 The provider, 10.3 Persistence, 10. Context (L4 part 1) — the four-layer substrate, 14.1 The Terraform layout, 14.2 Production extras, 14.3 Secrets (+27 more)
+Cohesion: 0.03
+Nodes (72): 0. How to read this document, 10.1 The types, 10.2 The provider, 10.3 Persistence, 10. Context (L4 part 1) — the four-layer substrate, 12.1 The seven subagents, 12.2 Why Vertex AI Agent Engine, 12.3 The deployment shape (+64 more)
 
 ### Community 56 - "account-settings-page.tsx"
 Cohesion: 0.05
@@ -1179,63 +1161,63 @@ Nodes (66): 2026-05-10 — repo cleanup, 2026-05-10 — v5 MVP Phase 0, 2026-05-
 
 ### Community 58 - "capsule-plus/index.ts"
 Cohesion: 0.05
-Nodes (65): ADR 0052: GraphLite Seeds for Capsule+ Embedded Graphs, Consequences, Context, Decision, Implementation Notes, Status, pg, isRecord() (+57 more)
+Nodes (76): ADR 0052: GraphLite Seeds for Capsule+ Embedded Graphs, Consequences, Context, Decision, Implementation Notes, Status, dynamic, isRecord() (+68 more)
 
 ### Community 59 - "capsule-closed-loop-learning.ts"
-Cohesion: 0.09
-Nodes (56): GET, POST, SourceabilityClaimVerdict, appendCaveat(), appendDocumentClaims(), applyFeedbackToClaimLedger(), applyUsageToClaimLedger(), asRecord() (+48 more)
+Cohesion: 0.08
+Nodes (59): GET, POST, SourceabilityVerdict, appendCaveat(), appendDocumentClaims(), applyFeedbackToClaimLedger(), applyUsageToClaimLedger(), asRecord() (+51 more)
 
 ### Community 60 - "capsule-v2.ts"
 Cohesion: 0.07
-Nodes (64): buildCapsuleAgentPayload(), buildCapsuleImproveProposals(), CapsuleAgentPayload, CapsuleForkability, CapsuleImproveAction, CapsuleImproveProposal, CapsuleReviewStatus, CapsuleVisibilityV2 (+56 more)
+Nodes (65): buildCapsuleAgentPayload(), buildCapsuleImproveProposals(), CapsuleAgentPayload, CapsuleForkability, CapsuleImproveAction, CapsuleImproveProposal, CapsuleReviewStatus, CapsuleVisibilityV2 (+57 more)
 
 ### Community 61 - "CapsuleBuilderWizard.tsx"
 Cohesion: 0.07
 Nodes (52): 2. What we have done so far (honest current state), @monaco-editor/react, BuilderStepId, CapsuleBuilderWizard(), patchCapsule(), patchCausalLink(), patchTimelineAnchor(), runArchitect() (+44 more)
 
 ### Community 62 - "dialectica-capsule-import.ts"
-Cohesion: 0.10
-Nodes (43): getModelIdForTask(), buildDialecticaCapsuleImportPlan(), buildDialecticaCapsuleImportPreview(), claimCaveat(), claimProvenanceRefs(), cleanStringArray(), confidenceOrNull(), DIALECTICA_KNOWN_LAYERS (+35 more)
+Cohesion: 0.13
+Nodes (28): getModelIdForTask(), buildDialecticaCapsuleImportPlan(), buildDialecticaCapsuleImportPreview(), claimCaveat(), claimProvenanceRefs(), cleanStringArray(), confidenceOrNull(), DIALECTICA_KNOWN_LAYERS (+20 more)
 
 ### Community 63 - "notifications/registry.py"
-Cohesion: 0.05
-Nodes (55): dispatch_notification_deliveries(), DispatchRequest, get_notification_preferences(), get_notifications(), notification_registry(), PreferencesRequest, put_notification_preferences(), send_test_notification() (+47 more)
-
-### Community 64 - "analyst-profile-admin.ts"
-Cohesion: 0.07
-Nodes (37): @google-cloud/pubsub, dynamic, POST(), verifyPubSubPushAuth(), COOKIE_OPTIONS, POST, canUseDefaultCalibration(), isOnboardingComplete() (+29 more)
-
-### Community 65 - "analyst-profile.ts"
 Cohesion: 0.03
-Nodes (112): Decision 3 — Roles, Component Candidates, Dead Surface Inventory, Deletion Performed, Route Inventory, Auth and onboarding pages, Full route and page inventory, Layouts (+104 more)
+Nodes (63): EdgeRepo, EmbeddingRepo, GraphEdgeRecord, GraphNodeRecord, GraphTraversalRepo, NodeRepo, dispatch_pending_deliveries(), initial_channel_status() (+55 more)
+
+### Community 64 - "profile-events.ts"
+Cohesion: 0.11
+Nodes (22): @google-cloud/pubsub, dynamic, POST(), verifyPubSubPushAuth(), compactAttributes(), decodePubSubJsonEnvelope(), getPubSubClient(), isPushEnvelope() (+14 more)
+
+### Community 65 - "onboarding-return.test.tsx"
+Cohesion: 0.07
+Nodes (39): Decision 3 — Roles, CallbackCard(), LoginCallbackContent(), LoginCallbackPage(), getPasswordStrength(), LoginForm(), OnboardingPage(), OnboardingWizard() (+31 more)
 
 ### Community 66 - "profile-context.ts"
-Cohesion: 0.12
-Nodes (29): Domain Taxonomy — 11 domains, live Firestore config, ActiveCapsuleRef, deriveInteractionFrame(), summarizeOutput(), toIso(), truncate(), AttachedCapsuleContext, buildCalibratedContext() (+21 more)
+Cohesion: 0.06
+Nodes (54): ActiveCapsuleRef, deriveInteractionFrame(), summarizeOutput(), toIso(), truncate(), AttachedCapsuleContext, buildCalibratedContext(), buildDefaultRetrievalQuery() (+46 more)
 
 ### Community 67 - "handover-package/route.ts"
-Cohesion: 0.08
-Nodes (47): buildDocx(), buildPdf(), dynamic, GET, json(), loadPinnedCapsule(), loadPlan(), POST (+39 more)
+Cohesion: 0.09
+Nodes (46): buildDocx(), buildPdf(), dynamic, GET, json(), loadPinnedCapsule(), loadPlan(), POST (+38 more)
 
 ### Community 68 - "runtime.ts"
 Cohesion: 0.07
-Nodes (35): dynamic, POST, RouteContext, buildSuggestionRationale(), CATEGORY_LABELS, getMethodById(), getMethodSourceTool(), getMethodSuggestions() (+27 more)
+Nodes (33): POST, buildSuggestionRationale(), CATEGORY_LABELS, getMethodById(), getMethodSourceTool(), getMethodSuggestions(), MethodCategory, MethodDefinition (+25 more)
 
 ### Community 69 - "pydantic"
-Cohesion: 0.04
-Nodes (32): CorporateStrategicAnalysisOntology, DomesticPolicyAnalysisOntology, ForeignPolicyResearchOntology, ACODataPoint, Actor, Claim, Commitment, Constraint (+24 more)
+Cohesion: 0.10
+Nodes (5): CorporateStrategicAnalysisOntology, DomesticPolicyAnalysisOntology, ForeignPolicyResearchOntology, confidence_cap_for_tier(), SourceTierDefinition
 
 ### Community 70 - "asyncio"
-Cohesion: 0.04
-Nodes (37): capped_confidence(), CogneeCandidate, promote_link(), reject_link(), write_candidate_links(), _escape(), _format_labels(), increment_counter() (+29 more)
+Cohesion: 0.05
+Nodes (28): capped_confidence(), CogneeCandidate, promote_link(), reject_link(), write_candidate_links(), _escape(), _format_labels(), increment_counter() (+20 more)
 
 ### Community 71 - "cognee_memory.py"
-Cohesion: 0.07
-Nodes (48): get_settings(), CloudLoggingJsonFormatter, configure_logging(), add(), _base_payload(), _candidate_id(), _candidate_metadata(), _candidate_score() (+40 more)
+Cohesion: 0.10
+Nodes (41): add(), _base_payload(), _candidate_id(), _candidate_metadata(), _candidate_score(), _candidate_source_id(), _candidate_text(), _candidate_to_hit() (+33 more)
 
 ### Community 72 - "assistant/next-moves.ts"
-Cohesion: 0.10
-Nodes (31): POST, DomainPickerProps, attachedFromContext(), candidate(), dedupeMoves(), domainFromContext(), getNextMoves(), inferHealthScore() (+23 more)
+Cohesion: 0.13
+Nodes (25): POST, attachedFromContext(), candidate(), dedupeMoves(), domainFromContext(), getNextMoves(), inferHealthScore(), labelFor() (+17 more)
 
 ### Community 73 - "types/index.ts"
 Cohesion: 0.05
@@ -1246,88 +1228,88 @@ Cohesion: 0.10
 Nodes (59): ADVISORY_REVIEW_STATES, AgentContextBudget, arrayOfRecords(), arrayOfStrings(), BUDGETS, buildReasoningPaths(), capCausalConfidence(), CAUSAL_RELATIONSHIPS (+51 more)
 
 ### Community 75 - "active-context-stack.ts"
-Cohesion: 0.07
-Nodes (43): ScopedStack, ScopeSession, useActiveContextStack(), activeContextCacheKey(), readScopedContextStack(), writeScopedContextStack(), ActiveCapsuleRole, ActiveCapsuleRoleInputValue (+35 more)
+Cohesion: 0.04
+Nodes (80): Verified local facts, 2. P1: signed-out copy must match the login requirement, fixed, 7. P2: repeated public explanations, consolidated, GuidePage(), metadata, requestExamples, steps, AskContextBar (+72 more)
 
 ### Community 76 - "AskQueuedAgentRunPanel.tsx"
+Cohesion: 0.07
+Nodes (50): dynamic, POST, dynamic, freshRetryMetadata(), hasElapsedDeadline(), POST, RETRY_EXECUTION_ARTIFACTS, AgentEventProofFacts() (+42 more)
+
+### Community 77 - "CapsuleLibraryCard.tsx"
 Cohesion: 0.14
-Nodes (22): AgentEventProofFacts(), agentRunLifecycleGlyph(), agentRunLifecycleGlyphClass(), agentRunLifecycleStepClass(), AskQueuedAgentRunPanel(), buildAgentChainItems(), eventProofFacts(), labelizeAgentToken() (+14 more)
+Nodes (20): CapsuleLibraryCard(), CapsuleLibraryCardAddAction, CapsuleLibraryCardBadge, CapsuleLibraryCardCounts, CapsuleLibraryCardDragAction, CapsuleLibraryCardGraph, CapsuleLibraryCardMetric, CapsuleLibraryCardProps (+12 more)
 
-### Community 77 - "ContextBuilderRoom.tsx"
-Cohesion: 0.04
-Nodes (63): AdvancedExplanationPanel(), AdvancedExplanationPanelProps, CapsuleAdoptionProvenance, CapsuleAdoptionSourceCoverage, CapsuleAdoptionTrustBlock(), CapsuleAdoptionTrustBlockProps, Forkability, TrustSignal() (+55 more)
+### Community 78 - "model-matrix.ts"
+Cohesion: 0.13
+Nodes (19): auditModelMatrixCoverage(), AuditModelMatrixCoverageResult, checkForbiddenModelId(), findForbiddenSourceMatches(), FORBIDDEN_MODEL_PATTERNS, isTextFile(), SANCTIONED_TASK_MODELS, walkFiles() (+11 more)
 
-### Community 78 - "provider/route.ts"
-Cohesion: 0.23
-Nodes (9): GET, getProviderIntegrationStatus(), POLAR_REQUIRED_ENV, ProviderIntegrationStatus, AI_PLATFORM_POSTURE, getAvailableProviders(), getProviderInfo(), isVertexProviderActive() (+1 more)
-
-### Community 79 - "praxis-chat-first-shell.tsx"
-Cohesion: 0.08
-Nodes (41): Executive summary, Public pages, 2. P1: signed-out copy must match the login requirement, fixed, 7. P2: repeated public explanations, consolidated, GuidePage(), metadata, requestExamples, steps (+33 more)
+### Community 79 - "src/app/page.tsx"
+Cohesion: 0.38
+Nodes (5): Public pages, operatorJsonLd, Page(), softwareJsonLd, PraxisMarketingHome()
 
 ### Community 80 - "from-ask-pack/route.ts"
-Cohesion: 0.07
-Nodes (51): artifactMetadataLines(), buildArtifactMetadata(), buildOutputCapsuleInput(), collectSourceReceiptIds(), excerpt(), PackSchema, POST, RequestSchema (+43 more)
+Cohesion: 0.08
+Nodes (44): artifactMetadataLines(), buildArtifactMetadata(), buildOutputCapsuleInput(), collectSourceReceiptIds(), excerpt(), PackSchema, POST, RequestSchema (+36 more)
 
 ### Community 81 - "capsule-details-service.ts"
-Cohesion: 0.08
-Nodes (39): CapsuleDetail, CapsuleDetailKind, CapsuleDetailLinkRefs, capsuleDetailsCollection(), CapsuleDetailsServiceDeps, CapsuleEvaluation, CapsuleEvaluationScorecard, CapsuleMemoryType (+31 more)
+Cohesion: 0.07
+Nodes (46): CreateEvaluationSchema, dynamic, GET, LinksSchema, POST, RouteContext, ScorecardSchema, CapsuleDetail (+38 more)
 
 ### Community 82 - "gcloud"
-Cohesion: 0.09
-Nodes (27): Removed, MISSING, Unknowns, Audit scope and boundaries, Availability and access controls, Browser-test mechanism and existing journey receipts, Deployed release, Firebase configuration (+19 more)
+Cohesion: 0.05
+Nodes (45): Active Enforcement, Canonical references, Current Production Shape, Deeper References, Historical / Subsumed Directions, PRAXIS Architecture, Product Surface Doctrine, Removed (+37 more)
 
 ### Community 83 - "knowledge/context-engine.ts"
-Cohesion: 0.06
-Nodes (45): Lane A — Situation corpus retrieval API (NEW), Implementation Order, POST, AgentPersona, RunAgentResult, SearchSituationCorpusInput, activateContextPackage(), advanceIngestionRun() (+37 more)
+Cohesion: 0.04
+Nodes (57): Lane A — Situation corpus retrieval API (NEW), Corpus Sources, Current Implementation, Google Cloud Path, Implementation Order, Objective, PRAXIS Corpus Architecture, Target API (+49 more)
 
 ### Community 84 - "capsule-quality-ranking.ts"
-Cohesion: 0.08
-Nodes (38): 10. CODEX prompt queue (run in order, one prompt = one checkpoint), 1. The objective, 3. Architecture invariants (do not break), 4. Workstream A — Make each capsule genuinely great (highest priority), 5. Workstream B — Repository as the extensible capsule library, 6. Workstream C — Generation transparency and source attention, 7. Workstream D — Graphic coherence (simple, gentle, a bit futuristic), 8. Workstream E — Continuous cleanup (+30 more)
+Cohesion: 0.05
+Nodes (51): 10. CODEX prompt queue (run in order, one prompt = one checkpoint), advancedSource, componentSource, Finding, findings, inspectionSource, librarySource, outDir (+43 more)
 
 ### Community 85 - "audit-route-cleanup-map.ts"
 Cohesion: 0.07
 Nodes (51): ApiRouteCategory, ApiRouteInventoryEntry, authPostureFor(), buildApiRouteInventory(), calibrationStatusFor(), callerEvidenceFor(), categorizeRoute(), formatApiRouteInventoryMarkdown() (+43 more)
 
 ### Community 86 - "getModel"
-Cohesion: 0.06
-Nodes (64): AI Model Tiers (Gemini 3.5 Ask primary + Gemini 2.5 fallbacks), Anti-Patterns to Refuse, AI model, IndicatorSchema, maxDuration, POST, ResponseSchema, RiskIndicatorsResponse (+56 more)
+Cohesion: 0.05
+Nodes (70): AI Model Tiers (Gemini 3.5 Ask primary + Gemini 2.5 fallbacks), Anti-Patterns to Refuse, AI model, EventSchema, maxDuration, POST, ResponseSchema, runtime (+62 more)
 
 ### Community 87 - "context-builder-plan.ts"
-Cohesion: 0.11
-Nodes (25): getPolicyWorkflowPath(), POLICY_WORKFLOW_PATHS, PolicyWorkflowPath, PolicyWorkflowPathId, buildChecklist(), buildContextBuilderPlan(), buildDeepResearchPrompt(), buildNextActions() (+17 more)
+Cohesion: 0.13
+Nodes (20): getPolicyWorkflowPath(), POLICY_WORKFLOW_PATHS, PolicyWorkflowPathId, buildChecklist(), buildContextBuilderPlan(), buildDeepResearchPrompt(), buildNextActions(), buildRunSequence() (+12 more)
 
-### Community 88 - "briefing-generate/route.ts"
-Cohesion: 0.04
-Nodes (78): [4.1.0] — 2026-03-31, Added, Changed, Lane B — Humanitarian calibrated route (NEW), ActorEnrichmentSchema, DEMO_RESPONSE, maxDuration, POST (+70 more)
+### Community 88 - "feed-aggregator.ts"
+Cohesion: 0.06
+Nodes (43): [4.1.0] — 2026-03-31, Added, Changed, GET(), maxDuration, SituationAlert, GET(), maxDuration (+35 more)
 
 ### Community 89 - "context-kernel.ts"
 Cohesion: 0.07
-Nodes (56): Local PRAXIS Findings, 1. Agent Context Packet v1 is injected into the Ask prompt, CapsuleClaimLedgerItem, CapsuleGroundingReceipt, CapsuleMemoryReceipt, CapsuleSourceRefreshDocket, CapsuleSourceRefreshDocketItem, CapabilityDefinition (+48 more)
+Nodes (51): Local PRAXIS Findings, CapsuleClaimLedgerItem, CapsuleGroundingReceipt, CapsuleMemoryReceipt, CapsuleSourceRefreshDocket, CapsuleSourceRefreshDocketItem, CapabilityDefinition, CapabilityId (+43 more)
 
 ### Community 90 - "boardroom-workspace.tsx"
-Cohesion: 0.07
-Nodes (50): AgentRunSummary, arrayFromPath(), BOARDROOM_AGENT_IDS, BOARDROOM_ROSTER, BoardroomAgent, BoardroomDecisionOption, BoardroomProofSummaryPanel(), BoardroomRuntimeContext (+42 more)
+Cohesion: 0.06
+Nodes (53): BoardroomLoadingSkeleton(), BoardroomPage(), BoardroomWorkspace, AgentRunSummary, arrayFromPath(), BOARDROOM_AGENT_IDS, BOARDROOM_ROSTER, BoardroomAgent (+45 more)
 
-### Community 92 - "dataclasses"
+### Community 92 - "wikidata_sparql.py"
 Cohesion: 0.08
 Nodes (25): _decompose(), ResearchState, run_research_state_machine(), ResearchRunRequest, run_research(), _sse(), stream_research_report(), _fallback_result() (+17 more)
 
 ### Community 93 - "research-graph/index.ts"
-Cohesion: 0.08
-Nodes (52): aiSettingsSchema, BigQueryEventTimelineInput, BigQueryEventTimelineValidation, BigQueryTemplate, blockedReasonMessage(), buildBlockedResearchGraphReceipt(), buildEventTimelineBigQueryTemplate(), buildGdeltDocQuery() (+44 more)
+Cohesion: 0.09
+Nodes (51): BigQueryEventTimelineInput, BigQueryEventTimelineValidation, BigQueryTemplate, blockedReasonMessage(), buildBlockedResearchGraphReceipt(), buildEventTimelineBigQueryTemplate(), buildGdeltDocQuery(), buildGdeltDocUrl() (+43 more)
 
 ### Community 94 - "context-injection.ts"
-Cohesion: 0.06
-Nodes (57): 1. What "attachable capsule" must mean technically, 2.1 Slot semantics (already shipped — freeze them), 2.2 Pinning and versioning, 2.3 Attach flows (all write through the same helpers), 2.4 Compilation budget, 2. The dock: recommended target architecture, 3. Capsule portability (the "attachable anywhere" story), 4. Build sequence (maps to HANDOVER P-queue) (+49 more)
+Cohesion: 0.10
+Nodes (39): High: Boardroom can truncate away the dock prompt layer, Medium: Dock prompt text is not escaped like the system prompt block, CognitiveAttachmentSource, ActiveContextBlocks, buildAdvisoryMemoryPromptBlock(), buildAssociatedCapsulesPromptBlock(), buildBuilderDraftPromptBlock(), buildCapsuleContext() (+31 more)
 
-### Community 95 - "workflow-plan.ts"
-Cohesion: 0.06
-Nodes (47): 1. Ask Supervisor, 2. Capsule Reader, 3. Workflow Planner, 4. Research Scout, 5. Evidence Curator / Sourceability Reviewer, 6. Domain Lens Agents, 7. Synthesis / Briefing Agent, 8. Output Formatter (+39 more)
+### Community 95 - "ask-orchestrator.ts"
+Cohesion: 0.03
+Nodes (127): Phase 3 - Add An AskTurnPlan Before Generation, What I Would Do Next, In Order, 1. Ask Supervisor, 2. Capsule Reader, 3. Workflow Planner, 4. Research Scout, 5. Evidence Curator / Sourceability Reviewer, 6. Domain Lens Agents (+119 more)
 
 ### Community 96 - "ActiveContextStackState"
-Cohesion: 0.19
-Nodes (17): PraxisChatProps, AskStreamPanelProps, ActiveContextStackState, buildCapsulePromptBlock(), CapsulePromptInput, AppliedCapsuleRef, buildFallbackCoreRefs(), buildThinCapsuleFallback() (+9 more)
+Cohesion: 0.09
+Nodes (31): 10. Success criteria, 1. Goal, 2. Current state (verified), 3. Decisions (approved by user 2026-06-26), 4.2 Chat route change (the gate), 4.4 Frontend, 4. Architecture, 5. Error handling (+23 more)
 
 ### Community 97 - "flows.py"
 Cohesion: 0.06
@@ -1337,125 +1319,125 @@ Nodes (18): ACOExtractionOutput, build_agentic_research_flow_plan(), emit_agent_
 Cohesion: 0.07
 Nodes (40): SIGNAL integration map, SignalPage(), SignalFeedbackPanel(), Brief, BriefCard(), CaptureForm(), Card(), CoverageStatus() (+32 more)
 
-### Community 99 - "[action]/route.ts"
-Cohesion: 0.18
-Nodes (15): ACTIONS, ArchitectDocumentSchema, ArchitectElicitationSchema, AssistAction, AssistRequestSchema, buildArchitectResult(), buildAssistPatch(), dynamic (+7 more)
+### Community 99 - "FastAPI"
+Cohesion: 0.07
+Nodes (15): _init_firebase(), verify_firebase_token(), verify_service_token(), _mock_request(), test_verify_firebase_token_accepts_oidc_with_praxis_uid(), test_verify_firebase_token_raises_401_for_invalid_token(), test_verify_firebase_token_raises_401_when_no_token(), test_verify_firebase_token_returns_uid_for_valid_token() (+7 more)
 
-### Community 100 - "ask-conversation.ts"
-Cohesion: 0.08
-Nodes (44): GET, loadServerAskHistory(), cleanId(), ensureSchema(), eraseOwnerAskThreadMemory(), getDatabaseUrl(), getPool(), isAskThreadSqlConfigured() (+36 more)
+### Community 100 - "memo-service.ts"
+Cohesion: 0.11
+Nodes (37): Assigned local repairs and validation, GET, MemoQuerySchema, POST, SaveMemoSchema, omitUndefinedMetadata(), approveMemoBody(), artifactMetadata() (+29 more)
 
 ### Community 101 - "AskWorkspacePage.tsx"
 Cohesion: 0.08
-Nodes (41): AppPageHeader(), AppPageHeaderProps, HeaderAction, HeaderLink(), AskRunReadinessPanel(), AskWorkspacePage(), handleCaseChange(), handleUserModelChange() (+33 more)
+Nodes (42): AppPageHeader(), AppPageHeaderProps, HeaderAction, HeaderLink(), AskRunReadinessPanel(), AskWorkspacePage(), handleUserModelChange(), AskWorkspacePageProps (+34 more)
 
-### Community 102 - "sourceability-ledger.ts"
-Cohesion: 0.13
-Nodes (25): AnswerQualityStrip(), formatContextReadiness(), formatDeepRun(), iconForAction(), QualityPill(), buildLedger(), buildSourceabilityClaimVerdicts(), buildSourceabilityClaimVerdictsFromLedger() (+17 more)
+### Community 102 - "AnswerQualityStrip.tsx"
+Cohesion: 0.36
+Nodes (8): AnswerQualityStrip(), formatContextReadiness(), formatDeepRun(), iconForAction(), QualityPill(), computeEvidenceCoverage(), AskContextReadinessState, AskQueuedDeepRunStatus
 
 ### Community 103 - "draft-assembly-state.ts"
-Cohesion: 0.08
-Nodes (40): LoadedMemoByIdRecord, MemoDraftRecord, SaveMemoDraftInput, citationMarker(), collectFootnotes(), createMemoVersion(), memoBlocksToMarkdown(), memoBlocksToPlainText() (+32 more)
+Cohesion: 0.10
+Nodes (28): citationMarker(), collectFootnotes(), createMemoVersion(), memoBlocksToMarkdown(), memoBlocksToPlainText(), MemoExportInput, buildMemoBlocksForCase(), getMemoTemplate() (+20 more)
 
 ### Community 104 - "graph-updates-service.ts"
-Cohesion: 0.17
-Nodes (19): BodySchema, maxDuration, POST, ProposalSchema, applyApprovedProposal(), applyMutationToGraph(), approveProposal(), asRecord() (+11 more)
+Cohesion: 0.11
+Nodes (33): BodySchema, maxDuration, POST, ProposalSchema, POST, POST, buildAskPraxisExtensions(), groundedSearchFetchSessionCounters (+25 more)
 
-### Community 105 - "getCapsule"
-Cohesion: 0.10
-Nodes (39): POST, ActionSchema, dynamic, GET, isCapsuleReadOnlyError(), PATCH, PatchSchema, POST (+31 more)
+### Community 105 - "[token]/route.ts"
+Cohesion: 0.39
+Nodes (7): CapsuleShare, dynamic, GET, isExpired(), POST, resolveShare(), RouteContext
 
 ### Community 106 - "library-service.ts"
-Cohesion: 0.10
-Nodes (52): buildDigestPrompt(), POST, POST, GET, DELETE, dynamic, GET, PATCH (+44 more)
+Cohesion: 0.11
+Nodes (47): buildDigestPrompt(), POST, AttachDocumentSchema, dynamic, POST, RouteContext, dynamic, GET (+39 more)
 
 ### Community 107 - "situations.ts"
 Cohesion: 0.06
-Nodes (51): cleanParam(), dynamic, GET(), resolveCapsule(), GET(), POST(), RouteContext, BodySchema (+43 more)
+Nodes (49): GET(), POST(), RouteContext, cache, FeedAlert, GET, parseWindowHours(), RouteContext (+41 more)
 
 ### Community 108 - "agent-runtime/tool-registry.ts"
 Cohesion: 0.04
-Nodes (46): AGENT_TOOL_REGISTRY, AgentToolApprovalPolicy, AgentToolPersistenceTarget, ApprovalGateInputSchema, ApprovalGateOutputSchema, ArtifactListSchema, BoardExecutivePackInputSchema, BoardExecutivePackOutputSchema (+38 more)
+Nodes (49): AGENT_TOOL_REGISTRY, AgentToolApprovalPolicy, AgentToolDefinition, AgentToolPersistenceTarget, ApprovalGateInputSchema, ApprovalGateOutputSchema, ArtifactListSchema, BoardExecutivePackInputSchema (+41 more)
 
 ### Community 109 - "os"
-Cohesion: 0.05
-Nodes (38): document_retrieval_tool(), graph_query_tool(), web_search_tool(), build_agent(), main(), langsmith_enabled(), DocumentRef, NerEntity (+30 more)
+Cohesion: 0.06
+Nodes (29): document_retrieval_tool(), graph_query_tool(), web_search_tool(), build_agent(), main(), langsmith_enabled(), DocumentRef, NerEntity (+21 more)
 
 ### Community 110 - "context-snapshot.ts"
-Cohesion: 0.11
-Nodes (22): memoArtifactBodyToBlocks(), saveMemoArtifactDraft(), ArtifactContext, detachMemoArtifactContext(), memoArtifactContextSaveFields(), record(), savedMemoArtifactContext, string() (+14 more)
+Cohesion: 0.18
+Nodes (12): copy(), emptyContext(), MemoContextInput, MemoContextSnapshot, MemoContextSnapshotSchema, NullableReference, readMemoContextSnapshot(), recordMemoContextSnapshot() (+4 more)
 
 ### Community 111 - "flows/capsule-factory.ts"
-Cohesion: 0.05
-Nodes (78): boundedGaps(), CapsuleFactoryDeps, CapsuleFactoryDraftOutput, createCapsuleFactoryReviewCards(), factoryEvidence(), runCapsuleFactoryDraft(), stableId(), uniqueStrings() (+70 more)
+Cohesion: 0.07
+Nodes (40): FactoryTelemetryPath, SourceSnippet, CapsuleFactoryApplyTargetSchema, CapsuleFactoryCogneeModeSchema, CapsuleFactoryCoreKindSchema, CapsuleFactoryDocumentSchema, CapsuleFactoryDraftCoreSchema, CapsuleFactoryEcosystemContributorSchema (+32 more)
 
-### Community 112 - "ask-orchestrator.ts"
-Cohesion: 0.05
-Nodes (68): GroundingMode, GroundingPlan, GroundingPlanInput, resolveGroundingPlan(), appendSuppliedContextAnswerPolicy(), SUPPLIED_CONTEXT_ANSWER_POLICY, AskContextReceipt, AskExecutionPreference (+60 more)
+### Community 112 - "work-intent-router.ts"
+Cohesion: 0.08
+Nodes (39): appendSuppliedContextAnswerPolicy(), SUPPLIED_CONTEXT_ANSWER_POLICY, AskContextReceipt, AskExecutionPreference, filterAskToolsForExecution(), PROVIDED_CONTEXT_TOOL_IDS, readAskMessages(), resolveAskExecutionPreference() (+31 more)
 
 ### Community 113 - "polar-webhook.ts"
-Cohesion: 0.13
+Cohesion: 0.14
 Nodes (19): dynamic, POST(), runtime, applyPolarSubscriptionPatch(), booleanValue(), creditAllowanceForPlan(), isoDateValue(), objectValue() (+11 more)
 
-### Community 114 - "backend/main.py"
-Cohesion: 0.05
-Nodes (25): agents_health(), case_ontology_debug(), cognee_admin_quiesce(), cognee_admin_resume(), cognee_service_health(), _emit_agents_health_failure(), health(), healthz() (+17 more)
+### Community 114 - "ontology_system.py"
+Cohesion: 0.07
+Nodes (25): ontology_cache_debug(), _ontology_stack(), _candidate_key(), detect_ontology_gap(), OntologyGapProposal, _sample_quotes(), _suggested_fields(), UngroundedPattern (+17 more)
 
 ### Community 115 - "docling_parser.py"
 Cohesion: 0.11
 Nodes (27): Chunk, chunk_docling_document(), flush(), _extract_items(), _kind(), _order_key(), _page(), _split_long_text() (+19 more)
 
 ### Community 116 - "cleanString"
-Cohesion: 0.14
-Nodes (36): buildAgentOperatingContract(), buildCandidateExtension(), buildContextCaptureOntologyBinding(), buildContextCaptureProfile(), buildGrounding(), buildMemoryPosture(), causalRelationFromUnknown(), cleanString() (+28 more)
+Cohesion: 0.13
+Nodes (37): buildAgentOperatingContract(), buildCandidateExtension(), buildContextCaptureOntologyBinding(), buildContextCaptureProfile(), buildGrounding(), buildMemoryPosture(), causalRelationFromUnknown(), cleanString() (+29 more)
 
-### Community 117 - "situation_health.py"
-Cohesion: 0.16
-Nodes (31): _age(), AnalystProfileHealthInput, _as_utc(), compute_situation_health(), _corpus_health(), CorpusCoverageHealthInput, DegradationKind, _feed_health() (+23 more)
+### Community 117 - "_healthy_snapshot"
+Cohesion: 0.22
+Nodes (16): AnalystProfileHealthInput, CorpusCoverageHealthInput, DegradationKind, FeedHealthInput, HealthState, JobHealthInput, ToolOutputHealthInput, _healthy_snapshot() (+8 more)
 
 ### Community 118 - "Changelog"
-Cohesion: 0.06
-Nodes (36): 2026-04-30 — Tool operating system foundation, 2026-05-01 — Tools workspace continuation, 2026-05-03 — Syria graph-grounded research handoff, [2.x] — Pre-release, [3.0.0] — 2026-03-01, [3.1.0] — 2026-03-05, [3.2.0] — 2026-03-10, [3.3.0] — 2026-03-15 (+28 more)
+Cohesion: 0.03
+Nodes (61): 2026-04-30 — Tool operating system foundation, 2026-05-01 — Tools workspace continuation, 2026-05-03 — Syria graph-grounded research handoff, [2.x] — Pre-release, [3.0.0] — 2026-03-01, [3.1.0] — 2026-03-05, [3.2.0] — 2026-03-10, [3.3.0] — 2026-03-15 (+53 more)
 
 ### Community 119 - "useAgentRunSnapshots.ts"
-Cohesion: 0.19
-Nodes (16): CompactRunTimeline(), InlineApprovalDecision(), phaseDotClassName(), AgentRunApprovalSnapshot, AgentRunToolCallSnapshot, eventKindFrom(), recordValue(), snapshotToApproval() (+8 more)
+Cohesion: 0.06
+Nodes (55): @ai-sdk/react, CompactRunTimeline(), InlineApprovalDecision(), phaseDotClassName(), phaseFromEvent(), PHASES, RunTimeline(), RunTimelinePhase (+47 more)
 
 ### Community 120 - "context/capsules/route.ts"
-Cohesion: 0.06
-Nodes (37): ActivateSchema, CombineSchema, CoreRefsSchema, CreateSchema, dynamic, ForkSchema, GET, ImportCoreSchema (+29 more)
+Cohesion: 0.09
+Nodes (26): ActivateSchema, CombineSchema, CoreRefsSchema, CreateSchema, dynamic, ForkSchema, GET, ImportCoreSchema (+18 more)
 
 ### Community 121 - "documents-service.ts"
-Cohesion: 0.10
-Nodes (30): POST, dynamic, GET, RouteContext, POST, GET, CapsuleEvidencePackDeps, hasServerAiProvider() (+22 more)
+Cohesion: 0.07
+Nodes (31): dynamic, GET, RouteContext, POST, GET, CapsuleEvidencePackDeps, getEmbeddingModel(), hasServerAiProvider() (+23 more)
 
-### Community 122 - "session/route.ts"
-Cohesion: 0.08
-Nodes (33): BASE_COOKIE_OPTIONS, cookieOptionsForRequest(), GET(), POST(), readExistingOnboardingSkippedCookie(), COOKIE_OPTIONS, POST, GET() (+25 more)
+### Community 122 - "analyst-profile-admin.ts"
+Cohesion: 0.06
+Nodes (45): BASE_COOKIE_OPTIONS, cookieOptionsForRequest(), GET(), POST(), readExistingOnboardingSkippedCookie(), COOKIE_OPTIONS, POST, COOKIE_OPTIONS (+37 more)
 
 ### Community 123 - "CapsuleImportButton.tsx"
 Cohesion: 0.15
-Nodes (23): CapsuleImportButton(), confirmImport(), handleFile(), CapsuleImportResult, FieldError, FieldErrorList(), formatList(), ImportPhase (+15 more)
+Nodes (25): CapsuleImportButton(), confirmImport(), handleFile(), CapsuleImportResult, FieldError, FieldErrorList(), formatList(), ImportPhase (+17 more)
 
 ### Community 124 - "common.py"
 Cohesion: 0.10
 Nodes (26): run(), build_graph(), confidence(), label(), metadata(), neighbors_with_relation(), node_type(), nodes_by_type() (+18 more)
 
 ### Community 125 - "agents/registry.ts"
-Cohesion: 0.09
-Nodes (33): Lane M — Agent registry codified, main(), activePersonas(), ADVISOR_RUNTIME_BY_ID, advisorRuntimeSeeds(), AdvisorSeedConfig, AGENT_REGISTRY, criticPersonas() (+25 more)
+Cohesion: 0.11
+Nodes (28): Lane M — Agent registry codified, main(), activePersonas(), ADVISOR_RUNTIME_BY_ID, advisorRuntimeSeeds(), AdvisorSeedConfig, AGENT_REGISTRY, criticPersonas() (+20 more)
 
 ### Community 126 - "deep-search-agent/route.ts"
-Cohesion: 0.07
-Nodes (41): DeepResearchRequestSchema, deprecatedHeaders(), maxDuration, POST, RequestResearchDepth, RequestResearchMode, DeepSearchAgentRequestSchema, maxDuration (+33 more)
+Cohesion: 0.06
+Nodes (43): DeepResearchRequestSchema, deprecatedHeaders(), maxDuration, RequestResearchDepth, RequestResearchMode, DeepSearchAgentRequestSchema, maxDuration, POST (+35 more)
 
 ### Community 127 - "agent-context-verifier.ts"
-Cohesion: 0.10
-Nodes (34): NormalizedClaimCard, ReasoningPath, AgentContextFlaggedSpan, AgentContextVerifiedClaim, buildEvidenceIndex(), buildNotes(), claimByDisplayId(), DISABLE_VALUES (+26 more)
+Cohesion: 0.08
+Nodes (43): buildGroundingVerificationForText(), AgentContextGroundingMap, AgentContextPacketResult, AgentContextSelectionResult, NormalizedClaimCard, ReasoningPath, SelectedAgentContext, AgentContextFlaggedSpan (+35 more)
 
 ### Community 128 - "ask-context-bar.tsx"
-Cohesion: 0.08
-Nodes (40): [Unreleased], Broken or Risky, High: Boardroom visible dock is not guaranteed to be the authoritative run binding, Medium: Model matrix policy needs clarification, Medium: Typed dock slots are only partially structured, Verification gap: live authenticated panel and live Cloud Tasks, 2. Current state (verified shipped as of 2026-06-11), actionClassName() (+32 more)
+Cohesion: 0.10
+Nodes (36): [Unreleased], 1. What "attachable capsule" must mean technically, 2. Current state (verified shipped as of 2026-06-11), actionClassName(), ApprovalInboxButton, AskContextBar(), attachCapsuleToSlot(), attachContext() (+28 more)
 
 ### Community 129 - "temporal-timeline.ts"
 Cohesion: 0.13
@@ -1463,23 +1445,23 @@ Nodes (41): BROKEN OR RISKY, CapsuleTemporalViewerItem, anchorItems(), arrayOfRe
 
 ### Community 130 - "audit-agent-runtime-proof.ts"
 Cohesion: 0.05
-Nodes (35): access, files, fixtures, ids, markdown, phases, register, release (+27 more)
+Nodes (34): access, files, fixtures, ids, markdown, phases, register, release (+26 more)
 
 ### Community 131 - "config.ts"
-Cohesion: 0.07
-Nodes (33): firebase, analytics, auth, db, DEFAULT_FIREBASE_CONFIG, firebaseConfig, createReport(), deleteReport() (+25 more)
+Cohesion: 0.06
+Nodes (45): firebase, ApprovalInboxButton(), ApprovalInboxItem(), hydrateRunContexts(), PendingAgentApproval, recordValue(), RunApprovalContext, stringValue() (+37 more)
 
-### Community 132 - "resolveCapsuleTaxonomy"
+### Community 132 - "PraxisCapsuleLibraryCard"
 Cohesion: 0.07
-Nodes (62): buildCapsuleEnrichmentReceipt(), buildCapsuleLibraryOverview(), buildCapsuleUsefulnessRating(), _capsuleAdoptionSourceCoverage(), CapsuleBrowserDialog(), capsuleCategory(), capsuleCategoryMeta(), capsuleCounts() (+54 more)
+Nodes (66): AgentFailureForensicsPanel(), agentRunStatusClass(), AgentStatusRail(), buildCapsuleEnrichmentReceipt(), buildCapsuleUsefulnessRating(), _capsuleAdoptionSourceCoverage(), CapsuleBrowserDialog(), capsuleCategory() (+58 more)
 
 ### Community 133 - "normalizeCapsuleIntakeContract"
 Cohesion: 0.13
 Nodes (20): buildCapsuleArtifactIndex(), buildCapsuleContextPack(), buildCapsuleQualityReceipt(), createCapsuleIngestionReceipt(), dedupeArtifactIndexItems(), deriveIntakeReviewGate(), getCapsuleConnector(), intakeEvidenceIds() (+12 more)
 
-### Community 134 - "OntologyId"
-Cohesion: 0.05
-Nodes (48): 0030 Dynamic Ontology Lenses, Alternatives considered, Consequences, Context, Decision, Status, Agent-Readable Additions, Backend Specialization Mapping (+40 more)
+### Community 134 - "case-scaffold.ts"
+Cohesion: 0.07
+Nodes (33): 0030 Dynamic Ontology Lenses, Alternatives considered, Consequences, Context, Decision, Status, CustomSource, SOURCE_CATEGORIES (+25 more)
 
 ### Community 135 - "with-credits.ts"
 Cohesion: 0.10
@@ -1490,44 +1472,44 @@ Cohesion: 0.08
 Nodes (33): Dataset contract, Interpret results honestly, Run the bounded offline evaluator, SIGNAL analyst labeling and evaluation, three, Scene, SignalCoverageGlobe(), totalLabels (+25 more)
 
 ### Community 137 - "typing"
-Cohesion: 0.03
-Nodes (41): build_graph(), RedTeamAnalystState, coach_context(), CoachRequest, delete_source(), get_graph_node(), get_graph_timeline(), get_situation_frame() (+33 more)
+Cohesion: 0.02
+Nodes (35): get_checkpointer(), init_checkpointer(), NoopAsyncSaver, health_check(), build_graph(), RedTeamAnalystState, build_registry(), FlowRegistration (+27 more)
 
 ### Community 138 - "Skeleton"
-Cohesion: 0.10
-Nodes (29): AgentWorkspacePage(), AgentWorkspacePageProps, TaskletPraxisWorkbench, WorkbenchLoadingSkeleton(), BoardroomLoadingSkeleton(), BoardroomPage(), BoardroomWorkspace, CapsuleLibraryWithTry (+21 more)
+Cohesion: 0.11
+Nodes (25): AgentWorkspacePage(), AgentWorkspacePageProps, TaskletPraxisWorkbench, WorkbenchLoadingSkeleton(), CapsuleLibraryWithTry, CapsulesPage(), CapsulesPageProps, LibraryLoadingSkeleton() (+17 more)
 
 ### Community 139 - "capsule-schema.ts"
-Cohesion: 0.07
-Nodes (27): CapsuleQualityResult, CapsuleAnyVersionSchema, CapsuleClaimCausalLinksSchema, CapsuleClaimPatchSchema, CapsuleEnvelopePatchSchema, CapsuleReadinessBlock, CapsuleReadinessTier, CapsuleSchemaVersion (+19 more)
+Cohesion: 0.06
+Nodes (47): fromV3(), CapsuleQualityResult, CapsuleAnyVersionSchema, CapsuleClaimCausalLinksSchema, CapsuleClaimPatchSchema, CapsuleEnvelopePatchSchema, CapsuleReadinessBlock, CapsuleReadinessTier (+39 more)
 
 ### Community 140 - "context.ts"
-Cohesion: 0.09
-Nodes (32): ContextProvider, ContextProviderInput, createContextProvider(), ToolRunContext, defaultToolContextProjection(), ToolContextProjectionResult, MarketplaceToolRunInput, MarketplaceToolDefinition (+24 more)
+Cohesion: 0.07
+Nodes (39): CaseTypeDefinition, OntologyId, CapsuleCogneeSeedDocument, CapsuleCogneeSeedPack, CapsuleOntologyBindingProfile, CapsuleSourceOntologyBinding, ContextProvider, ContextProviderInput (+31 more)
 
 ### Community 141 - "upload/route.ts"
-Cohesion: 0.10
-Nodes (36): ALLOWED_EXTENSIONS, cleanFormValue(), computeReceiptConfidence(), confirmOwnerAfterStorageWrite(), documentLimitResponse(), documentWriteUnavailableResponse(), isDocumentWriteUnavailable(), JsonUploadBody (+28 more)
+Cohesion: 0.12
+Nodes (28): ALLOWED_EXTENSIONS, cleanFormValue(), computeReceiptConfidence(), confirmOwnerAfterStorageWrite(), documentLimitResponse(), documentWriteUnavailableResponse(), isDocumentWriteUnavailable(), JsonUploadBody (+20 more)
 
 ### Community 142 - "situations/route.ts"
-Cohesion: 0.09
-Nodes (36): POST, POST, cleanContextNotes(), cleanUrl(), ESCALATION_TRENDS, GET, isEscalationTrend(), orgIdOf() (+28 more)
+Cohesion: 0.08
+Nodes (38): Domain Taxonomy — 11 domains, live Firestore config, BodySchema, POST, cleanContextNotes(), cleanUrl(), ESCALATION_TRENDS, GET, isEscalationTrend() (+30 more)
 
 ### Community 143 - "capsule-quality.ts"
-Cohesion: 0.08
-Nodes (46): 3.1 Creation — co-pilot + document-first + progressive depth, 3.3 Embedded graph · dynamic ontology · semantic layer, 3.4 Display / workbench — legible knowledge object, 3.5 Usage / consumption — capsule as first-class context, 3.6 Analysis & quality 2.0, 3.7 Learning — closed loop under governance, 3. Target capability upgrades (the substance), buildCapsuleReadinessCounts() (+38 more)
+Cohesion: 0.06
+Nodes (67): 3.1 Creation — co-pilot + document-first + progressive depth, 3.3 Embedded graph · dynamic ontology · semantic layer, 3.4 Display / workbench — legible knowledge object, 3.5 Usage / consumption — capsule as first-class context, 3.6 Analysis & quality 2.0, 3.7 Learning — closed loop under governance, 3. Target capability upgrades (the substance), buildCapsuleReadinessCounts() (+59 more)
 
 ### Community 144 - "context-enrichment-adapter.ts"
-Cohesion: 0.07
-Nodes (31): Proposed Serialization Spec, Section Structure, Serialization Rules, KernelMemoryItem, CapsuleServiceDeps, advisoryHitToMemoryItem(), attachEnrichment(), buildEnrichedTurnCapsule() (+23 more)
+Cohesion: 0.08
+Nodes (29): Proposed Serialization Spec, Section Structure, Serialization Rules, KernelMemoryItem, advisoryHitToMemoryItem(), attachEnrichment(), buildEnrichedTurnCapsule(), CogneeEnrichmentProvider (+21 more)
 
 ### Community 145 - "sourcing.ts"
-Cohesion: 0.10
-Nodes (29): buildCapsuleSourcingPlan(), CapsuleContextRetrievalDeps, CapsuleContextRetrievalResult, CapsuleSourcingLane, CapsuleSourcingLaneId, corpusItemToSourceResult(), corpusToSourceResults(), defaultVertexRagRetriever() (+21 more)
+Cohesion: 0.09
+Nodes (34): CapsuleDryRunEvalInput, buildCapsuleSourcingPlan(), CapsuleContextRetrievalDeps, CapsuleContextRetrievalInput, CapsuleContextRetrievalResult, CapsuleSourcingLane, CapsuleSourcingLaneId, CapsuleSourcingPlan (+26 more)
 
 ### Community 146 - "agent-context-packet.ts"
 Cohesion: 0.10
-Nodes (49): AgentContextGroundingMap, AgentContextPacketResult, buildAgentContextPacket(), BuildAgentContextPacketInput, buildGroundingMap(), buildRenderContext(), capsuleTemporality(), claimUseRuleFor() (+41 more)
+Nodes (45): 1. Agent Context Packet v1 is injected into the Ask prompt, appendAgentContextPacketToPromptBlock(), buildAgentContextPacket(), BuildAgentContextPacketInput, buildGroundingMap(), buildRenderContext(), capsuleTemporality(), claimUseRuleFor() (+37 more)
 
 ### Community 147 - "properties"
 Cohesion: 0.05
@@ -1538,40 +1520,40 @@ Cohesion: 0.06
 Nodes (31): acceptedPostConsolidationCatalogWaves, auditDir, averagePromptLength, counts, expectedCounts, failures, jsonPath, mdPath (+23 more)
 
 ### Community 149 - "turns/route.ts"
-Cohesion: 0.11
-Nodes (35): cleanDocId(), ConversationTurnRouteContext, ConversationTurnSchema, deriveConversationTitle(), dynamic, maxDuration, POST, requestedAgenticSearchPremium() (+27 more)
+Cohesion: 0.08
+Nodes (45): cleanDocId(), ConversationTurnRouteContext, ConversationTurnSchema, deriveConversationTitle(), dynamic, maxDuration, POST, requestedAgenticSearchPremium() (+37 more)
 
 ### Community 150 - "audit-deep-preship.ts"
 Cohesion: 0.05
 Nodes (38): add(), allSource, auditDir, bannedModelMarkers, baseOwl, bySection, Check, checks (+30 more)
 
 ### Community 151 - "memo-checks.ts"
-Cohesion: 0.10
-Nodes (31): GapFillerRailProps, SourceabilityVerdict, AskPraxisDelegateResult, CapsuleUsageClaimSignal, OutputConstraints, buildMemoClaimCheckQuestion(), buildMemoClaimCheckResult(), checkMemoLanguageConstraints() (+23 more)
+Cohesion: 0.13
+Nodes (24): AskPraxisDelegateResult, buildMemoClaimCheckQuestion(), buildMemoClaimCheckResult(), checkMemoLanguageConstraints(), confidenceForSupportLabel(), deriveMemoExportGate(), exportGateDetail(), findAudienceToneViolations() (+16 more)
 
 ### Community 152 - "cognitive-capsule/types.ts"
 Cohesion: 0.07
 Nodes (35): CognitiveComposition, composeCognitiveCapsules(), compositionConflicts(), CompositionParentLock, CompositionRecordOrigin, IndexedRecord, normalize(), recordsOf() (+27 more)
 
 ### Community 153 - "knowledge/index.ts"
-Cohesion: 0.09
-Nodes (28): getEmbeddingModel(), EMBEDDING_DIMENSION, EMBEDDING_MODEL, EmbeddingDimension, chunkText(), EMBEDDING_DIMENSIONS, generateEmbedding(), generateEmbeddings() (+20 more)
+Cohesion: 0.05
+Nodes (43): GET, EMBEDDING_DIMENSION, EMBEDDING_MODEL, EmbeddingDimension, chunkText(), EMBEDDING_DIMENSIONS, generateEmbedding(), generateEmbeddings() (+35 more)
 
 ### Community 154 - "capsule-version-resolution.ts"
-Cohesion: 0.13
-Nodes (35): normalizeSelectedCoreIds(), resolveAskAgentRunContext(), GET, getActiveStackDb(), getActiveStackPointer(), getActiveStackRef(), hasExplicitSelection(), isExplicitClear() (+27 more)
+Cohesion: 0.12
+Nodes (35): GET, getActiveStackDb(), getActiveStackPointer(), getActiveStackRef(), hasExplicitSelection(), isExplicitClear(), PUT, reconcileGoverningCapsuleRef() (+27 more)
 
 ### Community 155 - "AnswerSourcesPanel.tsx"
-Cohesion: 0.10
-Nodes (33): AnswerSourceGapChips(), AnswerSourcesPanel(), AnswerSourcesPanelProps, buildAnswerSourcesPanelModel(), buildClaimChips(), buildCommentaryLines(), buildSourceEntries(), buildSummaryLine() (+25 more)
+Cohesion: 0.14
+Nodes (26): AnswerSourceGapChips(), AnswerSourcesPanel(), AnswerSourcesPanelProps, buildAnswerSourcesPanelModel(), buildClaimChips(), buildCommentaryLines(), buildSourceEntries(), buildSummaryLine() (+18 more)
 
 ### Community 156 - "conflict-grammar.ts"
 Cohesion: 0.06
 Nodes (37): ACO_ENTITY_TYPES, Actor, ActorSchema, BaseEntitySchema, Claim, ClaimSchema, Commitment, CommitmentSchema (+29 more)
 
 ### Community 157 - "dialectica/route.ts"
-Cohesion: 0.11
-Nodes (31): buildImportSummary(), dynamic, importLegacyDialecticaContextPackage(), importSpec3DialecticaPackage(), isDialecticaZipContentType(), isRecord(), isSpec3JsonPackage(), jsonPackageParts() (+23 more)
+Cohesion: 0.10
+Nodes (30): buildImportSummary(), dynamic, importLegacyDialecticaContextPackage(), importSpec3DialecticaPackage(), isDialecticaZipContentType(), isRecord(), isSpec3JsonPackage(), jsonPackageParts() (+22 more)
 
 ### Community 158 - "Evidence And Remediation"
 Cohesion: 0.05
@@ -1579,67 +1561,67 @@ Nodes (37): BLOCKED auth-doctor, Canary Artifacts, Checks, Evidence And Remediat
 
 ### Community 159 - "capsule-quality-review.ts"
 Cohesion: 0.10
-Nodes (35): buildCapsuleQualityReviewAnalysis(), buildCapsuleQualityReviewDigest(), buildDeterministicCapsuleQualityReviewProposals(), CapsuleQualityReviewAnalysis, capsuleQualityReviewCardInput(), CapsuleQualityReviewDeficit, capsuleQualityReviewGeneratedBy(), CapsuleQualityReviewProposal (+27 more)
+Nodes (36): buildCapsuleQualityReviewAnalysis(), buildCapsuleQualityReviewDigest(), buildDeterministicCapsuleQualityReviewProposals(), CapsuleQualityReviewAnalysis, capsuleQualityReviewCardInput(), CapsuleQualityReviewDeficit, capsuleQualityReviewGeneratedBy(), CapsuleQualityReviewProposal (+28 more)
 
 ### Community 160 - "marketplace/registry.ts"
-Cohesion: 0.09
-Nodes (28): COST_RANK, filterMarketplaceTools(), contract(), generatedContractForTool(), MARKETPLACE_HANDLER_CONTRACTS, MarketplaceHandlerContract, MarketplaceHandlerStage, ALL_ONTOLOGY_REQUIREMENTS (+20 more)
+Cohesion: 0.08
+Nodes (32): Retrieval Contract, missingOnly, renderSkill(), title(), COST_RANK, filterMarketplaceTools(), contract(), generatedContractForTool() (+24 more)
 
-### Community 161 - "PRAXIS — Context Capsule Excellence Plan"
+### Community 161 - "ContextCapsuleClaim"
 Cohesion: 0.09
-Nodes (19): 0. North star, 1. The four pillars of a capsule (Users · Tools · Output · Situation), 4. Phased roadmap (CAP-1 … CAP-7), 5. CODEX work packets, 6. Capsule validation gate (run before each PR / deploy), 7. Sequential CODEX prompts (paste in order), 8. Done-state definition, CAP-1 — Capsules in the Ask context stack (+11 more)
+Nodes (22): 0. North star, 3.2 Content — claim ledger 2.0 (temporal · causal · receipted · typed), 4. Phased roadmap (CAP-1 … CAP-7), 5. CODEX work packets, 6. Capsule validation gate (run before each PR / deploy), 7. Sequential CODEX prompts (paste in order), 8. Done-state definition, CAP-1 — Capsules in the Ask context stack (+14 more)
 
 ### Community 162 - "routers/pipeline.py"
-Cohesion: 0.08
+Cohesion: 0.09
 Nodes (13): push_to_neo4j(), to_cypher(), to_graphml(), to_html(), to_json(), ingest_gdelt_retired(), ingest_url(), IngestUrlRequest (+5 more)
 
 ### Community 163 - "10 Specific Things To Build"
-Cohesion: 0.05
-Nodes (36): 10 Specific Things To Build, 10. Trust, Packaging, And Paid Pilot Layer, 1. Conflict Case Capsule Bundles, 3. Source Connector And Receipt Layer, 4. Conflict Scene Graph, 5. Analytica Framework Runner, 6. Conflict Agent Team, 7. Cognee Conflict Memory (+28 more)
+Cohesion: 0.10
+Nodes (20): 10 Specific Things To Build, 10. Trust, Packaging, And Paid Pilot Layer, 1. Conflict Case Capsule Bundles, 3. Source Connector And Receipt Layer, 4. Conflict Scene Graph, 5. Analytica Framework Runner, 6. Conflict Agent Team, 7. Cognee Conflict Memory (+12 more)
 
-### Community 164 - "retrieval-orchestrator.ts"
+### Community 164 - "graph-layer.ts"
+Cohesion: 0.13
+Nodes (12): buildAdjacency(), computeBetweennessCentrality(), computeDensity(), detectCommunities(), findShortestPath(), getMostCentralNode(), FirestoreGraphLayer, Neo4jGraphLayer (+4 more)
+
+### Community 165 - "tabs.py"
 Cohesion: 0.11
-Nodes (17): FEED_TTL_HOURS, buildAdjacency(), computeBetweennessCentrality(), computeDensity(), detectCommunities(), findShortestPath(), getMostCentralNode(), createGraphLayer() (+9 more)
+Nodes (19): coach_context(), CoachRequest, delete_source(), get_graph_node(), get_graph_timeline(), get_situation_frame(), get_source_detail(), get_tab_graph() (+11 more)
 
-### Community 165 - "useOrchestratorEvents.ts"
-Cohesion: 0.17
-Nodes (18): applyOrchestratorEvent(), buildOrchestratorStreamUrl(), BuildOrchestratorStreamUrlOptions, eventKindFrom(), initialState, isRecord(), LAST_EVENT_ID_HEADER, LEDGER_EVENT_TYPES (+10 more)
+### Community 166 - "extract.py"
+Cohesion: 0.13
+Nodes (15): extract_conflict_text(), extract_from_document(), extract_from_url(), _make_id(), _parse_llm_response(), _strip_html(), ExtractionEdge, ExtractionNode (+7 more)
 
-### Community 166 - "test_phase2_wiring.py"
-Cohesion: 0.06
-Nodes (17): get_checkpointer(), init_checkpointer(), NoopAsyncSaver, recall(), remember(), cosine(), embed_text(), retrieve() (+9 more)
-
-### Community 167 - "worker.test.ts"
-Cohesion: 0.06
-Nodes (31): Testing and Gates, Cleanup & Infra Implementation Plan, Task 10: Wire backend pytest stage into Cloud Build, Task 11: Wire smoke check into Cloud Build as final step, Task 12: Split `tasklet-praxis-workbench.tsx` — Extract `WorkbenchHeader`, Task 13: Split workbench — Extract `CapsuleColumn`, Task 14: Split workbench — Extract `RuntimePanel`, Task 15: Split workbench — Extract `EvidenceDrawer` (+23 more)
+### Community 167 - "Cleanup & Infra Implementation Plan"
+Cohesion: 0.08
+Nodes (25): Testing and Gates, Cleanup & Infra Implementation Plan, Task 10: Wire backend pytest stage into Cloud Build, Task 11: Wire smoke check into Cloud Build as final step, Task 12: Split `tasklet-praxis-workbench.tsx` — Extract `WorkbenchHeader`, Task 13: Split workbench — Extract `CapsuleColumn`, Task 14: Split workbench — Extract `RuntimePanel`, Task 15: Split workbench — Extract `EvidenceDrawer` (+17 more)
 
 ### Community 168 - "PRAXIS anti-slop review, 30 September 2026"
 Cohesion: 0.08
 Nodes (21): Direction and purpose, Findings and changes, Measured copy reduction, Page families reviewed, PRAXIS anti-slop review, 30 September 2026, Publication checkpoint, Self-evaluation of this PRAXIS pass, Validation and limits (+13 more)
 
-### Community 169 - "[Unreleased] — 2026-04-26 (tenth session — Claude Code multi-lane sprint)"
-Cohesion: 0.06
-Nodes (36): Brick #45 — Hero quadrant tour (CODE), Brick #46 — Color system audit (DOC + verified), Bricks #47-54 — second sweep (CODE shipped), Bricks #47-54 — Specs only (NEW BRICKS in roadmap), Codex handoff, Codex strategic-uplift pass, Documentation, Lane C — Brainstorming Table MVP (NEW) (+28 more)
+### Community 169 - "Round 3 — 15-improvement sprint (Lanes M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z + LP1 + LP2)"
+Cohesion: 0.15
+Nodes (14): Lane LP1 — Landing page hero animation + product copy overhaul, Lane LP2 — Audit of previous lanes, Lane M — Agent registry codified (this round), Lane T — Source Scout agent (agentic workflow #1), Lane U — Red-Team auto-review agent (agentic workflow #2), Lane V — `<AiErrorToast />` + `<DegradedDataChip />` shared primitives, Lane W — Citation parser + chip primitives for Ask PRAXIS chat, Lane X — Brainstorming Table Markdown export (+6 more)
 
 ### Community 170 - "emit.ts"
-Cohesion: 0.10
-Nodes (38): orgIdOf(), POST, maxDuration, orgIdOf(), POST, runtime, buckets, consume() (+30 more)
+Cohesion: 0.07
+Nodes (48): Browser Events, Downstream KPI Pipeline, Enforcement, Event Shape, PRAXIS Structured Telemetry, Server Events, orgIdOf(), POST (+40 more)
 
 ### Community 171 - "app-search.ts"
-Cohesion: 0.12
-Nodes (29): dynamic, GET, APP_SEARCH_TYPES, AppSearchDeps, AppSearchGroupKey, AppSearchInput, AppSearchResponseSchema, AppSearchResultSchema (+21 more)
+Cohesion: 0.05
+Nodes (57): appSearchRoute, appShell, failures, federatedSearch, globalSearch, header, mobile, primaryNav (+49 more)
 
-### Community 172 - "core-package.ts"
-Cohesion: 0.11
-Nodes (22): CapsuleGateResult, checkCapsuleAgainstRequiredCores(), checkCapsuleForTool(), coreIdsForKind(), dedupe(), isCorePresent(), isCoreStale(), mapToGateKind() (+14 more)
+### Community 172 - "capsule-gate.ts"
+Cohesion: 0.17
+Nodes (14): CapsuleGateResult, checkCapsuleAgainstRequiredCores(), checkCapsuleForTool(), ALLOWED_KINDS, asGateKindArray(), parseCapsuleGateResponse(), readCapsuleGateError(), coreIdsForKind() (+6 more)
 
 ### Community 173 - "graphops.ts"
 Cohesion: 0.13
-Nodes (28): GraphData, GraphUpdateProposal, normalizeCanonicalGraph(), buildGraphContextPack(), byType(), hasEvidence(), generateGraphRepairSuggestions(), GraphRepairSuggestion (+20 more)
+Nodes (26): GraphData, GraphUpdateProposal, normalizeCanonicalGraph(), buildGraphContextPack(), byType(), hasEvidence(), generateGraphRepairSuggestions(), GraphRepairSuggestion (+18 more)
 
 ### Community 174 - "case-module.ts"
-Cohesion: 0.12
-Nodes (17): COMING_SOON_CASES, getLandingCaseCards(), LandingCaseCardView, EXAMPLE_CASE_MODULES, listLandingCaseCards(), RESEARCH_SOURCE_SETS, ResearchCandidate, ResearchDepth (+9 more)
+Cohesion: 0.07
+Nodes (35): neo4j-driver, main(), readArgs(), GET(), maxDuration, runtime, COMING_SOON_CASES, getLandingCaseCards() (+27 more)
 
 ### Community 175 - "PRAXIS authentication, account cleanup, and billing readiness"
 Cohesion: 0.06
@@ -1650,56 +1632,60 @@ Cohesion: 0.06
 Nodes (34): @xmldom/xmldom, overrides, axios, dompurify, fast-xml-parser, @fastify/busboy, follow-redirects, @google-cloud/firestore (+26 more)
 
 ### Community 177 - "flows/sourceability.ts"
-Cohesion: 0.14
-Nodes (22): cautiousRewrite(), citationWarningsFor(), cleanList(), cleanText(), deterministicSourceability(), explanationForDeterministicStatus(), explanationForStatus(), missingEvidenceFor() (+14 more)
+Cohesion: 0.10
+Nodes (30): dynamic, POST, RequestSchema, runtime, SourceSnippetSchema, cautiousRewrite(), citationWarningsFor(), cleanList() (+22 more)
 
 ### Community 178 - "routers/graph.py"
 Cohesion: 0.06
-Nodes (12): entity_timeline(), get_actor_profile(), get_graph(), get_path(), get_visualization(), GraphBackendConfig, GraphQueryRequest, query_graph() (+4 more)
+Nodes (13): entity_timeline(), export_graph(), get_actor_profile(), get_graph(), get_path(), get_visualization(), GraphBackendConfig, GraphQueryRequest (+5 more)
 
 ### Community 179 - "sats.py"
+Cohesion: 0.18
+Nodes (15): test_ach_matrix_accepts_pack_15_shape(), test_red_team_report_caps_synthesized_confidence(), ACHEvidence, ACHHypothesis, ACHMatrix, ACHRanking, ACHScore, KACAssumption (+7 more)
+
+### Community 180 - "recipes/base.py"
 Cohesion: 0.11
-Nodes (20): main(), is_safe_framing(), run_red_team_analysis(), test_red_team_runner_returns_synthesized_safe_report(), test_red_team_runner_sanitizes_operational_framing(), test_ach_matrix_accepts_pack_15_shape(), test_red_team_report_caps_synthesized_confidence(), ACHEvidence (+12 more)
+Nodes (12): AcoOutput, _community_to_review_block(), _entity_to_node(), graphrag_to_aco(), _mapped_id(), _relationship_to_edge(), _stable_id(), BaseRecipe (+4 more)
 
 ### Community 181 - "system-prompt-block.ts"
-Cohesion: 0.16
-Nodes (25): AGENT_CONTEXT_PACKET_USE_BLOCK, CapsuleFrameAgentOperatingContract, CapsuleFrameClaim, CapsuleFrameOntologyBinding, CapsuleFrameSourceReceipt, CapsuleFrameValidityWindow, domainPostureFor(), escapeTag() (+17 more)
+Cohesion: 0.14
+Nodes (28): Layer 2 — `<situation-frame>`  *(what is being analysed)*, AGENT_CONTEXT_PACKET_USE_BLOCK, CapsuleFrameAgentOperatingContract, CapsuleFrameClaim, CapsuleFrameOntologyBinding, CapsuleFrameSourceReceipt, CapsuleFrameValidityWindow, CapsulePromptFrame (+20 more)
 
 ### Community 182 - "run_recipe"
 Cohesion: 0.13
 Nodes (10): run_recipe(), reason(), ReasonRequest, test_commitment_check_flags_fragility_from_violation_event(), test_counter_narrative_returns_divergent_citation_sets(), test_interest_vs_position_finds_shared_interest_opening(), graph(), test_leverage_trace_returns_ranked_path() (+2 more)
 
 ### Community 183 - "types/context-capsule.ts"
-Cohesion: 0.05
-Nodes (53): Ontology-Library Gaps to Fill, buildCapsule(), buildInstantContextCapsule(), buildInstantCoreRefs(), buildSourcingPolicy(), buildTemporality(), cleanSignal(), compactList() (+45 more)
+Cohesion: 0.07
+Nodes (31): Ontology-Library Gaps to Fill, CapsuleCausality, CapsuleCausalLink, CapsuleCausalRelation, CapsuleEmbeddedGraphEdge, CapsuleEmbeddedGraphNode, CapsuleEmbeddedGraphProjection, CapsuleEval (+23 more)
 
-### Community 184 - "policy-agents.ts"
-Cohesion: 0.08
-Nodes (25): liveAgentText, loginText, redirectText, requiredFiles, root, welcomeText, workbenchText, workerText (+17 more)
+### Community 184 - "memoArtifactFromMemoPayload"
+Cohesion: 0.11
+Nodes (26): asRecord(), firstMemoArtifactMetadata(), memoArtifactBodyToBlocks(), memoArtifactFromAskPack(), memoArtifactFromCreatedWork(), memoArtifactFromMemoPayload(), memoIdFromHref(), numberFieldFromUnknown() (+18 more)
 
 ### Community 185 - "helpers.ts"
-Cohesion: 0.08
-Nodes (34): activeCapsulesFromContextStack(), capsuleDefaultRole(), capsuleRoleLabel(), capsuleToChip(), MobileCapsuleLane(), applyCapsuleCard(), applyUserCapsule(), handleCapsuleDragEnd() (+26 more)
+Cohesion: 0.09
+Nodes (33): activeCapsulesFromContextStack(), capsuleRoleLabel(), capsuleToChip(), MobileCapsuleLane(), applyCapsuleCard(), applyUserCapsule(), handleCapsuleDragEnd(), markContextApplied() (+25 more)
 
 ### Community 186 - "hosted-registry.ts"
-Cohesion: 0.11
-Nodes (25): dynamic, GET, POST, HostedRegistryEntry, HostedRegistryInstallation, HostedRegistryList, HostedRegistryLock, HostedRegistryRequest (+17 more)
+Cohesion: 0.09
+Nodes (34): dynamic, GET, dynamic, GET, dynamic, GET, POST, HostedRegistryEntry (+26 more)
 
 ### Community 187 - "notifications.tsx"
-Cohesion: 0.09
-Nodes (26): zustand, AiErrorToast(), ErrorToastRow(), categoryConfig, formatRelative(), NotificationBell(), NotificationDisplayConfig, typeConfig (+18 more)
+Cohesion: 0.17
+Nodes (17): categoryConfig, formatRelative(), NotificationBell(), NotificationDisplayConfig, typeConfig, BackendNotification, categoryToType(), fromBackend() (+9 more)
 
 ### Community 188 - "schemas/context-capsule.ts"
 Cohesion: 0.07
 Nodes (29): CapsuleLivePreview(), CapsuleLivePreviewProps, readable(), safeJson(), CapsuleCausalitySchema, CapsuleEmbeddedGraphProjectionSchema, CapsuleEmbeddedGraphReviewStateSchema, CapsuleEvalSchema (+21 more)
 
 ### Community 189 - "one-click-context-builder.tsx"
-Cohesion: 0.13
-Nodes (26): BuilderCell(), InlineQuickContextBuilder(), createAndAttach(), BuilderFact(), LiteList(), OneClickContextBuilder(), createStarterContext(), canCreateWithMode() (+18 more)
+Cohesion: 0.12
+Nodes (29): BuilderCell(), InlineQuickContextBuilder(), BuilderFact(), LiteList(), OneClickContextBuilder(), PolicyWorkflowPath, canCreateWithMode(), clampScore() (+21 more)
 
 ### Community 190 - "PRAXIS codebase cleanup plan"
-Cohesion: 0.15
-Nodes (12): `/app/contexts` residue, Boardroom and advanced labs, Dead and unused code candidates, Direct AI tools, Legacy clusters, Method and limitations, PRAXIS codebase cleanup plan, Public aliases (+4 more)
+Cohesion: 0.06
+Nodes (30): API route inventory, `/app/contexts` residue, Auth and onboarding pages, Boardroom and advanced labs, Dead and unused code candidates, Direct AI tools, Executive summary, Full route and page inventory (+22 more)
 
 ### Community 191 - "proof-summary.ts"
 Cohesion: 0.17
@@ -1713,13 +1699,13 @@ Nodes (31): agentRunToCreatedWork(), CreatedWorkInternal, CreatedWorkKind, Creat
 Cohesion: 0.12
 Nodes (28): createDefaultTrustGraphEnrichmentProvider(), buildTrustGraphCapsuleSegments(), buildTrustGraphCapsuleSyncRequest(), cleanArray(), compactSegmentText(), normalizeCoreRefs(), NormalizedCoreRefs, readRecord() (+20 more)
 
-### Community 194 - "starter"
-Cohesion: 0.10
-Nodes (32): buildReasoningGuideSourcePack(), buildResearchDossierSourceSpine(), buildStarterClaimLedgerSeeds(), buildStarterCurationProfile(), buildStarterDeviceProfile(), buildStarterHumanWorkflowExample(), buildStarterIntelligenceProfile(), buildStarterResearchDossier() (+24 more)
+### Community 194 - "analyst-profile.ts"
+Cohesion: 0.15
+Nodes (15): GET, ChipLibrary, FALLBACK_CHIPS, getMandateChips(), getRedLineChips(), scrubProfilePII(), ANALYST_DOMAIN_IDS, AnalystProfileSchema (+7 more)
 
 ### Community 195 - "entity-extraction.ts"
-Cohesion: 0.10
-Nodes (33): ACOEntityType, ConfidenceLevel, PRIMITIVE_SUBTYPES, SourceSpanSchema, buildDocumentCausalLinks(), buildDocumentFirstCapsuleArchitectSignals(), buildDocumentFirstClaims(), buildDocumentFirstEmbeddedGraph() (+25 more)
+Cohesion: 0.09
+Nodes (34): ACOEntityType, ConfidenceLevel, PRIMITIVE_SUBTYPES, SourceSpanSchema, buildDocumentCausalLinks(), buildDocumentFirstClaims(), buildDocumentFirstEmbeddedGraph(), buildDocumentTimelineAnchors() (+26 more)
 
 ### Community 196 - "Evidence And Remediation"
 Cohesion: 0.06
@@ -1730,64 +1716,64 @@ Cohesion: 0.08
 Nodes (27): Capsule and memo versioning, Deterministic capsule preparation and persistence correction, Experimental context handover: research and implementation, Explicit remaining work, Focused local verification, Implemented package contract, Package files and integrity, Preview and download API (+19 more)
 
 ### Community 198 - "shared-contracts.ts"
-Cohesion: 0.13
-Nodes (26): AppSearchAuditResult, auditAppSearchContracts(), AuditInput, graphFreshness(), isAllowedHref(), readGraphReport(), readHeadCommit(), ROUTE_FILES (+18 more)
+Cohesion: 0.10
+Nodes (29): AppSearchAuditResult, auditAppSearchContracts(), AuditInput, graphFreshness(), isAllowedHref(), readGraphReport(), readHeadCommit(), ROUTE_FILES (+21 more)
 
 ### Community 199 - "test_jev_adapter.py"
-Cohesion: 0.16
+Cohesion: 0.17
 Nodes (17): _answers(), JevAdapter, JevConfig, JevResult, _number(), _request(), _text(), response() (+9 more)
 
-### Community 200 - "primary-nav.ts"
-Cohesion: 0.08
-Nodes (26): appSearchRoute, appShell, failures, federatedSearch, globalSearch, header, mobile, primaryNav (+18 more)
+### Community 200 - "consolidated-tools.ts"
+Cohesion: 0.10
+Nodes (18): CONSOLIDATED_ANCHOR_TOOL_IDS, CONSOLIDATED_TOOL_IDS, CONSOLIDATED_TOOLS, consolidatedToolForLegacyId(), getSpecializedToolDevelopmentGroups(), LEGACY_TO_CONSOLIDATED, SPECIALIZED_TOOL_DEVELOPMENT_GROUPS, SpecializedToolDevelopmentGroup (+10 more)
 
 ### Community 201 - "web-research.ts"
-Cohesion: 0.05
-Nodes (67): DEMO_SCOUT, maxDuration, POST, ProposedSourceSchema, SourceScoutSchema, WebSearchResult, buildLiveSourcePack(), cleanExcerpt() (+59 more)
+Cohesion: 0.06
+Nodes (58): DEMO_SCOUT, maxDuration, POST, ProposedSourceSchema, SourceScoutSchema, WebSearchResult, buildLiveSourcePack(), cleanExcerpt() (+50 more)
 
 ### Community 202 - "graph-views.ts"
-Cohesion: 0.14
-Nodes (25): SourceSpan, GraphEdge, GraphNode, GraphContextPack, allView(), episodicView(), eventTime(), graphView (+17 more)
+Cohesion: 0.12
+Nodes (27): CitationProps, SourceSpan, GraphEdge, GraphNode, GraphContextPack, allView(), episodicView(), eventTime() (+19 more)
 
 ### Community 203 - "with-firewall.ts"
 Cohesion: 0.12
 Nodes (24): attachFirewallHeaders(), CLAIM_KEYS, ClaimGrounding, extractFirewallClaims(), walk(), FirewallClaimDecision, FirewallContext, FirewallStatus (+16 more)
 
 ### Community 204 - "output-capsules.test.ts"
-Cohesion: 0.11
-Nodes (18): clamp01(), evaluateOutputCapsuleQuality(), validateOutputCapsulePayload(), composeOutputCapsules(), CreateOutputCapsuleInput, createOutputCapsuleRecord(), dedupeById(), estimateCitationCoverage() (+10 more)
+Cohesion: 0.07
+Nodes (22): canTransitionOutputCapsule(), BasePayloadSchema, BoardExecutivePackPayloadSchema, CardPayloadSchema, CompositePackPayloadSchema, CountryOnePagerPayloadSchema, DailyReadPayloadSchema, OptionsMemoPayloadSchema (+14 more)
 
 ### Community 205 - "connectors.ts"
 Cohesion: 0.16
 Nodes (27): abstractFromInvertedIndex(), arrayValue(), asRecord(), clampLimit(), clampTrust(), CONNECTOR_ENV, ConnectorEnvMeta, FIRECRAWL_ID (+19 more)
 
 ### Community 206 - "corpus-search.ts"
-Cohesion: 0.14
-Nodes (34): getConflictGraphAdmin(), asRecord(), clampExcerpt(), clampLimit(), layerWeight(), pickString(), reliabilityToConfidence(), retrieveArgus() (+26 more)
+Cohesion: 0.12
+Nodes (36): asRecord(), clampExcerpt(), clampLimit(), layerWeight(), pickString(), reliabilityToConfidence(), retrieveArgus(), retrieveDocuments() (+28 more)
 
-### Community 207 - "tools/registry.ts"
-Cohesion: 0.08
-Nodes (26): failures, { PATH_IDS }, { PATH_SEEDS }, { PRAXIS_GENKIT_PATH_TOOL_IDS }, registeredPathToolIds, require, ai, EXTERNAL_MCP_TOOL_STUBS (+18 more)
+### Community 207 - "tasklet-workbench-conversation.ts"
+Cohesion: 0.13
+Nodes (22): AssistantMarkdown(), openSavedConversation(), setGuideField(), answerEnvelopeFromDataStreamLine(), buildConversationPath(), ChatMessage, ConversationCapsuleChip, emptyGuideChatState() (+14 more)
 
 ### Community 208 - "sourceability-request.ts"
-Cohesion: 0.11
-Nodes (25): inferredItems(), KnowledgeStructureBucket, knowledgeStructureFromAskEnvelope(), KnowledgeStructurePanel(), defaultMemoGaps(), MemoArtifactOverlay(), selectedSourceabilityText(), MemoArtifactTabButton() (+17 more)
+Cohesion: 0.24
+Nodes (14): selectedSourceabilityText(), buildMemoSourceabilityRequest(), clampIndex(), cleanId(), MemoSourceabilityRequest, MemoSourceabilityResult, MemoSourceSnippet, normalizeText() (+6 more)
 
 ### Community 209 - "trust-posture.ts"
-Cohesion: 0.20
-Nodes (15): claimSupport(), clamp(), computeTrustPosture(), daysSince(), evidenceCoverage(), graphReadiness(), looseArray(), missingGaps() (+7 more)
+Cohesion: 0.13
+Nodes (24): cleanParam(), dynamic, GET(), resolveCapsule(), claimSupport(), clamp(), computeTrustPosture(), daysSince() (+16 more)
 
 ### Community 210 - "ladybug-projection.ts"
-Cohesion: 0.15
-Nodes (29): buildLadybugProjectionFromGraphJsonLd(), cleanString(), collectJsonLdRecords(), compareById(), confidenceForRecord(), dedupeEdges(), edgesForRecord(), entityTypeOf() (+21 more)
+Cohesion: 0.16
+Nodes (28): buildLadybugProjectionFromGraphJsonLd(), cleanString(), collectJsonLdRecords(), compareById(), confidenceForRecord(), dedupeEdges(), edgesForRecord(), entityTypeOf() (+20 more)
 
 ### Community 211 - "core-library.ts"
 Cohesion: 0.15
 Nodes (30): asRecord(), capsuleToCore(), composeCoreLibrary(), core(), CoreLibraryDeps, CoreLibraryFilters, coreStatusFromDocument(), filterCoreLibrary() (+22 more)
 
 ### Community 212 - "reasoning-loop.ts"
-Cohesion: 0.12
-Nodes (20): McpToolDescriptor, normalizeMcpPart(), RegisteredMcpAgentTool, registerMcpToolForAgentRuntime(), approvalThresholdFromRun(), buildOutputFormatterReasoningLoop(), isRecord(), OUTPUT_FORMATTER_PLAN (+12 more)
+Cohesion: 0.11
+Nodes (22): McpToolDescriptor, normalizeMcpPart(), RegisteredMcpAgentTool, registerMcpToolForAgentRuntime(), approvalThresholdFromRun(), buildOutputFormatterReasoningLoop(), buildResearchMemoReasoningLoop(), isRecord() (+14 more)
 
 ### Community 213 - "federated-app-search.ts"
 Cohesion: 0.11
@@ -1799,7 +1785,7 @@ Nodes (21): auditDir, computeGraphStats(), CountRow, Finding, findings, graphEdg
 
 ### Community 215 - "world-research.ts"
 Cohesion: 0.11
-Nodes (23): calibratedHandler, errorResponse(), headers, maxDuration, POST, prepared, runtime, SIGNAL_WORLD_CATALOG (+15 more)
+Nodes (24): calibratedHandler, errorResponse(), headers, maxDuration, POST, prepared, runtime, SIGNAL_WORLD_CATALOG (+16 more)
 
 ### Community 216 - "checkout/route.ts"
 Cohesion: 0.17
@@ -1810,8 +1796,8 @@ Cohesion: 0.19
 Nodes (26): buildCapsule(), canReadCapsule(), CapsuleListInput, CapsuleRecord, capsulesCollection(), CapsuleScope, CapsuleStorageDeps, CapsuleWriteError (+18 more)
 
 ### Community 218 - "flows/classify-path.ts"
-Cohesion: 0.14
-Nodes (26): buildOutputForProfile(), buildPathCatalogue(), clamp01(), classifyPathFlow, ClassifyPathFlowInput, ClassifyPathFlowInputSchema, ClassifyPathFlowOutput, ClassifyPathFlowOutputSchema (+18 more)
+Cohesion: 0.11
+Nodes (32): buildOutputForProfile(), buildPathCatalogue(), clamp01(), classifyPathFlow, ClassifyPathFlowInput, ClassifyPathFlowInputSchema, ClassifyPathFlowOutput, ClassifyPathFlowOutputSchema (+24 more)
 
 ### Community 219 - "workbench-case-graph.ts"
 Cohesion: 0.10
@@ -1830,32 +1816,32 @@ Cohesion: 0.07
 Nodes (28): 1. Daily Brief Agent, 2. Research Memo Agent, 3. Watchlist Agent, Browser And Code Execution, Build Order, Definition Of "Works Better", Executive Decision, First Three Agents (+20 more)
 
 ### Community 223 - "admin-gate.ts"
-Cohesion: 0.25
-Nodes (14): access, gate, DEFAULT_ADMIN_EMAILS, getAdminEmailAllowlist(), getAdminGateStatus(), getAdminPrincipalAccess(), getAdminUidAllowlist(), isAdmin() (+6 more)
+Cohesion: 0.19
+Nodes (17): access, gate, maxDuration, POST, runtime, DEFAULT_ADMIN_EMAILS, getAdminEmailAllowlist(), getAdminGateStatus() (+9 more)
 
 ### Community 224 - "properties"
 Cohesion: 0.07
 Nodes (27): type, additionalProperties, maxLength, minLength, type, oneOf, default, items (+19 more)
 
 ### Community 225 - "agent-runtime/schema.ts"
-Cohesion: 0.10
-Nodes (35): dynamic, GET, isCloudSqlConnectivityError(), ledgerError(), POST, requestedManualVersion(), resolveCapsule(), clampLimit() (+27 more)
+Cohesion: 0.05
+Nodes (69): dynamic, GET, isCloudSqlConnectivityError(), ledgerError(), POST, requestedManualVersion(), resolveCapsule(), dynamic (+61 more)
 
 ### Community 226 - "agent-packet/route.ts"
 Cohesion: 0.11
-Nodes (26): advisoryRows(), AgentPacketGroundingClaim, AgentPacketRiskFlag, BUDGET_TIERS, buildUiGroundingMap(), dedupeRiskFlags(), deriveRiskFlags(), displayId() (+18 more)
+Nodes (27): advisoryRows(), AgentPacketGroundingClaim, AgentPacketRiskFlag, BUDGET_TIERS, buildUiGroundingMap(), dedupeRiskFlags(), deriveRiskFlags(), displayId() (+19 more)
 
-### Community 227 - "human-gate.ts"
-Cohesion: 0.14
-Nodes (26): collectHumanGateDeficits(), ContextCapsuleNormalizeOptions, ContextCapsuleV2, ContextCapsuleGovernanceV3, ContextChainHealthInput, ContextChainHealthResult, ContextChainSafeUseLabel, ContextChainStrength (+18 more)
+### Community 227 - "notifications.py"
+Cohesion: 0.17
+Nodes (14): dispatch_notification_deliveries(), DispatchRequest, get_notification_preferences(), get_notifications(), notification_registry(), PreferencesRequest, put_notification_preferences(), send_test_notification() (+6 more)
 
-### Community 228 - "FakeCollection"
-Cohesion: 0.12
-Nodes (7): architectDb(), assertFirestoreDefined(), FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot, projectedFields()
+### Community 228 - "capsule-service.test.ts"
+Cohesion: 0.09
+Nodes (16): AttachSchema, dynamic, POST, RouteContext, stageRegistryCapsuleInstallation(), attachCapsuleRefs(), buildContextCapsuleV3(), detachCapsuleRefs() (+8 more)
 
 ### Community 229 - "output-capsules/types.ts"
 Cohesion: 0.12
-Nodes (23): destinationForTemplate(), labelCore(), planOutputCapsuleRun(), PlanOutputCapsuleRunInput, canTransitionOutputCapsule(), defaultQuality, getOutputCapsuleTemplate(), getOutputTemplatesForTool() (+15 more)
+Nodes (29): destinationForTemplate(), labelCore(), planOutputCapsuleRun(), PlanOutputCapsuleRunInput, clamp01(), evaluateOutputCapsuleQuality(), composeOutputCapsules(), CreateOutputCapsuleInput (+21 more)
 
 ### Community 230 - "sats.ts"
 Cohesion: 0.07
@@ -1866,12 +1852,12 @@ Cohesion: 0.07
 Nodes (26): activeContextStackHelperSource, advancedSource, answerQualityStripSource, applyCapsuleToStackSource, askArtifactPreviewSource, askQueuedAgentRunPanelPath, askStreamPanelSource, capsuleLibraryCardSource (+18 more)
 
 ### Community 232 - "routers/analyze.py"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (13): render_situation_brief(), render_situation_brief_json(), diff_snapshots(), DiffRequest, get_brief_json(), get_brief_markdown(), get_escalation(), get_factions() (+5 more)
 
 ### Community 233 - "graph-populate.ts"
-Cohesion: 0.20
-Nodes (21): Phase 3 — Conflict Graph stage-then-approve (commit `0e21c55`), approveStagedGraph(), discardStagedGraph(), enrichActors(), extractFromText(), getExistingGraph(), getSituation(), getStagedGraph() (+13 more)
+Cohesion: 0.13
+Nodes (28): Phase 3 — Conflict Graph stage-then-approve (commit `0e21c55`), maxDuration, POST, runtime, EnrichedEntity, enrichEntity(), fetchWikipediaSummary(), WikipediaSummary (+20 more)
 
 ### Community 234 - "ContextCapsule Policy Research Guide"
 Cohesion: 0.07
@@ -1885,21 +1871,21 @@ Nodes (23): agenticMemoryHealth(), availableLayers(), buildSituationContextHealt
 Cohesion: 0.11
 Nodes (18): expectExcludes(), expectIncludes(), failures, read(), root, sitemapPaths, metadata, generateMetadata() (+10 more)
 
-### Community 237 - "boardroom/runs/route.ts"
-Cohesion: 0.07
-Nodes (48): contextUnavailable(), dispatchErrorMessage(), dynamic, ledgerError(), POST, resolveBoardroomContextInjection(), resolveCapsule(), validSnapshot() (+40 more)
+### Community 237 - "boardroom/schema.ts"
+Cohesion: 0.08
+Nodes (39): BRAINSTORMING_PERSONA_IDS, BOARDROOM_DOCK_ROLES, BoardroomCapsuleDockPayload, BoardroomCapsuleDockPayloadSchema, BoardroomCapsuleDockSlotPayload, BoardroomCapsuleDockSlotPayloadSchema, buildBoardroomCapsuleDockPayloadFromStack(), isDockRole() (+31 more)
 
 ### Community 238 - "tool-context-blueprints.ts"
 Cohesion: 0.08
-Nodes (44): dynamic, GET(), getToolById(), ACTIVE_PATH_LABELS, databaseBlueprint(), degradedReasons(), documentArtifactTypes(), DRAFTING_TOOL_IDS (+36 more)
+Nodes (46): dynamic, GET(), enrichCalibrationWithToolBackbone(), getToolById(), ACTIVE_PATH_LABELS, buildToolContextBlueprintPrompt(), databaseBlueprint(), degradedReasons() (+38 more)
 
-### Community 239 - "getPolicyTeamCategory"
-Cohesion: 0.15
-Nodes (15): _filterPublicCapsules(), publicCapsuleMatchesDomain(), publicCapsuleMatchesPolicyTeam(), publicCapsuleMatchesType(), publicCategoryForTemplate(), starterDefinitionToCapsuleSummary(), attachRecommendedTool(), createCapsuleFromBuilder() (+7 more)
+### Community 239 - "resolveCapsuleTaxonomy"
+Cohesion: 0.09
+Nodes (31): buildCapsuleLibraryOverview(), capsuleMatchesDomain(), capsuleMatchesPolicyTeam(), capsuleMatchesType(), domainOrPolicyTeamMatchesCapsule(), _filterPublicCapsules(), filterStarterCapsules(), filterUserCapsules() (+23 more)
 
 ### Community 240 - "tool-package-readiness.ts"
-Cohesion: 0.11
-Nodes (27): consolidatedToolForLegacyId(), CONSOLIDATED_TOOL_TAB, hrefForSituationSettings(), hrefForTool(), TOOL_HREF_OVERRIDES, dedupeActions(), defaultAction(), defaultPackageActions() (+19 more)
+Cohesion: 0.13
+Nodes (24): hrefForSituationSettings(), hrefForTool(), dedupeActions(), defaultAction(), defaultPackageActions(), getToolPackageActions(), prettyToolName(), ToolPackageAction (+16 more)
 
 ### Community 241 - "instrument-visual-contract.test.ts"
 Cohesion: 0.07
@@ -1914,36 +1900,36 @@ Cohesion: 0.12
 Nodes (5): create_graph_adapter(), GraphAdapter, Neo4jAdapter, _safe_cypher_identifier(), test_graph_adapter_mock()
 
 ### Community 244 - "PRAXIS Ask Same-Window Chat And Artifacts Plan"
-Cohesion: 0.08
-Nodes (25): 1. One Ask PRAXIS Window, 2. Chat First, Receipts Progressive, 3. Artifacts Are Message Parts, 4. One Canonical Ask Client, 5. One Canonical Ask Route, Acceptance Criteria, Current Diagnosis, Executive Decision (+17 more)
+Cohesion: 0.11
+Nodes (18): 1. One Ask PRAXIS Window, 2. Chat First, Receipts Progressive, 3. Artifacts Are Message Parts, 4. One Canonical Ask Client, 5. One Canonical Ask Route, Acceptance Criteria, Executive Decision, First Implementation Slice (+10 more)
 
 ### Community 245 - "agentic-search-health.ts"
 Cohesion: 0.11
 Nodes (20): buildRedflagArtifact(), collectAppSearchProof(), redflag, report, routeFailures, shouldWriteArtifacts, dynamic, GET() (+12 more)
 
-### Community 246 - "status.ts"
-Cohesion: 0.17
-Nodes (19): AGENT_RUN_CANCELLABLE_STATUSES, AGENT_RUN_RETRYABLE_STATUSES, AGENT_RUN_TERMINAL_STATUSES, AgentRunLifecycleEvent, AgentRunLifecycleInput, AgentRunLifecycleStep, agentRunLifecycleSteps(), AgentRunUiStatus (+11 more)
+### Community 246 - "runtime-health.ts"
+Cohesion: 0.15
+Nodes (20): GET, GET(), runtime, RUNTIME_HEALTH_SECURITY_HEADERS, safeRuntimeHealth(), buildRuntimeHealthSummary(), checkAgentTaskQueue(), checkAgentTaskQueueViaMetadata() (+12 more)
 
 ### Community 247 - "v3-surface-classification.ts"
 Cohesion: 0.10
-Nodes (22): CONSOLIDATED_ANCHOR_TOOL_IDS, CONSOLIDATED_TOOL_IDS, ConsolidatedToolDefinition, getSpecializedToolDevelopmentGroups(), LEGACY_TO_CONSOLIDATED, SPECIALIZED_TOOL_DEVELOPMENT_GROUPS, SpecializedToolDevelopmentGroup, SpecializedToolDevelopmentStatus (+14 more)
+Nodes (27): ConsolidatedToolDefinition, PrimaryNavItem, PRODUCT_SURFACE_IDS, PRODUCT_SURFACE_TOOL_IDS, PRODUCT_SURFACES, ProductSurface, ProductSurfaceId, applyToolPreferences() (+19 more)
 
 ### Community 248 - "uniqueStrings"
-Cohesion: 0.14
-Nodes (32): applyCatalogWideReasonedGraphVariation(), applyHumanGatedPolicyJudgmentPhaseBRewrite(), buildCapsuleCogneeSeedDocuments(), buildCatalogReasonedBoundaryEdgeTemplates(), buildCatalogReasonedBoundaryNodeTemplates(), buildCatalogReasonedEdgeTemplates(), buildCatalogReasonedNodeTemplates(), buildHumanGatedPolicyJudgmentPhaseBEdgeTemplates() (+24 more)
+Cohesion: 0.16
+Nodes (28): applyCatalogWideReasonedGraphVariation(), applyHumanGatedPolicyJudgmentPhaseBRewrite(), buildCatalogReasonedBoundaryEdgeTemplates(), buildCatalogReasonedBoundaryNodeTemplates(), buildCatalogReasonedEdgeTemplates(), buildCatalogReasonedNodeTemplates(), buildHumanGatedPolicyJudgmentPhaseBEdgeTemplates(), buildHumanGatedPolicyJudgmentPhaseBNodeTemplates() (+20 more)
 
 ### Community 249 - "memory.py"
-Cohesion: 0.21
-Nodes (12): forget(), list_candidates(), memory_health(), promote(), PromoteRequest, recall(), RecallRequest, reject() (+4 more)
+Cohesion: 0.13
+Nodes (14): CloudLoggingJsonFormatter, configure_logging(), forget(), list_candidates(), memory_health(), promote(), PromoteRequest, recall() (+6 more)
 
 ### Community 250 - "PRAXIS — Policy, Diplomacy, and Political Intelligence Platform by TACITUS"
-Cohesion: 0.06
-Nodes (34): ACO v2.0 — Agentic Conflict Ontology, Agent Handoff, Analytical Frameworks (15), Architecture, Authentication, Backend Trust Boundary, Brief template, Codex (via the `codex-rescue` agent) — executor (+26 more)
+Cohesion: 0.07
+Nodes (28): ACO v2.0 — Agentic Conflict Ontology, Agent Handoff, Analytical Frameworks (15), Architecture, Authentication, Backend Trust Boundary, Cognee Memory Layer, Current Executive Intelligence Slice (+20 more)
 
 ### Community 251 - "PRAXIS by TACITUS — Context-Capsule Marketplace & Agentic Workspace Improvement Plan"
-Cohesion: 0.11
-Nodes (19): 0. How to read this document, 10. Recommended launch capsule set (8–10, domain-anchored), 11. Security, trust & compliance, 12. Phased roadmap, 14. Risks & open questions, 1. Executive summary, 2. Current state (ground truth) and the honest gaps, 4. Capsule Builder UX (inside Home + Capsules) (+11 more)
+Cohesion: 0.09
+Nodes (24): 0. How to read this document, 10. Recommended launch capsule set (8–10, domain-anchored), 11. Security, trust & compliance, 12. Phased roadmap, 14. Risks & open questions, 1. Executive summary, 2. Current state (ground truth) and the honest gaps, 3.1 Capsule data model (extends, not replaces, ADR 0050) (+16 more)
 
 ### Community 252 - "Textual Pitch Deck"
 Cohesion: 0.08
@@ -1953,45 +1939,45 @@ Nodes (24): Business Model, Current Proof, Elevator Pitch, Funding Needs, Market
 Cohesion: 0.08
 Nodes (25): 10 The graph and canonical record, 11 How context capsules make SIGNAL useful, 12 Metrics and alerts that can be defended, 13 The production architecture, 14 Real time operations without a global collection bill, 15 Deliverables customers can use, 16 Pricing hypotheses and a solo founder cost model, 17 Commercial validation and the first ninety days (+17 more)
 
-### Community 254 - "ask-praxis-tools.ts"
-Cohesion: 0.15
-Nodes (21): AskPraxisToolBindings, buildAskPraxisExtensions(), groundedSearchFetchSessionCounters, makeGroundedSearchFetch(), makePremiumExaSearch(), makeProposeGraphDelta(), makeResearchGraphSearch(), makeRunDeepResearch() (+13 more)
+### Community 254 - "workspace.py"
+Cohesion: 0.14
+Nodes (10): confirm_workspace_suggestion(), dismiss_workspace_suggestion(), _event_from_log(), _event_from_suggestion(), _sse(), _sse_event_name(), SuggestionActionRequest, workspace_events() (+2 more)
 
-### Community 255 - "daily-brief/route.ts"
-Cohesion: 0.15
-Nodes (16): GET(), maxDuration, SituationAlert, enqueueDailyBriefRun(), GET(), isRecord(), localHourFor(), maxDuration (+8 more)
+### Community 255 - "situation_health.py"
+Cohesion: 0.32
+Nodes (15): _age(), _as_utc(), compute_situation_health(), _corpus_health(), _feed_health(), _grey_dimension(), HealthDimension, HealthFinding (+7 more)
 
 ### Community 256 - "preferences.ts"
 Cohesion: 0.13
-Nodes (16): GET, PATCH, PatchSchema, getPreferences(), PatchSchema, PATH(), savePreferences(), CITATION_STYLES (+8 more)
+Nodes (16): GET, PATCH, PatchSchema, getPreferences(), PatchSchema, PATH(), savePreferences(), LANGUAGES (+8 more)
 
-### Community 257 - "runPraxisDoctor"
-Cohesion: 0.14
-Nodes (17): buildArtifactFreshness(), buildCanaryPlan(), buildDoctorReport(), classifyDoctorRedFlags(), cloudRunRuntimeConfigChecks(), commandCheck(), commandId(), commandText() (+9 more)
+### Community 257 - "yente_client.py"
+Cohesion: 0.22
+Nodes (9): ActorNode, build_owner_scoped_actor_metadata_update(), match_actor(), normalize_actor(), SanctionsMatch, test_actor_normalization_maps_organization_schema(), test_actor_normalization_maps_person_schema(), test_sanctions_metadata_update_is_owner_scoped_and_reviewable() (+1 more)
 
 ### Community 258 - "PRAXIS Testing"
 Cohesion: 0.22
 Nodes (8): Automated Checks, Browser QA Rules, Critical Flows, Current Verified Baseline, Deeper References, Latest Browser Smoke, Manual Persona Testing, PRAXIS Testing
 
 ### Community 259 - "capsules/resolve.ts"
-Cohesion: 0.17
-Nodes (20): canonicalize(), canonicalizeCapsuleContent(), CapsuleLoader, CapsuleResolutionStep, deepMerge(), isPlainObject(), loadCapsuleFromFirestore(), mergeCapsules() (+12 more)
+Cohesion: 0.15
+Nodes (22): canonicalize(), canonicalizeCapsuleContent(), CapsuleLoader, CapsuleResolutionStep, deepMerge(), isPlainObject(), loadCapsuleFromFirestore(), mergeCapsules() (+14 more)
 
 ### Community 260 - "capsule-architect.ts"
-Cohesion: 0.12
-Nodes (28): buildArchitectCausality(), buildArchitectReviewCards(), buildArchitectTacitKnowledge(), buildArchitectTemporality(), buildCapsuleArchitectProposal(), buildTacitKnowledgeQuestions(), CapsuleArchitectBuildInput, CapsuleArchitectElicitationInput (+20 more)
+Cohesion: 0.15
+Nodes (25): buildArchitectCausality(), buildArchitectReviewCards(), buildArchitectTacitKnowledge(), buildArchitectTemporality(), buildCapsuleArchitectProposal(), buildTacitKnowledgeQuestions(), CapsuleArchitectBuildInput, CapsuleArchitectElicitationInput (+17 more)
 
 ### Community 261 - "evidence-review.ts"
 Cohesion: 0.15
 Nodes (23): actionsForStatus(), buildClaimEvidenceReport(), buildEvidenceReviews(), buildSectionQuestions(), ClaimEvidenceReview, ClaimEvidenceStatus, countSentences(), countWords() (+15 more)
 
-### Community 262 - "episodes.ts"
-Cohesion: 0.12
-Nodes (21): aggregateEpisodesByDay(), createEpisode(), CreateEpisodeInput, deleteEpisode(), EpisodeDayBucket, episodesCol(), generateEpisodeId(), listEpisodes() (+13 more)
+### Community 262 - "evaluate-policy-narrative-quality.ts"
+Cohesion: 0.18
+Nodes (13): buildAnalystRubric(), buildQualityPair(), captureSchema, caseSchema, Condition, fixtureSchema, parseQualityOptions(), QUALITY_SYSTEM_PROMPT (+5 more)
 
 ### Community 263 - "context-core-map.ts"
 Cohesion: 0.10
-Nodes (22): CONSOLIDATED_TOOLS, AREA_IDS, CONSOLIDATED_TOOL_CONTEXT_CORES, CONTEXT_CORES, ContextCoreDefinition, ContextCoreOwnerScope, CORE_BY_ID, getContextCore() (+14 more)
+Nodes (21): AREA_IDS, CONSOLIDATED_TOOL_CONTEXT_CORES, CONTEXT_CORES, ContextCoreDefinition, ContextCoreOwnerScope, CORE_BY_ID, getContextCore(), getContextCoresForTool() (+13 more)
 
 ### Community 264 - "tool-path-taxonomy.ts"
 Cohesion: 0.17
@@ -2002,24 +1988,24 @@ Cohesion: 0.08
 Nodes (25): 01_DIAGNOSTICS, 02_MARKETPLACE_HONESTY, 03_CALIBRATION_INVARIANT, 04_COGNEE_UI_HONESTY, 05_CHAPTER_CODE_SPLIT, 06_LIBRARY_INGEST_CONSOLIDATION, 07_ONBOARDING_GATE, 08_THIN_CASE_CALIBRATION (+17 more)
 
 ### Community 266 - "clarifying-questions.ts"
-Cohesion: 0.11
-Nodes (22): Lane AA — Bottom-right collision + Screenshot gitignore, Lane BB — Dashboard card legibility, Lane CC — Developer backlog system, Lane DD — Clarifying Questions framework, Lane EE — Wikipedia enrichment client, Lane FF — Analyst Notes (natural-language knowledge retention), Round 4 validation, Round 4 — Visual fixes + dev backlog + clarifying questions + Wikipedia + analyst notes (+14 more)
+Cohesion: 0.18
+Nodes (13): ClarificationRequest, ClarificationRequestSchema, clarificationResponse, ClarificationResponseSchema, ClarifyingAnswer, ClarifyingAnswersBundle, ClarifyingAnswersBundleSchema, ClarifyingAnswerSchema (+5 more)
 
 ### Community 267 - "PRAXIS anti-slop review, 2026-09-30"
 Cohesion: 0.08
 Nodes (24): 10. P2: advanced connector targets, corrected in the combined source, 11. P2: builder privacy wording, narrowed in the combined source, 12. P2: advanced implementation vocabulary, recommendation, 13. P2: writing review language and version limits, mostly preserve, 14. P2: onboarding remains optional and recoverable, preserve and verify, 15. P2: library and inspection already contain purposeful structure, preserve, 16. P2: pricing and legal readability must retain substance, 17. Source reduction and validation (+16 more)
 
 ### Community 268 - "analysis-baselines.test.mjs"
-Cohesion: 0.12
+Cohesion: 0.13
 Nodes (16): affectedDependents(), attentionChange(), digest(), manifestDelta(), namespace(), pinMap(), rankedEmbeddingCandidates(), baseline() (+8 more)
 
 ### Community 269 - "genkit/index.ts"
-Cohesion: 0.11
-Nodes (18): genkit, @genkit-ai/google-cloud, @genkit-ai/google-genai, gemini25Flash, gemini25Pro, genkitGoogleProvider, modelIdForTask(), ModelTaskKind (+10 more)
+Cohesion: 0.13
+Nodes (17): genkit, @genkit-ai/google-cloud, @genkit-ai/google-genai, validateSituationIntelligence(), situationIntelligenceFlow, SituationIntelligenceFlowInput, SituationIntelligenceFlowInputSchema, ai (+9 more)
 
-### Community 270 - "[...path]/route.ts"
-Cohesion: 0.25
-Nodes (12): ALLOWED_BACKEND_PATHS, DELETE, GET, isAllowedBackendPath(), localBackendFallback(), maxDuration, POST, proxyBackendRequest() (+4 more)
+### Community 270 - "PRAXIS Conflict Analyst Product Proposal"
+Cohesion: 0.12
+Nodes (16): Analytic Tradecraft And Frameworks, Conflict Data And Monitoring, Executive Position, Market Pattern, PRAXIS Conflict Analyst Product Proposal, Product Principles, Recommended Build Order, Research Inputs (+8 more)
 
 ### Community 271 - "audit-launch-readiness.ts"
 Cohesion: 0.15
@@ -2027,15 +2013,15 @@ Nodes (22): assertLiveHeaders(), body(), collectFiles(), collectLiveHeaderEviden
 
 ### Community 272 - "dry-run-eval.ts"
 Cohesion: 0.08
-Nodes (42): buildSeedOperations(), CapsuleSeedOperation, loadFirestore(), main(), seedLaunchCapsules(), POST, CAPSULE_EVAL_JUDGE_MODEL, average() (+34 more)
+Nodes (39): buildSeedOperations(), CapsuleSeedOperation, loadFirestore(), main(), seedLaunchCapsules(), CapsuleEvalClaimSchema, CapsuleEvalSampleSchema, DryRunEvalRequestSchema (+31 more)
 
 ### Community 273 - "PraxisCapsule"
 Cohesion: 0.06
-Nodes (45): Field Mapping, CapsuleSlotRow(), CapsuleStripHeader(), saveAssociatedCapsules(), dotFilled(), KIND_DOT_FILLED, KIND_LABEL, KIND_ORDER (+37 more)
+Nodes (46): Field Mapping, CapsuleSlotRow(), CapsuleStripHeader(), saveAssociatedCapsules(), dotFilled(), KIND_DOT_FILLED, KIND_LABEL, KIND_ORDER (+38 more)
 
 ### Community 274 - "context-aware.ts"
-Cohesion: 0.15
-Nodes (21): allowUnsignedConversationHeader(), buildCaseContext(), buildContextAdvisories(), buildContextSnapshot(), buildUserContext(), buildWorkspaceContext(), ContextAwareResult, inferWeakestLayer() (+13 more)
+Cohesion: 0.16
+Nodes (20): allowUnsignedConversationHeader(), buildCaseContext(), buildContextAdvisories(), buildContextSnapshot(), buildUserContext(), buildWorkspaceContext(), ContextAwareResult, inferWeakestLayer() (+12 more)
 
 ### Community 275 - "context_capsule.py"
 Cohesion: 0.16
@@ -2053,44 +2039,44 @@ Nodes (6): 0:00–1:00 — Brasil, Portuguese, 1:00–2:00 — Review and inspec
 Cohesion: 0.10
 Nodes (23): default, items, maxItems, type, default, items, maxItems, type (+15 more)
 
-### Community 279 - "account/route.ts"
-Cohesion: 0.13
-Nodes (21): ACCOUNT_PATCH_FIELDS, cleanAccountPatch(), DELETE, GET, PATCH, serializeFirestoreData(), eraseOwnerAccount(), ERASURE_RETAINED_RECORDS (+13 more)
+### Community 279 - "admin.ts"
+Cohesion: 0.03
+Nodes (73): firebase-admin, ACCOUNT_PATCH_FIELDS, cleanAccountPatch(), DELETE, GET, PATCH, serializeFirestoreData(), GET() (+65 more)
 
-### Community 280 - "runAuthenticatedCanary"
-Cohesion: 0.15
-Nodes (19): canaryHttpStatus(), canaryResult(), extractCookieHeader(), extractMemoId(), extractOutputHref(), extractPendingApprovalId(), extractRunId(), extractRunRecord() (+11 more)
+### Community 280 - "capsule-factory-flow.test.ts"
+Cohesion: 0.16
+Nodes (15): capsuleResearchPlanFlow, capsuleSynthesisFlow, capsuleWritingProfileFlow, deterministicResearchPlan(), deterministicWritingProfile(), queryFrom(), withFactoryTelemetry(), BRIEF_RE (+7 more)
 
 ### Community 281 - "drafting/export.ts"
 Cohesion: 0.16
 Nodes (18): POST, WorkProductExportSchema, buildDraftingTemplate(), DRAFTING_OUTPUT_TARGETS, DraftingOutputTargetId, DraftingTemplate, TEMPLATES, buildShareableWorkProductLink() (+10 more)
 
 ### Community 282 - "context-capsules.test.ts"
-Cohesion: 0.10
-Nodes (30): assignPolicyTeam(), average(), buildCapsuleTaxonomyStats(), CAPSULE_ATTACHMENT_ROLES, CAPSULE_CONNECTOR_IDEAS, CAPSULE_CONNECTOR_REGISTRY, CAPSULE_OUTPUT_PRODUCTS, CAPSULE_SLOT_DEFINITIONS (+22 more)
+Cohesion: 0.08
+Nodes (33): COCKPIT_CAPSULE_LIBRARY, COCKPIT_COMBINATION_RECIPES, COCKPIT_TOOL_SUGGESTIONS, COCKPIT_USER_ARCHETYPES, findCapsuleTemplate(), POLICY_NEED_TABS, PolicyNeedTab, buildCapsuleTaxonomyStats() (+25 more)
 
 ### Community 283 - "sync-ecc-to-codex.mjs"
 Cohesion: 0.06
-Nodes (24): adminTabRedirects, bareRoutes, nextConfig, repoRoot, withBundleAnalyzer, @next/bundle-analyzer, ALLOWED_H1_FILES, offenders (+16 more)
+Nodes (22): adminTabRedirects, bareRoutes, nextConfig, repoRoot, withBundleAnalyzer, @next/bundle-analyzer, ALLOWED_H1_FILES, offenders (+14 more)
 
 ### Community 284 - "case-registry.ts"
 Cohesion: 0.11
 Nodes (18): CASE_REGISTRY, CaseArchetype, getActorClaims(), getActorFromCase(), getActorInterests(), getActorRelationships(), getCaseEventsSorted(), getCaseOntology() (+10 more)
 
-### Community 285 - "run-timeline-view-model.ts"
-Cohesion: 0.19
-Nodes (14): AgentRunSnapshotSummary, OrchestratorEvent, buildCompactRunTimelineViewModel(), CompactRunPhaseId, CompactRunTimelineViewModel, inferTimelineMode(), isCompletionEvent(), mergePhaseStatus() (+6 more)
+### Community 285 - "AskAnswerEnvelope"
+Cohesion: 0.18
+Nodes (12): SourceabilityVerdictBadges(), sourceabilityVerdictBadgeTone(), SourceabilityVerdictTone, VERDICT_TONES, SourceabilityClaimVerdict, SourceabilityLedgerSummary, AskAnswerEnvelope, AskAnswerEnvelopeStreamPayload (+4 more)
 
 ### Community 286 - "PRAXIS Context Injection Contract"
 Cohesion: 0.12
-Nodes (16): Anti-patterns to avoid, Evolution roadmap, Health-check the contract, How a single AI call assembles the prompt, How the contract stays warm, How to add a new tool that respects the contract, Layer 1 — `<analyst-profile>`  *(who is asking)*, Layer 2 — `<situation-frame>`  *(what is being analysed)* (+8 more)
+Nodes (16): Anti-patterns to avoid, Evolution roadmap, Health-check the contract, How a single AI call assembles the prompt, How the contract stays warm, How to add a new tool that respects the contract, Layer 1 — `<analyst-profile>`  *(who is asking)*, Layer 3 — `<domain-frame>`  *(what kind of work this is)* (+8 more)
 
-### Community 287 - "run-artifact.ts"
-Cohesion: 0.21
-Nodes (13): POST, FirewallReport, buildToolRunArtifact(), firestoreToolRunArtifactWriter, hashArtifact(), numberField(), persistToolRunArtifact(), stringField() (+5 more)
+### Community 287 - "marketplace/run/route.ts"
+Cohesion: 0.17
+Nodes (17): dynamic, GET, LooseObject, POST, RunBodySchema, FirewallReport, buildToolRunArtifact(), firestoreToolRunArtifactWriter (+9 more)
 
 ### Community 288 - "Actor"
-Cohesion: 0.10
+Cohesion: 0.11
 Nodes (20): Actor, Event, Cell, DesignationEvent, DisruptionOperation, NetworkNode, OperationalCapability, ThreatClaim (+12 more)
 
 ### Community 289 - "google-agent-platform/readiness.ts"
@@ -2102,8 +2088,8 @@ Cohesion: 0.10
 Nodes (16): appIndex, appShell, boardroom, chatShell, dockerfile, failures, marketingHome, policyMissions (+8 more)
 
 ### Community 291 - "canonical.ts"
-Cohesion: 0.11
-Nodes (19): canonical, docsDir, entries, JSON_PATH, markdown, MD_PATH, OUT_DIR, summary (+11 more)
+Cohesion: 0.13
+Nodes (16): canonical, docsDir, entries, JSON_PATH, markdown, MD_PATH, OUT_DIR, summary (+8 more)
 
 ### Community 292 - "generate-tool-sprint-backlog.ts"
 Cohesion: 0.14
@@ -2113,36 +2099,36 @@ Nodes (21): buildRows(), CRITICAL_IDS, { getToolContextBlueprint }, { getToolOpe
 }, graphicsTask(), inspectPage(), latestAuditPath() (+13 more)
 
 ### Community 293 - "dialectica-capsule-idempotency.test.ts"
-Cohesion: 0.14
-Nodes (8): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot, fixtureInput(), fixtureRoot, fixtureText(), ImportedCapsuleInput
+Cohesion: 0.16
+Nodes (6): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot, fixtureRoot, ImportedCapsuleInput
 
 ### Community 294 - "ref_node_child_process"
-Cohesion: 0.16
-Nodes (13): API route inventory, DROPPED_AUDIT_LEAVES, GROUPS, main(), runNpmScript(), ScriptStep, usage(), Check (+5 more)
+Cohesion: 0.06
+Nodes (24): checks, sql, failures, graphPath, handoffPaths, reportPath, root, todoPath (+16 more)
 
-### Community 295 - "TenantConnection"
-Cohesion: 0.07
-Nodes (22): EdgeRepo, EmbeddingRepo, GraphEdgeRecord, GraphNodeRecord, GraphTraversalRepo, NodeRepo, TenantConnection, FakeConnection (+14 more)
+### Community 295 - "capsule-starters.ts"
+Cohesion: 0.18
+Nodes (11): actor, ADMIN_ALLOWLIST, main(), CACHE_TTL_MS, CAPSULE_STARTERS_COLLECTION_PATH, CAPSULE_STARTERS_HISTORY_COLLECTION_PATH, getCapsuleStarterDefinition(), listCapsuleStarterDefinitions() (+3 more)
 
 ### Community 296 - "error-boundary.tsx"
-Cohesion: 0.13
-Nodes (13): [3.6.2] — 2026-03-29, Added, class-variance-authority, AppError(), RootError(), ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryState (+5 more)
+Cohesion: 0.11
+Nodes (13): [3.6.2] — 2026-03-29, Added, @sentry/nextjs, AppError(), RootError(), ErrorBoundary, ErrorBoundaryProps, ErrorBoundaryState (+5 more)
 
 ### Community 297 - "TrustGraph Context Substrate"
 Cohesion: 0.25
 Nodes (7): App-Side Readiness, Bridge Contract, Capsule Mapping, Deployment Path, Position, TrustGraph Context Substrate, Upstream Basis
 
 ### Community 298 - "GCP_OPERATIONS.md"
-Cohesion: 0.15
-Nodes (12): 1. Validation gate — all must pass, 2. Cloud Build deploy (≈8 minutes), 3. Capture the build ID (printed at the start of the gcloud builds output), 4. Verify Cloud Run revisions, 5. Smoke-test production endpoints, 6. Append to docs/DEPLOYMENT_LOG.md (commit ID, build ID, revisions,, Cloud Run picks up the new version on next revision deploy., health output, configuration gaps remaining). (+4 more)
+Cohesion: 0.10
+Nodes (20): 1. Activate paid / freemium data sources, 1. Validation gate — all must pass, 1a. ~~source-linked event reporting~~ — **withdrawn 2026-04-25**, 1b. Vertex AI Agent Engine (Deep Research Agent, ~1–2 h), 1c. Retired structured-feed ingestion, 1d. Polar billing (~2 h, active launch path), 1e. Research providers, 1f. Stripe (legacy) (+12 more)
 
 ### Community 299 - "PRAXIS Operational Spine"
-Cohesion: 0.09
-Nodes (21): Activity feed, Add a new AI tool route, API contract, `background_jobs/{jobId}` (TTL: 90d), Common patterns, Deployment, Future extensions, IAM model (+13 more)
+Cohesion: 0.10
+Nodes (20): Activity feed, Add a new AI tool route, API contract, `background_jobs/{jobId}` (TTL: 90d), Common patterns, Deployment, Future extensions, IAM model (+12 more)
 
 ### Community 300 - "capability-registry.ts"
-Cohesion: 0.15
-Nodes (15): aiRoutesDir, failures, firstWave, root, routeNames, superTools, CAPABILITIES, CapabilityExecutor (+7 more)
+Cohesion: 0.13
+Nodes (17): aiRoutesDir, failures, firstWave, root, routeNames, superTools, CAPABILITIES, CapabilityExecutor (+9 more)
 
 ### Community 301 - "nodes/route.ts"
 Cohesion: 0.10
@@ -2152,33 +2138,33 @@ Nodes (17): dynamic, EdgeActionSchema, EdgePayloadSchema, GeneratedBySchema, gra
 Cohesion: 0.15
 Nodes (5): persistSuggestedActionReceipt(), FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
 
-### Community 303 - "aco_adapter.py"
-Cohesion: 0.32
-Nodes (10): AcoOutput, _community_to_review_block(), _entity_to_node(), graphrag_to_aco(), _mapped_id(), _relationship_to_edge(), _stable_id(), test_graphrag_communities_are_synthesized_review_candidates() (+2 more)
+### Community 303 - "parseDialecticaCapsulePackageFromParts"
+Cohesion: 0.25
+Nodes (14): DialecticaCapsuleImportError, isRecord(), normalizeEpisodes(), optionalZipJson(), optionalZipText(), parseDialecticaCapsulePackageFromParts(), parseDialecticaCapsuleZip(), parseDialecticaManifest() (+6 more)
 
 ### Community 304 - "praxis_data_controller/agent.py"
-Cohesion: 0.14
+Cohesion: 0.15
 Nodes (8): build_tools(), capsule_context_reader(), review_card_proposer(), vertex_rag_retrieval(), Deploy Shape, Official Sources, PRAXIS Data Controller ADK Agent, Tool Boundaries
 
 ### Community 305 - "graphlite-contract.ts"
 Cohesion: 0.12
 Nodes (21): createDefaultGraphLiteEnrichmentProvider(), buildGraphLiteCapsuleSyncRequest(), buildGraphLiteCollectionId(), buildGraphLiteWorkspaceId(), cleanGraphLiteIdentifier(), GRAPHLITE_CLI_CRATE, GRAPHLITE_CLI_VERSION, GraphLiteAdvisoryHitSchema (+13 more)
 
-### Community 306 - "server.mjs"
-Cohesion: 0.15
-Nodes (15): fixture(), aliases, assigned, countries, getCountry(), literal(), makeScope(), names (+7 more)
+### Community 306 - "capsule-list-picker.test.tsx"
+Cohesion: 0.18
+Nodes (11): capsules, click(), Element, elements(), find(), focus, open(), render() (+3 more)
 
 ### Community 307 - "memory-layer.ts"
 Cohesion: 0.17
 Nodes (15): capCogneeConfidence(), cogneeDatasetFor(), formatAdvisoryCandidate(), isCogneeEnabledForClient(), isRecord(), MemoryLayer, MemoryLayerHealth, MemoryLayerMode (+7 more)
 
 ### Community 308 - "source-receipt-normalizer.ts"
-Cohesion: 0.23
-Nodes (17): hostFromUrl(), isRecord(), normalizeConfidence(), normalizeCoords(), normalizeKind(), normalizeReliability(), normalizeRetrievalMethod(), normalizeSourceReceipt() (+9 more)
+Cohesion: 0.14
+Nodes (23): hostFromUrl(), isRecord(), normalizeConfidence(), normalizeCoords(), normalizeKind(), normalizeReliability(), normalizeRetrievalMethod(), normalizeSourceReceipt() (+15 more)
 
 ### Community 309 - "firestore.ts"
 Cohesion: 0.12
-Nodes (10): DEFAULT_MODEL_PREFERENCE, PRAXIS_ASK_TOKEN_COST, AI_CREDIT_COSTS, CreditTransaction, deductCredits(), ensureUserProfile(), getCreditBalance(), getUserProfile() (+2 more)
+Nodes (11): AskRuntimeOption, DEFAULT_MODEL_PREFERENCE, ModelPreferenceValue, AI_CREDIT_COSTS, AISettings, CreditTransaction, deductCredits(), getCreditBalance() (+3 more)
 
 ### Community 311 - "Findings"
 Cohesion: 0.10
@@ -2204,25 +2190,25 @@ Nodes (16): actionOrder, expectedActionOrder, failures, root, scenarios, source,
 Cohesion: 0.12
 Nodes (19): aiRoutesRoot, aiSdkRows, genkitRows, matchingRoutes(), migratedTargets, minimumTargets, missingTargets, remainingTargets (+11 more)
 
-### Community 317 - "CAPSULE_STARTER_DEFINITIONS"
-Cohesion: 0.21
-Nodes (10): inspectUser(), main(), needsBackfill(), parseArgs(), StarterBackfillStatus, summarize(), seedPack, starter (+2 more)
+### Community 317 - "backfill-capsule-research-dossiers.ts"
+Cohesion: 0.48
+Nodes (6): inspectUser(), main(), needsBackfill(), parseArgs(), StarterBackfillStatus, summarize()
 
 ### Community 318 - "diff/route.ts"
-Cohesion: 0.19
-Nodes (18): buildCapsuleFieldDiffs(), DiffRow, dynamic, flattenCoreRefs(), GET, isRecord(), listDiffRows(), loadCapsuleVersion() (+10 more)
+Cohesion: 0.17
+Nodes (20): buildCapsuleFieldDiffs(), DiffRow, dynamic, flattenCoreRefs(), GET, isRecord(), listDiffRows(), loadCapsuleVersion() (+12 more)
 
-### Community 319 - "jobs.ts"
-Cohesion: 0.11
-Nodes (25): GET, maxDuration, POST(), runtime, maxDuration, POST(), runtime, changed() (+17 more)
+### Community 319 - "changes/route.ts"
+Cohesion: 0.39
+Nodes (5): GET, changed(), diffGraphSnapshots(), GraphDiff, GraphSnapshot
 
 ### Community 320 - "login/page.tsx"
-Cohesion: 0.15
-Nodes (13): getPasswordStrength(), LoginForm(), LoginPage(), PENDING_CONTEXT_CAPSULE_OUTPUT_KEY, PENDING_CONTEXT_CAPSULE_PATH_KEY, PENDING_CONTEXT_CAPSULE_PROMPT_KEY, PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, PENDING_POLICY_AGENT_ID_KEY (+5 more)
+Cohesion: 0.22
+Nodes (11): LoginPage(), PENDING_CONTEXT_CAPSULE_OUTPUT_KEY, PENDING_CONTEXT_CAPSULE_PATH_KEY, PENDING_CONTEXT_CAPSULE_PROMPT_KEY, PENDING_CONTEXT_CAPSULE_TEMPLATE_KEY, PENDING_TASKLET_PROMPT_KEY, Element, elements() (+3 more)
 
 ### Community 321 - "adk-bridge.ts"
-Cohesion: 0.11
-Nodes (26): AdkAgentKind, AdkDryRunMirrorDeps, AdkDryRunMirrorResult, AdkRunContext, AdkRunEvent, AdkRunInput, buildAdkPromptFromContextCapsule(), cleanContext() (+18 more)
+Cohesion: 0.19
+Nodes (18): AdkAgentKind, AdkDryRunMirrorDeps, AdkDryRunMirrorResult, AdkRunContext, AdkRunEvent, AdkRunInput, buildAdkPromptFromContextCapsule(), cleanContext() (+10 more)
 
 ### Community 322 - "runner.ts"
 Cohesion: 0.16
@@ -2241,24 +2227,24 @@ Cohesion: 0.19
 Nodes (17): Thin-case handling, dynamic, GET(), POST(), promptHealthSpec(), summarizeSnapshot(), buildPromptHealthReport(), buildSuggestedFlow() (+9 more)
 
 ### Community 326 - "PRAXIS Public Launch And Agentic Readiness Plan"
-Cohesion: 0.10
-Nodes (21): Cloud SQL Postgres, Cognee / Graph Layer, ContextCapsule Repository, Current Checkpoint, Documents, Sources, And Storage, Firebase / Firestore, Launch Score Target, Non-Negotiables (+13 more)
+Cohesion: 0.11
+Nodes (18): Cloud SQL Postgres, Cognee / Graph Layer, ContextCapsule Repository, Current Checkpoint, Documents, Sources, And Storage, Firebase / Firestore, Launch Score Target, Non-Negotiables (+10 more)
 
-### Community 327 - "domain.test.mjs"
-Cohesion: 0.25
-Nodes (16): collect(), discoveryURL(), capsuleSnapshot(), exportBrief(), gdeltTime(), graphProjection(), normalizeSource(), proposeClaim() (+8 more)
+### Community 327 - "server.mjs"
+Cohesion: 0.11
+Nodes (32): collect(), discoveryURL(), capsuleSnapshot(), exportBrief(), gdeltTime(), graphProjection(), hash(), normalizeSource() (+24 more)
 
 ### Community 328 - "START_HERE.md"
 Cohesion: 0.11
 Nodes (14): Ordered build sessions, 1 Check tools, 2 Get the real repository, 3 Prepare the isolated worktree, 4 Start the first build session, 5 Resume and check progress, Fast path from any extraction folder, Official references checked 5 October 2026 (+6 more)
 
 ### Community 329 - "parseDataStreamError"
-Cohesion: 0.27
-Nodes (12): B2. Fix build errors, HelpAgent(), buildHelpPrompt(), sendHelp(), HelpMessage, replaceLastAssistant(), describeAskFailure(), isRecord() (+4 more)
+Cohesion: 0.18
+Nodes (18): 5. Track B — Preventive Cohort Hardening (parallel), B1. Legacy/new-user audit + fixes, B2. Fix build errors, B3. Regression tests for both cohorts, HelpAgent(), buildHelpPrompt(), sendHelp(), HelpMessage (+10 more)
 
-### Community 330 - "audit-capsule-quality-ranking.ts"
-Cohesion: 0.23
-Nodes (10): auditDir, jsonPath, mdCell(), mdPath, percent(), renderCounts(), renderMarkdown(), renderWeakestRow() (+2 more)
+### Community 330 - "PRAXIS Deep Pre-Ship Checklist Audit"
+Cohesion: 0.14
+Nodes (14): 13. Notifications system, 14. Operator view — the transparency surface, 16. CI / audit scripts, 17. End-to-end product tests, 18. Frontend polish, 19. Performance and latency targets, 1. Database, migrations, RLS, connection pool, 2. Cognee substrate wrapper (+6 more)
 
 ### Community 331 - "type"
 Cohesion: 0.14
@@ -2269,8 +2255,8 @@ Cohesion: 0.19
 Nodes (16): EvalPayload, main(), renderMarkdown(), AGENTIC_RESEARCH_EVAL_SCENARIOS, AgenticResearchEvalScenarioId, AgenticResearchEvalScorecard, average(), buildDefaultAgenticResearchEvalRun() (+8 more)
 
 ### Community 333 - "schemas/__init__.py"
-Cohesion: 0.05
-Nodes (47): extract_conflict_text(), extract_from_document(), extract_from_url(), _make_id(), _parse_llm_response(), _strip_html(), ACOEdge, ACONode (+39 more)
+Cohesion: 0.07
+Nodes (33): build(), ACOEdge, ACONode, Actor, Claim, Commitment, ConfidenceLevel, Constraint (+25 more)
 
 ### Community 334 - "google-agent-platform-cloud-check.ts"
 Cohesion: 0.14
@@ -2281,24 +2267,24 @@ Cohesion: 0.22
 Nodes (18): cleanup(), decodeDocument(), decodeField(), fail(), firebaseExchange(), firestoreRest(), {getAuth}, {GoogleAuth} (+10 more)
 
 ### Community 336 - "networkx"
-Cohesion: 0.08
-Nodes (26): build(), export_graph(), write_metrics_to_graph_nodes(), analyze_graph(), compute_centrality(), detect_communities(), graph_from_records(), k_core_decomposition() (+18 more)
+Cohesion: 0.11
+Nodes (23): analyze_graph(), compute_centrality(), detect_communities(), graph_from_records(), k_core_decomposition(), load_case_graph(), NetworkAnalysisResult, RankedNode (+15 more)
 
 ### Community 337 - "next-moves/route.ts"
 Cohesion: 0.26
 Nodes (16): collectionRef(), GET, PATCH, POST, cleanEmphasis(), cleanHref(), cleanStatus(), cleanText() (+8 more)
 
-### Community 338 - "CapsuleRegistryPanel.test.tsx"
-Cohesion: 0.16
-Nodes (15): CapsuleRegistryPanel(), mutate(), publish(), RegistryDependencyImpact(), RegistryImpact, button(), effects(), Element (+7 more)
+### Community 338 - "postgres-execution.test.ts"
+Cohesion: 0.22
+Nodes (7): Canonical v3 Sections, 1. The four pillars of a capsule (Users · Tools · Output · Situation), claim, mocks, NOW, QueryLedger, Row
 
 ### Community 339 - "core-objects.ts"
 Cohesion: 0.18
 Nodes (18): BaseCore, ContextStack, CoreKind, CoreProvenance, CoreStatus, DocumentCore, GraphCore, MemoryCore (+10 more)
 
-### Community 340 - "FakeCollection"
-Cohesion: 0.14
-Nodes (4): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
+### Community 340 - "risk-indicators/route.ts"
+Cohesion: 0.18
+Nodes (11): IndicatorSchema, maxDuration, POST, ResponseSchema, RiskIndicatorsResponse, runtime, COMMON_INDICATORS, DomainKey (+3 more)
 
 ### Community 341 - "FakeCollection"
 Cohesion: 0.14
@@ -2309,36 +2295,36 @@ Cohesion: 0.11
 Nodes (18): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModules, jsx, lib, module (+10 more)
 
 ### Community 343 - "gliner_pre_pass.py"
-Cohesion: 0.11
-Nodes (11): Settings, extract_document_candidates(), prepare_l1_candidates(), _dedupe(), detect_entities(), EntitySpan, _fallback_detect(), _labels_for() (+3 more)
+Cohesion: 0.20
+Nodes (10): extract_document_candidates(), prepare_l1_candidates(), _dedupe(), detect_entities(), EntitySpan, _fallback_detect(), _labels_for(), _load_model() (+2 more)
 
-### Community 344 - "PRAXIS Codex Session Brief"
-Cohesion: 0.18
-Nodes (11): Common Local Blockers, Databricks Analytics Lane, Fast Validation, First Reads, Full Local Gate, Google Agent Platform Lane, PRAXIS Codex Session Brief, Product Boundaries (+3 more)
+### Community 344 - "readiness/route.ts"
+Cohesion: 0.23
+Nodes (10): AXES, axesFromReadiness(), clamp01(), cleanParam(), dynamic, GET(), RadarAxis, resolveCapsule() (+2 more)
 
 ### Community 345 - "100. IMPLEMENTATION MASTER PLAN"
 Cohesion: 0.11
 Nodes (18): 100. IMPLEMENTATION MASTER PLAN, WAVE 0 — ARCHITECTURE CONVERGENCE, WAVE 10 — SHARED AGENT BLACKBOARD, WAVE 11 — SPECIALIST WORKERS, WAVE 12 — CLI MVP, WAVE 13 — PORTABLE PACKAGE, WAVE 14 — CAPSULE REGISTRY, WAVE 15 — EVALUATION (+10 more)
 
-### Community 346 - "neo4j-drift-verifier.ts"
-Cohesion: 0.19
-Nodes (16): neo4j-driver, GET(), maxDuration, runtime, listExampleCases(), buildGraphSyncReport(), compareGraphSnapshots(), GraphSyncDiff (+8 more)
+### Community 346 - "clean"
+Cohesion: 0.26
+Nodes (13): capsuleIntakeFlow, clean(), core(), deterministicIntake(), deterministicSynthesis(), dominantProposalSource(), normalizeIntake(), normalizeSources() (+5 more)
 
 ### Community 347 - "rights"
 Cohesion: 0.11
 Nodes (18): maxLength, minLength, type, mode, maxLength, minLength, type, enum (+10 more)
 
-### Community 348 - "CognitiveGraph"
-Cohesion: 0.08
-Nodes (23): CapsuleCognitiveChat(), inspect(), interview(), submit(), Message, modeLabels, Preview, CAPSULE_INSPECTION_COMMANDS (+15 more)
+### Community 348 - "chat.ts"
+Cohesion: 0.18
+Nodes (15): CapsuleCognitiveChat(), inspect(), interview(), submit(), Message, modeLabels, Preview, CAPSULE_INSPECTION_COMMANDS (+7 more)
 
 ### Community 349 - "canonical-graph.ts"
 Cohesion: 0.19
 Nodes (17): BiTemporalFields, BiTemporalFieldsSchema, buildTemporalAssertionsFromGraph(), CANONICAL_GRAPH_SCHEMA_VERSION, evidenceFromMetadata(), GraphEvidenceEnvelope, GraphEvidenceEnvelopeSchema, NODE_SOURCE_VALUES (+9 more)
 
-### Community 350 - "tool-output-layer.ts"
-Cohesion: 0.08
-Nodes (12): FeedLayer, estimateTokens(), RetrievalOrchestrator, candidateToolIds(), LEGACY_TOOL_KEYS, normalizeToolDoc(), __test__, TOOL_DEPENDENCIES (+4 more)
+### Community 350 - "RetrievalOrchestrator"
+Cohesion: 0.20
+Nodes (3): estimateTokens(), RetrievalOrchestrator, GraphLayer
 
 ### Community 351 - "context-enrichment-adapter.test.ts"
 Cohesion: 0.13
@@ -2348,9 +2334,9 @@ Nodes (6): buildContextEnrichmentReceipt(), createDisabledTemporalGraphProvider(
 Cohesion: 0.14
 Nodes (4): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
 
-### Community 353 - "config"
-Cohesion: 0.06
-Nodes (15): build_registry(), FlowRegistration, _placeholder_flow(), lifespan(), database_url(), run_migrations_offline(), run_migrations_online(), close_pool() (+7 more)
+### Community 353 - "backend/main.py"
+Cohesion: 0.05
+Nodes (22): agents_health(), case_ontology_debug(), cognee_admin_quiesce(), cognee_admin_resume(), cognee_service_health(), _emit_agents_health_failure(), health(), healthz() (+14 more)
 
 ### Community 354 - "vertex_rag.py"
 Cohesion: 0.23
@@ -2361,8 +2347,8 @@ Cohesion: 0.12
 Nodes (16): Agentic Structure, Concrete Next Ticket, Diagnosis, Executive Read, Lane 1 - Memo Studio Sourceability Action, Lane 2 - Evidence Pack v2, Lane 3 - Live Research Memo Agent Dry Run, Lane 4 - Ask Traceability Panel (+8 more)
 
 ### Community 356 - "CapsuleAgentView.tsx"
-Cohesion: 0.21
-Nodes (15): 5. The `/app/capsules` agent-context panel exists in code, AgentPacketTier, CapsuleAgentPacketResponse, CapsuleAgentView(), CapsuleAgentViewContent(), CapsuleAgentViewEmpty(), CapsuleAgentViewError(), CapsuleAgentViewLoading() (+7 more)
+Cohesion: 0.23
+Nodes (14): AgentPacketTier, CapsuleAgentPacketResponse, CapsuleAgentView(), CapsuleAgentViewContent(), CapsuleAgentViewEmpty(), CapsuleAgentViewError(), CapsuleAgentViewLoading(), CountTile() (+6 more)
 
 ### Community 357 - "PRAXIS streamlining and workflow repairs — 2026-09-29"
 Cohesion: 0.12
@@ -2385,36 +2371,36 @@ Cohesion: 0.12
 Nodes (17): devDependencies, eslint, eslint-config-next, @modelcontextprotocol/sdk, @next/bundle-analyzer, @playwright/test, tailwindcss, @tailwindcss/postcss (+9 more)
 
 ### Community 362 - "signal/evaluation.ts"
-Cohesion: 0.21
+Cohesion: 0.23
 Nodes (14): Claim, completeCorrect(), correct(), evaluateSignal(), fields, lanes, literal(), matched() (+6 more)
 
 ### Community 363 - "[...slug]/route.ts"
-Cohesion: 0.14
-Nodes (23): google-auth-library, maxDuration, POST, runtime, ALLOWED_MEMORY_PATHS, cogneeServiceHeaders(), DELETE, disabledMemoryResponse() (+15 more)
+Cohesion: 0.11
+Nodes (31): ALLOWED_BACKEND_PATHS, DELETE, GET, isAllowedBackendPath(), localBackendFallback(), maxDuration, POST, proxyBackendRequest() (+23 more)
 
 ### Community 364 - "open-questions-store.ts"
-Cohesion: 0.19
-Nodes (14): BodySchema, POST(), RouteContext, collectionRef(), createOpenQuestion(), listOpenQuestions(), normalizeOpenQuestion(), updateOpenQuestion() (+6 more)
+Cohesion: 0.16
+Nodes (16): SanctionsMeasure, 2. Conflict Dynamic Ontology Pack, BodySchema, POST(), RouteContext, collectionRef(), createOpenQuestion(), listOpenQuestions() (+8 more)
 
 ### Community 365 - "fix-this-first-panel.tsx"
-Cohesion: 0.11
-Nodes (15): CORE_LABEL, CORE_REPAIR_CTA, CORE_REPAIR_HREF, FixThisFirstPanel(), FixThisFirstPanelProps, RequiredCoreKind, Props, State (+7 more)
+Cohesion: 0.14
+Nodes (10): CORE_LABEL, CORE_REPAIR_CTA, CORE_REPAIR_HREF, FixThisFirstPanel(), FixThisFirstPanelProps, RequiredCoreKind, Props, State (+2 more)
 
 ### Community 366 - "situation-intelligence/route.ts"
-Cohesion: 0.14
-Nodes (17): buildUserInput(), POST, scenarioTypesAreComplete(), SituationIntelligenceRequest, IntelligenceEdgeSchema, IntelligenceNodeSchema, SituationIntelligence, SituationIntelligenceSchema (+9 more)
+Cohesion: 0.17
+Nodes (12): buildUserInput(), POST, scenarioTypesAreComplete(), SituationIntelligenceRequest, IntelligenceEdgeSchema, IntelligenceNodeSchema, SituationIntelligence, SituationIntelligenceSchema (+4 more)
 
 ### Community 367 - "LocalCapsuleRegistry"
-Cohesion: 0.24
-Nodes (5): Cognitive CLI and MCP, assertIdentity(), authorize(), LocalCapsuleRegistry, registry()
+Cohesion: 0.21
+Nodes (7): Cognitive CLI and MCP, assertIdentity(), authorize(), LocalCapsuleRegistry, cognition(), input(), registry()
 
 ### Community 368 - "app-red-flags.ts"
-Cohesion: 0.21
-Nodes (15): agenticResearchFlag(), AgenticSearchInput, AppDiagnosticGroup, AppDiagnosticSource, AppDiagnosticStatus, AppDiagnosticSummary, AppDiagnosticSummaryInput, authCanaryFlag() (+7 more)
+Cohesion: 0.20
+Nodes (16): agenticResearchFlag(), AgenticSearchInput, AppDiagnosticGroup, AppDiagnosticRedFlag, AppDiagnosticSource, AppDiagnosticStatus, AppDiagnosticSummary, AppDiagnosticSummaryInput (+8 more)
 
 ### Community 369 - "output-capsules/storage.ts"
-Cohesion: 0.22
-Nodes (17): dynamic, GET, RouteContext, capsuleOutputsCollection(), cleanId(), cleanIso(), cleanText(), dbOf() (+9 more)
+Cohesion: 0.27
+Nodes (15): capsuleOutputsCollection(), cleanId(), cleanIso(), cleanText(), dbOf(), getOutputCapsule(), listOutputCapsules(), numberOr() (+7 more)
 
 ### Community 370 - "stage-targets.ts"
 Cohesion: 0.17
@@ -2436,25 +2422,25 @@ Nodes (4): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
 Cohesion: 0.15
 Nodes (4): FakeCollection, FakeDoc, FakeFirestore, FakeSnapshot
 
-### Community 375 - ".status"
-Cohesion: 0.08
-Nodes (23): Contract, Later integration, Optional JEV review adapter, Sources, [3.10.0] — 2026-03-30, Added, Changed, Browser Events (+15 more)
+### Community 375 - "PRAXIS release record: September 30, 2026"
+Cohesion: 0.06
+Nodes (29): Contract, Later integration, Optional JEV review adapter, Sources, [3.10.0] — 2026-03-30, Added, Changed, Accepted CSS-only checkpoint: 01a95497 (+21 more)
 
 ### Community 376 - "constants/tool-registry.ts"
-Cohesion: 0.12
-Nodes (17): [4.0.0] — 2026-03-31, Added, Changed, EntityEnrichment, ARCHIVE_TOOLS, getRelatedTools(), getToolsByCategory(), HERO_TOOLS (+9 more)
+Cohesion: 0.14
+Nodes (15): Added, EntityEnrichment, ARCHIVE_TOOLS, getRelatedTools(), getToolsByCategory(), HERO_TOOLS, TOOL_BY_ID, TOOL_ID_ALIASES (+7 more)
 
 ### Community 377 - "Layout Grammar"
 Cohesion: 0.13
 Nodes (15): Anti-Patterns, Cartographic Grid, Civic Atelier Primitives, Context Chain, Dossier Spine, Implementation Order, Layout Grammar, Living Context Rail (+7 more)
 
 ### Community 378 - "PRAXIS Agent Runtime Architecture"
-Cohesion: 0.08
-Nodes (27): Latest Validation Checkpoint, ADK vs Genkit Boundary, AgentRun Lifecycle, Approval Model, Documentation Anchors, Eval Strategy, Event Taxonomy, Executive Contract (+19 more)
-
-### Community 379 - "PRAXIS release record: September 30, 2026"
 Cohesion: 0.12
-Nodes (16): Accepted CSS-only checkpoint: 01a95497, Current serving observation: separate successor, Earlier checkpoints and remaining proof, Exact deployment and checkout receipts, External intermediate release `18dd6e39`, Firebase Rules evidence, Historical accepted release: `9e95085f`, Historical callback corrective release (+8 more)
+Nodes (16): ADK vs Genkit Boundary, AgentRun Lifecycle, Approval Model, Documentation Anchors, Eval Strategy, Event Taxonomy, Executive Contract, No-Go Rules (+8 more)
+
+### Community 379 - "red_team_analyst/runner.py"
+Cohesion: 0.30
+Nodes (5): main(), is_safe_framing(), run_red_team_analysis(), test_red_team_runner_returns_synthesized_safe_report(), test_red_team_runner_sanitizes_operational_framing()
 
 ### Community 380 - "verify-design-shipped.mjs"
 Cohesion: 0.31
@@ -2465,20 +2451,16 @@ Cohesion: 0.12
 Nodes (15): Contracts inspected, Directory reachability, Economic provider contract, Firsthand network observations and reproducible evidence, Global Voices attribution basis and bounds, Headline candidates and rights, Implemented initial provider panel, Independent publisher follow-up (+7 more)
 
 ### Community 382 - "Ontology-First Capsule Workbench + Cohort Hardening — Design & Codex Brief"
-Cohesion: 0.11
-Nodes (18): 1. Goal, 2. Constraints & non-goals, 3. Architecture (current → target), 4. Track A — Ontology-First Inspector (lead), 5. Track B — Preventive Cohort Hardening (parallel), 6. Execution model (how Claude drives Codex), 7. Open risks, A1. Build the new IA (+10 more)
+Cohesion: 0.13
+Nodes (15): 1. Goal, 2. Constraints & non-goals, 3. Architecture (current → target), 4. Track A — Ontology-First Inspector (lead), 6. Execution model (how Claude drives Codex), 7. Open risks, A1. Build the new IA, A2. "Build the ontology" actions (the loop) (+7 more)
 
 ### Community 383 - "extract-docling/main.py"
 Cohesion: 0.23
 Nodes (8): _convert(), _download_gcs_uri(), _get_converter(), healthz(), parse(), ParseRequest, ParseResponse, _persist_json()
 
-### Community 384 - "package.json"
-Cohesion: 0.04
-Nodes (49): name, private, version, clsx, d3, docx, fast-xml-parser, @genkit-ai/vertexai (+41 more)
-
-### Community 385 - "global-search.tsx"
-Cohesion: 0.20
-Nodes (11): cmdk, COMMAND_ICONS, COMMANDS, iconForResult(), PraxisCommand, SEARCH_GROUPS, COMMAND_SEARCH_ACTIONS, CommandSearchAction (+3 more)
+### Community 385 - "negotiation_mediation.py"
+Cohesion: 0.18
+Nodes (10): Interest, AgendaItem, BATNA, MediationInterest, MediationSession, Mediator, Party, Position (+2 more)
 
 ### Community 386 - "audit-capsule-backfill-readiness.ts"
 Cohesion: 0.12
@@ -2489,16 +2471,16 @@ Cohesion: 0.20
 Nodes (9): 1. Graph Serialization for LLM Reasoning, 2. Ontology Grounding, 3. Provenance and Confidence, 4. Salience and Subgraph Selection, 6. Verification Surface: What the Agent Sees, Agent Context Serialization Research for PRAXIS Capsules, Executive Summary, Risks and Open Questions (+1 more)
 
 ### Community 388 - "graph-service.ts"
-Cohesion: 0.22
-Nodes (17): GET, POST, addEdges(), addNodes(), findPivotActors(), getEntityDistribution(), getGraph(), getGraphEvolution() (+9 more)
+Cohesion: 0.31
+Nodes (14): GET, POST, addEdges(), addNodes(), findPivotActors(), getEntityDistribution(), getGraph(), getGraphEvolution() (+6 more)
 
 ### Community 389 - "pricing/page.tsx"
-Cohesion: 0.17
-Nodes (10): metadata, PricingPage(), PricingCheckoutButton(), PRAXIS_STARTER_TOKEN_ALLOWANCE, INTERNAL_COST_DISCLOSURE_NOTICE, PLAN_USAGE_BUCKETS, PRICING_TIERS, PricingTier (+2 more)
+Cohesion: 0.16
+Nodes (10): metadata, PricingPage(), CheckoutPayload, CheckoutPlan, PricingCheckoutButton(), PricingCheckoutButtonProps, SessionPayload, INTERNAL_COST_DISCLOSURE_NOTICE (+2 more)
 
 ### Community 390 - "getAdminDbOrThrow"
-Cohesion: 0.03
-Nodes (77): firebase-admin, apply, main(), VersionBucket, actor, ADMIN_ALLOWLIST, main(), GET (+69 more)
+Cohesion: 0.04
+Nodes (76): Fixed, AnalystProfile — Calibration Contract, 3.8 Every AI route is wrapped, What PRAXIS Already Has, POST, POST, GET, ConversationRouteContext (+68 more)
 
 ### Community 391 - "AgentsWorkingStrip.tsx"
 Cohesion: 0.21
@@ -2508,33 +2490,33 @@ Nodes (13): AgentsWorkingStrip(), countApprovalGates(), countTools(), dotClass()
 Cohesion: 0.22
 Nodes (13): assertContextReady(), ContextHealthGateError, average(), clamp(), computeContextHealthScore(), ContextHealthDimensionId, ContextHealthDimensionScore, ContextHealthScore (+5 more)
 
-### Community 393 - "red-team-annotations.ts"
-Cohesion: 0.21
-Nodes (14): arrayOfRecords(), FlaggedAssumptionLike, isRecord(), mapRedTeamReviewToAnnotations(), memoTextToParagraphs(), paragraphIndexForClaim(), RedTeamAnnotation, RedTeamAnnotationSeverity (+6 more)
+### Community 393 - "context_layers.py"
+Cohesion: 0.29
+Nodes (9): CaseContext, ContextAdvisory, ContextSnapshot, ContextSpec, ConversationContext, PreparedContext, UserContext, WorkspaceContext (+1 more)
 
 ### Community 394 - "manifest.json"
 Cohesion: 0.12
 Nodes (15): capsule_id, category, cores, created_at, depends_on, layers_present, owner_uid, provenance_root_hash (+7 more)
 
-### Community 395 - "DialecticaClient"
-Cohesion: 0.08
-Nodes (5): DialecticaClient, _is_read_only_cypher(), Neo4jClient, _safe_label(), _with_bitemporal()
+### Community 395 - "test_sync_creates_nodes"
+Cohesion: 0.06
+Nodes (8): sync_situation(), DialecticaClient, _is_read_only_cypher(), Neo4jClient, _safe_label(), _with_bitemporal(), test_sync_creates_nodes(), test_tenant_isolation_rejects_writes_in_query()
 
-### Community 396 - "[Unreleased] — 2026-04-28 (Five-pillar uplift: ask-praxis, dashboard, conflict-graph, risk+timeline, briefing)"
-Cohesion: 0.12
-Nodes (16): Codex Continuation — 2026-04-29 AI safeguards and health visibility, Codex Continuation — 2026-04-29 executive situation intelligence, Codex Continuation — 2026-04-29 grounded-search intelligence spine, Codex Continuation — 2026-04-29 persona QA demo trust wave, Codex Continuation — 2026-04-29 roadmap and root runbooks, Codex Continuation — 2026-04-29 sophisticated persona and AI trust wave, Codex Continuation — backend trust boundary + Core-8 graph coverage, Codex Continuation — Evidence envelope + SKC retrieval hardening (+8 more)
+### Community 396 - "writer/ask/route.ts"
+Cohesion: 0.07
+Nodes (31): Codex Continuation — 2026-04-29 AI safeguards and health visibility, Codex Continuation — 2026-04-29 executive situation intelligence, Codex Continuation — 2026-04-29 grounded-search intelligence spine, Codex Continuation — 2026-04-29 persona QA demo trust wave, Codex Continuation — 2026-04-29 roadmap and root runbooks, Codex Continuation — 2026-04-29 sophisticated persona and AI trust wave, Codex Continuation — backend trust boundary + Core-8 graph coverage, Codex Continuation — Evidence envelope + SKC retrieval hardening (+23 more)
 
-### Community 397 - "PRAXIS Deep Pre-Ship Checklist Audit"
-Cohesion: 0.05
-Nodes (37): Diagnostics Evidence, Issues Found And Fixed, PRAXIS Full UX, Agentic, Capsule, And Legal Diagnostic, Product Quality Notes, Remaining Red Flags, Scope, Documentation Cleanup Decision, PRAXIS Red Flags And Improvement Plan (+29 more)
+### Community 397 - "audits/README.md"
+Cohesion: 0.10
+Nodes (16): Diagnostics Evidence, Issues Found And Fixed, PRAXIS Full UX, Agentic, Capsule, And Legal Diagnostic, Product Quality Notes, Remaining Red Flags, Scope, Documentation Cleanup Decision, PRAXIS Red Flags And Improvement Plan (+8 more)
 
 ### Community 398 - "PRAXIS Deep Pre-Ship Checklist Audit"
 Cohesion: 0.13
 Nodes (14): 13. Notifications system, 14. Operator view — the transparency surface, 16. CI / audit scripts, 17. End-to-end product tests, 18. Frontend polish, 19. Performance and latency targets, 1. Database, migrations, RLS, connection pool, 2. Cognee substrate wrapper (+6 more)
 
-### Community 399 - "memo-desk.tsx"
-Cohesion: 0.06
-Nodes (52): @tiptap/extension-link, @tiptap/extension-placeholder, @tiptap/extension-task-item, @tiptap/extension-task-list, @tiptap/react, @tiptap/starter-kit, DraftingSourceCard, CitationMark (+44 more)
+### Community 399 - "package.json"
+Cohesion: 0.02
+Nodes (126): R8 — Language/register layer for outputs (later, product-led), name, private, version, clsx, d3, fast-xml-parser, @genkit-ai/vertexai (+118 more)
 
 ### Community 400 - "PRAXIS Compliance Tracker"
 Cohesion: 0.13
@@ -2545,8 +2527,8 @@ Cohesion: 0.13
 Nodes (15): Browser Automation Lane, Clerk As Auth, Dark Tasklet Clone Aesthetic, Generic FastAPI-First App Split, Guardrails, Incorporated, New Canonical Additions, Not Adopted (+7 more)
 
 ### Community 402 - "PRAXIS tooling research — 2026-09-29"
-Cohesion: 0.12
-Nodes (16): 1. Reuse the authenticated testing tools already present, 2. Finish recovery within the existing durable boundary, 3. Measure the analytical value of capsules, 4. Adopt continuation only for a demonstrated long-running need, Decision, Developer map maintenance, Four concrete recommendations, PRAXIS tooling research — 2026-09-29 (+8 more)
+Cohesion: 0.13
+Nodes (15): 1. Reuse the authenticated testing tools already present, 2. Finish recovery within the existing durable boundary, 3. Measure the analytical value of capsules, 4. Adopt continuation only for a demonstrated long-running need, Decision, Developer map maintenance, Four concrete recommendations, PRAXIS tooling research — 2026-09-29 (+7 more)
 
 ### Community 403 - "2. Still to ship (ordered by leverage)"
 Cohesion: 0.13
@@ -2561,32 +2543,32 @@ Cohesion: 0.18
 Nodes (13): buildInlineCitationMap(), citationByIdIndex(), ClaimGroundingInput, ClaimGroundingResult, cleanText(), GroundingChunk, GroundingMetadata, GroundingSupport (+5 more)
 
 ### Community 406 - "cognee_aco_models/base.py"
-Cohesion: 0.12
-Nodes (16): AcoDataPoint, Commitment, Interest, Leverage, Narrative, CeasefireCommitment, FinancingChannel, ResilienceCommitment (+8 more)
+Cohesion: 0.18
+Nodes (11): AcoDataPoint, Commitment, Leverage, Narrative, CeasefireCommitment, FinancingChannel, ResilienceCommitment, MonitoringMechanism (+3 more)
 
 ### Community 407 - "truth_layers.py"
 Cohesion: 0.20
 Nodes (5): infer_truth_layer(), ProvenanceRef, ProvenanceSpan, TruthLayer, TruthLayerNode
 
 ### Community 408 - "2. Gaps and recommendations (priority order)"
-Cohesion: 0.14
-Nodes (14): 1. Verdict on the current structure, 2. Gaps and recommendations (priority order), 3. What NOT to do, 4. Sequencing with the build queue, ContextCapsule — Ontology & Semantic Structure: Assessment + Recommendations, R1 — Close the entity-type gap between capsule graphs and ACO (high), R2 — Stable semantic identity for graph nodes (high), R3 — Claim ↔ graph ↔ source triangle (high) (+6 more)
-
-### Community 409 - "source-passage.ts"
 Cohesion: 0.15
-Nodes (15): authorityFor(), bounded(), decodeEntities(), extractedBody(), fetchOriginalSource(), isPublicSourceAddress(), OriginalPassageStatus, OriginalSourcePassage (+7 more)
+Nodes (13): 1. Verdict on the current structure, 2. Gaps and recommendations (priority order), 3. What NOT to do, 4. Sequencing with the build queue, ContextCapsule — Ontology & Semantic Structure: Assessment + Recommendations, R1 — Close the entity-type gap between capsule graphs and ACO (high), R2 — Stable semantic identity for graph nodes (high), R3 — Claim ↔ graph ↔ source triangle (high) (+5 more)
+
+### Community 409 - "collectors.ts"
+Cohesion: 0.09
+Nodes (29): authorityFor(), bounded(), decodeEntities(), extractedBody(), fetchOriginalSource(), isPublicSourceAddress(), OriginalPassageStatus, OriginalSourcePassage (+21 more)
 
 ### Community 410 - "Raw Gate Output"
 Cohesion: 0.14
 Nodes (13): AI route calibration audit, Audit gate, Build, Forbidden Gemini grep, Landing bundle, LATEST Baseline Audit, Lint, Mobile landing E2E (+5 more)
 
-### Community 411 - "Safe removal plan"
-Cohesion: 0.20
-Nodes (10): Safe removal plan, Slice 0: freeze the current contract, Slice 1: delete high-confidence orphan UI, Slice 2: make redirect-only pages invisible in normal navigation, Slice 3: rewrite `/app/contexts` and `/app/repository` affordances into Capsules, Slice 4: fold Recent Work into the cockpit, Slice 5: fold Capsule Builder into the Capsule Library, Slice 6: demote Boardroom to Labs (+2 more)
+### Community 411 - "[Unreleased] — 2026-04-26 (tenth session — Claude Code multi-lane sprint)"
+Cohesion: 0.17
+Nodes (12): Codex strategic-uplift pass, Documentation, Lane D — Shared confidence/citation primitives + provenance panel, Lane E — Strategy: large-scale improvement roadmap + persona walkthroughs, Lanes O–S — Strategy / test / GCP / TODO / index docs, Onboarding first-run UX, Production correction, Public UX source-truth cleanup (+4 more)
 
 ### Community 412 - "MCP Task Profiles"
-Cohesion: 0.25
-Nodes (7): Cloud, Codex Operating System, Daily, External Action Rule, Frontend, MCP Task Profiles, Research
+Cohesion: 0.15
+Nodes (13): Agent Role Hints, Build, Cloud, Codex Operating System, Daily, Diagnose, External Action Rule, Frontend (+5 more)
 
 ### Community 413 - "PRAXIS — CODEX Playbook & Improvement Roadmap"
 Cohesion: 0.14
@@ -2604,17 +2586,17 @@ Nodes (12): AI model, Dashboard, Data sources, Extension surface, Frameworks, Fr
 Cohesion: 0.14
 Nodes (13): AI model, Data sources, Extension surface, Frameworks, From `AnalystProfile` (via `withCalibration`), From SKC layers, From the active `Situation`, Inputs (read) (+5 more)
 
-### Community 417 - "reports/[id]/export/route.ts"
-Cohesion: 0.26
-Nodes (11): jspdf, generateDocx(), generatePdf(), addFooter(), ensureSpace(), loadReport(), POST(), ReportData (+3 more)
+### Community 417 - "docx"
+Cohesion: 0.19
+Nodes (13): docx, jspdf, mammoth, generateDocx(), generatePdf(), addFooter(), ensureSpace(), loadReport() (+5 more)
 
 ### Community 418 - "properties"
 Cohesion: 0.14
 Nodes (14): confidenceKind, derivedFrom, generatedBy, provenance, reviewedAt, reviewedBy, sourceRefs, additionalProperties (+6 more)
 
-### Community 419 - "release-notes/page.tsx"
-Cohesion: 0.24
-Nodes (11): metadata, ReleaseNoteCard(), ReleaseNotesPage(), APP_BUILD_DATE, APP_BUILD_LABEL, APP_BUILD_NUMBER, APP_RELEASE_LABEL, APP_VERSION (+3 more)
+### Community 419 - "pricing.ts"
+Cohesion: 0.18
+Nodes (8): PRAXIS_ASK_CREDIT_COST, PRAXIS_STARTER_TOKEN_ALLOWANCE, PLAN_USAGE_BUCKETS, PricingTier, starterAskAllowance, initializeServerUserProfile(), VerifiedProfileIdentity, identity
 
 ### Community 420 - "capsule-suggestions.ts"
 Cohesion: 0.24
@@ -2629,32 +2611,32 @@ Cohesion: 0.40
 Nodes (9): resend, baseTemplate(), EmailPayload, getResend(), send(), sendAlertDigestEmail(), sendCreditWarningEmail(), sendWeeklySummaryEmail() (+1 more)
 
 ### Community 423 - "Claim"
-Cohesion: 0.17
-Nodes (11): Claim, TerritorialClaim, AttributionClaim, AccessCorridor, AffectedPopulation, AidDeliveryCommitment, DeliveryConstraint, DisplacementEvent (+3 more)
+Cohesion: 0.15
+Nodes (12): Claim, TerritorialClaim, AttributionClaim, RecognitionClaim, AccessCorridor, AffectedPopulation, AidDeliveryCommitment, DeliveryConstraint (+4 more)
 
 ### Community 424 - "migrate-user-api-keys.mjs"
 Cohesion: 0.24
 Nodes (11): args, buildAad(), COMMIT, deleteLegacy(), encrypt(), getMasterKey(), initFirestore(), LEGACY_MAP (+3 more)
 
 ### Community 425 - "Constraint"
-Cohesion: 0.07
-Nodes (24): Constraint, EscalationEvent, Frontline, HumanitarianAccessConstraint, NonStateArmedGroup, State, CrossingEvent, DisplacedGroup (+16 more)
+Cohesion: 0.20
+Nodes (8): Constraint, EscalationEvent, Frontline, HumanitarianAccessConstraint, NonStateArmedGroup, State, AdministrativeBoundary, FrozenLineOfContact
 
-### Community 426 - "useSituationGuard"
-Cohesion: 0.15
-Nodes (13): 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates, [3.6.0] — 2026-03-28, Added, Audited, Documentation, Fixed, Notes, Security (+5 more)
+### Community 426 - "13. Codex execution backlog (Phases 0–1, file-level)"
+Cohesion: 0.09
+Nodes (23): 2026-04-29 — Subagent audit wave: persistence, exports, and deploy gates, [3.6.0] — 2026-03-28, Added, Audited, Documentation, Fixed, Notes, Security (+15 more)
 
-### Community 427 - "sourceability/route.ts"
-Cohesion: 0.22
-Nodes (8): dynamic, POST, RequestSchema, runtime, SourceSnippetSchema, normalizeInput(), sourceabilityFlow, mocks
+### Community 427 - "FakeCollection"
+Cohesion: 0.20
+Nodes (3): FakeCollection, FakeDoc, FakeFirestore
 
 ### Community 428 - "PRAXIS Multi-Tenant Data Model"
 Cohesion: 0.15
 Nodes (12): Current state (as of session start), Decision 1 — Org model, Decision 2 — Case ownership, Decision 4 — Invite mechanism, Decision 5 — Migration, Decisions, Implementation plan, Out of scope for this session (+4 more)
 
-### Community 429 - "3. Foundational invariants"
-Cohesion: 0.15
-Nodes (13): 3.10 Every subagent invocation is logged, costed, traced, 3.11 Persona suites are the production bar, 3.12 Terraform is the only sanctioned infrastructure, 3.13 Canary deploys are mandatory, 3.1 The eight ACO primitives are the substrate, 3.2 The four context layers are the only context, 3.3 Owner scoping is absolute, 3.4 The symbolic firewall has two tiers (+5 more)
+### Community 429 - "document-postgres.ts"
+Cohesion: 0.33
+Nodes (8): pg, ensureSchema(), eraseOwnerDocumentMirror(), getDatabaseUrl(), getPool(), isDocumentSqlMirrorConfigured(), mirrorDocumentIngestionSql(), mocks
 
 ### Community 430 - "56. WHERE STANDARD AI FALLS SHORT"
 Cohesion: 0.15
@@ -2664,17 +2646,17 @@ Nodes (13): 56. WHERE STANDARD AI FALLS SHORT, Armed conflict, Cyber incident re
 Cohesion: 0.15
 Nodes (12): 1. CI hardening (`cloudbuild.yaml`), 2. Repo hygiene, 3. Auth + dead-code purge, 4. Workbench split (`tasklet-praxis-workbench.tsx`, 2,132 lines), Acceptance Criteria, Goal, Out of Scope, Risks (+4 more)
 
-### Community 432 - "TurnCapsule"
-Cohesion: 0.10
-Nodes (20): 10. Success criteria, 1. Goal, 2. Current state (verified), 3. Decisions (approved by user 2026-06-26), 4.1 New unit: Instant Context builder, 4.2 Chat route change (the gate), 4.3 Agent loop quality (engine), 4.4 Frontend (+12 more)
+### Community 432 - "instant-context.ts"
+Cohesion: 0.12
+Nodes (24): 4.1 New unit: Instant Context builder, TurnCapsule, buildCapsule(), buildInstantContextCapsule(), buildInstantCoreRefs(), buildSourcingPolicy(), buildTemporality(), cleanSignal() (+16 more)
 
 ### Community 433 - "audit-capsule-depth.ts"
 Cohesion: 0.17
 Nodes (12): auditDir, capsuleReports, categories, check(), counts, expected, failures, genericFragments (+4 more)
 
-### Community 434 - "audit-capsule-inspect-visibility.ts"
-Cohesion: 0.15
-Nodes (9): advancedSource, componentSource, Finding, findings, inspectionSource, librarySource, outDir, report (+1 more)
+### Community 434 - "ContextCapsule — Attachable Capsule & Dock: Technical Build Recommendation"
+Cohesion: 0.20
+Nodes (9): 2.1 Slot semantics (already shipped — freeze them), 2.2 Pinning and versioning, 2.3 Attach flows (all write through the same helpers), 2.4 Compilation budget, 2. The dock: recommended target architecture, 3. Capsule portability (the "attachable anywhere" story), 4. Build sequence (maps to HANDOVER P-queue), 5. Anti-patterns (refuse in review) (+1 more)
 
 ### Community 435 - "audit-embedding-dim.ts"
 Cohesion: 0.15
@@ -2697,8 +2679,8 @@ Cohesion: 0.24
 Nodes (11): ActivityPanel(), ElapsedTime(), FilterMode, formatElapsed(), OperationRow(), StatusIcon(), ActiveOperation, ActivityStore (+3 more)
 
 ### Community 440 - "provenance-graph.ts"
-Cohesion: 0.31
-Nodes (11): clamp01(), computePathConfidence(), ConfidenceCarrier, confidenceFromString(), createProvenanceStep(), listProvenanceSteps(), normalizeNumericConfidence(), provenanceCollection() (+3 more)
+Cohesion: 0.35
+Nodes (10): clamp01(), computePathConfidence(), ConfidenceCarrier, confidenceFromString(), createProvenanceStep(), listProvenanceSteps(), normalizeNumericConfidence(), provenanceCollection() (+2 more)
 
 ### Community 441 - "rationale.ts"
 Cohesion: 0.21
@@ -2709,8 +2691,8 @@ Cohesion: 0.17
 Nodes (12): Defined comparison and acceptance, Delivery self-evaluation, Faithful recall and remaining inference gaps, Final-source answer fidelity, Final-source worker memo review, Historical harness evidence, Historical metadata defects and local correction, Historical production answers: agent review (+4 more)
 
 ### Community 443 - "PRAXIS Legacy Assistant Chat"
-Cohesion: 0.17
-Nodes (11): Data sources, Frameworks, From `AnalystProfile` (via `withCalibration`), From the active `Situation`, Inputs (read), Live feeds (per tool), Open questions / TODO, Operations (+3 more)
+Cohesion: 0.15
+Nodes (12): Data sources, Frameworks, From `AnalystProfile` (via `withCalibration`), From the active `Situation`, Inputs (read), Live feeds (per tool), Open questions / TODO, Operations (+4 more)
 
 ### Community 444 - "loadtest.mjs"
 Cohesion: 0.18
@@ -2744,13 +2726,13 @@ Nodes (10): buildExaAgenticSearchRequest(), EXA_SEARCH_ENDPOINT, EXA_SEARCH_TYPE
 Cohesion: 0.23
 Nodes (10): DIALECTICA_CAPABILITIES, DIALECTICA_DEMO_SCENARIO, DIALECTICA_NAMED_GRAPHS, DIALECTICA_PRIMITIVES, DialecticaCapability, dialecticaCoveragePercent(), DialecticaDemoScenario, DialecticaNamedGraph (+2 more)
 
-### Community 452 - "output-capsules/schemas.ts"
-Cohesion: 0.17
-Nodes (11): BasePayloadSchema, BoardExecutivePackPayloadSchema, CardPayloadSchema, CompositePackPayloadSchema, CountryOnePagerPayloadSchema, DailyReadPayloadSchema, OptionsMemoPayloadSchema, OUTPUT_CAPSULE_PAYLOAD_SCHEMAS (+3 more)
+### Community 452 - "PRAXIS — Builder Handover (Architect Brief + CODEX Prompt Queue)"
+Cohesion: 0.20
+Nodes (9): 1. The objective, 3. Architecture invariants (do not break), 4. Workstream A — Make each capsule genuinely great (highest priority), 5. Workstream B — Repository as the extensible capsule library, 6. Workstream C — Generation transparency and source attention, 7. Workstream D — Graphic coherence (simple, gentle, a bit futuristic), 8. Workstream E — Continuous cleanup, 9. Validation gate + deploy (every checkpoint) (+1 more)
 
-### Community 453 - "cockpit-composition.ts"
-Cohesion: 0.24
-Nodes (11): COCKPIT_CAPSULE_LIBRARY, COCKPIT_COMBINATION_RECIPES, COCKPIT_TOOL_SUGGESTIONS, COCKPIT_USER_ARCHETYPES, findCapsuleTemplate(), POLICY_NEED_TABS, PolicyNeedTab, CAPSULE_COMBINATION_RECIPES (+3 more)
+### Community 453 - "capsules.ts"
+Cohesion: 0.42
+Nodes (7): attachSignalContext(), buildSignalNativeCapsule(), literalHash(), sameHash(), signalNativeEnvelope(), signalSourceReceipt(), compile()
 
 ### Community 454 - "human-review-panel.test.tsx"
 Cohesion: 0.24
@@ -2760,13 +2742,13 @@ Nodes (11): approveButton(), approved, change(), Element, elements(), find(), pr
 Cohesion: 0.17
 Nodes (11): capsuleBackfill, capsuleConsolidation, capsuleDepth, capsuleGraphLite, capsuleInspectVisibility, capsuleResearchDossiers, deepPreship, packageJson (+3 more)
 
-### Community 456 - "context_genesis/pipeline.py"
-Cohesion: 0.24
-Nodes (4): default_pipeline_plan(), PipelineRunPlan, PipelineStage, test_default_pipeline_plan_records_case_source_and_ontology()
+### Community 456 - "Round 4 — Visual fixes + dev backlog + clarifying questions + Wikipedia + analyst notes"
+Cohesion: 0.22
+Nodes (9): Lane AA — Bottom-right collision + Screenshot gitignore, Lane BB — Dashboard card legibility, Lane CC — Developer backlog system, Lane DD — Clarifying Questions framework, Lane EE — Wikipedia enrichment client, Lane FF — Analyst Notes (natural-language knowledge retention), Round 4 validation, Round 4 — Visual fixes + dev backlog + clarifying questions + Wikipedia + analyst notes (+1 more)
 
 ### Community 457 - "Cognitive Capsule architecture"
-Cohesion: 0.18
-Nodes (10): Acceptance and release evidence, Cognitive Capsule architecture, Context compilation and execution, Human review and canonicality, Implementation seams, Logical layers, Portability, registry, and deferred work, Product contract (+2 more)
+Cohesion: 0.17
+Nodes (11): Acceptance and release evidence, Cognitive Capsule architecture, Context compilation and execution, Human review and canonicality, Implementation seams, Inventory and compatibility, Logical layers, Portability, registry, and deferred work (+3 more)
 
 ### Community 458 - "compose-capsules-demo.tsx"
 Cohesion: 0.22
@@ -2776,13 +2758,13 @@ Nodes (10): Recent history (manual log), ACCENT_BG, ACCENT_INK, ComposeCapsulesS
 Cohesion: 0.18
 Nodes (11): 101. FIRST CODEX EXECUTION PACK, TASK 1, TASK 10, TASK 2, TASK 3, TASK 4, TASK 5, TASK 6 (+3 more)
 
-### Community 460 - "with-calibration.ts"
-Cohesion: 0.04
-Nodes (67): AnalystProfile — Calibration Contract, 3.8 Every AI route is wrapped, P0.2 — Memo fact-check + language-check, 13. Codex execution backlog (Phases 0–1, file-level), 2026-05-30 verification checkpoint, EPIC 0.1 — Hardening & durable AgentRun, EPIC 1.2 — Capsule CRUD API + storage, EPIC 1.3 — Capsule Builder UI (wizard) (+59 more)
+### Community 460 - "drafting-action/route.ts"
+Cohesion: 0.24
+Nodes (9): DraftingActionRequestSchema, maxDuration, POST, applyDraftingAction(), DRAFTING_ACTIONS, DraftingActionId, DraftingActionInput, DraftingActionResult (+1 more)
 
 ### Community 461 - "Capsule and Agentic Workflow Review - 2026-06-24"
-Cohesion: 0.18
-Nodes (10): 2. Ask orchestration is real and tested, 3. Direct and queued branches both exist, 4. Capsule context is hardened for missing and legacy profiles, Capsule and Agentic Workflow Review - 2026-06-24, Ladybug Feasibility, Ranked Improvement Backlog, Verdict, Verification Run (+2 more)
+Cohesion: 0.12
+Nodes (15): 2. Ask orchestration is real and tested, 4. Capsule context is hardened for missing and legacy profiles, 5. The `/app/capsules` agent-context panel exists in code, Broken or Risky, Capsule and Agentic Workflow Review - 2026-06-24, High: Boardroom visible dock is not guaranteed to be the authoritative run binding, Ladybug Feasibility, Medium: Model matrix policy needs clarification (+7 more)
 
 ### Community 462 - "Codex: start from this extracted folder"
 Cohesion: 0.18
@@ -2816,9 +2798,9 @@ Nodes (10): Anti-patterns we will refuse, How to apply, PRAXIS Design Rules — 
 Cohesion: 0.20
 Nodes (3): date-fns, formatDiplomaticDate(), formatRelativeTime()
 
-### Community 470 - "audit-gcp.mjs"
-Cohesion: 0.22
-Nodes (3): checks, sql, createCloudSqlReadinessReader()
+### Community 470 - "user-core-onboarding-card.tsx"
+Cohesion: 0.28
+Nodes (8): UserCoreOnboardingCard, CapsuleCreateResponse, OUTPUT_OPTIONS, ROLE_OPTIONS, slug(), UserCoreOnboardingCard(), buildUserCore(), dismiss()
 
 ### Community 471 - "audit-tool-contracts.ts"
 Cohesion: 0.27
@@ -2836,9 +2818,9 @@ Nodes (10): Composition, Context Preparer, Context Requirements, Examples, Input
 Cohesion: 0.18
 Nodes (10): Composition, Context Requirements, Examples, Inputs, Memo Drafter, Outputs, Pitfalls, Purpose (+2 more)
 
-### Community 475 - "eslint.config.mjs"
-Cohesion: 0.18
-Nodes (6): eslintConfig, noForbiddenModels, require, ALLOWED, eslint, eslint-config-next
+### Community 475 - "deploy-firebase-rules.mjs"
+Cohesion: 0.13
+Nodes (13): eslintConfig, noForbiddenModels, require, ALLOWED, eslint, eslint-config-next, BUCKETS, main() (+5 more)
 
 ### Community 476 - "Output Refiner"
 Cohesion: 0.18
@@ -3084,9 +3066,9 @@ Nodes (10): Composition, Context Requirements, Examples, Inputs, Outputs, Pitfal
 Cohesion: 0.24
 Nodes (9): FrameworkChain(), LENS_AXES, PATH_TINT, PathPicker(), PreviewPanel(), RadialLensChart(), SAMPLE_BY_PATH, SPRING (+1 more)
 
-### Community 537 - "usePendingAgentApprovals.ts"
-Cohesion: 0.33
-Nodes (8): ApprovalInboxButton(), ApprovalInboxItem(), hydrateRunContexts(), PendingAgentApproval, recordValue(), RunApprovalContext, stringValue(), usePendingAgentApprovals()
+### Community 537 - "sources-preference.ts"
+Cohesion: 0.42
+Nodes (7): applySourcePreferences(), normalizeHost(), preferenceForUrl(), ProposalLike, SavedSource, SourcePreference, __test__
 
 ### Community 538 - "auto-structure.ts"
 Cohesion: 0.38
@@ -3112,13 +3094,13 @@ Nodes (10): chatShell, globals, landingPage, marketingHome, ogImage, praxisChat,
 Cohesion: 0.18
 Nodes (11): 2026-06-12 session — shipped and follow-ups, Current Build Queue, Current continuation priorities, Current Priority Queue, Existing MVP Follow-Ups, Future Architecture Direction, Immediate Next Steps, Live Production Blockers (+3 more)
 
-### Community 544 - "capsule_eval.py"
-Cohesion: 0.42
-Nodes (6): _faithfulness(), _has_required(), _ratio(), _required_keys(), run_capsule_dry_run_eval(), test_capsule_eval_scores_schema_and_citations()
+### Community 544 - "forced_displacement.py"
+Cohesion: 0.25
+Nodes (6): DisplacedGroup, DurableSolutionCommitment, HostCommunity, ProtectionClaim, ReturnConstraint, Route
 
 ### Community 545 - "6. The recalibrated symbolic firewall"
-Cohesion: 0.22
-Nodes (9): Party, 6.1 The principle, 6.2 The structural core (Hard tier — deterministic), 6.3 The advisory layer (Soft tier — informative, never blocking), 6.4 The synthesized layer (AI proposals, always labeled), 6.5 What the firewall is for, 6.6 Implementation, 6.7 What is NOT the firewall's job (+1 more)
+Cohesion: 0.29
+Nodes (7): 6.1 The principle, 6.3 The advisory layer (Soft tier — informative, never blocking), 6.4 The synthesized layer (AI proposals, always labeled), 6.5 What the firewall is for, 6.6 Implementation, 6.7 What is NOT the firewall's job, 6. The recalibrated symbolic firewall
 
 ### Community 546 - "strategic_competition.py"
 Cohesion: 0.22
@@ -3132,9 +3114,9 @@ Nodes (10): Files added, Files updated, Hardening, IAM / SA migration plan, Idem
 Cohesion: 0.27
 Nodes (8): buildLibraryArtifacts(), deriveClaims(), LibraryArtifact, LibraryArtifactType, SourceImportReceipt, truncate(), SavedClaim, SavedClaimSchema
 
-### Community 549 - "ContextCapsuleClaim"
+### Community 549 - "Round 5 — Hero quadrant tour + 10 new bricks + Codex handoff doc"
 Cohesion: 0.25
-Nodes (9): 3.2 Content — claim ledger 2.0 (temporal · causal · receipted · typed), CAP-2 — Claim ledger 2.0 (receipts · temporality · causality), ContextCapsuleClaim, ContextCapsuleSourceRef, EvidenceReceipt, ContextCapsuleSourceSpine, DialecticaCapsuleImportPlan, CapsuleDocumentFirstSignals (+1 more)
+Nodes (8): Brick #45 — Hero quadrant tour (CODE), Brick #46 — Color system audit (DOC + verified), Bricks #47-54 — second sweep (CODE shipped), Bricks #47-54 — Specs only (NEW BRICKS in roadmap), Codex handoff, Round 5 — Hero quadrant tour + 10 new bricks + Codex handoff doc, Round 5 plan, Round 5 validation (final)
 
 ### Community 550 - "Capsule Database Audit"
 Cohesion: 0.20
@@ -3152,9 +3134,9 @@ Nodes (10): Canonical Documents, Codebase Alignment, Current Gaps, Documentation
 Cohesion: 0.20
 Nodes (10): Delivery evidence and limitations, Delivery states, Documentation and operator entrypoints, Evidence and policy-method regression cases, PRAXIS implementation ledger — 2026-09-30, Recommendation coverage register (current dispositions), Release boundary and integrated evidence, Remaining dependencies and proof (+2 more)
 
-### Community 554 - "analyst-memory.ts"
-Cohesion: 0.29
-Nodes (4): AnalystMemory, extractMemoryFromAnnotations(), MemoryCategory, upsertAnalystMemory()
+### Community 554 - "PRAXIS Audit Runner And TODO Triage"
+Cohesion: 0.25
+Nodes (7): Accepted Copy / Test Fixtures, Audit Runner, Implemented In This Branch, PRAXIS Audit Runner And TODO Triage, Remaining Gap, Ticketed, TODO And Stub Triage
 
 ### Community 555 - "PRAXIS chat-first experience plan — 2026-09-30"
 Cohesion: 0.22
@@ -3176,9 +3158,9 @@ Nodes (9): checkFile(), failures, federatedSearch, forbiddenExternalMarkers, glo
 Cohesion: 0.20
 Nodes (8): failures, FORBIDDEN_PREFIXES, FORBIDDEN_SUFFIXES, full, hrefMatches, root, src, workspaceBlock
 
-### Community 560 - "deploy-firebase-rules.mjs"
-Cohesion: 0.36
-Nodes (7): BUCKETS, main(), releaseFirebaseRules(), remoteErrorDiagnostic(), rulesHash(), expectedHashes, sources
+### Community 560 - "PRAXIS Tool Catalogue"
+Cohesion: 0.25
+Nodes (7): Authoring guidance for future docs, Changes since 2026-04-25, Coverage, How to read a tool doc, PRAXIS Tool Catalogue, Status legend, Tools with deep docs in this folder
 
 ### Community 561 - "generate-tool-docs.ts"
 Cohesion: 0.29
@@ -3224,9 +3206,9 @@ Nodes (9): Composition, Context Requirements, Examples, Inputs, Outputs, Pitfall
 Cohesion: 0.20
 Nodes (9): Composition, Context Requirements, Examples, Inputs, Outputs, Pitfalls, Purpose, When Not To Use (+1 more)
 
-### Community 572 - "getAnalystProfile"
-Cohesion: 0.09
-Nodes (25): GET, applyAssistantPatch(), AssistantPatch, GET, PATCH, PatchOp, getAnalystProfile(), cosine() (+17 more)
+### Community 572 - "profile-weighted-retrieval.ts"
+Cohesion: 0.19
+Nodes (17): cosine(), mapChunk(), retrieveForProfile(), scoreWithSourcePosture(), clamp(), DEFAULT_FEED_RELIABILITY, fallbackPosture(), getSourcePosture() (+9 more)
 
 ### Community 573 - "capsule-factory-route-consolidation.test.ts"
 Cohesion: 0.22
@@ -3236,13 +3218,13 @@ Nodes (8): RepositoryPage(), appShellSource, capsuleRouteSource, capsuleServiceS
 Cohesion: 0.22
 Nodes (8): Approved Cloud Setup Commands, Current Build Lane, Google Agent Platform For PRAXIS, Local Preflight, Macro RAG Repositories, Official Sources, Product Rule, Production Preflight
 
-### Community 575 - "chat-service.ts"
-Cohesion: 0.33
-Nodes (9): appendMessage(), Chat, chatDoc(), ChatMessage, chatsRef(), createChat(), deleteChat(), getChat() (+1 more)
+### Community 575 - "sanctions_economic_statecraft.py"
+Cohesion: 0.29
+Nodes (5): ComplianceCommitment, DesignationEvent, EconomicPressureClaim, EvasionRoute, SanctionedActor
 
-### Community 576 - "tool-preferences.ts"
-Cohesion: 0.23
-Nodes (12): PRODUCT_SURFACE_IDS, PRODUCT_SURFACE_TOOL_IDS, PRODUCT_SURFACES, ProductSurface, applyToolPreferences(), CUSTOMIZABLE_SIDEBAR_TOOLS, CustomizableToolItem, hiddenToolSet() (+4 more)
+### Community 576 - "context.py"
+Cohesion: 0.48
+Nodes (4): test_user_model_fields_accept_seed_shape(), OutputPreferences, SourcePreferences, UserModelFields
 
 ### Community 577 - "Historical: PRAXIS Codex Night Pack — STATUS (2026-05-08)"
 Cohesion: 0.10
@@ -3264,9 +3246,9 @@ Nodes (5): button(), Element, elements(), runtime, text()
 Cohesion: 0.22
 Nodes (9): Agents, Codex ECC Baseline, Current Slice Work, graphify, Hard Rules, Operational references (consult when relevant), Read Before Code, Start Every Session (+1 more)
 
-### Community 582 - "checkpointing.py"
-Cohesion: 0.07
-Nodes (12): close_checkpointer(), _conninfo(), get_checkpointer(), health_check(), _resolve_password(), health_check(), _increment(), run_smoke() (+4 more)
+### Community 582 - "get_settings"
+Cohesion: 0.05
+Nodes (26): close_checkpointer(), _conninfo(), get_checkpointer(), health_check(), _resolve_password(), _increment(), run_smoke(), SmokeState (+18 more)
 
 ### Community 583 - "Grafeo Context Graph Experiment"
 Cohesion: 0.22
@@ -3281,8 +3263,8 @@ Cohesion: 0.22
 Nodes (9): 17.1 New concept in the situation domain (e.g., "ceasefire violation," "BATNA"), 17.2 New piece of context (e.g., "user's preferred citation format"), 17.3 New analytical capability (e.g., "fact-check Russian-language sources"), 17.4 New AI capability that doesn't fit a tool's request/response shape (e.g., "translate memo blocks to French"), 17.5 New surface in the UI (e.g., "a global search bar"), 17.6 New data store (e.g., "a graph database for high-fanout queries"), 17.7 New external integration (e.g., "import documents from Google Drive"), 17.8 New infrastructure resource (e.g., "BigQuery for analytics") (+1 more)
 
 ### Community 586 - "PRAXIS Architecture Live-App Alignment"
-Cohesion: 0.22
-Nodes (9): Active Status Ledger, Architecture Audit Chain Parity, Current Local Gate, Known Reference/API Shape Drift, Partially Implemented Target State, PRAXIS Architecture Live-App Alignment, Required Correction, Shipped And Enforced (+1 more)
+Cohesion: 0.12
+Nodes (15): Active Status Ledger, Architecture Audit Chain Parity, Current Local Gate, Known Reference/API Shape Drift, Partially Implemented Target State, PRAXIS Architecture Live-App Alignment, Required Correction, Shipped And Enforced (+7 more)
 
 ### Community 587 - "Agent ownership map — Claude × Codex on PRAXIS"
 Cohesion: 0.22
@@ -3348,13 +3330,13 @@ Nodes (5): eventRowFromParams(), insertedEvents(), mockQueries(), mocks, NOW
 Cohesion: 0.25
 Nodes (7): Costs, Files, IAM (one-time), LangGraph Runtime Plan, PRAXIS Vertex AI Agent Engine — backend, TL;DR deploy, Troubleshooting
 
-### Community 603 - "1. Activate paid / freemium data sources"
-Cohesion: 0.25
-Nodes (8): 1. Activate paid / freemium data sources, 1a. ~~source-linked event reporting~~ — **withdrawn 2026-04-25**, 1b. Vertex AI Agent Engine (Deep Research Agent, ~1–2 h), 1c. Retired structured-feed ingestion, 1d. Polar billing (~2 h, active launch path), 1e. Research providers, 1f. Stripe (legacy), PRAXIS GCP Operations Runbook
+### Community 603 - "Fable ↔ Codex Pair Protocol (MANDATORY)"
+Cohesion: 0.33
+Nodes (6): Brief template, Codex (via the `codex-rescue` agent) — executor, Fable ↔ Codex Pair Protocol (MANDATORY), Fable (this session) — planner & reviewer, Hard rules, The loop
 
-### Community 604 - "run-timeline.tsx"
-Cohesion: 0.32
-Nodes (7): @ai-sdk/react, phaseFromEvent(), PHASES, RunTimeline(), RunTimelinePhase, statusClass(), 2026-05-30 — EPIC 1.5 Agentic Research Flow And Run Timeline
+### Community 604 - "scenario-forks.ts"
+Cohesion: 0.47
+Nodes (5): createScenarioFork(), forksCollection(), listScenarioForks(), ScenarioFork, ScenarioMutation
 
 ### Community 605 - "11. Tools (L4 part 2) — the marketplace"
 Cohesion: 0.25
@@ -3376,9 +3358,9 @@ Nodes (7): Assets, Deployment Runbook, Document Upload Fail Rate, Live Status, P
 Cohesion: 0.25
 Nodes (7): How Outputs Return With Proof, How Triage Selects the Team, Policy-Agent Roster, PRAXIS Agentic Workflow Explained, What Happens, Why Capsules Make It Smarter, Why It Is More Trustworthy
 
-### Community 610 - "audit-repo-shape.ts"
-Cohesion: 0.25
-Nodes (7): failures, graphPath, handoffPaths, reportPath, root, todoPath, warnings
+### Community 610 - "chat-pinned-evidence.test.ts"
+Cohesion: 0.33
+Nodes (4): Handler, mocks, snapshot, user
 
 ### Community 611 - "PRAXIS Agentic Search Diagnostic"
 Cohesion: 0.25
@@ -3448,9 +3430,9 @@ Nodes (7): Core Rules, Deeper References, Incident Response, Launch Acceptance C
 Cohesion: 0.25
 Nodes (4): TERMINOLOGY_MAP, TerminologyCategory, TerminologyEntry, UN_TERMINOLOGY
 
-### Community 628 - "tiers.ts"
-Cohesion: 0.32
-Nodes (6): canPromoteToVerdict(), confidenceCapForTier(), getTierDefinition(), SourceTier, SourceTierDefinition, TIER_DEFINITIONS
+### Community 628 - "ask-praxis-clean-routing.test.ts"
+Cohesion: 0.33
+Nodes (5): askToolsSource, chatRouteSource, exaSource, repoRoot, researchGraphSource
 
 ### Community 629 - "ical-parser.ts"
 Cohesion: 0.39
@@ -3468,17 +3450,17 @@ Nodes (6): 0036 - GCP Production Verification Discipline, Alternatives considere
 Cohesion: 0.29
 Nodes (6): ADR 0051: TrustGraph as an Optional Derived Context Substrate, Consequences, Context, Decision, Implementation Notes, Status
 
-### Community 634 - "PRAXIS Architecture"
-Cohesion: 0.29
-Nodes (7): Active Enforcement, Canonical references, Current Production Shape, Deeper References, Historical / Subsumed Directions, PRAXIS Architecture, Product Surface Doctrine
+### Community 634 - "Ontology Backend Frontend Map"
+Cohesion: 0.40
+Nodes (4): Agent-Readable Additions, Backend Specialization Mapping, Core Contract, Ontology Backend Frontend Map
 
 ### Community 635 - "DIALECTICA PRAXIS Context Contract"
 Cohesion: 0.29
 Nodes (6): Context Core Lite, DIALECTICA Future Export, DIALECTICA PRAXIS Context Contract, Mapping Rule, Modes, Product Boundary
 
-### Community 636 - "PRAXIS, DIALECTICA, KAIROS, and AGON Alignment"
-Cohesion: 0.29
-Nodes (6): Direction, Guardrails, Honest Assessment, Layer Responsibilities, PRAXIS, DIALECTICA, KAIROS, and AGON Alignment, Recommended Contract
+### Community 636 - "Dead Surface Inventory"
+Cohesion: 0.40
+Nodes (4): Component Candidates, Dead Surface Inventory, Deletion Performed, Route Inventory
 
 ### Community 637 - "Lane: Cloud And Auth Operations"
 Cohesion: 0.29
@@ -3528,13 +3510,13 @@ Nodes (6): Access checkpoints, Future SIGNAL tools, MCP and access: keep the fir
 Cohesion: 0.25
 Nodes (7): Operational limits and follow-up, Published geographic visualization and feedback refinement, Resume, Safe release receipts, SIGNAL build and release progress, Validation evidence, Verified initial text-pilot release
 
-### Community 649 - "SIGNAL cloud release record and procedure"
-Cohesion: 0.29
-Nodes (7): Acceptance evidence, Future staging and publication, Historical initial text-pilot release, Indexes and scheduling, Published geographic refinement, Rollback and remaining limits, SIGNAL cloud release record and procedure
+### Community 649 - "ok"
+Cohesion: 0.12
+Nodes (18): Latest Validation Checkpoint, Local, Staging, And Production Readiness Matrix, Cognitive Capsule implementation and publication, Corrected published checkpoint, Explicit remaining scope, Final serving release and acceptance, First-pack publication evidence (historical), First-pack verified source (historical) (+10 more)
 
 ### Community 650 - "Next 20 Improvements After Capsule Composer"
-Cohesion: 0.29
-Nodes (6): Acceptance Standard, Batch A: 10 More Improvements, Batch B: 10 More After That, Guardrails, Next 20 Improvements After Capsule Composer, Recommended Ship Order
+Cohesion: 0.33
+Nodes (5): Acceptance Standard, Batch B: 10 More After That, Guardrails, Next 20 Improvements After Capsule Composer, Recommended Ship Order
 
 ### Community 651 - "10. Coalition Detector"
 Cohesion: 0.29
@@ -3584,9 +3566,9 @@ Nodes (7): 8. Contradiction Finder, Cores it needs, Frameworks, Limits, Methodol
 Cohesion: 0.29
 Nodes (7): 9. Frame Narrative, Cores it needs, Frameworks, Limits, Methodology, Output, What it does
 
-### Community 663 - "12. Agents (L3) — Vertex AI Agent Engine"
-Cohesion: 0.29
-Nodes (7): 12.1 The seven subagents, 12.2 Why Vertex AI Agent Engine, 12.3 The deployment shape, 12.4 Calling subagents, 12.5 Constraints on subagents, 12.6 Adding a new subagent, 12. Agents (L3) — Vertex AI Agent Engine
+### Community 663 - "sweep/route.ts"
+Cohesion: 0.50
+Nodes (4): maxDuration, POST(), runtime, sweepSignalWatches()
 
 ### Community 664 - "audit-architecture-chain.ts"
 Cohesion: 0.29
@@ -3600,9 +3582,9 @@ Nodes (6): attachRoute, capsuleRoute, capsuleService, failures, root, stackRoute
 Cohesion: 0.29
 Nodes (6): files, markers, missingMarkers, root, source, textParts
 
-### Community 667 - "PRAXIS Corpus Architecture"
-Cohesion: 0.29
-Nodes (6): Corpus Sources, Current Implementation, Google Cloud Path, Objective, PRAXIS Corpus Architecture, Target API
+### Community 667 - "AskTurnPlanPanel.tsx"
+Cohesion: 0.80
+Nodes (4): AskTurnPlanPanel(), continuationActionForTurnPlan(), formatPlanToken(), PlanChip()
 
 ### Community 668 - "audit-substrate-writers.ts"
 Cohesion: 0.29
@@ -3632,17 +3614,17 @@ Nodes (5): Current Posture, Pack 15 Decisions, PRAXIS Model Selection, Source Of
 Cohesion: 0.29
 Nodes (4): AskMode, AskSlashCommand, COMMANDS, ParsedAskCommand
 
-### Community 675 - "13. Data (L2) — Firestore + Postgres + Cloud Storage"
-Cohesion: 0.33
-Nodes (6): 13.1 The four-store model, 13.2 Why this combination, 13.3 Why Neo4j is retired in v1, 13.4 The Postgres schema (essential excerpt), 13.5 The two-phase commit protocol, 13. Data (L2) — Firestore + Postgres + Cloud Storage
+### Community 675 - "[3.7.0] — 2026-03-29"
+Cohesion: 0.50
+Nodes (4): [3.7.0] — 2026-03-29, Added, Fixed, Removed
 
 ### Community 676 - "search-query.ts"
 Cohesion: 0.52
 Nodes (5): buildAdvancedMediaSearchQuery(), buildSituationMediaKeywords(), cleanToken(), MediaSearchQueryInput, quote()
 
-### Community 677 - "20. The Codex collaboration protocol"
-Cohesion: 0.33
-Nodes (6): 20.1 On entering the project, 20.2 The four-phase pattern (always), 20.3 The five collaboration patterns, 20.4 Hard rules for AI engineers, 20.5 The single prompt that triggers Codex, 20. The Codex collaboration protocol
+### Community 677 - "[3.9.6] — 2026-03-30"
+Cohesion: 0.67
+Nodes (3): [3.9.6] — 2026-03-30, Changed, Fixed
 
 ### Community 678 - "ask-context-bar-contract.test.ts"
 Cohesion: 0.29
@@ -3656,9 +3638,9 @@ Nodes (9): deleteSignalDesk(), isDeskGeneratedCapsule(), revokeSignalSnapshotExp
 Cohesion: 0.33
 Nodes (6): Changed, Changed (public pricing surface — credit metering hidden), Fixed, Known Remaining Work, [Unreleased] — 2026-04-25 (first session), Validation
 
-### Community 681 - "SIGNAL text pilot checklist"
-Cohesion: 0.33
-Nodes (5): Founder measurements, Release operator, Remaining risk ownership, Reviewer and source-panel owner, SIGNAL text pilot checklist
+### Community 681 - "signal/README.md"
+Cohesion: 0.09
+Nodes (19): Further geographic improvements, Geographic coverage contract, Private feedback workflow, Release and task evidence, SIGNAL improvement backlog, Founder measurements, Release operator, Remaining risk ownership (+11 more)
 
 ### Community 682 - "Contributing to PRAXIS"
 Cohesion: 0.33
@@ -3824,10 +3806,6 @@ Nodes (3): bumpCapsuleVersion, getCapsule, setSpan
 Cohesion: 0.40
 Nodes (5): Context and persistence hardening, Fixed, Improved, [Unreleased] — 2026-04-25 (seventh session — deploy hardening), Verified
 
-### Community 723 - "[Unreleased] — 2026-04-25 (fifth session — open-source pivot)"
-Cohesion: 0.40
-Nodes (5): Docs rewritten, Strategic pivot — ACLED + Firecrawl + Anthropic dropped, Surfaces updated, [Unreleased] — 2026-04-25 (fifth session — open-source pivot), Validation
-
 ### Community 724 - "ADR 0049: Cognee Memory Layer Disabled-First"
 Cohesion: 0.40
 Nodes (4): ADR 0049: Cognee Memory Layer Disabled-First, Consequences, Context, Decision
@@ -3875,14 +3853,6 @@ Nodes (4): Commercial Production, Development And Evaluation, Engineering Bounda
 ### Community 736 - "Runtime template - extract what the source says"
 Cohesion: 0.40
 Nodes (4): Application inputs, Instruction, Runtime template - extract what the source says, Validation after response
-
-### Community 737 - "SIGNAL improvement backlog"
-Cohesion: 0.40
-Nodes (5): Further geographic improvements, Geographic coverage contract, Private feedback workflow, Release and task evidence, SIGNAL improvement backlog
-
-### Community 738 - "SIGNAL"
-Cohesion: 0.40
-Nodes (5): Clean environment setup, Geographic coverage and feedback refinement, Initial text-pilot verification status, SIGNAL, Workers, storage and release
 
 ### Community 739 - "kpis.sql"
 Cohesion: 0.60
@@ -3943,14 +3913,6 @@ Nodes (4): CAPSULE_CORE_BY_KEY, CAPSULE_CORES, CapsuleCoreDef, CapsuleCoreKey
 ### Community 754 - "aco-copy.ts"
 Cohesion: 0.40
 Nodes (4): ACO_COPY, ACO_THESIS_COPY, ACO_WORKED_EXAMPLE, AcoEntityCopy
-
-### Community 758 - "settings-page-contract.test.ts"
-Cohesion: 0.33
-Nodes (5): accountApi, appShell, proxy, settingsPage, settingsRoute
-
-### Community 759 - "[Unreleased] — 2026-04-27 (Codex docs cleanup and LangGraph readiness)"
-Cohesion: 0.50
-Nodes (4): Added, Changed, Removed, [Unreleased] — 2026-04-27 (Codex docs cleanup and LangGraph readiness)
 
 ### Community 760 - "[Unreleased] — 2026-04-25 (fourth session — playbook + vision + cleanup)"
 Cohesion: 0.50
@@ -4076,14 +4038,6 @@ Nodes (4): type, maxLength, minLength, type
 Cohesion: 0.50
 Nodes (4): wordingRef, maxLength, minLength, type
 
-### Community 792 - "Fixed"
-Cohesion: 0.40
-Nodes (4): [6.3.1] — 2026-04-14, Changed, Fixed, safeNum()
-
-### Community 793 - "7. Frontend (L7) — Next.js workbench"
-Cohesion: 0.40
-Nodes (5): 7.1 Route structure, 7.2 State management, 7.3 Server vs client components, 7.4 Streaming, 7. Frontend (L7) — Next.js workbench
-
 ### Community 795 - "redactMarketplaceFoundationJson"
 Cohesion: 0.67
 Nodes (3): FOUNDATION_MARKERS, redactMarketplaceFoundationJson(), redactMarketplaceFoundationMarkers()
@@ -4100,14 +4054,6 @@ Nodes (3): [3.5.0] — 2026-03-26, Added, Changed
 Cohesion: 0.67
 Nodes (3): [3.7.1] — 2026-03-29, Added, Audited
 
-### Community 829 - "[3.9.1] — 2026-03-30"
-Cohesion: 0.67
-Nodes (3): [3.9.1] — 2026-03-30, Added, Fixed
-
-### Community 830 - "generate-marketplace-skills.ts"
-Cohesion: 0.50
-Nodes (4): Retrieval Contract, missingOnly, renderSkill(), title()
-
 ### Community 831 - "[3.9.7] — 2026-03-30"
 Cohesion: 0.67
 Nodes (3): [3.9.7] — 2026-03-30, Added, Fixed
@@ -4120,14 +4066,6 @@ Nodes (3): [5.1.0] — 2026-04-01, Added, Changed
 Cohesion: 0.67
 Nodes (3): Added, Changed, [Unreleased] — 2026-04-25 (third session)
 
-### Community 834 - "[Unreleased] — 2026-04-25 (third session, post-research integration)"
-Cohesion: 0.67
-Nodes (3): Added (compass research integration), Critical finding to action this week, [Unreleased] — 2026-04-25 (third session, post-research integration)
-
-### Community 835 - "[Unreleased] — 2026-04-27 (Landing-page + share-metadata refresh)"
-Cohesion: 0.67
-Nodes (3): Added (SEO + share metadata), Changed, [Unreleased] — 2026-04-27 (Landing-page + share-metadata refresh)
-
 ### Community 836 - "[Unreleased] — 2026-04-26 (eighth session — workspace personalization)"
 Cohesion: 0.67
 Nodes (3): Improved, Tests, [Unreleased] — 2026-04-26 (eighth session — workspace personalization)
@@ -4135,10 +4073,6 @@ Nodes (3): Improved, Tests, [Unreleased] — 2026-04-26 (eighth session — work
 ### Community 840 - "19. CAPSULE STUDIO MODES"
 Cohesion: 0.67
 Nodes (3): 19. CAPSULE STUDIO MODES, Mode A — Start from sources, Mode B — Interview an expert
-
-### Community 841 - "3. The Context Capsule, done right"
-Cohesion: 0.40
-Nodes (5): 3.1 Capsule data model (extends, not replaces, ADR 0050), 3.2 Lifecycle, 3.3 Composability, 3.4 Guardrails & structured output (reliability rules), 3. The Context Capsule, done right
 
 ### Community 846 - "language"
 Cohesion: 0.67
@@ -4169,8 +4103,8 @@ Cohesion: 0.67
 Nodes (3): validFrom, pattern, type
 
 ### Community 854 - "run-agent.ts"
-Cohesion: 0.08
-Nodes (29): BriefBuilderSchema, BriefSectionSchema, DecisionPointSchema, DEMO_BRIEF, maxDuration, maxDuration, DEMO_REVIEW, FlaggedAssumptionSchema (+21 more)
+Cohesion: 0.07
+Nodes (32): Lane C — Brainstorming Table MVP (NEW), Lane N — Ask PRAXIS wired to the shared corpus retriever, Batch A: 10 More Improvements, BriefBuilderSchema, BriefSectionSchema, DecisionPointSchema, DEMO_BRIEF, maxDuration (+24 more)
 
 ### Community 855 - "PRAXIS production acceptance — 2026-09-30"
 Cohesion: 0.40
@@ -4188,53 +4122,33 @@ Nodes (4): Current boundaries, Files under backend/agents/, PRAXIS optional back
 Cohesion: 0.50
 Nodes (4): Current Entrypoints, Current Product Truth, Documentation Hygiene, PRAXIS Documentation Map
 
-### Community 961 - "SIGNAL visualization and feedback review"
-Cohesion: 0.50
-Nodes (4): Feedback collection, Observations and implemented changes, SIGNAL visualization and feedback review, Verification and release
-
 ### Community 962 - "[3.8.0] — 2026-03-29"
 Cohesion: 0.67
 Nodes (3): [3.8.0] — 2026-03-29, Added, Changed
-
-### Community 963 - "[3.9.4] — 2026-03-30"
-Cohesion: 0.67
-Nodes (3): [3.9.4] — 2026-03-30, Added, Fixed
-
-### Community 964 - "[3.9.5] — 2026-03-30"
-Cohesion: 0.67
-Nodes (3): [3.9.5] — 2026-03-30, Added, Fixed
 
 ### Community 965 - "[4.2.0] — 2026-03-31"
 Cohesion: 0.67
 Nodes (3): [4.2.0] — 2026-03-31, Added, Changed
 
-### Community 966 - "[4.3.0] — 2026-03-31"
-Cohesion: 0.67
-Nodes (3): [4.3.0] — 2026-03-31, Changed, Dependencies
-
-### Community 967 - "[5.0.0] — 2026-03-31"
-Cohesion: 0.67
-Nodes (3): [5.0.0] — 2026-03-31, Added, Changed
-
 ## Knowledge Gaps
-- **7238 isolated node(s):** `time`, `Contracts inspected`, `Representative country panel`, `Economic provider contract`, `Headline candidates and rights` (+7233 more)
+- **7238 isolated node(s):** `SignalWorldResearchOutputSchema`, `SignalWorldResearchInput`, `gateway`, `input`, `observation` (+7233 more)
   These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 8829 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **152 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **150 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `vitest` connect `vitest` to `next`, `saveToolOutput`, `capsule-v3.ts`, `situation-initializer.ts`, `TaskletPraxisWorkbench`, `ontology/registry.ts`, `auth-context.tsx`, `capsule-workbench-view-model.ts`, `capsule-service.ts`, `cn`, `signal/domain.ts`, `path/types.ts`, `ai/chat/route.ts`, `react`, `world-service.ts`, `cognitive-capsule/schema.ts`, `types/domain.ts`, `CapsuleExpertisePanel.tsx`, `library.ts`, `analyst-notes.ts`, `AskStreamPanel.tsx`, `ask-context-readiness.test.tsx`, `futurist-ai-lab-contract.test.ts`, `praxis-chat.tsx`, `evidence-pack.ts`, `agent-runtime/postgres.ts`, `cognitive-capsule/evaluation.ts`, `state.ts`, `agent-runtime/types.ts`, `CapsuleWorkbenchPanel.tsx`, `ask-answer-envelope.ts`, `CapsuleGraphViewer.tsx`, `ref_node_crypto`, `memo-service.ts`, `user-keys.ts`, `blackboard/index.ts`, `runtime-data-plane.ts`, `model-matrix.ts`, `CognitiveCapsule`, `deploy-firebase-rules.mjs`, `signal/schema.ts`, `capsule-plus/index.ts`, `capsule-closed-loop-learning.ts`, `getAnalystProfile`, `capsule-factory-route-consolidation.test.ts`, `CapsuleBuilderWizard.tsx`, `dialectica-capsule-import.ts`, `analyst-profile-admin.ts`, `analyst-profile.ts`, `profile-context.ts`, `handover-package/route.ts`, `runtime.ts`, `marketing-home-contract.test.ts`, `CapsuleReviewQueueSection.test.tsx`, `tool-preferences.ts`, `assistant/next-moves.ts`, `active-context-stack.ts`, `AskQueuedAgentRunPanel.tsx`, `ContextBuilderRoom.tsx`, `provider/route.ts`, `praxis-chat-first-shell.tsx`, `from-ask-pack/route.ts`, `capsule-details-service.ts`, `capsule-quality-ranking.ts`, `audit-route-cleanup-map.ts`, `context-capsule-cognitive-assist-route.test.ts`, `context-builder-plan.ts`, `briefing-generate/route.ts`, `CapsuleBuilderWizard.test.tsx`, `postgres-sweep.test.ts`, `research-graph/index.ts`, `context-injection.ts`, `workflow-plan.ts`, `ActiveContextStackState`, `signal-workspace.tsx`, `ask-conversation.ts`, `AskWorkspacePage.tsx`, `sourceability-ledger.ts`, `draft-assembly-state.ts`, `library-service.ts`, `agent-runtime/tool-registry.ts`, `context-snapshot.ts`, `flows/capsule-factory.ts`, `ask-orchestrator.ts`, `polar-webhook.ts`, `useAgentRunSnapshots.ts`, `context/capsules/route.ts`, `documents-service.ts`, `session/route.ts`, `agents/registry.ts`, `deep-search-agent/route.ts`, `ask-context-bar.tsx`, `temporal-timeline.ts`, `audit-agent-runtime-proof.ts`, `config.ts`, `OntologyId`, `with-credits.ts`, `coverage-globe.ts`, `Skeleton`, `capsule-schema.ts`, `context.ts`, `upload/route.ts`, `situations/route.ts`, `capsule-quality.ts`, `sourcing.ts`, `agent-context-packet.ts`, `turns/route.ts`, `memo-checks.ts`, `cognitive-capsule/types.ts`, `knowledge/index.ts`, `capsule-version-resolution.ts`, `AnswerSourcesPanel.tsx`, `conflict-grammar.ts`, `dialectica/route.ts`, `capsule-quality-review.ts`, `cypher/route.ts`, `PRAXIS — Context Capsule Excellence Plan`, `marketplace/registry.ts`, `search-query.ts`, `useOrchestratorEvents.ts`, `ask-context-bar-contract.test.ts`, `worker.test.ts`, `deletion.ts`, `emit.ts`, `app-search.ts`, `core-package.ts`, `graphops.ts`, `system-prompt-block.ts`, `types/context-capsule.ts`, `policy-agents.ts`, `notifications.tsx`, `schemas/context-capsule.ts`, `one-click-context-builder.tsx`, `proof-summary.ts`, `trustgraph-contract.ts`, `memo-handover-preview.test.tsx`, `shared-contracts.ts`, `primary-nav.ts`, `web-research.ts`, `graph-views.ts`, `with-firewall.ts`, `output-capsules.test.ts`, `evidence-summary.ts`, `tool-data-shapes.test.ts`, `tools/registry.ts`, `corpus-search.ts`, `context-capsule-spans-route.test.ts`, `ladybug-projection.ts`, `trust-posture.ts`, `reasoning-loop.ts`, `sourceability-request.ts`, `federated-app-search.ts`, `world-research.ts`, `checkout/route.ts`, `capsules/storage.ts`, `flows/classify-path.ts`, `admin-gate.ts`, `praxis-chat-onboarding-recovery-contract.test.ts`, `agent-runtime/schema.ts`, `agent-packet/route.ts`, `human-gate.ts`, `tasklet-workbench-contract.test.ts`, `situation-context-health.ts`, `audit-tasklet-mvp-foundation.ts`, `boardroom/runs/route.ts`, `tool-context-blueprints.ts`, `getPolicyTeamCategory`, `tool-package-readiness.ts`, `instrument-visual-contract.test.ts`, `agentic-search-health.ts`, `settings-page-contract.test.ts`, `status.ts`, `v3-surface-classification.ts`, `ask-praxis-tools.ts`, `daily-brief/route.ts`, `preferences.ts`, `runPraxisDoctor`, `capsules/resolve.ts`, `capsule-architect.ts`, `evidence-review.ts`, `episodes.ts`, `tool-path-taxonomy.ts`, `clarifying-questions.ts`, `[...path]/route.ts`, `audit-launch-readiness.ts`, `dry-run-eval.ts`, `PraxisCapsule`, `context-aware.ts`, `account/route.ts`, `drafting/export.ts`, `context-capsules.test.ts`, `run-timeline-view-model.ts`, `memos-id-route.test.ts`, `run-artifact.ts`, `google-agent-platform/readiness.ts`, `audit-public-surface.ts`, `canonical.ts`, `dialectica-capsule-idempotency.test.ts`, `capability-registry.ts`, `nodes/route.ts`, `context-kernel.test.ts`, `graphlite-contract.ts`, `memory-layer.ts`, `source-receipt-normalizer.ts`, `jobs.ts`, `login/page.tsx`, `adk-bridge.ts`, `runner.ts`, `capsule-architect-service.test.ts`, `parseDataStreamError`, `research-eval.ts`, `google-agent-platform-cloud-check.ts`, `next-moves/route.ts`, `CapsuleRegistryPanel.test.tsx`, `run-agent.ts`, `context-capsule-source-gap-promotion-route.test.ts`, `context-capsules-route.test.ts`, `neo4j-drift-verifier.ts`, `tool-output-layer.ts`, `context-enrichment-adapter.test.ts`, `CapsuleAgentView.tsx`, `signal/evaluation.ts`, `situation-intelligence/route.ts`, `app-red-flags.ts`, `output-capsules/storage.ts`, `conversations-isolation.test.ts`, `core-library.test.ts`, `FakeCollection`, `constants/tool-registry.ts`, `package.json`, `global-search.tsx`, `graph-service.ts`, `pricing/page.tsx`, `getAdminDbOrThrow`, `AgentsWorkingStrip.tsx`, `red-team-annotations.ts`, `grounding-metadata.ts`, `source-passage.ts`, `capsule-suggestions.ts`, `tasklet-style-runtime.ts`, `sourceability/route.ts`, `export-docx/route.ts`, `provenance-graph.ts`, `rationale.ts`, `exa-agentic-search.ts`, `dialectica-backbone.ts`, `cockpit-composition.ts`, `human-review-panel.test.tsx`, `audit-runner.test.ts`, `with-calibration.ts`, `audit-gcp.mjs`?**
-  _High betweenness centrality (0.136) - this node is a cross-community bridge._
+- **Why does `vitest` connect `vitest` to `next`, `saveToolOutput`, `tasklet-praxis-workbench.tsx`, `context-capsules.ts`, `capsule-v3.ts`, `situation-initializer.ts`, `worker.ts`, `ontology/registry.ts`, `auth-context.tsx`, `capsule-workbench-view-model.ts`, `cn`, `signal/domain.ts`, `path/types.ts`, `ai/chat/route.ts`, `react`, `world-service.ts`, `cognitive-capsule/service.ts`, `getCapsule`, `types/domain.ts`, `sources-preference.ts`, `library.ts`, `analyst-notes.ts`, `CapsuleExpertisePanel.tsx`, `ask-context-readiness.test.tsx`, `futurist-ai-lab-contract.test.ts`, `praxis-chat.tsx`, `evidence-pack.ts`, `praxis-doctor.ts`, `agent-runtime/postgres.ts`, `cognitive-capsule/evaluation.ts`, `agent-runtime/types.ts`, `CapsuleWorkbenchPanel.tsx`, `ask-answer-envelope.ts`, `CapsuleGraphViewer.tsx`, `ref_node_crypto`, `output-review.ts`, `user-keys.ts`, `specialists.ts`, `runtime-data-plane.ts`, `model-runtime-policy.ts`, `blackboard/index.ts`, `cognitive-capsule/schema.ts`, `capsule-plus/index.ts`, `capsule-closed-loop-learning.ts`, `profile-weighted-retrieval.ts`, `capsule-factory-route-consolidation.test.ts`, `CapsuleBuilderWizard.tsx`, `profile-events.ts`, `onboarding-return.test.tsx`, `profile-context.ts`, `handover-package/route.ts`, `runtime.ts`, `marketing-home-contract.test.ts`, `CapsuleReviewQueueSection.test.tsx`, `assistant/next-moves.ts`, `active-context-stack.ts`, `AskQueuedAgentRunPanel.tsx`, `CapsuleLibraryCard.tsx`, `model-matrix.ts`, `from-ask-pack/route.ts`, `capsule-details-service.ts`, `knowledge/context-engine.ts`, `capsule-quality-ranking.ts`, `audit-route-cleanup-map.ts`, `context-capsule-cognitive-assist-route.test.ts`, `getModel`, `feed-aggregator.ts`, `CapsuleBuilderWizard.test.tsx`, `postgres-sweep.test.ts`, `context-builder-plan.ts`, `research-graph/index.ts`, `context-injection.ts`, `ask-orchestrator.ts`, `ActiveContextStackState`, `chat-pinned-evidence.test.ts`, `signal-workspace.tsx`, `memo-service.ts`, `AskWorkspacePage.tsx`, `draft-assembly-state.ts`, `library-service.ts`, `agent-runtime/tool-registry.ts`, `context-snapshot.ts`, `flows/capsule-factory.ts`, `work-intent-router.ts`, `polar-webhook.ts`, `ask-praxis-clean-routing.test.ts`, `useAgentRunSnapshots.ts`, `context/capsules/route.ts`, `documents-service.ts`, `analyst-profile-admin.ts`, `agents/registry.ts`, `deep-search-agent/route.ts`, `agent-context-verifier.ts`, `ask-context-bar.tsx`, `temporal-timeline.ts`, `audit-agent-runtime-proof.ts`, `config.ts`, `case-scaffold.ts`, `with-credits.ts`, `coverage-globe.ts`, `Skeleton`, `capsule-schema.ts`, `context.ts`, `upload/route.ts`, `situations/route.ts`, `capsule-quality.ts`, `sourcing.ts`, `agent-context-packet.ts`, `turns/route.ts`, `memo-checks.ts`, `cognitive-capsule/types.ts`, `knowledge/index.ts`, `capsule-version-resolution.ts`, `AnswerSourcesPanel.tsx`, `conflict-grammar.ts`, `dialectica/route.ts`, `capsule-quality-review.ts`, `cypher/route.ts`, `marketplace/registry.ts`, `search-query.ts`, `ask-context-bar-contract.test.ts`, `deletion.ts`, `emit.ts`, `app-search.ts`, `capsule-gate.ts`, `graphops.ts`, `case-module.ts`, `flows/sourceability.ts`, `memoArtifactFromMemoPayload`, `hosted-registry.ts`, `schemas/context-capsule.ts`, `one-click-context-builder.tsx`, `proof-summary.ts`, `trustgraph-contract.ts`, `analyst-profile.ts`, `memo-handover-preview.test.tsx`, `shared-contracts.ts`, `consolidated-tools.ts`, `web-research.ts`, `graph-views.ts`, `with-firewall.ts`, `output-capsules.test.ts`, `evidence-summary.ts`, `tool-data-shapes.test.ts`, `corpus-search.ts`, `tasklet-workbench-conversation.ts`, `context-capsule-spans-route.test.ts`, `ladybug-projection.ts`, `trust-posture.ts`, `reasoning-loop.ts`, `sourceability-request.ts`, `federated-app-search.ts`, `world-research.ts`, `checkout/route.ts`, `capsules/storage.ts`, `flows/classify-path.ts`, `admin-gate.ts`, `praxis-chat-onboarding-recovery-contract.test.ts`, `agent-runtime/schema.ts`, `agent-packet/route.ts`, `capsule-service.test.ts`, `tasklet-workbench-contract.test.ts`, `situation-context-health.ts`, `audit-tasklet-mvp-foundation.ts`, `boardroom/schema.ts`, `tool-context-blueprints.ts`, `resolveCapsuleTaxonomy`, `tool-package-readiness.ts`, `instrument-visual-contract.test.ts`, `agentic-search-health.ts`, `runtime-health.ts`, `v3-surface-classification.ts`, `preferences.ts`, `capsules/resolve.ts`, `capsule-architect.ts`, `evidence-review.ts`, `evaluate-policy-narrative-quality.ts`, `tool-path-taxonomy.ts`, `clarifying-questions.ts`, `genkit/index.ts`, `audit-launch-readiness.ts`, `dry-run-eval.ts`, `PraxisCapsule`, `context-aware.ts`, `admin.ts`, `capsule-factory-flow.test.ts`, `drafting/export.ts`, `context-capsules.test.ts`, `AskAnswerEnvelope`, `memos-id-route.test.ts`, `marketplace/run/route.ts`, `google-agent-platform/readiness.ts`, `audit-public-surface.ts`, `dialectica-capsule-idempotency.test.ts`, `ref_node_child_process`, `capability-registry.ts`, `nodes/route.ts`, `context-kernel.test.ts`, `graphlite-contract.ts`, `capsule-list-picker.test.tsx`, `memory-layer.ts`, `source-receipt-normalizer.ts`, `changes/route.ts`, `login/page.tsx`, `adk-bridge.ts`, `runner.ts`, `capsule-architect-service.test.ts`, `parseDataStreamError`, `research-eval.ts`, `google-agent-platform-cloud-check.ts`, `next-moves/route.ts`, `postgres-execution.test.ts`, `run-agent.ts`, `readiness/route.ts`, `context-capsule-source-gap-promotion-route.test.ts`, `RetrievalOrchestrator`, `context-enrichment-adapter.test.ts`, `CapsuleAgentView.tsx`, `signal/evaluation.ts`, `[...slug]/route.ts`, `situation-intelligence/route.ts`, `app-red-flags.ts`, `output-capsules/storage.ts`, `conversations-isolation.test.ts`, `core-library.test.ts`, `FakeCollection`, `constants/tool-registry.ts`, `pricing/page.tsx`, `getAdminDbOrThrow`, `AgentsWorkingStrip.tsx`, `writer/ask/route.ts`, `package.json`, `grounding-metadata.ts`, `collectors.ts`, `docx`, `pricing.ts`, `capsule-suggestions.ts`, `tasklet-style-runtime.ts`, `document-postgres.ts`, `instant-context.ts`, `export-docx/route.ts`, `provenance-graph.ts`, `rationale.ts`, `exa-agentic-search.ts`, `dialectica-backbone.ts`, `capsules.ts`, `human-review-panel.test.tsx`, `audit-runner.test.ts`, `deploy-firebase-rules.mjs`?**
+  _High betweenness centrality (0.113) - this node is a cross-community bridge._
 - **Are the 2 inferred relationships involving `handleRouteError()` (e.g. with `Fixed` and `What I Reviewed`) actually correct?**
   _`handleRouteError()` has 2 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `time`, `Contracts inspected`, `Representative country panel` to the rest of the system?**
+- **What connects `SignalWorldResearchOutputSchema`, `SignalWorldResearchInput`, `gateway` to the rest of the system?**
   _7238 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `next` be split into smaller, more focused modules?**
-  _Cohesion score 0.012308394641195371 - nodes in this community are weakly interconnected._
-- **Why does `next` connect `next` to `saveToolOutput`, `tasklet-praxis-workbench.tsx`, `situation-initializer.ts`, `auth-context.tsx`, `cn`, `signal/domain.ts`, `path/types.ts`, `react`, `world-service.ts`, `cognitive-capsule/schema.ts`, `types/domain.ts`, `CapsuleExpertisePanel.tsx`, `library.ts`, `usePendingAgentApprovals.ts`, `AskStreamPanel.tsx`, `praxis-chat.tsx`, `agent-runtime/postgres.ts`, `agent-runtime/types.ts`, `CapsuleWorkbenchPanel.tsx`, `ask-answer-envelope.ts`, `CapsuleGraphViewer.tsx`, `memo-service.ts`, `user-keys.ts`, `runtime-data-plane.ts`, `visualizations.ts`, `account-settings-page.tsx`, `capsule-plus/index.ts`, `getAnalystProfile`, `capsule-factory-route-consolidation.test.ts`, `CapsuleBuilderWizard.tsx`, `analyst-profile-admin.ts`, `analyst-profile.ts`, `handover-package/route.ts`, `runtime.ts`, `AskQueuedAgentRunPanel.tsx`, `ContextBuilderRoom.tsx`, `provider/route.ts`, `praxis-chat-first-shell.tsx`, `from-ask-pack/route.ts`, `getModel`, `briefing-generate/route.ts`, `boardroom-workspace.tsx`, `signal-workspace.tsx`, `[action]/route.ts`, `AskWorkspacePage.tsx`, `graph-updates-service.ts`, `getCapsule`, `library-service.ts`, `situations.ts`, `src/app/layout.tsx`, `polar-webhook.ts`, `useAgentRunSnapshots.ts`, `context/capsules/route.ts`, `documents-service.ts`, `session/route.ts`, `ask-context-bar.tsx`, `with-credits.ts`, `coverage-globe.ts`, `Skeleton`, `upload/route.ts`, `situations/route.ts`, `turns/route.ts`, `capsule-version-resolution.ts`, `dialectica/route.ts`, `cypher/route.ts`, `worker.test.ts`, `emit.ts`, `app-search.ts`, `policy-agents.ts`, `hosted-registry.ts`, `notifications.tsx`, `web-research.ts`, `world-research.ts`, `checkout/route.ts`, `agent-runtime/schema.ts`, `agent-packet/route.ts`, `audit-tasklet-mvp-foundation.ts`, `boardroom/runs/route.ts`, `features/route.ts`, `tool-context-blueprints.ts`, `opengraph-image.tsx`, `agentic-search-health.ts`, `daily-brief/route.ts`, `preferences.ts`, `[...path]/route.ts`, `PraxisCapsule`, `account/route.ts`, `drafting/export.ts`, `sync-ecc-to-codex.mjs`, `nodes/route.ts`, `diff/route.ts`, `jobs.ts`, `login/page.tsx`, `prompt-health.ts`, `next-moves/route.ts`, `CapsuleRegistryPanel.test.tsx`, `run-agent.ts`, `neo4j-drift-verifier.ts`, `[...slug]/route.ts`, `open-questions-store.ts`, `fix-this-first-panel.tsx`, `situation-intelligence/route.ts`, `output-capsules/storage.ts`, `package.json`, `global-search.tsx`, `pricing/page.tsx`, `getAdminDbOrThrow`, `AgentsWorkingStrip.tsx`, `memo-desk.tsx`, `reports/[id]/export/route.ts`, `release-notes/page.tsx`, `sourceability/route.ts`, `export-docx/route.ts`, `builder/page.tsx`, `memos/search/route.ts`, `recent-policy-work-page.tsx`, `with-calibration.ts`?**
-  _High betweenness centrality (0.082) - this node is a cross-community bridge._
+  _Cohesion score 0.014437417969216083 - nodes in this community are weakly interconnected._
+- **Why does `next` connect `next` to `saveToolOutput`, `tasklet-praxis-workbench.tsx`, `ContextBuilderRoom.tsx`, `situation-initializer.ts`, `auth-context.tsx`, `cn`, `signal/domain.ts`, `path/types.ts`, `react`, `world-service.ts`, `cognitive-capsule/service.ts`, `CapsuleExpertisePanel.tsx`, `library.ts`, `AskStreamPanel.tsx`, `praxis-chat.tsx`, `agent-runtime/postgres.ts`, `agent-runtime/types.ts`, `CapsuleWorkbenchPanel.tsx`, `CapsuleGraphViewer.tsx`, `output-review.ts`, `user-keys.ts`, `signal/schema.ts`, `account-settings-page.tsx`, `capsule-plus/index.ts`, `capsule-factory-route-consolidation.test.ts`, `CapsuleBuilderWizard.tsx`, `profile-events.ts`, `onboarding-return.test.tsx`, `handover-package/route.ts`, `active-context-stack.ts`, `AskQueuedAgentRunPanel.tsx`, `src/app/page.tsx`, `from-ask-pack/route.ts`, `capsule-details-service.ts`, `knowledge/context-engine.ts`, `getModel`, `feed-aggregator.ts`, `boardroom-workspace.tsx`, `ask-orchestrator.ts`, `signal-workspace.tsx`, `memo-service.ts`, `AskWorkspacePage.tsx`, `graph-updates-service.ts`, `[token]/route.ts`, `library-service.ts`, `situations.ts`, `src/app/layout.tsx`, `polar-webhook.ts`, `useAgentRunSnapshots.ts`, `context/capsules/route.ts`, `documents-service.ts`, `analyst-profile-admin.ts`, `ask-context-bar.tsx`, `config.ts`, `with-credits.ts`, `coverage-globe.ts`, `Skeleton`, `upload/route.ts`, `situations/route.ts`, `turns/route.ts`, `sweep/route.ts`, `capsule-version-resolution.ts`, `dialectica/route.ts`, `cypher/route.ts`, `Cleanup & Infra Implementation Plan`, `emit.ts`, `app-search.ts`, `case-module.ts`, `flows/sourceability.ts`, `hosted-registry.ts`, `notifications.tsx`, `analyst-profile.ts`, `web-research.ts`, `trust-posture.ts`, `world-research.ts`, `checkout/route.ts`, `admin-gate.ts`, `agent-runtime/schema.ts`, `agent-packet/route.ts`, `capsule-service.test.ts`, `graph-populate.ts`, `audit-tasklet-mvp-foundation.ts`, `features/route.ts`, `tool-context-blueprints.ts`, `opengraph-image.tsx`, `agentic-search-health.ts`, `runtime-health.ts`, `preferences.ts`, `dry-run-eval.ts`, `PraxisCapsule`, `admin.ts`, `drafting/export.ts`, `sync-ecc-to-codex.mjs`, `marketplace/run/route.ts`, `nodes/route.ts`, `diff/route.ts`, `changes/route.ts`, `login/page.tsx`, `prompt-health.ts`, `next-moves/route.ts`, `run-agent.ts`, `readiness/route.ts`, `[...slug]/route.ts`, `open-questions-store.ts`, `fix-this-first-panel.tsx`, `situation-intelligence/route.ts`, `pricing/page.tsx`, `getAdminDbOrThrow`, `AgentsWorkingStrip.tsx`, `writer/ask/route.ts`, `package.json`, `docx`, `export-docx/route.ts`, `builder/page.tsx`, `memos/search/route.ts`, `recent-policy-work-page.tsx`, `drafting-action/route.ts`?**
+  _High betweenness centrality (0.100) - this node is a cross-community bridge._
 - **Are the 16 inferred relationships involving `TaskletPraxisWorkbench()` (e.g. with `Product Surface Doctrine` and `Executive Contract`) actually correct?**
   _`TaskletPraxisWorkbench()` has 16 INFERRED edges - model-reasoned connections that need verification._
 - **Should `saveToolOutput` be split into smaller, more focused modules?**
-  _Cohesion score 0.03130938376617501 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.028261711188540456 - nodes in this community are weakly interconnected._
