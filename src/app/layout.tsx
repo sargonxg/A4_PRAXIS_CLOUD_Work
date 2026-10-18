@@ -1,25 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { EB_Garamond, Inter, JetBrains_Mono } from "next/font/google";
 import { headers } from "next/headers";
 import "./globals.css";
-
-const ebGaramond = EB_Garamond({
-  subsets: ["latin"],
-  variable: "--font-eb-garamond",
-  display: "swap",
-});
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-jetbrains-mono",
-  display: "swap",
-});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -150,7 +131,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body className={`${ebGaramond.variable} ${inter.variable} ${jetbrainsMono.variable} antialiased`}>
+      <body className="antialiased">
         {children}
       </body>
     </html>
