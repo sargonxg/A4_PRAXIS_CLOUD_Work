@@ -1,3 +1,6 @@
+import { readSavedNativeLocks } from '@/lib/tacitus-native/persistence';
+import { NativeAttachmentError, parseNativeAttachmentLocks } from '@/lib/tacitus-native/contract';
+import { verifyNativeStackLocks } from '@/lib/tacitus-native/server';
 import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { getAdminDbOrThrow } from '@/lib/firebase/admin';
@@ -18,6 +21,7 @@ import {
 import { CapsuleVersionConflictError, resolveCapsuleReference, stackWithResolvedGoverningCapsule, validateCapsuleVersionPins } from '@/lib/context/capsule-version-resolution';
 
 export const GET = withAuth(async (req, user) => {
+  try {
   if (user.isDemo) {
     return NextResponse.json({ stack: defaultActiveContextStack(), persisted: false });
   }
@@ -30,7 +34,7 @@ export const GET = withAuth(async (req, user) => {
       return NextResponse.json({ error: 'Context stack not found' }, { status: 404 });
     }
     return NextResponse.json({
-      stack: capsuleToStack(capsule),
+      stack: { ...capsuleToStack(capsule), ...await readSavedNativeLocks(user.uid, capsule.capsuleId) },
       capsule,
       migrated: false,
       persisted: true,
@@ -71,21 +75,30 @@ export const GET = withAuth(async (req, user) => {
   }
   const result = await getOrMigrateDefaultCapsule(user.uid);
   return NextResponse.json({
-    stack: capsuleToStack(result.capsule),
+    stack: { ...capsuleToStack(result.capsule), ...(activeSnap?.nativeAttachments !== undefined ? { nativeAttachments: activeSnap.nativeAttachments } : {}) },
     capsule: result.capsule,
     migrated: result.migrated,
     persisted: result.persisted,
   });
+  } catch (error) {
+    if (error instanceof NativeAttachmentError) return nativeConflict(error);
+    throw error;
+  }
 });
 
 export const PUT = withAuth(async (req, user) => {
+  try {
   if (user.isDemo) {
     return NextResponse.json({ stack: defaultActiveContextStack(), persisted: false });
   }
 
   const body = await req.json().catch(() => null);
   const incoming = body && typeof body === 'object' && !Array.isArray(body) ? body as Partial<ActiveContextStackState> : {};
-  try { validateCapsuleVersionPins(incoming); } catch (error) {
+  try {
+    if (incoming.nativeAttachments !== undefined) incoming.nativeAttachments = await verifyNativeStackLocks(user.uid, incoming.nativeAttachments);
+    validateCapsuleVersionPins(incoming);
+  } catch (error) {
+    if (error instanceof NativeAttachmentError) return nativeConflict(error);
     if (error instanceof CapsuleVersionConflictError) return versionConflict(error);
     throw error;
   }
@@ -113,6 +126,7 @@ export const PUT = withAuth(async (req, user) => {
     // Dock requests carry only refs; preserve its document/source cores and version.
     const stack = sanitizeNamedStack({
       ...(existing ? capsuleToStack(existing) : {}),
+      ...(existing ? await readSavedNativeLocks(user.uid, existing.capsuleId) : {}),
       ...(active?.stackId === requested.stackId ? active : {}),
       ...incoming,
       stackId: requested.stackId,
@@ -132,11 +146,23 @@ export const PUT = withAuth(async (req, user) => {
       capsuleId: capsule.capsuleId,
       stackId: capsule.capsuleId,
     }, capsule), capsule);
+    try {
+      if (activeStack.nativeAttachments?.length) await verifyNativeStackLocks(user.uid, activeStack.nativeAttachments);
+    } catch (error) {
+      if (error instanceof NativeAttachmentError) return nativeConflict(error);
+      throw error;
+    }
     await saveActiveStackPointer(user.uid, activeStack);
     return NextResponse.json({ stack: activeStack, capsule, persisted: true });
   }
-  const result = await saveContextStackCompat(user.uid, incoming);
+  if (incoming.nativeAttachments === undefined) Object.assign(incoming, await readSavedNativeLocks(user.uid, DEFAULT_CONTEXT_STACK_ID));
+  if (incoming.nativeAttachments?.length) await verifyNativeStackLocks(user.uid, incoming.nativeAttachments);
+  const result = await saveContextStackCompat(user.uid, { ...incoming, nativeAttachments: incoming.nativeAttachments ?? [] });
   return NextResponse.json(result);
+  } catch (error) {
+    if (error instanceof NativeAttachmentError) return nativeConflict(error);
+    throw error;
+  }
 });
 
 async function resolveGoverningCapsule(uid: string, stack: ActiveContextStackState) {
@@ -174,6 +200,7 @@ function sanitizeNamedStack(input: Partial<ActiveContextStackState>): ActiveCont
       : DEFAULT_CONTEXT_STACK_ID,
     capsuleId: input.capsuleId ?? null,
     capsuleRefs: Array.isArray(input.capsuleRefs) ? input.capsuleRefs : [],
+    ...(input.nativeAttachments !== undefined ? { nativeAttachments: parseNativeAttachmentLocks(input.nativeAttachments) } : {}),
     contextPackageId: input.contextPackageId ?? null,
     userModelId: input.userModelId ?? null,
     situationId: input.situationId ?? null,
@@ -191,14 +218,14 @@ function isExplicitClear(input: Partial<ActiveContextStackState>): boolean {
   if (input.capsuleId !== null || !Array.isArray(input.capsuleRefs) || input.capsuleRefs.length) return false;
   const stack = sanitizeNamedStack(input);
   return !stack.contextPackageId && !stack.userModelId && !stack.situationId && !stack.outputGoal
-    && !stack.sourceIds.length && !stack.documentIds.length && !stack.evidenceGaps.length
+    && !stack.nativeAttachments?.length && !stack.sourceIds.length && !stack.documentIds.length && !stack.evidenceGaps.length
     && Object.values(stack.contextBlocks).every((items) => !items.length);
 }
 
 function hasExplicitSelection(input: Partial<ActiveContextStackState>): boolean {
   // Check raw refs so legacy capsuleId-only records still use migration.
-  return Array.isArray(input.capsuleRefs)
-    && sanitizeActiveContextStack({ capsuleRefs: input.capsuleRefs }).capsuleRefs.length > 0;
+  return Boolean(input.nativeAttachments?.length) || (Array.isArray(input.capsuleRefs)
+    && sanitizeActiveContextStack({ capsuleRefs: input.capsuleRefs }).capsuleRefs.length > 0);
 }
 
 async function getActiveStackPointer(uid: string, rejectInvalidPins = false): Promise<{ stack: ActiveContextStackState; cleared: boolean; explicitSelection: boolean } | null> {
@@ -215,7 +242,15 @@ async function getActiveStackPointer(uid: string, rejectInvalidPins = false): Pr
 }
 
 async function saveActiveStackPointer(uid: string, stack: ActiveContextStackState): Promise<void> {
-  await getActiveStackRef(uid).set(stack, { merge: true });
+  if (stack.stackId !== DEFAULT_CONTEXT_STACK_ID && stack.nativeAttachments !== undefined) {
+    const db = getActiveStackDb(); const batch = db.batch();
+    batch.set(getActiveStackRef(uid), { ...stack, nativeAttachments: stack.nativeAttachments ?? [] }, { merge: true });
+    batch.set(db.collection('users').doc(uid).collection('contextStacks').doc(stack.stackId),
+      { nativeAttachments: stack.nativeAttachments }, { merge: true });
+    await batch.commit();
+  } else await getActiveStackRef(uid).set({ ...stack, nativeAttachments: stack.nativeAttachments ?? [],
+    ...(stack.stackId === DEFAULT_CONTEXT_STACK_ID && stack.capsuleId ? { savedDefaultNativeAttachments: stack.nativeAttachments ?? [] } : {}),
+  }, { merge: true });
 }
 
 function getActiveStackRef(uid: string) {
@@ -224,4 +259,8 @@ function getActiveStackRef(uid: string) {
 
 function getActiveStackDb() {
   return getAdminDbOrThrow();
+}
+
+function nativeConflict(error: NativeAttachmentError) {
+  return NextResponse.json({ error: error.code, action: 'reattach_native_artifact' }, { status: error.status });
 }

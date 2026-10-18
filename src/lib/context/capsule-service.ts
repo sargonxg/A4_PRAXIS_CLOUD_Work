@@ -1,3 +1,4 @@
+import { readSavedNativeLocks } from '@/lib/tacitus-native/persistence';
 import { FieldPath, type Firestore, type Query, type Transaction } from 'firebase-admin/firestore';
 import { createHash } from 'node:crypto';
 import { CognitiveCapsuleSchema, CognitiveNodeSchema, CognitiveStatementSchema, KnowledgeSchema } from '@/lib/cognitive-capsule/schema';
@@ -2924,13 +2925,17 @@ export async function saveContextStackCompat(
   deps?: CapsuleServiceDeps,
 ): Promise<{ stack: ActiveContextStackState; capsule: PraxisCapsule; persisted: true }> {
   const { capsule } = await getOrMigrateDefaultCapsule(uid, deps);
+  const previousNative = (await readSavedNativeLocks(uid, DEFAULT_CONTEXT_STACK_ID, deps?.db)).nativeAttachments;
   const stack = sanitizeActiveContextStack({
     ...capsuleToStack(capsule),
+    ...(previousNative !== undefined ? { nativeAttachments: previousNative } : {}),
     ...patch,
     evidenceGaps: patch.evidenceGaps ?? [],
     canvasLayout: patch.canvasLayout ?? {},
   });
-  await stackDoc(uid, stack.stackId, deps).set(stack, { merge: true });
+  await stackDoc(uid, stack.stackId, deps).set({ ...stack,
+    ...(stack.nativeAttachments !== undefined ? { savedDefaultNativeAttachments: stack.nativeAttachments } : {}),
+  }, { merge: true });
   const updated = await bumpCapsuleVersion(uid, capsule.capsuleId, {
     coreRefs: stackToCoreRefs(stack),
     activeForSituationIds: stack.situationId ? [stack.situationId] : ['workspace'],

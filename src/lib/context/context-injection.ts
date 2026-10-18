@@ -1,3 +1,6 @@
+import { readSavedNativeLocks } from '@/lib/tacitus-native/persistence';
+import { NativeAttachmentError } from '@/lib/tacitus-native/contract';
+import type { NativeAttachmentAdapter } from '@/lib/tacitus-native/adapter';
 import {
   CAPSULE_DOCK_SLOT_KINDS,
   DEFAULT_CONTEXT_STACK_ID,
@@ -22,6 +25,7 @@ import { MAX_ASSOCIATED_REFERENCE_CAPSULES } from './capsule-associations';
 import type { CognitiveCapsule } from '@/lib/cognitive-capsule/types';
 
 type InjectableContextDeps = CapsuleServiceDeps & {
+  nativeAdapter?: NativeAttachmentAdapter;
   verifyCognitiveDependencies?: (uid: string, cognition: CognitiveCapsule) => Promise<unknown>;
 };
 
@@ -32,6 +36,7 @@ export interface InjectableContextInput {
   activeContextStack?: unknown;
   situationId?: string | null;
   query?: string | null;
+  signal?: AbortSignal;
 }
 
 export interface InjectableContext {
@@ -46,6 +51,8 @@ export interface InjectableContext {
   promptBlock: string;
   sharePath: string;
   resolvedAt: string;
+  nativeReceipts?: Array<{ artifactId: string; archiveDigest: string; contextDigest: string }>;
+  nativeOmissions?: Array<{ artifactId: string; reason: 'whole-record-budget' }>;
   cognitiveReceipts?: CognitiveAttachmentReceipt[];
   cognitiveOmissions?: Array<{ capsuleId: string; reason: string }>;
 }
@@ -79,6 +86,7 @@ export async function resolveInjectableContext(
     ? sanitizeActiveContextStack(input.activeContextStack)
     : null;
 
+
   const requestedStack = incomingStack
     ? sanitizeActiveContextStack({ ...incomingStack, capsuleId: pointer ?? incomingStack.capsuleId })
     : pointer ? sanitizeActiveContextStack({ capsuleId: pointer }) : null;
@@ -92,9 +100,31 @@ export async function resolveInjectableContext(
   const requestedPointer = pointer ?? requestedStack?.capsuleId;
   let capsule: PraxisCapsule | null = requestedPointer ? attached.get(requestedPointer) ?? null : null;
 
+  const savedNative = incomingStack?.nativeAttachments !== undefined
+    ? { nativeAttachments: incomingStack.nativeAttachments }
+    : await readSavedNativeLocks(input.uid, pointer ?? incomingStack?.capsuleId ?? incomingStack?.stackId ?? DEFAULT_CONTEXT_STACK_ID, deps?.db);
+  if (incomingStack) Object.assign(incomingStack, savedNative);
+  if (requestedStack) Object.assign(requestedStack, savedNative);
+  // Native locks never enter cognitive semver resolution or compatibility writes.
+  // Refuse before all downstream generation when authority is unavailable/changed.
+  let native;
+  if (savedNative.nativeAttachments?.length) {
+    if (!deps?.nativeAdapter) throw new NativeAttachmentError('native_authority_unavailable', 503);
+    const now = Math.floor(Date.now() / 1000);
+    native = await deps.nativeAdapter.compile(input.uid, savedNative.nativeAttachments, {
+      question: input.query || 'What evidence is retained in these attachments?', knownAsOf: now, validAt: now,
+      timeMode: 'disclose_unknown', maxBytes: 16000,
+    }, input.signal);
+  }
+
+
   let resolvedStack = requestedStack;
   if (!capsule && incomingStack && incomingStack.stackId === DEFAULT_CONTEXT_STACK_ID) {
-    const saved = await saveContextStackCompat(input.uid, incomingStack, deps);
+    // Freeze the already checked selection, including explicit emptiness; a
+    // concurrent pointer write must not introduce unchecked native attachments.
+    const saved = await saveContextStackCompat(input.uid, {
+      ...incomingStack, nativeAttachments: savedNative.nativeAttachments ?? [],
+    }, deps);
     capsule = saved.capsule;
     resolvedStack = saved.stack;
   }
@@ -106,6 +136,7 @@ export async function resolveInjectableContext(
   let stack = resolvedStack
     ? sanitizeActiveContextStack({ ...capsuleToStack(capsule), ...resolvedStack })
     : capsuleToStack(capsule);
+  stack = sanitizeActiveContextStack({ ...stack, ...savedNative });
   stack = stackWithResolvedGoverningCapsule(stack, capsule);
   stack.capsuleRefs = stack.capsuleRefs.map((ref) => ({
     ...ref,
@@ -143,6 +174,7 @@ export async function resolveInjectableContext(
     omittedAssociatedCapsuleIds: omittedAssociatedIds,
     dockCapsules: dock.entries, missingDockCapsuleIds: dock.missingIds,
   });
+  if (native) await native.revalidate();
   return {
     capsule,
     associatedCapsules: associated.capsules,
@@ -151,7 +183,8 @@ export async function resolveInjectableContext(
     missingDockCapsuleIds: dock.missingIds,
     stack,
     injectionKey: buildCapsuleInjectionKey(capsule),
-    promptBlock: compiled.promptBlock,
+    promptBlock: native ? insertCognitiveContext(compiled.promptBlock, native.text) : compiled.promptBlock,
+    ...(native ? { nativeReceipts: native.receipts, nativeOmissions: native.omissions } : {}),
     cognitiveReceipts: compiled.cognitiveReceipts,
     cognitiveOmissions: [...compiled.cognitiveOmissions, ...omittedAssociatedIds.map((capsuleId) => ({ capsuleId, reason: 'reference-limit' }))],
     sharePath: `/app?capsuleId=${encodeURIComponent(capsule.capsuleId)}`,
@@ -348,6 +381,25 @@ export function buildProtectedContextPromptBlock(
   options: { maxChars?: number; dockMaxChars?: number } = {},
 ): ProtectedContextPromptBlock {
   const maxChars = Math.max(800, Number.isFinite(options.maxChars) ? Math.floor(options.maxChars!) : 12000);
+  const nativeStart = rawPromptBlock.indexOf('<tacitus-native-attachments>');
+  if (nativeStart >= 0) {
+    const nativeEnd = rawPromptBlock.indexOf('</tacitus-native-attachments>', nativeStart);
+    const completeEnd = nativeEnd < 0 ? rawPromptBlock.length : nativeEnd + '</tacitus-native-attachments>'.length;
+    const section = rawPromptBlock.slice(nativeStart, completeEnd);
+    const without = rawPromptBlock.slice(0, nativeStart) + rawPromptBlock.slice(completeEnd);
+    // Reserve a bounded share for legacy/cognitive context; never slice a native record.
+    const include = nativeEnd >= 0 && section.length <= maxChars - 1600;
+    if (!include) {
+      const note = '[native_attachment_omission: whole-record-budget; retrieve complete attachment before using it]';
+      const result = buildProtectedContextPromptBlock(note + '\n' + without, dockCapsules, missingDockCapsuleIds, options);
+      return { ...result, contextTrimmed: true };
+    }
+    const result = buildProtectedContextPromptBlock(without, dockCapsules, missingDockCapsuleIds, {
+      ...options, maxChars: maxChars - (include ? section.length + 2 : 120),
+    });
+    const note = include ? section : '[native_attachment_omission: whole-record-budget; retrieve complete attachment before using it]';
+    return { ...result, promptBlock: insertCognitiveContext(result.promptBlock, note), contextTrimmed: result.contextTrimmed || !include };
+  }
   const start = rawPromptBlock.indexOf('<cognitive-attachments>');
   if (start < 0) return protectLegacyContext(rawPromptBlock, dockCapsules, missingDockCapsuleIds, options);
   const end = rawPromptBlock.indexOf('</cognitive-attachments>', start);

@@ -4,7 +4,7 @@ import { CAPSULE_LIBRARY_ENTRIES } from '@/lib/capsules/library';
 import { activeContextPatchForLibraryEntry } from '@/lib/capsules/library-try';
 import { capsuleToStack, sanitizeCapsule } from '@/lib/context/capsule-service';
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), readPointer: vi.fn(), create: vi.fn(), bump: vi.fn(), set: vi.fn(), migrate: vi.fn(), compat: vi.fn(), versions: new Map<string, unknown>() }));
+const mocks = vi.hoisted(() => ({ get: vi.fn(), readPointer: vi.fn(), readNamed: vi.fn(), create: vi.fn(), bump: vi.fn(), set: vi.fn(), migrate: vi.fn(), compat: vi.fn(), versions: new Map<string, unknown>() }));
 vi.mock('@/lib/api/with-auth', () => ({ withAuth: (handler: unknown) => handler }));
 vi.mock('@/lib/firebase/admin', () => ({
   getAdminDbOrThrow: () => {
@@ -14,7 +14,7 @@ vi.mock('@/lib/firebase/admin', () => ({
       set: mocks.set,
       get: async () => {
         const match = path.match(/^users\/([^/]+)\/capsules\/([^/]+)(?:\/versions\/v(\d+))?$/);
-        if (!match) return mocks.readPointer();
+        if (!match) return path.startsWith('users/owner/contextStacks/') && !path.endsWith('/default') ? mocks.readNamed(path) : mocks.readPointer();
         const raw = match[3] ? mocks.versions.get(path) : await mocks.get(match[1], match[2]);
         return { exists: Boolean(raw), data: () => raw };
       },
@@ -43,6 +43,7 @@ describe('attaching saved capsule context', () => {
     vi.resetAllMocks();
     mocks.versions.clear();
     mocks.readPointer.mockResolvedValue({ exists: false });
+    mocks.readNamed.mockResolvedValue({ exists: false });
     mocks.migrate.mockResolvedValue({ capsule: defaultCapsule, migrated: true, persisted: true });
   });
 
@@ -161,7 +162,7 @@ describe('attaching saved capsule context', () => {
       method: 'PUT', body: JSON.stringify(patch),
     }), { uid: 'owner' });
     expect(response.status).toBe(200);
-    expect(mocks.compat).toHaveBeenCalledWith('owner', patch);
+    expect(mocks.compat).toHaveBeenCalledWith('owner', { ...patch, nativeAttachments: [] });
     expect(mocks.set).not.toHaveBeenCalled();
   });
 
