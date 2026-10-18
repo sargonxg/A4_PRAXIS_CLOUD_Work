@@ -145,7 +145,7 @@ export function PraxisChat({
   const isPublic = mode === 'public';
   const showExamples = variant === 'home' && messages.length === 0;
   const promptPlaceholder = isPublic
-    ? 'What would you like to understand or write?'
+    ? 'Your question for later; AI generation is paused'
     : 'Ask a question, compare the evidence, or draft a brief…';
 
   useEffect(() => {
@@ -525,7 +525,7 @@ export function PraxisChat({
               {isPublic ? 'Policy analysis you can inspect.' : 'What are we working on?'}
             </h1>
             <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-              {isPublic ? 'Ask a hard question. Bring your sources and methods. Review the evidence, assumptions and options.' : greeting ?? 'Start with a question. Bring your context when it helps.'}
+              {isPublic ? 'Explore the workspace and public examples. Access is invitation-only; AI generation is currently paused.' : greeting ?? 'Start with a question. Bring your context when it helps.'}
             </p>
           </div>
         ) : null}
@@ -539,8 +539,8 @@ export function PraxisChat({
             <div>
               <EmptyState
                 icon={ShieldCheck}
-                label="Ask a question"
-                hint={isPublic ? 'Sign in to save your work.' : 'Attach a capsule to reuse saved sources and background.'}
+                label={isPublic ? 'Invitation-only preview' : 'Ask a question'}
+                hint={isPublic ? 'AI generation is currently paused.' : 'Attach a capsule to reuse saved sources and background.'}
                 testId="praxis-chat-empty-state"
                 className={cn('border-emerald-100', variant === 'floating' ? 'min-h-48 bg-slate-900 text-white' : 'min-h-40')}
               />
@@ -687,11 +687,11 @@ export function PraxisChat({
                 )}
               >
                 {isStreaming ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizontal className="h-4 w-4" />}
-                {isPublic ? 'Continue' : 'Ask PRAXIS'}
+                {isPublic ? 'Invited access' : 'Ask PRAXIS'}
               </button>
             </div>
           </div>
-          {isPublic ? <p className="px-2 pb-1 pt-3 text-xs leading-5 text-slate-500">Sign in to run your question and save the work. AI-generated analysis needs your review.</p> : null}
+          {isPublic ? <p className="px-2 pb-1 pt-3 text-xs leading-5 text-slate-500">Workspace access is invitation-only. AI generation is currently paused; continuing does not run your question.</p> : null}
           {!isPublic ? <p className="px-1 pb-1 pt-3 text-xs leading-5 text-[var(--color-app-text-secondary)]">PRAXIS is experimental. Check sources and claims before sharing. <span className="hidden sm:inline">Shift + Enter for a new line.</span></p> : null}
         </form>
       </div>

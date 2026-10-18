@@ -226,7 +226,7 @@ function LoginForm() {
     }
   }
 
-  const title = mode === 'signup' ? 'Create your workspace' : mode === 'reset' ? 'Reset your password' : 'Welcome to PRAXIS';
+  const title = mode === 'signup' ? 'Invited account setup' : mode === 'reset' ? 'Reset your password' : 'Welcome to PRAXIS';
   const fieldClass = 'min-h-11 w-full rounded-lg border border-[var(--color-mineral)] bg-white px-3 py-2.5 text-base text-[var(--color-deep-ink)] placeholder:text-[var(--color-graphite)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-praxis-emerald-600)] disabled:opacity-60';
 
   function changeMode(next: 'signin' | 'signup' | 'reset') {
@@ -243,7 +243,7 @@ function LoginForm() {
         <section className="rounded-xl border border-[var(--color-mineral)] bg-[var(--color-archive-paper-strong)] p-5 sm:p-8" aria-labelledby="login-title">
           <h1 id="login-title" className="font-serif text-3xl font-semibold">{title}</h1>
           <p className="mt-2 text-sm leading-6 text-[var(--color-graphite)]">
-            {mode === 'reset' ? 'Enter your email to request a reset link.' : 'Ask a question. Attach saved context when you need it.'}
+            {mode === 'reset' ? 'Enter your email to request a reset link.' : 'Access is invitation-only. AI generation is currently paused. Continue only with an invited account; this form does not grant an invitation.'}
           </p>
           {capsulePromptParam?.trim() ? (
             <div className="mt-4 rounded-lg border border-[var(--color-praxis-emerald-300)] bg-[var(--color-praxis-emerald-50)] p-3">
@@ -278,14 +278,14 @@ function LoginForm() {
             {successMsg ? <p role="status" className="rounded-lg bg-[var(--color-praxis-emerald-50)] px-3 py-2 text-sm">{successMsg}</p> : null}
             <button type="submit" disabled={controlsDisabled} className="flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-praxis-emerald-700)] px-4 py-3 text-sm font-semibold text-white hover:bg-[var(--color-praxis-emerald-800)] disabled:opacity-60">
               {isLoading || loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : mode === 'reset' ? <Mail className="h-4 w-4" aria-hidden="true" /> : <ArrowRight className="h-4 w-4" aria-hidden="true" />}
-              {isLoading ? 'Please wait…' : mode === 'signup' ? 'Create account' : mode === 'reset' ? 'Send reset link' : 'Sign in'}
+              {isLoading ? 'Please wait…' : mode === 'signup' ? 'Set up invited account' : mode === 'reset' ? 'Send reset link' : 'Sign in'}
             </button>
           </form>
           <div className="mt-3 text-center text-sm">
-            {mode === 'signin' ? <button type="button" disabled={controlsDisabled} onClick={() => changeMode('signup')} className="min-h-11 font-medium underline underline-offset-4">New here? Create an account</button> : <button type="button" disabled={controlsDisabled} onClick={() => changeMode('signin')} className="min-h-11 font-medium underline underline-offset-4">Back to sign in</button>}
+            {mode === 'signin' ? <button type="button" disabled={controlsDisabled} onClick={() => changeMode('signup')} className="min-h-11 font-medium underline underline-offset-4">Have an invitation? Set up your account</button> : <button type="button" disabled={controlsDisabled} onClick={() => changeMode('signin')} className="min-h-11 font-medium underline underline-offset-4">Back to sign in</button>}
           </div>
         </section>
-        <p className="mt-5 text-center text-xs leading-5 text-[var(--color-graphite)]">Independent experimental software by Giulio Catanzariti. Current access is free; generated work needs human review.</p>
+        <p className="mt-5 text-center text-xs leading-5 text-[var(--color-graphite)]">Independent experimental software by Giulio Catanzariti. Workspace access is invitation-only; AI generation is paused and paid upgrades are currently unavailable.</p>
         <nav aria-label="Login information" className="mt-2 flex justify-center gap-4 text-xs text-[var(--color-graphite)]">
           <Link href="/legal/privacy" className="inline-flex min-h-11 items-center underline">Privacy</Link><Link href="/legal/terms" className="inline-flex min-h-11 items-center underline">Terms</Link><Link href="/guide" className="inline-flex min-h-11 items-center underline">How it works</Link>
         </nav>

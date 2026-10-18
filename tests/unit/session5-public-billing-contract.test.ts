@@ -56,7 +56,7 @@ describe('Session 5 public surface and billing contract', () => {
     const settings = read('src/components/settings/account-settings-page.tsx');
     const checkoutRoute = read('src/app/api/billing/checkout/route.ts');
 
-    expect(pricingPage).toContain('<PricingCheckoutButton plan="free" label="Start free"');
+    expect(pricingPage).toContain('<PricingCheckoutButton plan="free" label="Invited account access"');
     expect(pricingPage).toContain('Future plan proposals');
     expect(pricingPage).toContain('not offers or enabled entitlements');
     expect(pricingPage).not.toContain('&plan=${tier.id}');

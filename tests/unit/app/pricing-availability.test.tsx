@@ -26,11 +26,18 @@ describe('runtime pricing availability', () => {
   });
   afterEach(() => vi.unstubAllEnvs());
 
-  it('renders free entry and unavailable paid status with the flag disabled', async () => {
+  it('labels invited entry, paused generation and inactive allowances with paid checkout disabled', async () => {
     const html = renderToStaticMarkup(await PricingPage());
     expect(requestRendering).toHaveBeenCalledOnce();
     expect(html).toContain('pricing-checkout-free');
     expect(html).toContain('Paid upgrades are currently unavailable.');
+    expect(html).toContain('Invitation-only access.');
+    expect(html).toContain('AI generation is currently paused.');
+    expect(html).toContain('Configured allowance, currently inactive:');
+    expect(html).toContain('It becomes usable only if generation resumes');
+    expect(html).toContain('Invited account access');
+    expect(html).not.toContain('Free to try');
+    expect(html).not.toContain('Start free');
     expect(html).not.toContain('pricing-checkout-analyst');
     expect(html).not.toContain('pricing-checkout-team');
   });

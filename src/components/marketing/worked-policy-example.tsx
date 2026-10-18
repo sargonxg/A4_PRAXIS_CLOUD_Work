@@ -65,8 +65,8 @@ export function WorkedPolicyExample({ compact = false }: { compact?: boolean }) 
       ) : evidence}
       <p className="mt-5 text-sm leading-6 text-slate-700">{example.capsuleDefinition} Saving it does not independently verify its contents.</p>
       <div className="mt-4 flex flex-wrap gap-3">
-        <Link href="/login?redirect=%2Fapp" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700">Ask your own question</Link>
-        <Link href="/login?redirect=%2Fapp%2Fcapsules%2Fbuilder" className="inline-flex min-h-11 items-center rounded-full border border-emerald-300 bg-white px-5 text-sm font-semibold text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700">Build reusable context</Link>
+        <Link href="/login?redirect=%2Fapp" className="inline-flex min-h-11 items-center rounded-full bg-slate-950 px-5 text-sm font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700">Invited account access</Link>
+        <Link href="/login?redirect=%2Fapp%2Fcapsules%2Fbuilder" className="inline-flex min-h-11 items-center rounded-full border border-emerald-300 bg-white px-5 text-sm font-semibold text-emerald-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-emerald-700">Context workspace for invited users</Link>
       </div>
     </section>
   );

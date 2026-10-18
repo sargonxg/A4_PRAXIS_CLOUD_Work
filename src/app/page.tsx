@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import { PraxisMarketingHome } from '@/components/marketing/praxis-marketing-home';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://praxis.tacitus.me';
-const description = 'Turn a hard policy question into sourced work your team can review.';
+const description = 'Invitation-only PRAXIS preview for sourced policy work. AI generation is currently paused.';
 
 const softwareJsonLd = {
   '@context': 'https://schema.org',
