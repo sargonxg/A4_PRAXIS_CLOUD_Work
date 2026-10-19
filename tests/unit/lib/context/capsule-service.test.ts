@@ -16,6 +16,7 @@ import {
   createCapsuleIntakeReviewCards,
   createEmptyCapsuleInventorySummary,
   createCapsule,
+  stageDialecticaCapsuleImport,
   deriveCapsuleGraphStats,
   detachCapsuleRefs,
   exportCapsuleCorePackage,
@@ -62,6 +63,45 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  const imported = (hash = 'sha256:first') => ({ capsuleId: 'dialectica-atomic', label: 'Imported draft',
+    importSource: 'dialectica', originalCapsuleId: 'source-1', packageVersion: 1, importContentHash: hash });
+  const importReview = { title: 'Review imported evidence', sourceType: 'intake' as const, target: 'claimLedger' as const,
+    proposedEnvelopePatch: { summary: 'Requires human review.' } };
+  it('leaves no capsule, version, review or mirror when a new import fails at commit', async () => {
+    const db = architectDb(); const before = structuredClone([...db.data]); const run = db.runTransaction.bind(db);
+    vi.spyOn(db, 'runTransaction').mockImplementation(async work => run(async transaction => {
+      await work(transaction); throw new Error('Injected late import failure');
+    }));
+    await expect(stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db))).rejects.toThrow('Injected late import failure');
+    expect([...db.data]).toEqual(before);
+  });
+  it('leaves existing records unchanged when an import update fails at commit', async () => {
+    const db = architectDb(); await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const before = structuredClone([...db.data]); const run = db.runTransaction.bind(db);
+    vi.spyOn(db, 'runTransaction').mockImplementation(async work => run(async transaction => {
+      await work(transaction); throw new Error('Injected update failure');
+    }));
+    await expect(stageDialecticaCapsuleImport('u1', imported('sha256:second'), importReview, deps(db))).rejects.toThrow('Injected update failure');
+    expect([...db.data]).toEqual(before);
+  });
+  it('stages capsule and review together, and makes identical import retries idempotent', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const before = structuredClone([...db.data]);
+    const second = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(first.created).toBe(true); expect(second.created).toBe(false);
+    expect(second.reviewCard.reviewCardId).toBe(first.reviewCard.reviewCardId);
+    expect([...db.data]).toEqual(before);
+  });
+  it('rejects unavailable owners and invalid import proposals without partial records', async () => {
+    const db = architectDb(); const before = structuredClone([...db.data]);
+    await expect(stageDialecticaCapsuleImport('u1', imported(), { ...importReview, sourceType: 'public' }, deps(db))).rejects.toThrow();
+    expect([...db.data]).toEqual(before);
+    db.data.set('users/u1', { accountDeletionStatus: 'deleting' });
+    const unavailable = structuredClone([...db.data]);
+    await expect(stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db))).rejects.toThrow();
+    expect([...db.data]).toEqual(unavailable);
+  });
   it('demotes changed graph records and only stamps them through a human decision', async () => {
     const db = architectDb(); db.rejectUndefined = true;
     await createCapsule('u1', { capsuleId: 'graph-review' }, deps(db));
