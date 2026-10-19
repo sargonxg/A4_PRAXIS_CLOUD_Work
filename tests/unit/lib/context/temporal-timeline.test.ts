@@ -7,6 +7,14 @@ import {
 import type { PraxisCapsule } from '@/lib/context/capsule-service';
 
 describe('temporal timeline builder', () => {
+  it.each([undefined, '', 'precedes', 'follows', 'unknown'])('does not infer a causal claim from relation %s', (relation) => {
+    const timeline = buildTemporalTimeline({ capsule: temporalCapsule({ causality: { causalLinks: [{
+      id: 'order-only', cause: 'event-ceasefire-signed', effect: 'event-access-violation', relation, evidenceRefs: ['src-monitor'],
+    }] } }), requestTime: '2026-06-24T12:00:00.000Z' });
+    expect(timeline.edges.some(edge => edge.id === 'edge:order-only')).toBe(false);
+    expect(timeline.edges.find(edge => edge.id === 'edge:edge-precedes')?.relation).toBe('precedes');
+    expect(timeline.warnings).toContain('Unsupported or missing causal relations were omitted; temporal ordering does not establish causation.');
+  });
   it('orders sourced events, commitments, and claims without inventing dates', () => {
     const timeline = buildTemporalTimeline({
       capsule: temporalCapsule(),

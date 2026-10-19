@@ -15,6 +15,11 @@ import { normalizeContextCapsuleV2, type ContextCapsuleV2 } from '@/lib/context/
 import { CAPSULE_STARTER_CATALOG_VERSION, CAPSULE_STARTER_DEFINITIONS } from '@/lib/product/context-capsules';
 
 describe('ContextCapsule v3 contract', () => {
+  it.each([undefined, '', 'precedes', 'follows', 'unknown'])('rejects unsupported causal relation %s instead of inventing causation', (relation) => {
+    expect(() => normalizeContextCapsuleV3({ ...makeCapsule(), grounding: { causality: {
+      causalLinks: [{ id: 'order-only', cause: 'earlier', effect: 'later', relation, evidenceRefs: ['src-1'] }],
+    } } })).toThrow(/explicit supported causal relation/i);
+  });
   // These fixtures describe a May review. Keep time explicit so their quality
   // assertions do not change when the test suite is run months later.
   beforeEach(() => {
