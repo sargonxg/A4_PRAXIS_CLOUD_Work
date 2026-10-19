@@ -56,3 +56,5 @@ jobs:
             ${{ runner.temp }}/praxis-emulator-*/synthetic-prerequisites.json
             ${{ runner.temp }}/praxis-emulator-*/bootstrap.json
             ${{ runner.temp }}/praxis-emulator-*/failure.json
+            ${{ runner.temp }}/praxis-emulator-*/onboarding-tests.json
+            ${{ runner.temp }}/praxis-emulator-*/persona-tests.json
