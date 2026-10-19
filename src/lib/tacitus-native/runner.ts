@@ -55,13 +55,22 @@ export function createPinnedNativeRunner(config: NativeRunnerConfig): NativeRunn
       } finally { await source.close(); }
       if (createHash('sha256').update(binary).digest('hex') !== config.binarySha256)
         throw new NativeAttachmentError('native_binary_provenance_invalid', 503);
-      const executable = join(directory, 'knowledge_capture'); const archive = join(directory, 'input.zip');
+      const executable = join(directory, process.platform === 'win32' ? 'knowledge_capture.exe' : 'knowledge_capture');
+      const archive = join(directory, 'input.zip');
       await writeFile(executable, binary, { mode: 0o500, flag: 'wx' });
       await writeFile(archive, archiveBytes, { mode: 0o400, flag: 'wx' });
       if (signal?.aborted) throw new NativeAttachmentError('native_cancelled');
       return await new Promise<Uint8Array>((resolve, reject) => {
+        // libuv otherwise reintroduces these parent values on Windows even when
+        // spawn receives an explicit environment. Empty entries prevent inheritance.
+        const env: NodeJS.ProcessEnv = { LANG: 'C.UTF-8', TZ: 'UTC', NODE_ENV: 'production' };
+        if (process.platform === 'win32') {
+          for (const key of ['HOMEDRIVE', 'HOMEPATH', 'LOGONSERVER', 'PATH', 'SYSTEMDRIVE',
+            'SYSTEMROOT', 'TEMP', 'USERDOMAIN', 'USERNAME', 'USERPROFILE', 'WINDIR']) env[key] = '';
+        }
         const child = spawn(executable, [mode, archive], {
-          cwd: directory, shell: false, env: { LANG: 'C.UTF-8', TZ: 'UTC', NODE_ENV: 'production' }, stdio: ['pipe', 'pipe', 'pipe'],
+          cwd: directory, shell: false, windowsHide: true,
+          env, stdio: ['pipe', 'pipe', 'pipe'],
         });
         const chunks: Buffer[] = []; let size = 0; let stderrSize = 0; let failure: Error | undefined;
         const stop = (error: Error) => { failure ??= error; child.kill('SIGKILL'); };

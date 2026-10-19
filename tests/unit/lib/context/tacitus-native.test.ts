@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -152,22 +152,55 @@ describe('native-v2 contract and live authority boundary', () => {
 });
 
 const scratch: string[] = [];
+const nativeFixtures = new Map<string, Buffer>();
+let compilerScratch: string | undefined;
+afterAll(async () => { if (compilerScratch) await rm(compilerScratch, { recursive: true, force: true }); });
 afterEach(async () => { for (const path of scratch.splice(0)) await rm(path, { recursive: true, force: true }); });
+async function windowsFixture(program: string): Promise<Buffer> {
+  const modes: Record<string, string> = {
+    'process.stdout.write(JSON.stringify({env:process.env,args:process.argv.slice(2)}))': 'environment',
+    'process.stdout.write("unexpected")': 'unexpected',
+    'setInterval(()=>{},1000)': 'wait',
+    'process.stdout.write("x".repeat(3*1024*1024))': 'stdout',
+    'process.stderr.write("x".repeat(16384)); setInterval(()=>{},1000)': 'stderr',
+  };
+  const mode = modes[program];
+  if (!mode) throw new Error('Unknown native fixture program');
+  const cached = nativeFixtures.get(mode); if (cached) return cached;
+  compilerScratch ??= await mkdtemp(join(tmpdir(), 'native-fixture-compiler-'));
+  const source = (await readFile(join(process.cwd(), 'tests/fixtures/tacitus-native/runner-fixture.rs'), 'utf8'))
+    .replace('__BEHAVIOR__', mode);
+  const sourcePath = join(compilerScratch, `${mode}.rs`); const executablePath = join(compilerScratch, `${mode}.exe`);
+  await writeFile(sourcePath, source);
+  // Required local compiler; no downloaded code, shell, or skipped runner cases.
+  execFileSync(process.env.RUSTC ?? 'rustc', ['--edition=2021', '--crate-name', 'runner_fixture', sourcePath, '-o', executablePath],
+    { timeout: 60000, windowsHide: true, stdio: 'pipe' });
+  const binary = await readFile(executablePath); nativeFixtures.set(mode, binary); return binary;
+}
 async function executable(program: string) {
   const directory = await mkdtemp(join(tmpdir(), 'native-runner-test-')); scratch.push(directory);
-  const path = join(directory, 'stub'); const source = Buffer.from(`#!${process.execPath}\n${program}\n`);
+  const path = join(directory, 'stub');
+  const source = process.platform === 'win32' ? await windowsFixture(program) : Buffer.from(`#!${process.execPath}\n${program}\n`);
   await writeFile(path, source, { mode: 0o700 });
   return { directory, path, runner: createPinnedNativeRunner({ binaryPath: path, binarySha256: hash(source), coreCommit: NATIVE_CORE_COMMIT, patchSha256: NATIVE_CORE_PATCH, scratchRoot: directory }) };
 }
 describe('bounded hash-verified native subprocess', () => {
   it('passes no inherited secret environment, uses argument arrays and cleans private scratch', async () => {
     const f = await executable('process.stdout.write(JSON.stringify({env:process.env,args:process.argv.slice(2)}))');
+    const previousUsername = process.env.USERNAME;
+    process.env.USERNAME = 'must-not-inherit-username';
     process.env.TACITUS_TEST_SECRET = 'must-not-pass';
     try {
       const output = JSON.parse(Buffer.from(await f.runner.run('inspect', bytes)).toString());
-      expect(output.env).toEqual({ LANG: 'C.UTF-8', TZ: 'UTC', NODE_ENV: 'production' }); expect(output.args[0]).toBe('inspect');
+      const expectedEnv: Record<string, string> = { LANG: 'C.UTF-8', TZ: 'UTC', NODE_ENV: 'production' };
+      if (process.platform === 'win32') for (const key of ['HOMEDRIVE', 'HOMEPATH', 'LOGONSERVER', 'PATH',
+        'SYSTEMDRIVE', 'SYSTEMROOT', 'TEMP', 'USERDOMAIN', 'USERNAME', 'USERPROFILE', 'WINDIR']) expectedEnv[key] = '';
+      expect(output.env).toEqual(expectedEnv); expect(output.args[0]).toBe('inspect');
       expect(await readdir(f.directory)).toEqual(['stub']);
-    } finally { delete process.env.TACITUS_TEST_SECRET; }
+    } finally {
+      delete process.env.TACITUS_TEST_SECRET;
+      if (previousUsername === undefined) delete process.env.USERNAME; else process.env.USERNAME = previousUsername;
+    }
   });
   it('rejects a changed binary before executing it', async () => {
     const f = await executable('process.stdout.write("unexpected")'); await writeFile(f.path, 'substituted');
