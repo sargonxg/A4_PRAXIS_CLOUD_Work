@@ -718,16 +718,23 @@ function rawClaimRows(value: unknown): unknown[] {
 }
 
 export async function createCapsule(
-  uid: string,
-  input: CreateCapsuleInput = {},
-  deps?: CapsuleServiceDeps,
+  uid: string, input: CreateCapsuleInput = {}, deps?: CapsuleServiceDeps,
 ): Promise<PraxisCapsule> {
   const ref = input.capsuleId
     ? capsulesCollection(uid, deps).doc(cleanId(input.capsuleId, DEFAULT_CONTEXT_STACK_ID))
     : capsulesCollection(uid, deps).doc();
-  const timestamp = nowIso(deps);
+  const capsule = prepareNewCapsule(uid, input, ref.id, nowIso(deps));
+  if (deps?.requireWritableOwner) {
+    await withDocumentOwnerWrite(uid, transaction => { transaction.set(ref, capsule, { merge: true }); }, dbOf(deps));
+  } else {
+    await ref.set(capsule, { merge: true });
+  }
+  return capsule;
+}
+
+function prepareNewCapsule(uid: string, input: CreateCapsuleInput, capsuleId: string, timestamp: string): PraxisCapsule {
   const capsule = sanitizeCapsule({
-    capsuleId: ref.id,
+    capsuleId,
     ownerUid: uid,
     scope: input.scope ?? inferScope(input.coreRefs),
     parentCapsuleId: input.provenance?.parentCapsuleId ?? null,
@@ -783,14 +790,86 @@ export async function createCapsule(
     ...(stringOrNull(input.dialecticaManifestOwnerUid) ? { dialecticaManifestOwnerUid: input.dialecticaManifestOwnerUid } : {}),
     ...(stringOrNull(input.dialecticaSpecVersion) ? { dialecticaSpecVersion: input.dialecticaSpecVersion } : {}),
   });
-  if (deps?.requireWritableOwner) {
-    await withDocumentOwnerWrite(uid, (transaction) => {
-      transaction.set(ref, capsule, { merge: true });
-    }, dbOf(deps));
-  } else {
-    await ref.set(capsule, { merge: true });
-  }
   return capsule;
+}
+
+/** One owner-checked commit for import metadata, version history, review and active mirror. */
+export async function stageDialecticaCapsuleImport(
+  uid: string,
+  input: CreateCapsuleInput & { capsuleId: string; importSource: string; originalCapsuleId: string; packageVersion: number; importContentHash: string },
+  review: CreateCapsuleReviewCardInput,
+  deps?: CapsuleServiceDeps,
+): Promise<UpsertImportedCapsuleResult & { reviewCard: CapsuleReviewCard }> {
+  const db = dbOf(deps);
+  if (typeof db.runTransaction !== 'function') throw new Error('DIALECTICA imports require transactional storage.');
+  if (review.sourceType !== 'intake' || review.target !== 'claimLedger') throw new Error('DIALECTICA imports require an intake claim-ledger review.');
+  const proposedEnvelopePatch = normalizeReviewEnvelopePatch(review.proposedEnvelopePatch);
+  if (proposedEnvelopePatch.cognition) throw new Error('Native cognitive packages require their distinct staging contract.');
+  const ref = capsulesCollection(uid, deps).doc(cleanId(input.capsuleId, DEFAULT_CONTEXT_STACK_ID));
+  const stackRef = stackDoc(uid, DEFAULT_CONTEXT_STACK_ID, deps);
+  const timestamp = nowIso(deps);
+  return withDocumentOwnerWrite(uid, async transaction => {
+    // Complete all reads and validation before staging the first write.
+    const existing = await transaction.get(ref);
+    const rawCurrent = existing.exists ? existing.data()! : null;
+    const current = rawCurrent ? sanitizeCapsule(rawCurrent) : null;
+    if (current && (current.ownerUid !== uid || current.importSource !== input.importSource || current.originalCapsuleId !== input.originalCapsuleId))
+      throw Object.assign(new Error('The import target belongs to different source or ownership.'), { status: 409 });
+    if (current?.archivedAt) throw Object.assign(new CapsuleReadOnlyError('Restore the archived capsule before importing.'), { status: 409 });
+    if (current && review.expectedCapsuleVersion !== undefined && current.version !== review.expectedCapsuleVersion)
+      throw new StaleCapsuleProposalError('The capsule version changed before import.');
+    const changed = Boolean(current && (current.importContentHash !== input.importContentHash || current.packageVersion !== input.packageVersion));
+    const targetVersion = current ? current.version + (changed ? 1 : 0) : 1;
+    // Bind the review to this transition too: A -> B -> A must preserve A's
+    // earlier accepted/rejected decision while ordinary retries stay idempotent.
+    const currentMemory: Record<string, unknown> = isRecord(current?.memoryPosture) ? current.memoryPosture : {};
+    const priorStaging: Record<string, unknown> = isRecord(currentMemory.importStaging) ? currentMemory.importStaging : {};
+    const previousReviewId = !changed && priorStaging.sourceDigest === input.importContentHash && priorStaging.packageVersion === input.packageVersion
+      ? stringOrNull(priorStaging.reviewCardId) : null;
+    const reviewCardId = previousReviewId ?? `review-dialectica-${stableId(JSON.stringify([uid, input.importSource, input.originalCapsuleId, input.packageVersion, input.importContentHash, targetVersion]))}`;
+    const cardRef = ref.collection('reviewCards').doc(reviewCardId);
+    const [priorReview, stack] = await Promise.all([transaction.get(cardRef), transaction.get(stackRef)]);
+    if (current && !changed && priorReview.exists) {
+      if (priorReview.data()?.ownerUid !== uid || priorReview.data()?.capsuleId !== ref.id) throw new Error('The import review identity does not match its owner and capsule.');
+      return { capsule: current, reviewCard: normalizeReviewCard(priorReview.data(), current, reviewCardId),
+        created: false, updated: false, versionBumped: false, importNotes: cleanStringArray(current.importNotes) };
+    }
+    if (priorReview.exists) throw Object.assign(new Error('The import review transition already has a historical record.'), { status: 409 });
+    const versionRef = ref.collection('versions').doc(`v${targetVersion}`);
+    const previousVersionRef = current ? ref.collection('versions').doc(`v${current.version}`) : null;
+    const [savedVersion, previousVersion] = await Promise.all([
+      transaction.get(versionRef), previousVersionRef ? transaction.get(previousVersionRef) : Promise.resolve(null),
+    ]);
+    if ((!current || changed) && savedVersion.exists) throw Object.assign(new Error('The target capsule version already exists.'), { status: 409 });
+    const importNotes = uniqueStrings([...cleanStringArray(input.importNotes), ...(changed ? ['Imported source content changed; earlier reviews remain historical and the new proposal requires review.'] : [])]);
+    // Imported changes are proposals. Preserve existing accepted claims, sources,
+    // graph and review history until the separate human review decision.
+    const capsule = current ? sanitizeCapsule({ ...current, importContentHash: input.importContentHash,
+      packageVersion: input.packageVersion, importedAt: timestamp, importNotes, updatedAt: timestamp,
+      version: changed ? current.version + 1 : current.version }) : prepareNewCapsule(uid, { ...input, importNotes }, ref.id, timestamp);
+    const state = 'proposed' as const;
+    const card: CapsuleReviewCard = { reviewCardId, capsuleId: ref.id, ownerUid: uid,
+      title: cleanText(review.title, 180) || 'Review DIALECTICA import', sourceType: 'intake', target: 'claimLedger', state,
+      evidence: normalizeReviewEvidence(review.evidence ?? []), proposedEnvelopePatch,
+      proposalBase: buildProposalBase(capsule, proposedEnvelopePatch), applyMetadata: null, createdAt: timestamp, updatedAt: timestamp };
+    const updated = sanitizeCapsule({ ...capsule,
+      memoryPosture: { ...(isRecord(rawCurrent?.memoryPosture) ? rawCurrent.memoryPosture : {}), ...(isRecord(capsule.memoryPosture) ? capsule.memoryPosture : {}),
+        importStaging: { reviewCardId, sourceDigest: input.importContentHash, packageVersion: input.packageVersion } },
+      latestGateState: state, readinessSummary: normalizeReadinessSummary({
+      ...(capsule.readinessSummary ?? {}), reviewCardCount: Math.max(capsule.readinessSummary?.reviewCardCount ?? 0, 0) + (priorReview.exists ? 0 : 1),
+      reviewRequired: true }, capsule.coreRefs, state, timestamp) });
+    const active = stack.exists ? sanitizeActiveContextStack(stack.data()) : defaultActiveContextStack();
+    const mirror = current && (ref.id === DEFAULT_CONTEXT_STACK_ID || active.stackId === ref.id || active.capsuleId === ref.id)
+      ? { ...active, ...capsuleToStack(updated), contextPackageId: active.contextPackageId, evidenceGaps: active.evidenceGaps, canvasLayout: active.canvasLayout } : null;
+    // Materialize serializable payloads before queuing any mutations.
+    const saved = cloneSerializable({ ...rawCurrent, ...updated }), savedCard = cloneSerializable(card), savedMirror = mirror ? cloneSerializable(mirror) : null;
+    const previous = current && changed && !previousVersion?.exists ? cloneSerializable(rawCurrent!) : null;
+    if (previous && previousVersionRef) transaction.set(previousVersionRef, previous);
+    if (!current || changed) transaction.set(versionRef, saved);
+    transaction.set(ref, saved, { merge: true }); transaction.set(cardRef, savedCard);
+    if (savedMirror) transaction.set(stackRef, savedMirror, { merge: true });
+    return { capsule: updated, reviewCard: card, created: !current, updated: Boolean(current), versionBumped: changed, importNotes };
+  }, db);
 }
 
 export async function upsertImportedCapsule(

@@ -41,8 +41,9 @@ describe('DIALECTICA capsule import route contract', () => {
     const source = readFileSync(routePath, 'utf8');
     expect(source).toContain('withAuth');
     expect(source).toContain('parseDialecticaContextExport');
-    expect(source).toContain('upsertImportedCapsule');
-    expect(source).toContain('createCapsuleReviewCard');
+    expect(source).toContain('stageDialecticaCapsuleImport');
+    expect(source).not.toContain('await createCapsule(');
+    expect(source).not.toContain('await createCapsuleReviewCard(');
     expect(source).toContain("target: 'claimLedger'");
     expect(source).toContain("sourceType: 'intake'");
     expect(source).toContain('proposedRowsRetainedForReview');
@@ -58,7 +59,8 @@ describe('DIALECTICA capsule import route contract', () => {
     vi.doMock('@/lib/context/capsule-service', () => ({
       createCapsule: vi.fn(),
       createCapsuleReviewCard: vi.fn(async () => ({ reviewCardId: 'review-1', state: 'owner_review' })),
-      upsertImportedCapsule: vi.fn(async (_uid: string, input: Record<string, unknown>) => ({
+      stageDialecticaCapsuleImport: vi.fn(async (_uid: string, input: Record<string, unknown>) => ({
+        reviewCard: { reviewCardId: 'review-1', state: 'proposed' },
         capsule: {
           capsuleId: input.capsuleId,
           label: input.label,
@@ -122,5 +124,20 @@ describe('DIALECTICA capsule import route contract', () => {
 
     expect(exportPackage.claims).toHaveLength(3);
     expect(exportPackage.sourceReceipts[0].id).toBe('s1');
+  });
+  it('rejects unsafe ZIP paths without calling persistence', async () => {
+    const stage = vi.fn();
+    vi.doMock('@/lib/api/with-auth', () => ({ withAuth: (handler: (request: Request, user: { uid: string; isDemo: boolean }) => Promise<Response>) =>
+      (request: Request) => handler(request, { uid: 'route-user', isDemo: false }) }));
+    vi.doMock('@/lib/context/capsule-service', () => ({ stageDialecticaCapsuleImport: stage }));
+    const zip = await JSZip.loadAsync(await fixtureZip());
+    zip.file('../rejected.json', '{}', { createFolders: false });
+    const { POST } = await import('@/app/api/context/capsules/import/dialectica/route');
+    const response = await POST(new Request('http://local.test/api/context/capsules/import/dialectica', {
+      method: 'POST', headers: { 'content-type': DIALECTICA_CAPSULE_MIMETYPE },
+      body: new Blob([new Uint8Array(await zip.generateAsync({ type: 'uint8array' }))]),
+    }));
+    expect(response.status).toBe(400);
+    expect(stage).not.toHaveBeenCalled();
   });
 });

@@ -93,6 +93,51 @@ describe('capsule service', () => {
     expect(second.reviewCard.reviewCardId).toBe(first.reviewCard.reviewCardId);
     expect([...db.data]).toEqual(before);
   });
+  it('retains reviewed content and earlier reviews when a changed package stages a new proposal', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', { ...imported(), summary: 'Original reviewed context' }, importReview, deps(db));
+    const second = await stageDialecticaCapsuleImport('u1', { ...imported('sha256:changed'), summary: 'Unreviewed replacement' },
+      { ...importReview, proposedEnvelopePatch: { summary: 'Unreviewed replacement' } }, deps(db));
+    expect(second.capsule.summary).toBe('Original reviewed context');
+    expect(second.capsule.version).toBe(2);
+    expect(second.reviewCard.proposedEnvelopePatch.summary).toBe('Unreviewed replacement');
+    expect(first.reviewCard.reviewCardId).not.toBe(second.reviewCard.reviewCardId);
+    expect([...db.data.keys()].filter(key => key.includes('/reviewCards/'))).toHaveLength(2);
+    expect([...db.data.keys()].filter(key => key.includes('/versions/'))).toHaveLength(2);
+  });
+  it('preserves the decided review when A is reimported after B', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const firstPath = [...db.data.keys()].find(key => key.endsWith('/' + first.reviewCard.reviewCardId))!;
+    db.data.set(firstPath, { ...db.data.get(firstPath), state: 'rejected', decisionNote: 'Original review must remain historical.' });
+    const historical = structuredClone(db.data.get(firstPath));
+    await stageDialecticaCapsuleImport('u1', imported('sha256:second'), importReview, deps(db));
+    const third = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(third.capsule.version).toBe(3);
+    expect(third.reviewCard.reviewCardId).not.toBe(first.reviewCard.reviewCardId);
+    expect(db.data.get(firstPath)).toEqual(historical);
+    const retry = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(retry.reviewCard.reviewCardId).toBe(third.reviewCard.reviewCardId);
+    expect([...db.data.keys()].filter(key => key.includes('/reviewCards/'))).toHaveLength(3);
+  });
+  it('preserves private extension fields, immutable prior versions and decisions across retries', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const capsulePath = 'users/u1/capsules/dialectica-atomic';
+    const firstReviewPath = `${capsulePath}/reviewCards/${first.reviewCard.reviewCardId}`;
+    db.data.set(firstReviewPath, { ...db.data.get(firstReviewPath), state: 'rejected' });
+    db.data.set(capsulePath, { ...db.data.get(capsulePath), version: 2, privateExtension: { retain: 'original' } });
+    const beforeRetry = structuredClone([...db.data]);
+    const retry = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(retry.reviewCard.reviewCardId).toBe(first.reviewCard.reviewCardId);
+    expect([...db.data]).toEqual(beforeRetry);
+    const historical = { immutable: 'prior-v2', version: 2 };
+    db.data.set(`${capsulePath}/versions/v2`, historical);
+    await stageDialecticaCapsuleImport('u1', imported('sha256:next'), importReview, deps(db));
+    expect(db.data.get(capsulePath)?.privateExtension).toEqual({ retain: 'original' });
+    expect(db.data.get(`${capsulePath}/versions/v2`)).toEqual(historical);
+    expect(db.data.get(firstReviewPath)?.state).toBe('rejected');
+  });
   it('rejects unavailable owners and invalid import proposals without partial records', async () => {
     const db = architectDb(); const before = structuredClone([...db.data]);
     await expect(stageDialecticaCapsuleImport('u1', imported(), { ...importReview, sourceType: 'public' }, deps(db))).rejects.toThrow();

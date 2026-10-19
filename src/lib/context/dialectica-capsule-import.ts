@@ -1,4 +1,5 @@
-import JSZip from 'jszip';
+import type JSZip from 'jszip';
+import { readImportZip } from '@/lib/package-zip';
 import { z } from 'zod';
 import { getModelIdForTask } from '@/lib/ai/model-matrix';
 import { buildLadybugProjectionFromGraphJsonLd } from '@/lib/context/ladybug-projection';
@@ -283,11 +284,11 @@ export function parseDialecticaCapsulePackageFromParts(parts: DialecticaCapsuleP
 export async function parseDialecticaCapsuleZip(buffer: Buffer | ArrayBuffer | Uint8Array): Promise<DialecticaParsedCapsulePackage> {
   let zip: JSZip;
   try {
-    zip = await JSZip.loadAsync(buffer);
-  } catch {
-    throw new DialecticaCapsuleImportError('DIALECTICA capsule package must be a readable zip archive.', [{
+    zip = await readImportZip(buffer);
+  } catch (error) {
+    throw new DialecticaCapsuleImportError('DIALECTICA capsule package must be a readable zip archive. Unsafe paths or exceeded byte budgets are rejected.', [{
       field: 'package',
-      message: 'Package must be a readable zip archive.',
+      message: error instanceof Error ? error.message : 'Package must be a readable zip archive.',
     }]);
   }
   const hasLadybugProjection = Object.keys(zip.files).some((path) => path.startsWith('graph/ladybug/'));

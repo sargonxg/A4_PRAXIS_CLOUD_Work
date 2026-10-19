@@ -3,9 +3,7 @@ import { NextResponse } from 'next/server';
 import { withAuth } from '@/lib/api/with-auth';
 import { handleRouteError } from '@/lib/api/standard-error';
 import {
-  createCapsule,
-  createCapsuleReviewCard,
-  upsertImportedCapsule,
+  stageDialecticaCapsuleImport,
 } from '@/lib/context/capsule-service';
 import {
   DIALECTICA_CAPSULE_MIMETYPE,
@@ -40,11 +38,11 @@ export const POST = withAuth(async (request, user) => {
       if (raw.byteLength > MAX_IMPORT_BYTES) {
         return NextResponse.json({ error: 'DIALECTICA package exceeds the 2MB import limit' }, { status: 413 });
       }
-      return importSpec3DialecticaPackage(user.uid, await parseDialecticaCapsuleZip(raw));
+      return await importSpec3DialecticaPackage(user.uid, await parseDialecticaCapsuleZip(raw));
     }
 
     const raw = await request.text();
-    if (raw.length > MAX_IMPORT_BYTES) {
+    if (Buffer.byteLength(raw, 'utf8') > MAX_IMPORT_BYTES) {
       return NextResponse.json({ error: 'DIALECTICA package exceeds the 2MB import limit' }, { status: 413 });
     }
     let parsedBody: unknown;
@@ -54,9 +52,9 @@ export const POST = withAuth(async (request, user) => {
       return NextResponse.json({ error: 'DIALECTICA package must be valid JSON' }, { status: 400 });
     }
     if (isSpec3JsonPackage(parsedBody)) {
-      return importSpec3DialecticaPackage(user.uid, parseDialecticaCapsulePackageFromParts(jsonPackageParts(parsedBody)));
+      return await importSpec3DialecticaPackage(user.uid, parseDialecticaCapsulePackageFromParts(jsonPackageParts(parsedBody)));
     }
-    return importLegacyDialecticaContextPackage(user.uid, parsedBody);
+    return await importLegacyDialecticaContextPackage(user.uid, parsedBody);
   } catch (err) {
     if (err instanceof DialecticaCapsuleImportError) {
       return NextResponse.json({
@@ -85,9 +83,7 @@ async function importSpec3DialecticaPackage(uid: string, parsedPackage: Dialecti
     packageVersion: plan.manifest.version,
     importContentHash,
   };
-  const result = await upsertImportedCapsule(uid, importedCapsuleInput);
-  const importNotes = uniqueStrings([...plan.importNotes, ...result.importNotes]);
-  const reviewCard = await createCapsuleReviewCard(uid, result.capsule.capsuleId, {
+  const result = await stageDialecticaCapsuleImport(uid, importedCapsuleInput, {
     title: `Review DIALECTICA import ${plan.manifest.capsule_id}`,
     sourceType: 'intake',
     target: 'claimLedger',
@@ -107,6 +103,8 @@ async function importSpec3DialecticaPackage(uid: string, parsedPackage: Dialecti
       ...(plan.reviewPatch.embeddedGraph ? { embeddedGraph: plan.reviewPatch.embeddedGraph } : {}),
     },
   });
+  const reviewCard = result.reviewCard;
+  const importNotes = uniqueStrings([...plan.importNotes, ...result.importNotes]);
 
   return NextResponse.json({
     capsule: result.capsule,
@@ -130,20 +128,24 @@ async function importLegacyDialecticaContextPackage(uid: string, parsedBody: unk
     const exportPackage = parseDialecticaContextExport(parsedBody);
     const preview = mapDialecticaExportToPraxisPreview(exportPackage);
 
-    const capsule = await createCapsule(uid, {
+    const capsuleInput = {
       capsuleId: `dialectica-${exportPackage.packageId}`,
       label: exportPackage.title,
       summary: buildImportSummary(exportPackage),
-      scope: 'user',
+      scope: 'user' as const,
+      importSource: 'dialectica-legacy',
+      originalCapsuleId: exportPackage.packageId,
+      packageVersion: 1,
+      importContentHash: `sha256:${createHash('sha256').update(JSON.stringify(exportPackage)).digest('hex')}`,
       community: { tags: ['dialectica', 'verified-context', 'imported'] },
       provenance: {
-        source: 'api',
+        source: 'api' as const,
         createdBy: uid,
         parentCapsuleId: exportPackage.capsuleId ?? null,
         forkedFromVersion: null,
         notes: `Imported from DIALECTICA context package ${exportPackage.packageId} (exported ${exportPackage.exportedAt}).`,
       },
-    });
+    };
 
     const sourceRefs = exportPackage.sourceReceipts.map((receipt): ContextCapsuleSourceRef => ({
       sourceId: receipt.id,
@@ -153,7 +155,7 @@ async function importLegacyDialecticaContextPackage(uid: string, parsedBody: unk
     }));
     const claimLedger = exportPackage.claims.map((claim) => mapDialecticaClaim(claim));
 
-    const reviewCard = await createCapsuleReviewCard(uid, capsule.capsuleId, {
+    const result = await stageDialecticaCapsuleImport(uid, capsuleInput, {
       title: `Review DIALECTICA import ${exportPackage.packageId}`,
       sourceType: 'intake',
       target: 'claimLedger',
@@ -170,6 +172,7 @@ async function importLegacyDialecticaContextPackage(uid: string, parsedBody: unk
         claimLedger: claimLedger.map((claim) => ({ ...claim })),
       },
     });
+    const { capsule, reviewCard } = result;
 
     return NextResponse.json({
       capsule,
@@ -187,7 +190,7 @@ async function importLegacyDialecticaContextPackage(uid: string, parsedBody: unk
       },
       reviewCard: { reviewCardId: reviewCard.reviewCardId, state: reviewCard.state },
       proposedRowsRetainedForReview: claimLedger.length + sourceRefs.length,
-    }, { status: 201 });
+    }, { status: result.created ? 201 : 200 });
 }
 
 function mapDialecticaClaim(claim: DialecticaClaim): ContextCapsuleClaim {

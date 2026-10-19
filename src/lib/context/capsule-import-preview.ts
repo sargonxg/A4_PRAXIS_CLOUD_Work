@@ -1,4 +1,5 @@
-import JSZip from 'jszip';
+import type JSZip from 'jszip';
+import { readImportZip } from '@/lib/package-zip';
 import {
   mapDialecticaExportToPraxisPreview,
   parseDialecticaContextExport,
@@ -56,7 +57,7 @@ export async function buildDialecticaPackageImportPreview(buffer: Buffer | Array
 }
 
 export async function buildCapsulePlusImportPreview(buffer: Buffer | ArrayBuffer | Uint8Array): Promise<CapsuleImportPreview> {
-  const zip = await JSZip.loadAsync(buffer);
+  const zip = await readImportZip(buffer);
   const manifest = parseRecord(await requiredZipJson(zip, 'manifest.json'));
   const capsule = parseRecord(await requiredZipJson(zip, 'capsule.json'));
   const nodes = parseLooseJsonl(await optionalZipText(zip, 'graph/nodes.jsonl'));
