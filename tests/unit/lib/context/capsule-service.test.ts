@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { GeoPoint, Timestamp } from 'firebase-admin/firestore';
 import { createCognitiveCapsule, KnowledgeSchema, CognitiveNodeSchema, CognitiveStatementSchema, EvidenceSpanSchema } from '@/lib/cognitive-capsule/schema';
 import { proposeCognitiveKnowledge, proposeCognitiveInterview, proposeCognitiveGraph, stageRegistryCapsuleInstallation } from '@/lib/cognitive-capsule/service';
 import { decideCognitiveCapsuleReviewCard } from '@/lib/context/capsule-service';
@@ -137,6 +138,40 @@ describe('capsule service', () => {
     expect(db.data.get(capsulePath)?.privateExtension).toEqual({ retain: 'original' });
     expect(db.data.get(`${capsulePath}/versions/v2`)).toEqual(historical);
     expect(db.data.get(firstReviewPath)?.state).toBe('rejected');
+  });
+  it('preserves typed private values in live capsules, new history and active mirrors', async () => {
+    const db = architectDb();
+    await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const path = 'users/u1/capsules/dialectica-atomic';
+    const privateDate = new Date('1914-07-23T12:00:00Z');
+    const privatePoint = new GeoPoint(48.2, 16.37);
+    const privateTimestamp = Timestamp.fromDate(privateDate);
+    const raw = { ...db.data.get(path), version: 2, privateExtension: privateDate,
+      privatePoint, privateTimestamp,
+      memoryPosture: { privateDate, privateTimestamp }, readinessSummary: { privateDate },
+      claimLedger: [{ id: 'accepted', privateDate }] };
+    db.data.set(path, raw);
+    const stackPath = 'users/u1/contextStacks/default';
+    const refs = [{ capsuleId: imported().capsuleId, role: 'primary', version: 1, privateDate },
+      { capsuleId: 'other-evidence', role: 'reference', version: 7, privateTimestamp }];
+    db.data.set(stackPath, { stackId: imported().capsuleId, capsuleId: imported().capsuleId,
+      capsuleRefs: refs, canvasLayout: { privateDate }, evidenceGaps: [{ privateDate }], privateDate });
+    await stageDialecticaCapsuleImport('u1', imported('sha256:typed-update'), importReview, deps(db));
+    for (const key of [path, `${path}/versions/v2`, `${path}/versions/v3`]) {
+      const saved = db.data.get(key)!;
+      expect(saved.privateExtension).toBe(privateDate);
+      expect(saved.privatePoint).toBe(privatePoint);
+      expect(saved.privateTimestamp).toBe(privateTimestamp);
+      expect((saved.memoryPosture as Record<string, unknown>).privateDate).toBe(privateDate);
+      expect((saved.memoryPosture as Record<string, unknown>).privateTimestamp).toBe(privateTimestamp);
+      expect((saved.readinessSummary as Record<string, unknown>).privateDate).toBe(privateDate);
+      expect(saved.claimLedger).toBe(raw.claimLedger);
+    }
+    const stack = db.data.get(stackPath)!;
+    expect((stack.canvasLayout as Record<string, unknown>).privateDate).toBe(privateDate);
+    expect(stack.evidenceGaps).toEqual([{ privateDate }]);
+    expect(stack.privateDate).toBe(privateDate);
+    expect(stack.capsuleRefs).toBe(refs);
   });
   it('rejects unavailable owners and invalid import proposals without partial records', async () => {
     const db = architectDb(); const before = structuredClone([...db.data]);

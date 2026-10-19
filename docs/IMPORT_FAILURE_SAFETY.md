@@ -8,6 +8,9 @@ leave these records unchanged. No rules, grants or credentials are changed.
 
 Imports remain proposals. Updating a source preserves existing reviewed content,
 private extension fields, immutable versions and earlier review decisions.
+Existing Firestore Date, Timestamp and GeoPoint values are preserved without
+JSON conversion. Staging writes scoped import/review metadata; it does not
+replace active attachments, their ordering, roles or historical version pins.
 Retries use the stored import receipt, including after a human decision advances
 the envelope version. Returning from package A to B to A creates a new transition
 review without rewriting the first A review. Local fault-injection tests verify

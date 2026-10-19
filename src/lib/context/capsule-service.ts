@@ -860,13 +860,26 @@ export async function stageDialecticaCapsuleImport(
       reviewRequired: true }, capsule.coreRefs, state, timestamp) });
     const active = stack.exists ? sanitizeActiveContextStack(stack.data()) : defaultActiveContextStack();
     const mirror = current && (ref.id === DEFAULT_CONTEXT_STACK_ID || active.stackId === ref.id || active.capsuleId === ref.id)
-      ? { ...active, ...capsuleToStack(updated), contextPackageId: active.contextPackageId, evidenceGaps: active.evidenceGaps, canvasLayout: active.canvasLayout } : null;
-    // Materialize serializable payloads before queuing any mutations.
-    const saved = cloneSerializable({ ...rawCurrent, ...updated }), savedCard = cloneSerializable(card), savedMirror = mirror ? cloneSerializable(mirror) : null;
-    const previous = current && changed && !previousVersion?.exists ? cloneSerializable(rawCurrent!) : null;
+      ? { stackId: ref.id, capsuleId: ref.id } : null;
+    // Only new import metadata crosses the JSON boundary. Existing Firestore
+    // Dates, references and typed private fields must retain their native values.
+    const metadata = cloneSerializable({ importContentHash: updated.importContentHash,
+      packageVersion: updated.packageVersion, importedAt: updated.importedAt,
+      importNotes: updated.importNotes, updatedAt: updated.updatedAt, version: updated.version,
+      latestGateState: updated.latestGateState });
+    const rawMemory = isRecord(rawCurrent?.memoryPosture) ? rawCurrent.memoryPosture : {};
+    const rawReadiness = isRecord(rawCurrent?.readinessSummary) ? rawCurrent.readinessSummary : {};
+    const patch = { ...metadata,
+      memoryPosture: { ...rawMemory, importStaging: { reviewCardId,
+        sourceDigest: input.importContentHash, packageVersion: input.packageVersion } },
+      readinessSummary: { ...rawReadiness, reviewCardCount: updated.readinessSummary!.reviewCardCount,
+        reviewRequired: true } };
+    const saved = current ? { ...rawCurrent, ...patch } : cloneSerializable(updated);
+    const savedCard = cloneSerializable(card), savedMirror = mirror ? cloneSerializable(mirror) : null;
+    const previous = current && changed && !previousVersion?.exists ? rawCurrent! : null;
     if (previous && previousVersionRef) transaction.set(previousVersionRef, previous);
     if (!current || changed) transaction.set(versionRef, saved);
-    transaction.set(ref, saved, { merge: true }); transaction.set(cardRef, savedCard);
+    transaction.set(ref, current ? patch : saved, { merge: true }); transaction.set(cardRef, savedCard);
     if (savedMirror) transaction.set(stackRef, savedMirror, { merge: true });
     return { capsule: updated, reviewCard: card, created: !current, updated: Boolean(current), versionBumped: changed, importNotes };
   }, db);
