@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   personas:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v6
@@ -27,6 +27,8 @@ jobs:
         run: npm ci
 
       - name: Install Playwright Chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/praxis-playwright-browsers
         run: npx playwright install --with-deps chromium
 
       - name: Install isolated pinned emulator tooling
@@ -38,6 +40,7 @@ jobs:
         env:
           PRAXIS_FIREBASE_CLI: ${{ runner.temp }}/praxis-firebase-tools/node_modules/firebase-tools/lib/bin/firebase.js
           PRAXIS_EMULATOR_OUTPUT: ${{ runner.temp }}
+          PRAXIS_TEST_BROWSERS_PATH: ${{ runner.temp }}/praxis-playwright-browsers
         run: npm run smoke:emulators
 
       - name: Upload emulator-only measurement receipts
@@ -51,3 +54,5 @@ jobs:
             ${{ runner.temp }}/praxis-emulator-*/tooling.json
             ${{ runner.temp }}/praxis-emulator-*/source.json
             ${{ runner.temp }}/praxis-emulator-*/synthetic-prerequisites.json
+            ${{ runner.temp }}/praxis-emulator-*/bootstrap.json
+            ${{ runner.temp }}/praxis-emulator-*/failure.json

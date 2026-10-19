@@ -6,10 +6,11 @@ import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { Readable } from 'node:stream';
-import { pipeline } from 'node:stream/promises';
+import { finished, pipeline } from 'node:stream/promises';
 import { fileURLToPath } from 'node:url';
 import { emulatorEnvironment, FIREBASE_TOOLS_VERSION, FIRESTORE_BINARY } from './environment.mjs';
 import { runBoundedChild } from './bounded-process.mjs';
+import { bootstrapRecord, failureRecord, persistSafeReceipt, readPrivateLogTail } from './bootstrap-receipt.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const overall = new AbortController();
@@ -36,6 +37,7 @@ for (const port of [3000, 3139, 4400, 4500, 8080, 9099, 9150]) {
   });
 }
 const receipts = [];
+let lastFailure;
 const implementationSha256 = {};
 const sourceFiles = new Set(execFileSync('git', ['ls-files', '--', 'src', 'public', 'package*.json', 'next.config.*',
   'tsconfig*.json', 'firestore.rules', 'firestore.indexes.json'], { encoding: 'utf8', cwd: root }).trim().split(/\r?\n/).filter(Boolean));
@@ -43,6 +45,7 @@ for (const file of ['src/lib/firebase/emulator-config.ts', 'src/lib/firebase/adm
   'src/lib/auth/current-token.ts', 'src/proxy.ts', 'scripts/emulators/environment.mjs', 'scripts/emulators/run.mjs',
   'scripts/emulators/accept.mjs', 'scripts/emulators/loopback-only.js', 'scripts/emulators/egress-proof.mjs',
   'scripts/emulators/bounded-process.mjs', 'scripts/emulators/seed-prerequisites.mjs', 'firebase.emulators.json',
+  'scripts/emulators/bootstrap-receipt.mjs', 'tests/unit/lib/firebase/emulator-bootstrap-receipt.test.ts',
   'tests/emulators/playwright.config.ts', 'src/components/praxis/tasklet-workbench-history.ts',
   'src/components/praxis/use-workbench-conversation.ts', 'tests/unit/components/tasklet-workbench-history.test.ts',
   'tests/unit/hooks/use-workbench-conversation.test.ts', 'tests/unit/lib/ai/tasklet-stream-framing.test.ts',
@@ -60,17 +63,31 @@ await writeFile(join(runtime, 'source.json'), JSON.stringify({
   implementationSha256, meaning: 'Local implementation bytes; uncommitted work is not certified as the base commit',
 }, null, 2), { flag: 'wx' });
 async function run(label, executable, args, timeoutMs) {
-  const started = Date.now(); const log = createWriteStream(join(runtime, `${label}.log`), { flags: 'wx' });
-  let result;
+  const logPath = join(runtime, `${label}.log`);
+  const started = Date.now(); const log = createWriteStream(logPath, { flags: 'wx' });
+  const flushed = finished(log).catch(error => error);
+  let result, originalError;
   try {
     result = await runBoundedChild(executable, args, { env, cwd: root, stdout: log, stderr: log, timeoutMs, signal: overall.signal });
   } catch (error) {
-    receipts.push({ label, exit: error?.rootExit ?? null, status: 'process-error', failureCode: error?.code || 'PROCESS_ERROR',
-      descendantCleanupVerified: error?.code === 'OWNED_DESCENDANTS_UNVERIFIED' ? false : null,
+    originalError = error;
+  } finally {
+    log.end();
+    const flushError = await flushed;
+    if (flushError) originalError ??= flushError;
+  }
+  if (originalError) {
+    let bootstrap;
+    try { bootstrap = JSON.parse(await readPrivateLogTail(join(runtime, 'bootstrap.json'))); } catch { /* fixed unknown phase below */ }
+    lastFailure = failureRecord(label, bootstrap, await readPrivateLogTail(logPath), originalError?.code, originalError?.rootExit);
+    await persistSafeReceipt(join(runtime, 'failure.json'), lastFailure);
+    receipts.push({ label, exit: lastFailure.rootExit, status: 'process-error', failureCode: lastFailure.processFailureCode,
+      primaryFailureCode: lastFailure.failureCode, bootstrapPhase: lastFailure.phase,
+      descendantCleanupVerified: lastFailure.descendantCleanupVerified,
       timeoutMs, elapsedMs: Date.now() - started });
-    await writeFile(join(runtime, 'stages.json'), JSON.stringify(receipts, null, 2));
-    throw error;
-  } finally { log.end(); }
+    await writeFile(join(runtime, 'stages.json'), JSON.stringify(receipts, null, 2)).catch(() => {});
+    throw originalError;
+  }
   const { exit, timedOut } = result;
   receipts.push({ label, exit, timedOut, timeoutMs, elapsedMs: Date.now() - started });
   await writeFile(join(runtime, 'stages.json'), JSON.stringify(receipts, null, 2));
@@ -91,7 +108,8 @@ try {
   const hash = createHash('sha256'); for await (const chunk of createReadStream(binary)) hash.update(chunk);
   if (hash.digest('hex') !== FIRESTORE_BINARY.sha256) throw new Error('Firestore emulator SHA-256 differs from reviewed pin');
   await writeFile(join(runtime, 'tooling.json'), JSON.stringify({ node: process.version, java: javaVersion,
-    firebaseTools: cliPackage.version, firestore: FIRESTORE_BINARY }, null, 2));
+    firebaseTools: cliPackage.version, firestore: FIRESTORE_BINARY, platform: process.platform,
+    explicitBrowserCache: Boolean(env.PLAYWRIGHT_BROWSERS_PATH) }, null, 2));
   await run('build', process.execPath, [npm, 'run', 'build'], 25 * 60_000);
   await writeFile(join(runtime, 'build-mode.json'), JSON.stringify({
     buildId: (await readFile(join(root, '.next/BUILD_ID'), 'utf8')).trim(),
@@ -100,12 +118,15 @@ try {
   }, null, 2), { flag: 'wx' });
   // This fixed command starts only the two local emulators. It never logs in,
   // imports a production export, deploys rules, or dispatches a hosted operation.
+  await persistSafeReceipt(join(runtime, 'bootstrap.json'), bootstrapRecord('cli-bootstrap', 'started'));
   await run('emulator-acceptance', process.execPath, [cli, 'emulators:exec', '--only', 'auth,firestore',
     '--project', 'demo-praxis-ci', '--config', 'firebase.emulators.json', '--non-interactive',
     'node --experimental-strip-types --require ./scripts/emulators/loopback-only.js scripts/emulators/accept.mjs'], 8 * 60_000);
   console.log(JSON.stringify({ status: 'emulator-only-accepted', receiptFolder: runtime, hostedAcceptance: false }));
-} catch (error) {
-  console.error(JSON.stringify({ status: 'failed', receiptFolder: runtime, reason: error instanceof Error ? error.message : 'unknown', hostedAcceptance: false }));
+} catch {
+  const safe = lastFailure ?? failureRecord('emulator-acceptance', null, '', 'PROCESS_ERROR', null);
+  console.error(JSON.stringify({ status: 'failed', receiptFolder: runtime, failureCode: safe.failureCode,
+    processFailureCode: safe.processFailureCode, reason: safe.message, hostedAcceptance: false }));
   process.exitCode = 1;
 } finally {
   clearTimeout(overallTimer);

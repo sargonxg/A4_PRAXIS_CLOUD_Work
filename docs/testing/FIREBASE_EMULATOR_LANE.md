@@ -71,3 +71,22 @@ owned-tree termination checks apply to expired stages; a successful stage receip
 must not be described as proof of complete process-tree cleanup.
 Task-local receipts record stages and limitations;
 raw local logs and tooling configuration are not uploaded as CI artifacts.
+
+Linux CI installs Chromium into a dedicated task-local `PLAYWRIGHT_BROWSERS_PATH`
+and supplies that same absolute directory as `PRAXIS_TEST_BROWSERS_PATH` to the
+isolated runner. Ambient browser paths/options are not forwarded. Linux refuses
+a missing dedicated path; all platforms refuse a relative dedicated path.
+This matters because Linux Playwright otherwise resolves its browser beneath the
+runner's deliberately fresh `XDG_CACHE_HOME`, unlike Windows' retained local
+application cache. The workflow pins the observed Ubuntu 24.04 OS for reproducibility;
+this is not evidence that an Ubuntu upgrade caused the original failure.
+
+`bootstrap.json` records only fixed phase/status/failure-code fields and fixed
+curated messages. `failure.json` separates the recognized primary failure from
+the process/descendant-cleanup failure. The outer runner awaits private-log flush
+and reads at most its last 64 KiB for fixed-pattern classification. It never copies
+log lines, exception text, destinations, environment values or unknown fields to
+uploaded diagnostics; unrecognized errors remain explicitly unknown. Receipt
+write failures cannot replace the original exception. Raw CLI/app/debug logs stay
+private and are excluded from CI artifacts. A new exact-commit Linux CI result is
+still required to establish the original startup cause and validate the repair.
