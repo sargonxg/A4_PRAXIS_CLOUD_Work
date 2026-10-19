@@ -74,7 +74,8 @@ try {
     // Exercise the first-login branch before another suite persists its skip.
     ['first-login-onboarding', 'tests/e2e/onboarding.spec.ts'],
     // Every remaining assertion runs once; no duplicate golden-path invocation.
-    ['authenticated-personas', 'tests/e2e/golden-path.spec.ts', 'tests/e2e/authenticated-app-post-login.spec.ts'],
+    ['authenticated-personas', 'tests/e2e/golden-path.spec.ts', 'tests/e2e/authenticated-app-post-login.spec.ts',
+      'tests/e2e/workbench-context-readiness.emulator.spec.ts'],
   ];
   for (const [label, ...files] of suites) {
     await markPhase(label);

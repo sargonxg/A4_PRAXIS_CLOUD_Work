@@ -17,6 +17,14 @@ describe('isolated safe Playwright reporter', () => {
       failureLocations: [{ file: 'tests/e2e/golden-path.spec.ts', line: 40, column: 7 }] });
     expect(JSON.stringify(record)).not.toContain(poison);
   });
+  it('recognizes only the fixed emulator context-readiness case and its repository source location', () => {
+    const file = join(root, 'tests/e2e/workbench-context-readiness.emulator.spec.ts');
+    const record = safeTestRecord({ title: 'waits for owner context before sending the requested conversation turn', location: { file } },
+      { status: 'failed', errors: [{ location: { file, line: 60 }, message: poison }] });
+    expect(record.testId).toBe('WORKBENCH_CONTEXT_READINESS');
+    expect(record.failureLocations).toEqual([{ file: 'tests/e2e/workbench-context-readiness.emulator.spec.ts', line: 60, column: null }]);
+    expect(JSON.stringify(record)).not.toContain(poison);
+  });
   it('rejects traversal, suffix spoofing, URLs, unknown files and malformed numbers', () => {
     for (const path of [file + '.private', join(root, '../private/auth.ts'), poison, 'https://private.invalid/auth.ts']) {
       expect(safeLocation({ file: path, line: 1, column: 1 })).toBeNull();

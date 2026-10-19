@@ -47,6 +47,8 @@ for (const file of ['src/lib/firebase/emulator-config.ts', 'src/lib/firebase/adm
   'scripts/emulators/bounded-process.mjs', 'scripts/emulators/seed-prerequisites.mjs', 'firebase.emulators.json',
   'scripts/emulators/bootstrap-receipt.mjs', 'tests/unit/lib/firebase/emulator-bootstrap-receipt.test.ts',
   'scripts/emulators/safe-reporter.mjs', 'tests/unit/lib/firebase/emulator-safe-reporter.test.ts',
+  'src/components/praxis/use-workbench-context-initialization.ts', 'tests/unit/hooks/use-workbench-context-initialization.test.ts',
+  'tests/e2e/workbench-context-readiness.emulator.spec.ts',
   'tests/emulators/playwright.config.ts', 'src/components/praxis/tasklet-workbench-history.ts',
   'src/components/praxis/use-workbench-conversation.ts', 'tests/unit/components/tasklet-workbench-history.test.ts',
   'tests/unit/hooks/use-workbench-conversation.test.ts', 'tests/unit/lib/ai/tasklet-stream-framing.test.ts',
