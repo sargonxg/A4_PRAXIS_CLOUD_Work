@@ -1,3 +1,24 @@
+/** Decode UTF-8 and protocol lines independently of HTTP chunk boundaries. */
+export function createTaskletStreamDecoder() {
+  const decoder = new TextDecoder();
+  let pending = '';
+  function drain(final: boolean): string[] {
+    const lines = pending.split('\n');
+    pending = final ? '' : lines.pop() ?? '';
+    return lines.map(line => line.endsWith('\r') ? line.slice(0, -1) : line).filter(Boolean);
+  }
+  return {
+    push(chunk: Uint8Array): string[] {
+      pending += decoder.decode(chunk, { stream: true });
+      return drain(false);
+    },
+    finish(): string[] {
+      pending += decoder.decode();
+      return drain(true);
+    },
+  };
+}
+
 export function parseDataStreamError(line: string): string | null {
   if (!line.startsWith('3:')) return null;
   try {

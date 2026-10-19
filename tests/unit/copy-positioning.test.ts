@@ -50,6 +50,6 @@ describe('PRAXIS product positioning copy', () => {
     expect(combined).not.toContain('Turn documents, sources, and policy tools into grounded analysis');
     expect(combined).toContain('Compose your reasoning and policy products from expert ContextCapsules.');
     expect(combined).toContain('Ask the question, attach sources when it matters, and leave with work your team can review.');
-    expect(combined).toContain('Turn a hard policy question into sourced work your team can review.');
+    expect(combined).toContain('Invitation-only PRAXIS preview for sourced policy work. AI generation is currently paused.');
   });
 });

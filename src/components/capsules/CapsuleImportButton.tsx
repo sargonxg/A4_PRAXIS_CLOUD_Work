@@ -268,6 +268,7 @@ export function CapsuleImportButton({
               <p className="mt-1 text-xs leading-5 text-amber-900">{pendingImport.preview.reviewGatedSummary}</p>
             </div>
             <div className="mt-4 flex flex-wrap justify-end gap-2">
+              {pendingImport.kind === 'capsule-plus' ? <p role="status" className="w-full text-xs text-amber-900">Capsule+ import is temporarily unavailable. This preview has not saved any records; local export remains available.</p> : null}
               <button
                 type="button"
                 onClick={() => {
@@ -280,7 +281,7 @@ export function CapsuleImportButton({
               </button>
               <button
                 type="button"
-                disabled={phase === 'uploading'}
+                disabled={phase === 'uploading' || pendingImport.kind === 'capsule-plus'}
                 onClick={() => void confirmImport()}
                 className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-3 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:cursor-wait disabled:opacity-60"
               >

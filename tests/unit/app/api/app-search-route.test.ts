@@ -3,7 +3,16 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   searchApp: vi.fn(),
   authUser: { uid: 'user-1', isDemo: false },
+  listCapsules: vi.fn(), listKnowledgeDocuments: vi.fn(),
+  getAdminDbOrThrow: vi.fn(), listRecentAgentRuns: vi.fn(),
 }));
+
+// The route delegates search to a mocked service. Preserve its real input
+// normalization without loading Firebase/Postgres service graphs in this unit.
+vi.mock('@/lib/context/capsule-service', () => ({ listCapsules: mocks.listCapsules }));
+vi.mock('@/lib/knowledge/library-service', () => ({ listKnowledgeDocuments: mocks.listKnowledgeDocuments }));
+vi.mock('@/lib/firebase/admin', () => ({ getAdminDbOrThrow: mocks.getAdminDbOrThrow }));
+vi.mock('@/lib/agent-runtime/postgres', () => ({ listRecentAgentRuns: mocks.listRecentAgentRuns }));
 
 vi.mock('@/lib/api/with-auth', () => ({
   withAuth: (handler: (request: Request, user: { uid: string; isDemo: boolean }) => Promise<Response>) => (
@@ -48,6 +57,9 @@ describe('/api/app/search route', () => {
       types: ['capsule', 'memo'],
       limit: 25,
     });
+    for (const provider of [mocks.listCapsules, mocks.listKnowledgeDocuments, mocks.getAdminDbOrThrow, mocks.listRecentAgentRuns]) {
+      expect(provider).not.toHaveBeenCalled();
+    }
   }, 15000);
 
   it('returns 400 for invalid query length', async () => {

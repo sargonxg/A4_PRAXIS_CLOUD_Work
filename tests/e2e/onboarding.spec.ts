@@ -32,6 +32,9 @@ test.describe('onboarding first-login flow', () => {
     }
 
     await expect(page.getByRole('heading', { level: 1, name: /Make PRAXIS yours|Your working preferences/ })).toBeVisible();
+    // The heading precedes profile loading; readiness follows the app's bounded
+    // initialization contract and must not be inferred from static page copy.
+    await expect(page.getByRole('button', { name: 'Finish later', exact: true })).toBeEnabled({ timeout: 30_000 });
     await expect(page.getByText('Preview the context your profile adds', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Finish later', exact: true })).toBeVisible();
     await finishOnboardingLater(page, BASE);

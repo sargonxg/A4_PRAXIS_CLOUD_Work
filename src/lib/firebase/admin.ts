@@ -4,6 +4,12 @@ import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { getStorage, type Storage } from 'firebase-admin/storage';
 import { readFileSync } from 'node:fs';
 import { verifyCurrentIdentity } from '@/lib/auth/current-token';
+import { serverEmulatorConfig } from './emulator-config';
+
+const emulator = serverEmulatorConfig();
+const emulatorHandlesKey = Symbol.for('praxis.local-emulator.admin-handles.v1');
+type EmulatorHandles = { app: App; auth: Auth; db: Firestore };
+const emulatorHandles = globalThis as unknown as Record<symbol, EmulatorHandles | undefined>;
 
 let _app: App | null = null;
 let _auth: Auth | null = null;
@@ -38,6 +44,21 @@ function readServiceAccountJson(): string | null {
 
 function ensureInitialized() {
   if (_app) return;
+
+  if (emulator) {
+    // SDK emulator transport verifies the emulator-issued identity and persists
+    // only to the configured loopback demo database. No service account needed.
+    const existing = getApps();
+    const owned = emulatorHandles[emulatorHandlesKey];
+    if (existing.some(app => app !== owned?.app) || (owned && owned.app.options.projectId !== emulator.projectId)) {
+      throw new Error('Mixed Firebase applications in isolated emulator runtime');
+    }
+    _app = owned?.app || initializeApp({ projectId: emulator.projectId });
+    _auth = owned?.auth || getAuth(_app);
+    _db = owned?.db || getFirestore(_app);
+    emulatorHandles[emulatorHandlesKey] = Object.freeze({ app: _app, auth: _auth, db: _db });
+    return;
+  }
 
   // Already initialized by another import
   if (getApps().length > 0) {
@@ -115,6 +136,7 @@ export function getAdminDbOrThrow(): Firestore {
  * FIREBASE_STORAGE_BUCKET).
  */
 export function getAdminStorage(): Storage {
+  if (emulator) throw new Error('Storage is unsupported in the isolated Firebase emulator lane');
   if (!_app) {
     throw new Error('[firebase-admin] App not initialized; cannot return Storage.');
   }
@@ -122,6 +144,7 @@ export function getAdminStorage(): Storage {
 }
 
 export function getDefaultBucketName(): string {
+  if (emulator) throw new Error('Storage is unsupported in the isolated Firebase emulator lane');
   return (
     process.env.FIREBASE_STORAGE_BUCKET ||
     process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET ||
@@ -145,6 +168,7 @@ export async function verifyIdToken(token: string): Promise<{
   const decoded = await verifyCurrentIdentity(token, {
     verify: (value, checkRevoked) => _auth!.verifyIdToken(value, checkRevoked),
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    emulator: Boolean(emulator),
   });
   return {
     uid: decoded.uid,

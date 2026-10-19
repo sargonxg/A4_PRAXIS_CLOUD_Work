@@ -21,7 +21,7 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     expect(source).toContain('PraxisMarketingHome');
     expect(source).toContain('@/components/marketing/praxis-marketing-home');
     expect(source).toContain('application/ld+json');
-    expect(source).toContain('Turn a hard policy question into sourced work your team can review.');
+    expect(source).toContain('Invitation-only PRAXIS preview for sourced policy work. AI generation is currently paused.');
     expect(source).not.toContain('TaskletPraxisWorkbench');
     expect(source).not.toContain('Phase8WowLanding');
     expect(legacySource).not.toContain('TaskletPraxisWorkbench');
@@ -102,7 +102,9 @@ describe('EPIC 1.9 public and signed-in home contracts', () => {
     const shellSource = readFileSync(chatShellPath, 'utf8');
     const chatSource = readFileSync(praxisChatPath, 'utf8');
     expect(chatSource).toContain('Policy analysis you can inspect.');
-    expect(chatSource).toContain('Sign in to run your question and save the work.');
+    expect(chatSource).toContain('Workspace access is invitation-only. AI generation is currently paused; continuing does not run your question.');
+    expect(chatSource).not.toContain('Sign in to run your question and save the work.');
+    expect(shellSource).not.toContain('Free experimental access.');
     expect(chatSource).toContain("isPublic || showExamples ? 'order-first mb-4'");
     expect(shellSource).toContain('Attach context');
     expect(shellSource).toContain('New capsule');

@@ -69,6 +69,9 @@ describe('login readiness', () => {
     expect(html).not.toContain('Intelligence Systems');
     expect(html).toContain('autoComplete="email"');
     expect(html).toContain('autoComplete="current-password"');
+    expect(html).toContain('Access is invitation-only. AI generation is currently paused.');
+    expect(html).toContain('this form does not grant an invitation');
+    expect(html).not.toContain('Current access is free');
   });
   it('shows the actual question only when one is supplied', () => {
     runtime.query += '&capsulePrompt=Compare%20the%20two%20positions';

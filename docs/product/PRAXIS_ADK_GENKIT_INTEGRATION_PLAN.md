@@ -114,7 +114,10 @@ provider resolution, schemas, tools, and audits:
   including `genkit:dev`, `audit:genkit-runtime`, and
   `audit:genkit-coverage`.
 - The current JavaScript package set is `genkit`, `@genkit-ai/google-genai`,
-  `@genkit-ai/vertexai`, and `@genkit-ai/google-cloud`. The older
+  and `@genkit-ai/google-cloud`. Vertex AI is supplied by the `vertexAI`
+  export of `@genkit-ai/google-genai`; the unused separate
+  `@genkit-ai/vertexai` plugin was removed to avoid its unused Anthropic
+  filesystem-memory dependency. The older
   `@genkit-ai/googleai` package name should not be reintroduced unless the
   Genkit package matrix is intentionally downgraded.
 - Google AI Studio key lookup accepts `GOOGLE_GENAI_API_KEY` first, then the

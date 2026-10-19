@@ -20,6 +20,14 @@ describe('current Firebase identity verification', () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it('never falls back to a production identity endpoint in the isolated emulator lane', async () => {
+    verify.mockRejectedValue(unavailable);
+    await expect(verifyCurrentIdentity('emulator-issued-token', { verify, fetcher, apiKey: 'demo-praxis-ci-key', emulator: true }))
+      .rejects.toMatchObject({ code: 'auth/verification-unavailable' });
+    expect(verify).toHaveBeenCalledTimes(1);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it.each(['auth/id-token-revoked', 'auth/id-token-expired', 'auth/user-disabled', 'auth/user-not-found'])('never falls back after %s', async (code) => {
     verify.mockRejectedValue(Object.assign(new Error('identity rejected'), { code }));
     await expect(run()).rejects.toMatchObject({ code });

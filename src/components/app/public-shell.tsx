@@ -98,7 +98,7 @@ export function PublicShell({
                 Sign in
               </Link>
               <Link href="/login?mode=signup&redirect=%2Fapp" prefetch={false} className="praxis-button-primary min-h-11 px-5 text-[14px]">
-                Start work
+                Invited access
               </Link>
             </div>
 
@@ -157,7 +157,7 @@ export function PublicShell({
                 onClick={() => setMobileMenuOpen(false)}
                 className="praxis-button-primary min-h-11 px-6 text-[15px]"
               >
-                Start work
+                Invited access
               </Link>
             </div>
           </div>

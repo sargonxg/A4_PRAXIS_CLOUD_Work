@@ -49,7 +49,8 @@ describe('Civic Atelier capsule UX compatibility contract', () => {
     expect(chatShell).toContain('PraxisChat');
     expect(praxisChat).toContain('What are we working on?');
     expect(praxisChat).toContain('Start with a question. Bring your context when it helps.');
-    expect(praxisChat).toContain('label="Ask a question"');
+    expect(praxisChat).toContain("'Invitation-only preview' : 'Ask a question'");
+    expect(praxisChat).toContain('continuing does not run your question');
     expect(praxisChat).toContain('POLICY_MISSION_EXAMPLES');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('TaskletPraxisWorkbench');
     expect(`${landingPage}\n${marketingHome}\n${chatShell}`).not.toContain('data-testid="app-first-root"');

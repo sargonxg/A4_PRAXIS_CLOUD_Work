@@ -1,3 +1,5 @@
+import { parseNativeAttachmentLocks, type NativeAttachmentLock } from '@/lib/tacitus-native/contract';
+
 export type ActiveContextBlockId = 'userCore' | 'situation' | 'sources' | 'thinkingDevices' | 'output';
 export type ActiveCapsuleRole = 'primary' | 'reference' | 'comparison' | 'user' | 'situation' | 'tool' | 'output';
 
@@ -37,6 +39,8 @@ export interface ActiveContextStackState {
   stackId: string;
   capsuleId: string | null;
   capsuleRefs: ActiveCapsuleRef[];
+  /** Separate native-v2 locks; never cognitive semver references or permissions. */
+  nativeAttachments?: NativeAttachmentLock[];
   contextPackageId: string | null;
   userModelId: string | null;
   situationId: string | null;
@@ -179,6 +183,7 @@ export function sanitizeActiveContextStack(input: unknown): ActiveContextStackSt
     stackId: stackId.slice(0, 80),
     capsuleId: capsuleRefs[0]?.capsuleId ?? stringOrNull(body.capsuleId),
     capsuleRefs,
+    ...(body.nativeAttachments !== undefined ? { nativeAttachments: parseNativeAttachmentLocks(body.nativeAttachments) } : {}),
     contextPackageId: stringOrNull(body.contextPackageId),
     userModelId: primaryUser ?? stringOrNull(body.userModelId),
     situationId: primarySituation ?? stringOrNull(body.situationId),

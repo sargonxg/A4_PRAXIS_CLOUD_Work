@@ -1,0 +1,58 @@
+name: persona-release-ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  personas:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ runner.temp }}/praxis-playwright-browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Install isolated pinned emulator tooling
+        run: |
+          test -x "$JAVA_HOME_21_X64/bin/java"
+          npm install --prefix "$RUNNER_TEMP/praxis-firebase-tools" --ignore-scripts --no-audit --no-fund --package-lock=false firebase-tools@15.34.0
+
+      - name: Build and run unchanged authenticated suites against isolated emulators
+        env:
+          PRAXIS_FIREBASE_CLI: ${{ runner.temp }}/praxis-firebase-tools/node_modules/firebase-tools/lib/bin/firebase.js
+          PRAXIS_EMULATOR_OUTPUT: ${{ runner.temp }}
+          PRAXIS_TEST_BROWSERS_PATH: ${{ runner.temp }}/praxis-playwright-browsers
+        run: npm run smoke:emulators
+
+      - name: Upload emulator-only measurement receipts
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: persona-emulator-receipts
+          path: |
+            ${{ runner.temp }}/praxis-emulator-*/acceptance.json
+            ${{ runner.temp }}/praxis-emulator-*/stages.json
+            ${{ runner.temp }}/praxis-emulator-*/tooling.json
+            ${{ runner.temp }}/praxis-emulator-*/source.json
+            ${{ runner.temp }}/praxis-emulator-*/synthetic-prerequisites.json
+            ${{ runner.temp }}/praxis-emulator-*/bootstrap.json
+            ${{ runner.temp }}/praxis-emulator-*/failure.json

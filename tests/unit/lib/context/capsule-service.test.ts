@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { GeoPoint, Timestamp } from 'firebase-admin/firestore';
 import { createCognitiveCapsule, KnowledgeSchema, CognitiveNodeSchema, CognitiveStatementSchema, EvidenceSpanSchema } from '@/lib/cognitive-capsule/schema';
 import { proposeCognitiveKnowledge, proposeCognitiveInterview, proposeCognitiveGraph, stageRegistryCapsuleInstallation } from '@/lib/cognitive-capsule/service';
 import { decideCognitiveCapsuleReviewCard } from '@/lib/context/capsule-service';
@@ -16,6 +17,7 @@ import {
   createCapsuleIntakeReviewCards,
   createEmptyCapsuleInventorySummary,
   createCapsule,
+  stageDialecticaCapsuleImport,
   deriveCapsuleGraphStats,
   detachCapsuleRefs,
   exportCapsuleCorePackage,
@@ -62,6 +64,124 @@ import {
 } from '@/lib/context/capsule-closed-loop-learning';
 
 describe('capsule service', () => {
+  const imported = (hash = 'sha256:first') => ({ capsuleId: 'dialectica-atomic', label: 'Imported draft',
+    importSource: 'dialectica', originalCapsuleId: 'source-1', packageVersion: 1, importContentHash: hash });
+  const importReview = { title: 'Review imported evidence', sourceType: 'intake' as const, target: 'claimLedger' as const,
+    proposedEnvelopePatch: { summary: 'Requires human review.' } };
+  it('leaves no capsule, version, review or mirror when a new import fails at commit', async () => {
+    const db = architectDb(); const before = structuredClone([...db.data]); const run = db.runTransaction.bind(db);
+    vi.spyOn(db, 'runTransaction').mockImplementation(async work => run(async transaction => {
+      await work(transaction); throw new Error('Injected late import failure');
+    }));
+    await expect(stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db))).rejects.toThrow('Injected late import failure');
+    expect([...db.data]).toEqual(before);
+  });
+  it('leaves existing records unchanged when an import update fails at commit', async () => {
+    const db = architectDb(); await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const before = structuredClone([...db.data]); const run = db.runTransaction.bind(db);
+    vi.spyOn(db, 'runTransaction').mockImplementation(async work => run(async transaction => {
+      await work(transaction); throw new Error('Injected update failure');
+    }));
+    await expect(stageDialecticaCapsuleImport('u1', imported('sha256:second'), importReview, deps(db))).rejects.toThrow('Injected update failure');
+    expect([...db.data]).toEqual(before);
+  });
+  it('stages capsule and review together, and makes identical import retries idempotent', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const before = structuredClone([...db.data]);
+    const second = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(first.created).toBe(true); expect(second.created).toBe(false);
+    expect(second.reviewCard.reviewCardId).toBe(first.reviewCard.reviewCardId);
+    expect([...db.data]).toEqual(before);
+  });
+  it('retains reviewed content and earlier reviews when a changed package stages a new proposal', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', { ...imported(), summary: 'Original reviewed context' }, importReview, deps(db));
+    const second = await stageDialecticaCapsuleImport('u1', { ...imported('sha256:changed'), summary: 'Unreviewed replacement' },
+      { ...importReview, proposedEnvelopePatch: { summary: 'Unreviewed replacement' } }, deps(db));
+    expect(second.capsule.summary).toBe('Original reviewed context');
+    expect(second.capsule.version).toBe(2);
+    expect(second.reviewCard.proposedEnvelopePatch.summary).toBe('Unreviewed replacement');
+    expect(first.reviewCard.reviewCardId).not.toBe(second.reviewCard.reviewCardId);
+    expect([...db.data.keys()].filter(key => key.includes('/reviewCards/'))).toHaveLength(2);
+    expect([...db.data.keys()].filter(key => key.includes('/versions/'))).toHaveLength(2);
+  });
+  it('preserves the decided review when A is reimported after B', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const firstPath = [...db.data.keys()].find(key => key.endsWith('/' + first.reviewCard.reviewCardId))!;
+    db.data.set(firstPath, { ...db.data.get(firstPath), state: 'rejected', decisionNote: 'Original review must remain historical.' });
+    const historical = structuredClone(db.data.get(firstPath));
+    await stageDialecticaCapsuleImport('u1', imported('sha256:second'), importReview, deps(db));
+    const third = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(third.capsule.version).toBe(3);
+    expect(third.reviewCard.reviewCardId).not.toBe(first.reviewCard.reviewCardId);
+    expect(db.data.get(firstPath)).toEqual(historical);
+    const retry = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(retry.reviewCard.reviewCardId).toBe(third.reviewCard.reviewCardId);
+    expect([...db.data.keys()].filter(key => key.includes('/reviewCards/'))).toHaveLength(3);
+  });
+  it('preserves private extension fields, immutable prior versions and decisions across retries', async () => {
+    const db = architectDb();
+    const first = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const capsulePath = 'users/u1/capsules/dialectica-atomic';
+    const firstReviewPath = `${capsulePath}/reviewCards/${first.reviewCard.reviewCardId}`;
+    db.data.set(firstReviewPath, { ...db.data.get(firstReviewPath), state: 'rejected' });
+    db.data.set(capsulePath, { ...db.data.get(capsulePath), version: 2, privateExtension: { retain: 'original' } });
+    const beforeRetry = structuredClone([...db.data]);
+    const retry = await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    expect(retry.reviewCard.reviewCardId).toBe(first.reviewCard.reviewCardId);
+    expect([...db.data]).toEqual(beforeRetry);
+    const historical = { immutable: 'prior-v2', version: 2 };
+    db.data.set(`${capsulePath}/versions/v2`, historical);
+    await stageDialecticaCapsuleImport('u1', imported('sha256:next'), importReview, deps(db));
+    expect(db.data.get(capsulePath)?.privateExtension).toEqual({ retain: 'original' });
+    expect(db.data.get(`${capsulePath}/versions/v2`)).toEqual(historical);
+    expect(db.data.get(firstReviewPath)?.state).toBe('rejected');
+  });
+  it('preserves typed private values in live capsules, new history and active mirrors', async () => {
+    const db = architectDb();
+    await stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db));
+    const path = 'users/u1/capsules/dialectica-atomic';
+    const privateDate = new Date('1914-07-23T12:00:00Z');
+    const privatePoint = new GeoPoint(48.2, 16.37);
+    const privateTimestamp = Timestamp.fromDate(privateDate);
+    const raw = { ...db.data.get(path), version: 2, privateExtension: privateDate,
+      privatePoint, privateTimestamp,
+      memoryPosture: { privateDate, privateTimestamp }, readinessSummary: { privateDate },
+      claimLedger: [{ id: 'accepted', privateDate }] };
+    db.data.set(path, raw);
+    const stackPath = 'users/u1/contextStacks/default';
+    const refs = [{ capsuleId: imported().capsuleId, role: 'primary', version: 1, privateDate },
+      { capsuleId: 'other-evidence', role: 'reference', version: 7, privateTimestamp }];
+    db.data.set(stackPath, { stackId: imported().capsuleId, capsuleId: imported().capsuleId,
+      capsuleRefs: refs, canvasLayout: { privateDate }, evidenceGaps: [{ privateDate }], privateDate });
+    await stageDialecticaCapsuleImport('u1', imported('sha256:typed-update'), importReview, deps(db));
+    for (const key of [path, `${path}/versions/v2`, `${path}/versions/v3`]) {
+      const saved = db.data.get(key)!;
+      expect(saved.privateExtension).toBe(privateDate);
+      expect(saved.privatePoint).toBe(privatePoint);
+      expect(saved.privateTimestamp).toBe(privateTimestamp);
+      expect((saved.memoryPosture as Record<string, unknown>).privateDate).toBe(privateDate);
+      expect((saved.memoryPosture as Record<string, unknown>).privateTimestamp).toBe(privateTimestamp);
+      expect((saved.readinessSummary as Record<string, unknown>).privateDate).toBe(privateDate);
+      expect(saved.claimLedger).toBe(raw.claimLedger);
+    }
+    const stack = db.data.get(stackPath)!;
+    expect((stack.canvasLayout as Record<string, unknown>).privateDate).toBe(privateDate);
+    expect(stack.evidenceGaps).toEqual([{ privateDate }]);
+    expect(stack.privateDate).toBe(privateDate);
+    expect(stack.capsuleRefs).toBe(refs);
+  });
+  it('rejects unavailable owners and invalid import proposals without partial records', async () => {
+    const db = architectDb(); const before = structuredClone([...db.data]);
+    await expect(stageDialecticaCapsuleImport('u1', imported(), { ...importReview, sourceType: 'public' }, deps(db))).rejects.toThrow();
+    expect([...db.data]).toEqual(before);
+    db.data.set('users/u1', { accountDeletionStatus: 'deleting' });
+    const unavailable = structuredClone([...db.data]);
+    await expect(stageDialecticaCapsuleImport('u1', imported(), importReview, deps(db))).rejects.toThrow();
+    expect([...db.data]).toEqual(unavailable);
+  });
   it('demotes changed graph records and only stamps them through a human decision', async () => {
     const db = architectDb(); db.rejectUndefined = true;
     await createCapsule('u1', { capsuleId: 'graph-review' }, deps(db));

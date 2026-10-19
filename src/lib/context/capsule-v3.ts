@@ -2199,7 +2199,7 @@ function timelineAnchorKindFromUnknown(value: unknown): ContextCapsuleTimelineAn
 function causalRelationFromUnknown(value: unknown): ContextCapsuleCausalRelation {
   const clean = cleanString(value);
   if (clean === 'causes' || clean === 'enables' || clean === 'blocks' || clean === 'escalates' || clean === 'de-escalates' || clean === 'correlates') return clean;
-  return 'causes';
+  throw new Error('An explicit supported causal relation is required; temporal ordering does not establish causation.');
 }
 
 function graphLiteStatusFromUnknown(value: unknown): ContextCapsuleEmbeddedGraphV3['status'] {

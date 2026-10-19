@@ -1,4 +1,5 @@
 import JSZip from 'jszip';
+import { readImportZip } from '@/lib/package-zip';
 import { z } from 'zod';
 import { normalizeToLatest, type PraxisCapsuleV3 } from '@/lib/context/capsule-schema';
 
@@ -320,7 +321,7 @@ export async function parseCapsulePlusImportBundle(
   options: { ownerUid: string },
 ): Promise<CapsulePlusBundle> {
   try {
-    const zip = await JSZip.loadAsync(buffer);
+    const zip = await readImportZip(buffer);
     const manifest = CapsulePlusManifestSchema.parse(JSON.parse(await requiredZipText(zip, 'manifest.json')));
     if (manifest.ownerUid !== options.ownerUid) {
       throw new Error('Capsule+ bundle owner does not match authenticated user.');

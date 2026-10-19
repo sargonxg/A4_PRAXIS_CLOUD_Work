@@ -227,7 +227,7 @@ export function PraxisChatFirstShell({ mode }: { mode: 'public' | 'authenticated
                   Policy analysis you can inspect.
                 </h1>
                 <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-[color:var(--color-app-text-secondary)]">
-                  Ask a policy question. Add sources when useful. Review the answer before sharing.
+                  Explore the policy workspace. Access is by invitation; AI generation is currently paused.
                 </p>
               </div>
             ) : null}
@@ -293,13 +293,13 @@ function PublicIntroduction() {
   return (
     <section aria-labelledby="public-workflow-title" className="mt-12 border-t border-slate-200 py-10">
       <h2 id="public-workflow-title" className="max-w-3xl font-serif text-3xl text-[var(--color-deep-ink)] sm:text-4xl">Keep useful context for the next question.</h2>
-      <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--color-graphite)]">For policy briefs, assessments and narrative analysis. Sign in to ask and save your conversation. A Context Capsule keeps sources, assumptions and methods together for your next question.</p>
+      <p className="mt-4 max-w-2xl text-base leading-7 text-[var(--color-graphite)]">For policy briefs, assessments and narrative analysis. Workspace access is invitation-only, and AI generation is currently paused. A Context Capsule keeps sources, assumptions and methods together for later review and reuse.</p>
       <div className="mt-6 flex flex-wrap gap-3">
         <Link href="/guide" className="inline-flex min-h-11 items-center rounded-md bg-[var(--color-praxis-emerald-700)] px-5 text-sm font-semibold text-white">Follow the quick start</Link>
         <Link href="/learn" className="inline-flex min-h-11 items-center rounded-md border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-800">Read about Context Capsules</Link>
         <Link href="/pricing" className="inline-flex min-h-11 items-center px-4 text-sm font-semibold text-[var(--color-praxis-emerald-700)]">Plans and availability</Link>
       </div>
-      <p className="mt-5 text-sm leading-6 text-[var(--color-graphite)]">Free experimental access. Check claims against original sources; saving context does not verify them.</p>
+      <p className="mt-5 text-sm leading-6 text-[var(--color-graphite)]">Public examples remain available to explore. An invitation is required for workspace access. Check claims against original sources; saving context does not verify them.</p>
     </section>
   );
 }
@@ -474,7 +474,7 @@ function ContextDrawer({
             </Link>
           </div>
           <p className="mt-3 rounded-[var(--radius-md)] border border-dashed border-slate-200 bg-[color:var(--color-archive-paper-strong)] px-3 py-2 text-xs leading-5 text-slate-500">
-            Sign in to ask. A capsule is optional.
+            Invited account access only. AI generation is currently paused.
           </p>
           <Link
             href="/login?mode=signup&redirect=%2Fapp%2Fcapsules%3Flane%3Drepository"

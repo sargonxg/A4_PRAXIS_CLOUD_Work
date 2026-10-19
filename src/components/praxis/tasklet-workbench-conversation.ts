@@ -142,13 +142,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === 'object' && !Array.isArray(value));
 }
 
-export async function loadLegacyAskThreadHistory(capsuleId: string, threadId: string): Promise<ChatMessage[]> {
+export async function loadLegacyAskThreadHistory(capsuleId: string, threadId: string, signal?: AbortSignal): Promise<ChatMessage[]> {
   const params = new URLSearchParams({
     capsuleId,
     threadId,
     limit: '12',
   });
-  const response = await fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include' });
+  const response = await fetch(`/api/ai/chat?${params.toString()}`, { credentials: 'include', signal });
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(payload?.error ?? 'legacy conversation history failed');
   const turns = Array.isArray(payload?.turns) ? payload.turns as ThreadHistoryTurn[] : [];

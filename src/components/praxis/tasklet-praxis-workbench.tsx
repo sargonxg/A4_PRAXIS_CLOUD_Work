@@ -141,7 +141,7 @@ import { deriveHumanGateBadges, deriveHumanGateStatus } from '@/lib/context/huma
 import { useAuth } from '@/lib/auth/auth-context';
 import { useOrchestratorEvents, type OrchestratorEvent, type OrchestratorEventState } from '@/hooks/useOrchestratorEvents';
 import type { AgentRunFailureSummary } from '@/lib/agent-runtime/types';
-import { describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
+import { createTaskletStreamDecoder, describeAskFailure, parseDataStreamError } from '@/lib/ai/tasklet-stream';
 import type { AskAnswerEnvelope, AskDocumentPackOutputTarget, ConversationDocumentPack } from '@/lib/ai/ask-answer-envelope';
 import { modelPolicyLabelFor } from '@/lib/proof/proof-summary';
 import {
@@ -168,19 +168,18 @@ import {
   emptyGuideChatState,
   ensureConversationRecord,
   guideChatCacheKey,
-  loadLegacyAskThreadHistory,
   pushConversationUrl,
   safeMarkdownHref,
   sanitizeConversationThreadId,
   savedConversationHref,
-  savedConversationTurnsToMessages,
   scopedGuideChatState,
   updateGuideChatState,
   type ChatMessage,
   type OwnedGuideChatState,
   type SavedConversationSummary,
-  type SavedConversationTurn,
 } from './tasklet-workbench-conversation';
+import { workbenchRequestKey } from './tasklet-workbench-history';
+import { useWorkbenchConversation } from './use-workbench-conversation';
 import {
   MAX_ACTIVE_CONTEXT_CAPSULES,
   applyCapsuleToStack,
@@ -949,7 +948,6 @@ export function TaskletPraxisWorkbench({
   const [activeTab, setActiveTab] = useState<PolicyNeedTabId>('analysis');
   const [selectedAgentId, setSelectedAgentId] = useState(PRAXIS_POLICY_AGENTS[0]?.id ?? 'research-memo');
   const [currentCapsuleId, setCurrentCapsuleId] = useState(capsuleId);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const guideScopeKey = guideChatCacheKey(isAuthenticated, user?.id);
   const [ownedGuideState, setOwnedGuideState] = useState<OwnedGuideChatState>(() => emptyGuideChatState(guideScopeKey, DEFAULT_GUIDE_CHAT_PROMPT));
   const currentGuide = scopedGuideChatState(ownedGuideState, guideScopeKey, DEFAULT_GUIDE_CHAT_PROMPT);
@@ -969,10 +967,12 @@ export function TaskletPraxisWorkbench({
   const [conversationThreadId, setConversationThreadId] = useState<string | null>(
     sanitizeConversationThreadId(initialConversationId),
   );
-  const [conversationLoadedFor, setConversationLoadedFor] = useState<string | null>(null);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [assistantArtifactSavingKey, setAssistantArtifactSavingKey] = useState<string | null>(null);
   const [status, setStatus] = useState('Ask PRAXIS can answer directly or choose the right tool from your capsule.');
+  const { authenticatedOwnerId, chatMessages, setChatMessages, isStreaming, setIsStreaming,
+    setConversationLoadedFor, workbenchRequests, cancelWorkbenchRequest } = useWorkbenchConversation({
+    authenticated: isAuthenticated, ownerId: user?.id, capsuleId: currentCapsuleId, threadId: conversationThreadId, setStatus,
+  });
+  const [assistantArtifactSavingKey, setAssistantArtifactSavingKey] = useState<string | null>(null);
   const [capsuleSearch, setCapsuleSearch] = useState('');
   const [capsuleTypeFilter, setCapsuleTypeFilter] = useState('all');
   const [capsuleDomainFilter, setCapsuleDomainFilter] = useState('all');
@@ -1451,20 +1451,21 @@ export function TaskletPraxisWorkbench({
     if (conversationThreadId) return conversationThreadId;
     const nextThreadId = createConversationThreadId();
     setConversationThreadId(nextThreadId);
-    setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
+    setConversationLoadedFor(workbenchRequestKey(authenticatedOwnerId, currentCapsuleId, nextThreadId));
     pushConversationUrl(currentCapsuleId, nextThreadId);
     void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     return nextThreadId;
   }
 
   function startNewConversation() {
+    cancelWorkbenchRequest();
     if (!isAuthenticated) {
       sendPublicToLogin(prompt.trim() || 'Start a PRAXIS conversation.');
       return;
     }
     const nextThreadId = createConversationThreadId();
     setConversationThreadId(nextThreadId);
-    setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
+    setConversationLoadedFor(workbenchRequestKey(authenticatedOwnerId, currentCapsuleId, nextThreadId));
     setChatMessages([]);
     pushConversationUrl(currentCapsuleId, nextThreadId);
     void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
@@ -1472,6 +1473,7 @@ export function TaskletPraxisWorkbench({
   }
 
   function openSavedConversation(conversation: SavedConversationSummary) {
+    cancelWorkbenchRequest();
     const threadId = sanitizeConversationThreadId(conversation.conversationId);
     if (!threadId) return;
     const nextCapsuleId = conversation.capsuleId || currentCapsuleId;
@@ -1573,7 +1575,7 @@ export function TaskletPraxisWorkbench({
     const nextThreadId = conversationThreadId ?? createConversationThreadId();
     if (!conversationThreadId) {
       setConversationThreadId(nextThreadId);
-      setConversationLoadedFor(`${currentCapsuleId}:${nextThreadId}`);
+      setConversationLoadedFor(workbenchRequestKey(authenticatedOwnerId, currentCapsuleId, nextThreadId));
       pushConversationUrl(currentCapsuleId, nextThreadId);
       void ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
     }
@@ -1723,14 +1725,13 @@ export function TaskletPraxisWorkbench({
       }
 
       const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const decoder = createTaskletStreamDecoder();
       let answer = '';
       while (true) {
         const { value, done } = await reader.read();
         if (requestController.signal.aborted) return;
-        if (done) break;
-        const chunk = decoder.decode(value);
-        for (const line of chunk.split('\n')) {
+        const lines = done ? decoder.finish() : decoder.push(value);
+        for (const line of lines) {
           const streamError = parseDataStreamError(line);
           if (streamError) throw new Error(streamError);
           const parsed = parseDataStreamChunk(line);
@@ -1743,6 +1744,7 @@ export function TaskletPraxisWorkbench({
             return next;
           });
         }
+        if (done) break;
       }
       if (!answer.trim()) throw new Error('PRAXIS guide returned no answer text.');
     } catch (err) {
@@ -1777,15 +1779,20 @@ export function TaskletPraxisWorkbench({
       ? 'PRAXIS is reading the active capsule and conversation memory...'
       : 'PRAXIS is building Instant context for this turn...');
     const nextThreadId = ensureConversationThread();
+    workbenchRequests.setScope(workbenchRequestKey(authenticatedOwnerId, currentCapsuleId, nextThreadId));
+    workbenchRequests.invalidate();
+    const request = workbenchRequests.begin();
     await ensureConversationRecord(nextThreadId, currentCapsuleId, activeCapsuleStack);
+    if (!request.isCurrent()) return;
     const userMessage: ChatMessage = { role: 'user', text: cleanPrompt };
-    setChatMessages((current) => [...current, userMessage, { role: 'assistant', text: '' }]);
+    setChatMessages((current) => request.isCurrent() ? [...current, userMessage, { role: 'assistant', text: '' }] : current);
 
     try {
       const currentConversationPath = buildConversationPath(currentCapsuleId, nextThreadId);
       const turnMetadata = buildStructuredAskTurnMetadata(cleanPrompt, agent, nextThreadId, currentConversationPath, askUsesSavedCapsule);
       const response = await fetch(`/api/conversations/${encodeURIComponent(nextThreadId)}/turns`, {
         method: 'POST',
+        signal: request.signal,
         credentials: 'include',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -1821,6 +1828,7 @@ export function TaskletPraxisWorkbench({
           },
         }),
       });
+      if (!request.isCurrent()) return;
       if (!response.ok || !response.body) {
         let detail = `${response.status} ${response.statusText}`;
         try {
@@ -1833,20 +1841,21 @@ export function TaskletPraxisWorkbench({
       }
 
       const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const decoder = createTaskletStreamDecoder();
       let answer = '';
       let answerEnvelope: AskAnswerEnvelope | undefined;
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        for (const line of chunk.split('\n')) {
+        if (!request.isCurrent()) return;
+        const lines = done ? decoder.finish() : decoder.push(value);
+        for (const line of lines) {
           const streamError = parseDataStreamError(line);
           if (streamError) throw new Error(streamError);
           const envelope = answerEnvelopeFromDataStreamLine(line);
           if (envelope) {
             answerEnvelope = envelope;
             setChatMessages((current) => {
+              if (!request.isCurrent()) return current;
               const next = [...current];
               const last = next[next.length - 1];
               if (last?.role === 'assistant') next[next.length - 1] = { ...last, answerEnvelope };
@@ -1858,13 +1867,16 @@ export function TaskletPraxisWorkbench({
           if (!parsed) continue;
           answer += parsed;
           setChatMessages((current) => {
+            if (!request.isCurrent()) return current;
             const next = [...current];
             const last = next[next.length - 1];
             if (last?.role === 'assistant') next[next.length - 1] = { ...last, text: answer };
             return next;
           });
         }
+        if (done) break;
       }
+      if (!request.isCurrent()) return;
       if (!answer.trim()) throw new Error('Ask PRAXIS returned no answer text.');
       const contextLabel = answer.toLowerCase().includes('thin capsule fallback')
         ? 'thin capsule fallback'
@@ -1880,18 +1892,20 @@ export function TaskletPraxisWorkbench({
         // Non-critical cleanup.
       }
     } catch (err) {
+      if (!request.isCurrent()) return;
       const message = err instanceof Error ? err.message : 'unknown error';
       const guidance = describeAskFailure(message);
       setPrompt(cleanPrompt);
       setStatus(`Ask PRAXIS failed: ${message}`);
       setChatMessages((current) => {
+        if (!request.isCurrent()) return current;
         const next = [...current];
         const last = next[next.length - 1];
         if (last?.role === 'assistant') next[next.length - 1] = { ...last, text: guidance };
         return next;
       });
     } finally {
-      setIsStreaming(false);
+      if (request.isCurrent()) setIsStreaming(false);
     }
   }
 
@@ -2539,42 +2553,6 @@ export function TaskletPraxisWorkbench({
     void refreshCreatedWork();
   }, [refreshCreatedWork]);
 
-  const loadConversationHistory = useCallback(async (capsuleIdToLoad: string, threadIdToLoad: string) => {
-    if (!isAuthenticated || !capsuleIdToLoad || !threadIdToLoad) return;
-    const loadKey = `${capsuleIdToLoad}:${threadIdToLoad}`;
-    setConversationLoadedFor(loadKey);
-    try {
-      const response = await fetch(`/api/conversations/${encodeURIComponent(threadIdToLoad)}`, { credentials: 'include' });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(payload?.error ?? 'conversation history failed');
-      const turns = Array.isArray(payload?.turns) ? payload.turns as SavedConversationTurn[] : [];
-      if (turns.length) {
-        const historyMessages = savedConversationTurnsToMessages(turns);
-        setChatMessages(historyMessages);
-        setStatus(`Conversation link loaded (${turns.length} turns).`);
-        return;
-      }
-      const legacyMessages = await loadLegacyAskThreadHistory(capsuleIdToLoad, threadIdToLoad);
-      setChatMessages(legacyMessages);
-      setStatus(legacyMessages.length ? `Conversation link loaded (${legacyMessages.length / 2} turns).` : 'New conversation link ready.');
-    } catch (err) {
-      try {
-        const legacyMessages = await loadLegacyAskThreadHistory(capsuleIdToLoad, threadIdToLoad);
-        setChatMessages(legacyMessages);
-        setStatus(legacyMessages.length ? `Conversation link loaded (${legacyMessages.length / 2} turns).` : 'New conversation link ready.');
-      } catch {
-        setStatus(err instanceof Error ? `Conversation link could not load: ${err.message}` : 'Conversation link could not load.');
-      }
-    }
-  }, [isAuthenticated]);
-
-  useEffect(() => {
-    if (!isAuthenticated || !conversationThreadId) return;
-    const loadKey = `${currentCapsuleId}:${conversationThreadId}`;
-    if (conversationLoadedFor === loadKey) return;
-    void loadConversationHistory(currentCapsuleId, conversationThreadId);
-  }, [conversationLoadedFor, conversationThreadId, currentCapsuleId, isAuthenticated, loadConversationHistory]);
-
   const refreshAgentRuns = useCallback(async () => {
     if (!isAuthenticated || !currentCapsuleId) return;
     setAgentRunsLoading(true);
@@ -2842,6 +2820,7 @@ export function TaskletPraxisWorkbench({
   }, [resolvedInitialFactoryLane]);
 
   function selectUserCapsule(capsule: PraxisCapsuleSummary) {
+    cancelWorkbenchRequest();
     const chip = capsuleToChip(capsule);
     setCurrentCapsuleId(chip.id);
     persistActiveCapsuleStack([chip, ...activeCapsuleStack.filter((item) => item.id !== chip.id)].slice(0, 6), { capsuleId: chip.id });
@@ -2863,6 +2842,7 @@ export function TaskletPraxisWorkbench({
   }
 
   function selectCapsuleCard(capsule: PraxisCapsuleSummary) {
+    cancelWorkbenchRequest();
     const persisted = userCapsules.find((item) => item.capsuleId === capsule.capsuleId);
     if (persisted) {
       selectUserCapsule(persisted);

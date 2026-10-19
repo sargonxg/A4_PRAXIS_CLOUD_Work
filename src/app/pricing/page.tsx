@@ -6,7 +6,7 @@ import { getCheckoutAvailability } from '@/lib/billing/checkout-availability';
 import { PricingCheckoutButton } from '@/components/billing/pricing-checkout-button';
 import { PublicPageShell } from '@/components/ui/instrument';
 
-const description = 'Compare current PRAXIS access. Ask questions, attach saved context and review your work.';
+const description = 'PRAXIS access is invitation-only. AI generation is paused, starter allowances are inactive, and paid upgrades are unavailable.';
 export const metadata: Metadata = {
   title: 'Access and plans', description,
   alternates: { canonical: '/pricing' },
@@ -24,24 +24,24 @@ export default async function PricingPage() {
     <PublicPageShell maxWidth="max-w-4xl">
       <section className="py-12 sm:py-16">
         <p className="font-mono text-xs uppercase tracking-[0.18em] text-emerald-800">Experimental access</p>
-        <h1 className="mt-4 max-w-2xl font-serif text-4xl font-semibold leading-tight text-[color:var(--color-diplomatic-blue)] sm:text-5xl">Start with one question.</h1>
-        <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">Ask PRAXIS, attach context when it helps, and keep work you can review and reuse.</p>
+        <h1 className="mt-4 max-w-2xl font-serif text-4xl font-semibold leading-tight text-[color:var(--color-diplomatic-blue)] sm:text-5xl">Invitation-only access.</h1>
+        <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-700">AI generation is currently paused. Explore the public examples; workspace access requires an invitation.</p>
         {!checkout.analyst ? <p className="mt-4 text-sm text-slate-600">Paid upgrades are currently unavailable.</p> : null}
       </section>
       <section aria-label="Current access" className={checkout.analyst ? 'grid gap-5 md:grid-cols-2' : undefined}>
         {PRICING_TIERS.filter(tier => tier.id === 'free').map(tier => (
           <article key={tier.id} className="rounded-2xl border border-emerald-200 bg-white/80 p-6 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="font-serif text-3xl font-semibold text-slate-950">Free to try</h2>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-900">No credit card</span>
+              <h2 className="font-serif text-3xl font-semibold text-slate-950">Invited preview</h2>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-sm font-medium text-emerald-900">Generation paused</span>
             </div>
-            <p className="mt-4 font-medium text-slate-800">{tier.usage}</p>
+            <p className="mt-4 font-medium text-slate-800">Configured allowance, currently inactive: {tier.usage}</p>
             <ul className="mt-5 grid gap-3 text-sm leading-6 text-slate-700">
               {tier.features.map(feature => <li key={feature} className="flex gap-3"><span aria-hidden="true" className="text-emerald-700">✓</span>{feature}</li>)}
             </ul>
-            <p className="mt-5 text-sm leading-6 text-slate-600">Research and writing share this allowance. Your account shows what remains; the starter allowance does not automatically refill.</p>
+            <p className="mt-5 text-sm leading-6 text-slate-600">The starter allowance is inactive while AI generation is paused. It becomes usable only if generation resumes and does not automatically refill. An allowance does not grant workspace access.</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <PricingCheckoutButton plan="free" label="Start free" />
+              <PricingCheckoutButton plan="free" label="Invited account access" />
               <Link href="/guide" className="praxis-link inline-flex min-h-11 items-center px-4 text-sm font-semibold">See the quick start</Link>
             </div>
           </article>

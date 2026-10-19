@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { resolvePostLoginRedirect, safeWorkspaceReturnTarget } from '@/lib/auth/post-login-redirect';
+import { serverEmulatorConfig } from '@/lib/firebase/emulator-config';
 
 const SESSION_COOKIE = 'tacitus-auth-session';
 const LEGACY_APP_ROUTE_TARGETS: Record<string, string> = {
@@ -328,6 +329,10 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
   const scriptSrcElem = nonce
     ? `'self' 'unsafe-inline' apis.google.com *.firebaseapp.com *.googleapis.com *.google.com *.gstatic.com www.googletagmanager.com www.google.com www.recaptcha.net`
     : scriptSrc;
+  const emulator = serverEmulatorConfig();
+  // Only the explicitly validated local test build may connect across these
+  // two loopback ports. The ordinary/production CSP string is unchanged.
+  const emulatorConnect = emulator ? ` ${emulator.authOrigin} ${emulator.firestoreOrigin}` : '';
 
   response.headers.set(
     'Content-Security-Policy',
@@ -337,7 +342,7 @@ function addSecurityHeaders(response: NextResponse, nonce?: string): NextRespons
       "style-src 'self' 'unsafe-inline' fonts.googleapis.com; " +
       "img-src 'self' data: blob: *.googleapis.com *.googleusercontent.com *.gstatic.com www.googletagmanager.com www.google-analytics.com *.google-analytics.com api.maptiler.com demotiles.maplibre.org; " +
       "font-src 'self' fonts.gstatic.com; " +
-      "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com firebaseappcheck.googleapis.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com www.google.com api.maptiler.com demotiles.maplibre.org; " +
+      "connect-src 'self' *.firebaseio.com *.googleapis.com *.firebaseapp.com identitytoolkit.googleapis.com securetoken.googleapis.com firebaseappcheck.googleapis.com wss://*.firebaseio.com www.google-analytics.com *.google-analytics.com www.googletagmanager.com www.google.com api.maptiler.com demotiles.maplibre.org" + emulatorConnect + "; " +
       "frame-src 'self' *.firebaseapp.com accounts.google.com *.google.com;",
   );
 

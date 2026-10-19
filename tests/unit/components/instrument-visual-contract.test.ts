@@ -191,12 +191,15 @@ describe('Civic Atelier visual contract', () => {
     expect(boardroom).not.toContain('--color-lab-');
   });
 
-  it('loads EB Garamond as the heading/display face while preserving compatibility aliases', () => {
+  it('preserves Civic Atelier font roles and system fallbacks without build-time font downloads', () => {
     const layout = readFileSync(join(root, 'src/app/layout.tsx'), 'utf8');
-    expect(layout).toContain('EB_Garamond');
+    expect(layout).not.toContain('next/font/google');
     expect(layout).not.toContain('Newsreader');
-    expect(globals).toContain('--font-heading: "EB Garamond"');
+    expect(globals).toContain('--font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif');
+    expect(globals).toContain('--font-heading: "EB Garamond", ui-serif, Georgia, "Times New Roman", serif');
     expect(globals).toContain('--font-serif: var(--font-heading)');
+    expect(globals).toContain('--font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", "Fira Code", monospace');
+    expect(globals).not.toContain('var(--font-geist-mono)');
   });
 
   it('documents Civic Atelier and token-first implementation as the visual contract', () => {

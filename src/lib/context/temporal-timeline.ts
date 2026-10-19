@@ -82,11 +82,11 @@ export function buildTemporalTimeline(input: BuildTemporalTimelineInput): Tempor
     ...nodeItems(nodes, nodeItemIds),
   ], (item) => item.id).sort(compareTimelineItems);
   const itemIds = new Set(items.map((item) => item.id));
+  const warnings: string[] = [];
   const edges = uniqueBy([
     ...graphTemporalEdges(graph, nodeItemIds, itemIds),
-    ...capsuleCausalEdges(input.capsule, nodeItemIds, claimItemIds, itemIds),
+    ...capsuleCausalEdges(input.capsule, nodeItemIds, claimItemIds, itemIds, warnings),
   ], (edge) => edge.id).sort((left, right) => left.source.localeCompare(right.source) || left.target.localeCompare(right.target) || left.id.localeCompare(right.id));
-  const warnings: string[] = [];
   if (!items.length) warnings.push('No dated capsule events, commitments, claims, or timeline anchors were available.');
   if (items.some((item) => item.dateUnparseable)) {
     warnings.push('Some timeline dates could not be normalized and were placed at the end.');
@@ -218,9 +218,16 @@ function capsuleCausalEdges(
   nodeItemIds: Map<string, string>,
   claimItemIds: Map<string, string>,
   itemIds: Set<string>,
+  warnings: string[],
 ): TemporalTimelineEdge[] {
   const causality = causalityRecord(capsule);
   return arrayOfRecords(causality?.causalLinks).flatMap((link, index): TemporalTimelineEdge[] => {
+    const relation = normalizeRelationship(link.relation);
+    if (!CAUSAL_RELATIONS.has(relation)) {
+      const warning = 'Unsupported or missing causal relations were omitted; temporal ordering does not establish causation.';
+      if (!warnings.includes(warning)) warnings.push(warning);
+      return [];
+    }
     const source = itemIdFor(cleanString(link.cause), nodeItemIds, claimItemIds);
     const target = itemIdFor(cleanString(link.effect), nodeItemIds, claimItemIds);
     if (!source || !target || !itemIds.has(source) || !itemIds.has(target)) return [];
@@ -228,7 +235,7 @@ function capsuleCausalEdges(
       id: `edge:${cleanString(link.id) || stableHash(`${source}:${cleanString(link.relation)}:${target}:${index}`)}`,
       source,
       target,
-      relation: normalizeRelationship(link.relation) || 'causes',
+      relation,
       sourceReceiptIds: sourceIdsFrom(link.evidenceRefs, link.sourceReceiptIds, link.sourceRefs),
       confidence: numberOrNull(link.confidence),
     })];
