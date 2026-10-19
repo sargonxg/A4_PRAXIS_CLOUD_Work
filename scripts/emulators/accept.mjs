@@ -81,7 +81,7 @@ try {
     const started = Date.now();
     const child = spawn(process.execPath, ['--require', './scripts/emulators/loopback-only.js', 'node_modules/@playwright/test/cli.js',
       'test', ...files, '--config=tests/emulators/playwright.config.ts', '--workers=1', '--retries=0'],
-    { env: process.env, stdio: 'inherit', windowsHide: true });
+    { env: { ...process.env, PRAXIS_EMULATOR_SUITE: label }, stdio: 'inherit', windowsHide: true });
     const [exit] = await once(child, 'close'); stages.push({ label, exit, elapsedMs: Date.now() - started });
     if (exit !== 0) throw new Error(`Unchanged authenticated suite ${label} failed`);
     if (label === 'first-login-onboarding') {
