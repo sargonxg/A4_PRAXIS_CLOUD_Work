@@ -80,6 +80,6 @@ export default class SafeReporter {
     this.steps.delete(test);
     this.persist();
   }
-  onError() { this.globalError = true; this.persist(); }
+  onError(_error) { this.globalError = true; this.persist(); }
   onEnd(result) { this.status = runStatuses.has(result?.status) ? result.status : 'unknown'; this.persist(); }
 }
