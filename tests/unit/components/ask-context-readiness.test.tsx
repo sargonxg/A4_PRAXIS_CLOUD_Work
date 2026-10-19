@@ -42,6 +42,12 @@ vi.mock('@/components/app/use-active-context-stack', () => ({ useActiveContextSt
 vi.mock('next/navigation', () => ({ usePathname: () => '/app', useSearchParams: () => new URLSearchParams(runtime.query), useRouter: () => ({ replace: vi.fn() }) }));
 vi.mock('next/link', () => ({ default: ({ children, ...props }: { children?: ReactNode }) => <a {...props}>{children}</a> }));
 vi.mock('@/components/app/public-shell', () => ({ PublicShell: ({ children }: { children: ReactNode }) => <>{children}</> }));
+// The picker is eager now; keep the same shallow boundary used for dynamic children.
+vi.mock('@/components/cores/CapsuleListPicker', () => {
+  const Stub = () => <button type="button" data-testid="CapsuleListPicker">CapsuleListPicker</button>;
+  Stub.displayName = 'CapsuleListPicker';
+  return { CapsuleListPicker: Stub };
+});
 vi.mock('next/dynamic', () => ({
   default: (loader: () => unknown) => {
     const name = loader.toString().match(/module\.(\w+)/)?.[1] ?? 'Dynamic';

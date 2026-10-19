@@ -15,17 +15,6 @@ jobs:
   personas:
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    env:
-      TEST_FIREBASE_EMAIL: ${{ secrets.TEST_FIREBASE_EMAIL }}
-      TEST_FIREBASE_PASSWORD: ${{ secrets.TEST_FIREBASE_PASSWORD }}
-      REQUIRE_AUTH_GOLDEN_PATH: "1"
-      NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
-      NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
-      COOKIE_SIGNING_SECRET: praxis-dev-cookie-signing-secret
     steps:
       - uses: actions/checkout@v6
 
@@ -34,56 +23,31 @@ jobs:
           node-version: '22'
           cache: npm
 
-      - name: Verify Firebase disposable test credentials
-        run: |
-          if [ -z "$TEST_FIREBASE_EMAIL" ] || [ -z "$TEST_FIREBASE_PASSWORD" ]; then
-            echo "GitHub Actions secrets TEST_FIREBASE_EMAIL and TEST_FIREBASE_PASSWORD are required for persona-smoke authenticated E2E."
-            exit 1
-          fi
-
       - name: Install dependencies
         run: npm ci
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Build app
-        env:
-          COOKIE_SIGNING_SECRET: praxis-dev-cookie-signing-secret
-        run: npm run build
-
-      - name: Start app
-        env:
-          COOKIE_SIGNING_SECRET: praxis-dev-cookie-signing-secret
+      - name: Install isolated pinned emulator tooling
         run: |
-          npm run start -- -p 3000 > persona-smoke.log 2>&1 &
-          for i in {1..60}; do
-            if curl -fsS http://127.0.0.1:3000 >/dev/null; then
-              exit 0
-            fi
-            sleep 2
-          done
-          cat persona-smoke.log
-          exit 1
+          test -x "$JAVA_HOME_21_X64/bin/java"
+          npm install --prefix "$RUNNER_TEMP/praxis-firebase-tools" --ignore-scripts --no-audit --no-fund --package-lock=false firebase-tools@15.34.0
 
-      - name: Run Tasklet app smoke suite
+      - name: Build and run unchanged authenticated suites against isolated emulators
         env:
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-        run: npm run smoke:tasklet-app
+          PRAXIS_FIREBASE_CLI: ${{ runner.temp }}/praxis-firebase-tools/node_modules/firebase-tools/lib/bin/firebase.js
+          PRAXIS_EMULATOR_OUTPUT: ${{ runner.temp }}
+        run: npm run smoke:emulators
 
-      - name: Run authenticated app smoke suite
-        env:
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-        run: npm run smoke:authenticated-app
-
-      - name: Run authenticated golden path proof
-        env:
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
-        run: npx playwright test tests/e2e/golden-path.spec.ts
-
-      - name: Upload server log
+      - name: Upload emulator-only measurement receipts
         if: always()
         uses: actions/upload-artifact@v6
         with:
-          name: persona-smoke-server-log
-          path: persona-smoke.log
+          name: persona-emulator-receipts
+          path: |
+            ${{ runner.temp }}/praxis-emulator-*/acceptance.json
+            ${{ runner.temp }}/praxis-emulator-*/stages.json
+            ${{ runner.temp }}/praxis-emulator-*/tooling.json
+            ${{ runner.temp }}/praxis-emulator-*/source.json
+            ${{ runner.temp }}/praxis-emulator-*/synthetic-prerequisites.json

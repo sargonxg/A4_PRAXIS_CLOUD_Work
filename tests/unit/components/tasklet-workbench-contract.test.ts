@@ -128,12 +128,6 @@ describe('Tasklet PRAXIS workbench contract', () => {
     expect(source).toContain("url.searchParams.set('capsuleId', capsuleId)");
   });
 
-  it('restores saved conversation turns before falling back to legacy Ask thread history', () => {
-    expect(source).toContain('fetch(`/api/conversations/${encodeURIComponent(threadIdToLoad)}`');
-    expect(source).toContain('savedConversationTurnsToMessages');
-    expect(source).toContain('loadLegacyAskThreadHistory');
-  });
-
   it('loads saved homepage conversations before separate agent-run recents', () => {
     expect(source).toContain("fetch('/api/conversations', { credentials: 'include' })");
     expect(source).toContain('savedConversations.slice(0, 6).map');

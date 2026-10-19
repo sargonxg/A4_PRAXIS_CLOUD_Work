@@ -39,11 +39,7 @@ import { getCapsuleCategoryPalette } from '@/lib/constants/aco-colors';
 import { useSituationStore } from '@/stores/situation-store';
 import type { Situation } from '@/types/situation';
 import { cn } from '@/lib/utils/cn';
-
-const CapsuleListPicker = dynamic(
-  () => import('@/components/cores/CapsuleListPicker').then((module) => module.CapsuleListPicker),
-  { loading: () => null, ssr: false },
-);
+import { CapsuleListPicker } from '@/components/cores/CapsuleListPicker';
 
 const CapsuleImportButton = dynamic(
   () => import('@/components/capsules/CapsuleImportButton').then((module) => module.CapsuleImportButton),

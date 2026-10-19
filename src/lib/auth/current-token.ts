@@ -19,12 +19,16 @@ export async function verifyCurrentIdentity<T extends { uid: string; auth_time: 
     verify: (token: string, checkRevoked: boolean) => Promise<T>;
     apiKey?: string;
     fetcher?: typeof fetch;
+    emulator?: boolean;
   },
 ): Promise<T> {
   try {
     return await options.verify(token, true);
   } catch (error) {
     if (isIdentityRejection(error)) throw error;
+    // The local emulator is the complete identity authority for its demo project.
+    // An emulator failure must never send its token to a production REST service.
+    if (options.emulator) throw authError('auth/verification-unavailable');
     const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : '';
     if (!INFRASTRUCTURE_CODES.has(code) || !options.apiKey) throw authError('auth/verification-unavailable');
   }

@@ -1,7 +1,11 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
+import { resolveClientEmulators } from './emulator-config';
 import type { Analytics } from 'firebase/analytics';
+import type { FirebaseApp } from 'firebase/app';
+import type { Auth } from 'firebase/auth';
+import type { Firestore } from 'firebase/firestore';
 import {
   initializeAppCheck,
   ReCaptchaEnterpriseProvider,
@@ -66,6 +70,24 @@ const firebaseConfig = {
   measurementId, // optional
 };
 
+const emulator = resolveClientEmulators({
+  mode: process.env.NEXT_PUBLIC_PRAXIS_EMULATOR_MODE,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  authHost: process.env.NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST,
+  firestoreHost: process.env.NEXT_PUBLIC_FIRESTORE_EMULATOR_HOST,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+}, typeof window === 'undefined' ? undefined : window.location.origin);
+const emulatorHandlesKey = Symbol.for('praxis.local-emulator.client-handles.v1');
+const emulatorHandles = globalThis as unknown as Record<symbol, { app: FirebaseApp; auth: Auth; db: Firestore } | undefined>;
+const owned = emulator ? emulatorHandles[emulatorHandlesKey] : undefined;
+if (emulator && (getApps().some(app => app !== owned?.app) || (owned && owned.app.options.projectId !== emulator.projectId))) {
+  throw new Error('Mixed Firebase applications in isolated emulator runtime');
+}
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 // ----------------------------------------------------------------------------
@@ -79,6 +101,9 @@ const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 // Otherwise every Firebase call logs a reCAPTCHA 400 warning and may fail
 // if enforcement is accidentally on server-side.
 const appCheckEnabled = process.env.NEXT_PUBLIC_FIREBASE_APPCHECK_ENABLED === 'true';
+if (emulator && (appCheckEnabled || appCheckEnterpriseKey || appCheckV3Key || appCheckDebugToken)) {
+  throw new Error('App Check cannot be mixed with isolated Firebase emulators');
+}
 
 if (typeof window !== 'undefined' && appCheckEnabled) {
   try {
@@ -102,8 +127,14 @@ if (typeof window !== 'undefined' && appCheckEnabled) {
   }
 }
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const auth = owned?.auth || getAuth(app);
+export const db = owned?.db || getFirestore(app);
+if (emulator && !owned) {
+  connectAuthEmulator(auth, emulator.authOrigin);
+  // Module initialization happens before any application Firestore operation.
+  connectFirestoreEmulator(db, emulator.firestoreHost, emulator.firestorePort);
+  emulatorHandles[emulatorHandlesKey] = Object.freeze({ app, auth, db });
+}
 
 // App initialization and sign-in must not initialize optional visit analytics.
 // Keep this export compatible for callers; a future consent flow may opt in.

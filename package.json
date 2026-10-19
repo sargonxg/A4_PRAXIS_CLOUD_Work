@@ -3,6 +3,7 @@
   "version": "6.5.2",
   "private": true,
   "scripts": {
+    "smoke:emulators": "node --experimental-strip-types scripts/emulators/run.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
