@@ -180,6 +180,7 @@ import {
 } from './tasklet-workbench-conversation';
 import { workbenchRequestKey } from './tasklet-workbench-history';
 import { useWorkbenchConversation } from './use-workbench-conversation';
+import { useWorkbenchContextInitialization, workbenchSendReady } from './use-workbench-context-initialization';
 import {
   MAX_ACTIVE_CONTEXT_CAPSULES,
   applyCapsuleToStack,
@@ -1073,6 +1074,26 @@ export function TaskletPraxisWorkbench({
   useEffect(() => {
     saveActiveContextStackRef.current = saveActiveContextStack;
   }, [saveActiveContextStack]);
+  const requestedRouteCapsuleId = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    const query = new URLSearchParams(window.location.search);
+    if (initialConversationId && capsuleId !== 'default') return capsuleId;
+    return query.get('capsuleId') || query.get('situationId') || null;
+  }, [capsuleId, initialConversationId]);
+  const initializeRequestedContext = useCallback((requestedId: string, signal: AbortSignal) => {
+    const current = activeCapsuleStackRef.current;
+    const chip: ActiveCapsuleChip = { id: requestedId, label: requestedId, code: 'SITUATION', role: 'situation' };
+    const next = [chip, ...current.filter(item => item.id !== requestedId)].slice(0, 6);
+    return saveActiveContextStackRef.current(buildActiveContextStackPatch(requestedId, next, activeContextStackStateRef.current), { signal });
+  }, []);
+  const { pending: contextInitializationPending, failed: contextInitializationFailed, retry: retryContextInitialization } = useWorkbenchContextInitialization({
+    ownerId: authenticatedOwnerId, hydrated: activeContextHydrated, requestedCapsuleId: requestedRouteCapsuleId,
+    routeKey: JSON.stringify([capsuleId, initialConversationId ?? null]), attachedCapsuleIds: activeCapsuleStack.map(item => item.id),
+    selectCapsule: setCurrentCapsuleId, initializeCapsule: initializeRequestedContext, setStatus,
+  });
+  const canSendToPraxis = workbenchSendReady({ authenticated: isAuthenticated, ownerId: authenticatedOwnerId,
+    hydrated: activeContextHydrated, contextPending: contextInitializationPending,
+    requestScope: workbenchRequests.currentScope(), expectedScope: workbenchRequestKey(authenticatedOwnerId, currentCapsuleId, conversationThreadId) });
   const contextBlocks = buildActiveContextBlocks(activeCapsuleStack);
   const activeContextStack = buildActiveContextStack(currentCapsuleId, activeCapsuleStack, activeContextStackState);
   const contextHealth = getContextHealth(activeCapsuleStack);
@@ -1362,6 +1383,7 @@ export function TaskletPraxisWorkbench({
 
   useEffect(() => {
     if (!activeContextHydrated) return;
+    if (contextInitializationPending) return;
     // Inspecting a draft must not switch to the capsule attached to chat.
     if (inspectorOpen || (initialPanel === 'capsules' && initialFactoryLane === 'inspect')) return;
     if (activeCapsuleStack.some((capsule) => capsule.id === currentCapsuleId)) return;
@@ -1371,7 +1393,7 @@ export function TaskletPraxisWorkbench({
       return;
     }
     if (currentCapsuleId !== capsuleId) setCurrentCapsuleId(capsuleId);
-  }, [activeCapsuleStack, activeContextHydrated, capsuleId, currentCapsuleId, initialPanel, initialFactoryLane, inspectorOpen]);
+  }, [activeCapsuleStack, activeContextHydrated, contextInitializationPending, capsuleId, currentCapsuleId, initialPanel, initialFactoryLane, inspectorOpen]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -1767,6 +1789,10 @@ export function TaskletPraxisWorkbench({
     if (!cleanPrompt || isStreaming) return;
     if (!isAuthenticated) {
       sendPublicToLogin(cleanPrompt, agent);
+      return;
+    }
+    if (!canSendToPraxis) {
+      setStatus('Wait for your conversation context to finish loading. Your draft is still here.');
       return;
     }
 
@@ -2766,21 +2792,14 @@ export function TaskletPraxisWorkbench({
   }
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthenticated || !activeContextHydrated) return;
     const searchParams = new URLSearchParams(window.location.search);
     const panel = searchParams.get('panel');
     const capsuleParam = searchParams.get('capsuleId') ?? searchParams.get('situationId');
     const threadParam = sanitizeConversationThreadId(searchParams.get('threadId') ?? searchParams.get('conversationId'));
     const memoIdParam = initialMemoId ?? searchParams.get('memoId') ?? searchParams.get('draftId');
     const importToken = searchParams.get('importToken');
-    if (capsuleParam) {
-      const currentActiveCapsuleStack = activeCapsuleStackRef.current;
-      setCurrentCapsuleId(capsuleParam);
-      if (!currentActiveCapsuleStack.some((capsule) => capsule.id === capsuleParam)) {
-        const chip: ActiveCapsuleChip = { id: capsuleParam, label: capsuleParam, code: 'SITUATION', role: 'situation' };
-        persistActiveCapsuleStack([chip, ...currentActiveCapsuleStack].slice(0, 6), { capsuleId: chip.id });
-      }
-    }
+    // Explicit capsule attachment is owned by the hydration-aware initializer.
     if (threadParam) {
       setConversationThreadId(threadParam);
       setActiveTab('analysis');
@@ -2810,7 +2829,7 @@ export function TaskletPraxisWorkbench({
     if (panel === 'advanced' || panel === 'ask') setStatus('Proof routing details appear in saved conversation receipts after a PRAXIS turn runs.');
     if (panel === 'account') setStatus('Account and runtime settings now live inside the PRAXIS cockpit.');
     if (memoIdParam) void openMemoArtifactById(memoIdParam);
-  }, [currentCapsuleId, initialMemoId, isAuthenticated, persistActiveCapsuleStack, refreshRepository]);
+  }, [activeContextHydrated, currentCapsuleId, initialMemoId, isAuthenticated, refreshRepository]);
 
   useEffect(() => {
     if (resolvedInitialFactoryLane !== 'inspect') return;
@@ -4278,7 +4297,7 @@ export function TaskletPraxisWorkbench({
                       type="button"
                       role="menuitem"
                       onClick={() => void sendToPraxis()}
-                      disabled={!prompt.trim() || isStreaming}
+                      disabled={!prompt.trim() || isStreaming || !canSendToPraxis}
                       className="w-full rounded-md px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-300"
                     >
                       Send to PRAXIS
@@ -4306,7 +4325,7 @@ export function TaskletPraxisWorkbench({
                   </button>
                   <motion.button
                     type="button"
-                    disabled={!prompt.trim() || isStreaming}
+                    disabled={!prompt.trim() || isStreaming || !canSendToPraxis}
                     onClick={() => void sendToPraxis()}
                     className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-950 text-white shadow-sm shadow-black/10 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
                     aria-label="Send to PRAXIS"
@@ -4320,6 +4339,7 @@ export function TaskletPraxisWorkbench({
                 <div className="flex min-w-0 items-center gap-2">
                   <ShieldCheck className="h-4 w-4 shrink-0" />
                   <span className="min-w-0">{status}</span>
+                  {contextInitializationFailed && <button type="button" onClick={retryContextInitialization} className="underline">Retry loading context</button>}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {conversationThreadId ? (

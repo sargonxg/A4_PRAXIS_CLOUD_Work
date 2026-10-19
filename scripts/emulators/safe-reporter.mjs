@@ -4,12 +4,13 @@ import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const files = new Set(['tests/e2e/onboarding.spec.ts', 'tests/e2e/golden-path.spec.ts',
-  'tests/e2e/authenticated-app-post-login.spec.ts', 'tests/e2e/helpers/auth.ts']);
+  'tests/e2e/authenticated-app-post-login.spec.ts', 'tests/e2e/helpers/auth.ts', 'tests/e2e/workbench-context-readiness.emulator.spec.ts']);
 const identities = new Map([
   ['tests/e2e/onboarding.spec.ts\0handles onboarding or an already-onboarded canary profile', 'ONBOARDING_FIRST_LOGIN'],
   ['tests/e2e/golden-path.spec.ts\0sign in → chat → capsule library → boardroom → settings', 'GOLDEN_CORE_ROUTES'],
   ['tests/e2e/golden-path.spec.ts\0capsule prompt → Ask with sources → memo export → boardroom proof', 'GOLDEN_MEMO_BOARDROOM'],
   ['tests/e2e/authenticated-app-post-login.spec.ts\0logs in with the Firebase canary and verifies core protected routes', 'AUTHENTICATED_PROTECTED_ROUTES'],
+  ['tests/e2e/workbench-context-readiness.emulator.spec.ts\0waits for owner context before sending the requested conversation turn', 'WORKBENCH_CONTEXT_READINESS'],
 ]);
 const statuses = new Set(['passed', 'failed', 'timedOut', 'skipped', 'interrupted']);
 const runStatuses = new Set(['passed', 'failed', 'timedout', 'interrupted']);
