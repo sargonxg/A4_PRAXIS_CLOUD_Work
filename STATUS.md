@@ -1,5 +1,11 @@
 # PRAXIS — STATUS
 
+## 2026-11-07 — Local policy context preparation
+
+- Added an offline CLI path from a supported cognitive capsule to a task-specific cited draft prompt, with source/graph/research-memory inspection and an entire-prompt UTF-8 byte budget.
+- New local task directories preserve native package bytes, task recipes and prompts. Reopen checks integrity and recomputes the saved view; revisions use a new directory. Proposals, qualifications and unknowns retain their recorded states.
+- This is local implementation, separate from the dated production acceptance below. No hosted/model/billing activation, source collection, database writes or deployment was performed. The PRAXIS native-1/cognitive schema and TACITUS website native-v2 formats remain separate.
+
 ## 2026-09-30 — Core capsule and writing journeys live
 
 - Final source `4480650999b5bd2808b55cba58f16e5a9a83d343` is served as `praxis-frontend-01082-nkw`. Cloud Build and both exact-source GitHub workflows succeeded. [Production acceptance](docs/reviews/2026-09-29-praxis-production-acceptance.md) records the evidence and its limits.

@@ -1,5 +1,13 @@
 # PRAXIS by TACITUS
 
+TACITUS builds AI data infrastructure for policy and political analysis.
+PRAXIS puts that infrastructure into a research workspace: Context Capsules
+connect source passages, ontology and semantic graph records, qualifications,
+and revisable research memory to a specific analytical task. This “second
+brain” keeps evidence, assumptions and open questions available for inspection
+and correction. Saliency and efficiency are design and research goals;
+measured improvements in analytical quality have not been established.
+
 PRAXIS helps policymakers and analysts ask questions, examine narratives and
 write reviewable briefs using their sources and saved ContextCapsules.
 Start in Home to ask or draft; use Capsules to create, inspect and review
@@ -179,6 +187,47 @@ git clone https://github.com/sargonxg/A4_PRAXIS_CLOUD_Work.git
 cd A4_PRAXIS_CLOUD_Work
 npm install
 ```
+
+### Prepare a policy task locally
+
+After installing the existing lockfile dependencies with `npm ci`, run this
+workflow from the repository root. It needs no account, model credentials,
+hosted PRAXIS instance or database. The fixture is entirely fictional;
+its author/reviewer identities and recorded decisions demonstrate the schema,
+not real expert review or a factual policy assessment.
+
+```bash
+npm run praxis -- capsule inspect tests/fixtures/cognitive-capsule/policy-context.json
+npm run praxis -- capsule task tests/fixtures/cognitive-capsule/policy-context.json --objective "Draft a policy brief distinguishing authorization from expenditure. Cite the supplied passages and keep missing transfer evidence explicit." --scope public-finance --as-of 2026-11-07 --role domain-specialist --max-bytes 16000
+npm run praxis -- capsule task tests/fixtures/cognitive-capsule/policy-context.json --objective "Draft a policy brief distinguishing authorization from expenditure. Cite the supplied passages and keep missing transfer evidence explicit." --scope public-finance --as-of 2026-11-07 --role domain-specialist --max-bytes 16000 --output /tmp/praxis-policy-task --allow-write
+npm run praxis -- capsule reopen /tmp/praxis-policy-task --format prompt
+```
+
+The task preview shows exact source quotations, source/version IDs, stance and
+anchor qualifications, ontology labels, selected records, guarded rules,
+omissions, open research questions and the complete prompt's UTF-8 byte use.
+The output is a **draft prompt**, ready for inspection or use in a separately
+authorized drafting step; no answer is generated. `--max-bytes` bounds the
+entire prompt, including the task and graph labels, rather than the exported
+capsule or preview JSON. Oversized records and their evidence are omitted as
+whole records and remain available in the source inventory.
+
+Use a new output directory each time. The saved directory contains
+`source.capsule`, `task.json` and `prompt.txt`. Reopen checks the package,
+artifact/semantic digests, compiler version, view and prompt. Original native
+`.capsule` bytes are preserved exactly; supported cognitive JSON is packaged
+through the existing writer. Revisions start with another `capsule task`
+invocation and a new directory, preserving the earlier task. Capsule knowledge
+changes still use explicit edits, review and versioning; preparation never
+promotes a proposal or fills an unknown.
+
+Supported input is `cognitive-capsule/vNext` JSON or a
+`tacitus-native-capsule/1` `.capsule` package. The TACITUS website's native-v2
+inspector and its `tacitus-uploaded-knowledge-context/1` selection exports use
+different contracts. There is no automatic conversion, interchange or review
+promotion between them. See the [local CLI runbook](docs/runbooks/COGNITIVE_CAPSULE_CLI.md)
+for the compatibility matrix and limits. Hosted generation and billing are
+outside this local workflow.
 
 Useful commands:
 

@@ -12570,9 +12570,9 @@
     "semantic_hash": ""
   },
   "cli/praxis.ts": {
-    "mtime": 1791221334.6905434,
-    "seen": 1791227120.4787643,
-    "ast_hash": "d28dec0776a84a889744a7c7edee4ef9",
+    "mtime": 1794066151.9920602,
+    "seen": 1794066469.226415,
+    "ast_hash": "14e43bbd8167e8926d72210cf295d847",
     "semantic_hash": ""
   },
   "docs/signal-build/RELEASE.json": {
@@ -15015,6 +15015,30 @@
     "mtime": 1791244235.8554862,
     "seen": 1791245860.6021929,
     "ast_hash": "d133d9a90e2975676467b8f377933465",
+    "semantic_hash": ""
+  },
+  "tests/fixtures/cognitive-capsule/policy-context.json": {
+    "mtime": 1794065761.6742907,
+    "seen": 1794066469.2281146,
+    "ast_hash": "a0bafbeac50066ab857688ca95ee5b9e",
+    "semantic_hash": ""
+  },
+  "tests/unit/lib/cognitive-capsule/local-task.test.ts": {
+    "mtime": 1794065761.9222918,
+    "seen": 1794066469.2366362,
+    "ast_hash": "bb32d5ea0b848a0454c61da0758ef1f9",
+    "semantic_hash": ""
+  },
+  "src/lib/cognitive-capsule/local-task.ts": {
+    "mtime": 1794065654.1018088,
+    "seen": 1794066469.2275474,
+    "ast_hash": "273c318e1cabe80142560c72c900c472",
+    "semantic_hash": ""
+  },
+  "tests/unit/cli/local-task.test.ts": {
+    "mtime": 1794066152.372062,
+    "seen": 1794066469.236356,
+    "ast_hash": "72289480b6eb69200b33aebfd24d1b00",
     "semantic_hash": ""
   }
 }

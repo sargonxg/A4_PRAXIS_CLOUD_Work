@@ -1,5 +1,11 @@
 # Graph Report - A4_PRAXIS_CLOUD_Work  (2026-10-06)
 
+## Scoped AST refresh — 2026-11-07
+
+Official graphifyy 0.9.76 AST extraction refreshed the local policy-task CLI, helper, tests and fixture on the branch based on `4b77dcd3`. No LLM/API calls ran.
+
+Current scoped graph: 20579 nodes and 46915 stored edges. Unrelated node and edge records are preserved; only the five code/fixture paths were refreshed; documentation and other graph records retain their prior snapshot. The full-graph commit marker and community summaries below retain the prior snapshot, rather than claiming a full current-main rebuild.
+
 ## Corpus Check
 - cluster-only mode — file stats not available
 

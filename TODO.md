@@ -1,6 +1,11 @@
 # PRAXIS TODO
 
-Last updated: 2026-09-30.
+Last updated: 2026-11-07.
+
+## Local policy context workflow
+
+- Local capsule task preview/export/reopen is implemented in the existing CLI; see [the runbook](docs/runbooks/COGNITIVE_CAPSULE_CLI.md). Retain exact source and review qualifications when revising research memory.
+- Empirical saliency, efficiency and analytical-quality comparisons remain future research. The deterministic selector and byte accounting do not establish measured benefit. Hosted generation/billing and cross-tool native-v2 interchange remain outside this workflow.
 
 ## Current continuation priorities
 

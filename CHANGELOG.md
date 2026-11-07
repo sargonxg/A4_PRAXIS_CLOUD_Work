@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Prepare local policy tasks from existing cognitive/native capsules, inspect cited sources, qualifications, graph records and revisable research memory, and export/reopen an integrity-checked draft prompt within a UTF-8 byte budget. No model or hosted service runs in this workflow.
+
 - Add reviewed Cognitive Capsule expertise in the existing inspector: guided interviews, explicit human decisions, correction lessons, provenance and native downloads. Conditional rules remain unapplied until their prerequisites and guards are established.
 - Compile worker-specific cognitive context within rendered prompt budgets, freeze source/model/tool dependencies, and use typed working objects in the existing specialist, writer and red-team memo workflow.
 - Add the local PRAXIS capsule CLI, defensive portable package import/export, private local registry and detached attestations. Hosted distribution and empirical performance claims remain pending; see the [implementation ledger](docs/build/COGNITIVE_CAPSULE_IMPLEMENTATION_LEDGER.md).

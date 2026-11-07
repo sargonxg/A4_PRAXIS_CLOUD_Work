@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "cognitive-capsule/vNext",
+  "capsuleId": "demo/policy-finance",
+  "version": "1.0.0",
+  "profile": "situation",
+  "rights": { "mode": "private", "author": "synthetic-demo-author" },
+  "nodes": [
+    {
+      "id": "council", "type": "aco:Actor", "label": "Fictional River Council", "layer": "world", "reviewState": "accepted",
+      "provenance": { "generatedBy": { "type": "human", "id": "synthetic-demo-author", "at": "2026-11-01T00:00:00Z" }, "reviewedBy": { "type": "human", "id": "synthetic-demo-reviewer", "at": "2026-11-01T00:00:00Z" }, "reviewedAt": "2026-11-01T00:00:00Z", "confidenceKind": "human-authored" }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "authorization-passage", "sourceId": "synthetic-council-minutes", "sourceVersion": "2026-11-01",
+      "quote": "Synthetic example: the Fictional River Council authorized a ceiling of 20 units for flood resilience. Authorization is not evidence that money was transferred or spent.",
+      "uri": "urn:tacitus:synthetic:council-minutes", "page": 1, "anchorStatus": "excerpt", "stance": "supports"
+    },
+    {
+      "id": "missing-transfer-record", "sourceId": "synthetic-source-register", "sourceVersion": "1",
+      "quote": "Synthetic example: no transfer receipt or expenditure report was supplied with these fictional minutes. Actual disbursement remains unknown.",
+      "uri": "urn:tacitus:synthetic:source-register", "page": 1, "anchorStatus": "excerpt", "stance": "qualifies"
+    }
+  ],
+  "statements": [
+    {
+      "id": "authorization", "subject": "council", "predicate": "AUTHORIZES", "object": { "literal": "a flood resilience ceiling of 20 fictional units" },
+      "layer": "world", "polarity": "positive", "modality": "asserted", "validFrom": "2026-11-01", "sourceRefs": ["authorization-passage"], "reviewState": "accepted",
+      "provenance": { "generatedBy": { "type": "human", "id": "synthetic-demo-author", "at": "2026-11-01T00:00:00Z" }, "sourceRefs": ["authorization-passage", "missing-transfer-record"], "reviewedBy": { "type": "human", "id": "synthetic-demo-reviewer", "at": "2026-11-01T00:00:00Z" }, "reviewedAt": "2026-11-01T00:00:00Z", "confidenceKind": "human-authored" }
+    },
+    {
+      "id": "unreviewed-disbursement", "subject": "council", "predicate": "DISBURSED", "object": { "literal": "20 fictional units" },
+      "layer": "world", "polarity": "positive", "reviewState": "proposed",
+      "provenance": { "generatedBy": { "type": "import", "id": "synthetic-unreviewed-note", "at": "2026-11-01T00:00:00Z" }, "confidenceKind": "imported" }
+    }
+  ],
+  "knowledge": [
+    {
+      "id": "finance-stages", "kind": "distinction", "label": "Authorization and expenditure are different stages", "scope": ["public-finance"],
+      "conceptA": "authorization", "conceptB": "disbursement or expenditure", "explanation": "An authorized ceiling does not establish that funds were released or spent.",
+      "whyItMatters": "A policy brief must distinguish permission, transfer and use of funds.", "decisionTests": ["Identify the record for each financial stage."], "commonMistake": "Reporting authorization as completed expenditure.", "reviewState": "accepted",
+      "provenance": { "generatedBy": { "type": "human", "id": "synthetic-demo-author", "at": "2026-11-01T00:00:00Z" }, "sourceRefs": ["authorization-passage"], "reviewedBy": { "type": "human", "id": "synthetic-demo-reviewer", "at": "2026-11-01T00:00:00Z" }, "reviewedAt": "2026-11-01T00:00:00Z", "confidenceKind": "human-authored" }
+    },
+    {
+      "id": "disbursement-gap", "kind": "unknown", "label": "Actual disbursement is unknown", "scope": ["public-finance"],
+      "description": "No transfer receipt or expenditure report is supplied in this synthetic case.", "requiredEvidence": ["A transfer receipt and an expenditure report for the programme."], "reviewState": "accepted",
+      "provenance": { "generatedBy": { "type": "human", "id": "synthetic-demo-author", "at": "2026-11-01T00:00:00Z" }, "sourceRefs": ["missing-transfer-record"], "reviewedBy": { "type": "human", "id": "synthetic-demo-reviewer", "at": "2026-11-01T00:00:00Z" }, "reviewedAt": "2026-11-01T00:00:00Z", "confidenceKind": "human-authored" }
+    },
+    {
+      "id": "implementation-check", "kind": "heuristic", "label": "Check implementation after a verified transfer", "scope": ["public-finance"],
+      "when": [{ "kind": "context", "key": "transfer-verified", "operator": "present" }], "exceptions": [{ "kind": "context", "key": "transfer-reversed", "operator": "present" }],
+      "interpretation": "A verified transfer permits a separate implementation check; it still does not establish completed expenditure.", "rationale": "Each financial stage needs its own supporting record.", "nextChecks": ["Verify the transfer and rule out reversal before applying this rule."], "reviewState": "accepted",
+      "provenance": { "generatedBy": { "type": "human", "id": "synthetic-demo-author", "at": "2026-11-01T00:00:00Z" }, "reviewedBy": { "type": "human", "id": "synthetic-demo-reviewer", "at": "2026-11-01T00:00:00Z" }, "reviewedAt": "2026-11-01T00:00:00Z", "confidenceKind": "expert-practice-rule" }
+    },
+    {
+      "id": "revisit-on-new-evidence", "kind": "revisionTrigger", "label": "Revisit the brief when transfer evidence arrives", "scope": ["public-finance"],
+      "when": [{ "kind": "context", "key": "new-transfer-record", "operator": "present" }], "affectedIds": ["disbursement-gap"],
+      "action": "Inspect the new evidence, propose a revision and obtain a separate human decision. Keep the previous version.", "reviewState": "accepted",
+      "provenance": { "generatedBy": { "type": "human", "id": "synthetic-demo-author", "at": "2026-11-01T00:00:00Z" }, "reviewedBy": { "type": "human", "id": "synthetic-demo-reviewer", "at": "2026-11-01T00:00:00Z" }, "reviewedAt": "2026-11-01T00:00:00Z", "confidenceKind": "human-authored" }
+    }
+  ]
+}

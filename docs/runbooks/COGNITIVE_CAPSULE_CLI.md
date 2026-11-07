@@ -22,6 +22,90 @@ Inspect, validate, graph, diff and eval also accept cognitive capsule JSON. Pack
 
 Validation checks structure, semantic references and package integrity. It does not prove factual truth. `capsule eval` reports deterministic graph reference and JSON-LD roundtrip checks; it makes no claim of model evaluation or with/without-capsule ablation.
 
+## Local policy task: inspect, attach, export and reopen
+
+`capsule task` attaches one supported local capsule snapshot to an objective,
+role, scope and explicit as-of date, using the existing worker context compiler.
+It prepares a cited draft prompt; it does not generate an answer, collect sources,
+resolve dependencies, call a hosted API or write a database. UTF-8 bytes for the
+**entire prompt**, including task instructions, escaped records, graph labels
+and evidence, must fit `--max-bytes` (1,024–64,000; default 16,000). The existing
+character-based selector is rerun with a smaller ceiling when necessary; this
+can leave unused byte capacity. It is a deterministic selection control, not
+measured saliency, efficiency or analytical-quality improvement.
+
+From the repository root, after `npm ci`:
+
+```bash
+npm run praxis -- capsule task tests/fixtures/cognitive-capsule/policy-context.json --objective "Draft a finance brief with cited evidence and explicit gaps." --scope public-finance --as-of 2026-11-07 --role domain-specialist --max-bytes 16000
+npm run praxis -- capsule task tests/fixtures/cognitive-capsule/policy-context.json --objective "Draft a finance brief with cited evidence and explicit gaps." --scope public-finance --as-of 2026-11-07 --role domain-specialist --max-bytes 16000 --output /tmp/praxis-finance-task --allow-write
+npm run praxis -- capsule reopen /tmp/praxis-finance-task
+npm run praxis -- capsule reopen /tmp/praxis-finance-task --format prompt
+```
+
+The fixture, source text and identities are synthetic. Its recorded accepted
+and proposed states exercise schema mechanics; they are not real human review.
+Inspect the JSON preview before using the prompt: `sources` retains every exact
+quotation, source/version ID, anchor status and stance, including unselected
+evidence. `ontology` preserves typed nodes and provenance. `researchMemory`
+exposes questions, unknowns and revision triggers. `view` records selected
+knowledge, unapplied conditional candidates, evidence and omission reasons.
+Source independence, factual truth and freshness are unverified. Unknown dates
+and missing evidence stay unknown; setting an as-of date does not verify them.
+
+Export requires a **new directory** and `--allow-write`. The directory contains:
+
+- `source.capsule`: original native bytes, or an existing-format package created
+  from supported JSON without changing its semantic records or review states.
+- `task.json`: the local `praxis-local-task/1` recipe, exact artifact and semantic
+  digests, compiler version, selected-view digest and prompt digest.
+- `prompt.txt`: the draft prompt bounded by the requested UTF-8 byte budget.
+
+`capsule reopen` is read-only. It checks package integrity, capsule and artifact
+digests, compiler version, recomputed view and the exact prompt. Changed recipes,
+prompts and packages fail rather than appearing to be the saved task. These
+checks are reproducibility/integrity checks, not proof of author identity. After
+a compiler change, prepare a new directory from the preserved source package.
+The three filenames are fixed; recipe fields cannot redirect reads outside the
+directory. Symlink ancestors and malformed UTF-8 prompts are rejected.
+Use another task objective/role and directory to revise a task. To change the
+research memory itself, explicitly edit/review the source capsule and save a
+new capsule version; task preparation cannot accept a proposal or alter an
+earlier snapshot. Original documents are not added to the package.
+
+### Format boundaries
+
+| Surface / artifact | Contract | This local workflow |
+| --- | --- | --- |
+| PRAXIS cognitive JSON | `cognitive-capsule/vNext` | Validated input; packaged with the existing native writer on export |
+| PRAXIS native `.capsule` | `tacitus-native-capsule/1`, carrying the cognitive schema | Validated input; exact original artifact bytes preserved on export |
+| Local task directory | `praxis-local-task/1` recipe plus native package and prompt | Local export/reopen only; not a native capsule or hosted AgentRun |
+| Persisted workbench ContextCapsule | Numeric V1/V2/V3 owner-scoped envelope | Separate storage contract; not silently imported by this command |
+| TACITUS website uploaded-knowledge inspector | Native-v2 from the `tacitus-political-policy-second-brain` public-core lineage | Separate contract; no automatic conversion/import |
+| TACITUS website saved selection | `tacitus-uploaded-knowledge-context/1` containing `tacitus-layered-policy-context/1` | Separate local selection export; not accepted as a PRAXIS native package |
+
+Names such as “capsule”, “native” and “v2” do not establish compatibility.
+Cross-tool interchange, review promotion and shared ontology identity require
+an explicit adapter and independent acceptance evidence. They are not provided
+by this workflow.
+
+### Validation on 7 November 2026
+
+The CLI and cognitive-context suites pass **130 tests in 23 files**. Typecheck,
+lint and the webpack production build pass (seven existing lint warnings).
+The local task was also prepared and reopened independently: **6,875 of 16,000
+UTF-8 prompt bytes**, with identical prompt content and owner-only saved files.
+
+The full repository suite has **3,234 passing tests, four failures and one skip**.
+The failures also reproduce on untouched main `4b77dcd3`: three allowance
+assertions in `tests/unit/lib/billing/polar-webhook.test.ts` and one process
+cleanup case in `tests/unit/lib/firebase/emulator-process.test.ts`. The
+public-surface copy-marker audit also fails on that baseline. The default
+Turbopack build is blocked by this environment's local-port restriction; the
+supported webpack build passes. GCP auditing was explicitly skipped to avoid
+live cloud queries. These checks establish the local workflow, not a clean
+repository-wide release gate or hosted acceptance.
+
 ## Private local registry
 
 The default registry is `$HOME\.praxis\registry`; choose another private directory with `--registry`. It contains a JSON version manifest and SHA-256 addressed immutable artifacts under `objects/`. Nothing is sent to an external registry. Publish, install, fork and deprecate require `--allow-write` even though they are local operations.

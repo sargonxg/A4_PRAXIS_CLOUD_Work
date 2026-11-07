@@ -27244,12 +27244,9 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "clioptions",
       "source_file": "cli/praxis.ts",
-      "source_location": "L15"
+      "source_location": "L16"
     },
     {
       "id": "cli_praxis_remoteoptions",
@@ -27257,12 +27254,9 @@
       "_callable": true,
       "_callable_class": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "remoteoptions",
       "source_file": "cli/praxis.ts",
-      "source_location": "L14"
+      "source_location": "L15"
     },
     {
       "id": "src_lib_cognitive_capsule_package_attestationoptions",
@@ -100557,108 +100551,81 @@
       "label": "boundedFile()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "boundedfile()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L60"
+      "source_location": "L64"
     },
     {
       "id": "cli_praxis_load",
       "label": "load()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "load()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L65"
+      "source_location": "L69"
     },
     {
       "id": "cli_praxis_redact",
       "label": "redact()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "redact()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L74"
+      "source_location": "L78"
     },
     {
       "id": "cli_praxis_remoteartifact",
       "label": "remoteArtifact()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "remoteartifact()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L125"
+      "source_location": "L129"
     },
     {
       "id": "cli_praxis_remoterequest",
       "label": "remoteRequest()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "remoterequest()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L114"
+      "source_location": "L118"
     },
     {
       "id": "cli_praxis_remoteresponse",
       "label": "remoteResponse()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "remoteresponse()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L82"
+      "source_location": "L86"
     },
     {
       "id": "cli_praxis_runcli",
       "label": "runCli()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "runcli()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L136"
+      "source_location": "L140"
     },
     {
       "id": "cli_praxis_safelocalpath",
       "label": "safeLocalPath()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "safelocalpath()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L51"
+      "source_location": "L55"
     },
     {
       "id": "cli_praxis_save",
       "label": "save()",
       "_callable": true,
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "save()",
       "source_file": "cli/praxis.ts",
-      "source_location": "L70"
+      "source_location": "L74"
     },
     {
       "id": "src_lib_cognitive_capsule_graph_cognitivegraph_fromjsonld",
@@ -188821,10 +188788,7 @@
       "id": "cli_praxis",
       "label": "praxis.ts",
       "_origin": "ast",
-      "community": 41,
-      "community_name": "ref_node_crypto",
       "file_type": "code",
-      "norm_label": "praxis.ts",
       "source_file": "cli/praxis.ts",
       "source_location": "L1"
     },
@@ -243774,6 +243738,162 @@
       "norm_label": "unittest_mock",
       "source_file": "",
       "type": "external"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task",
+      "label": "local-task.ts",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_localtaskinputschema",
+      "label": "LocalTaskInputSchema",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L9",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_localtaskinput",
+      "label": "LocalTaskInput",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L16",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_digest",
+      "label": "digest",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L17",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_localtasksessionschema",
+      "label": "LocalTaskSessionSchema",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L18",
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_utf8size",
+      "label": "utf8Size()",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L28",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_quoted",
+      "label": "quoted()",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L29",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_referencednodes",
+      "label": "referencedNodes()",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L31",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_renderprompt",
+      "label": "renderPrompt()",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L38",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "label": "prepareLocalTask()",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L55",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_localtaskpreview",
+      "label": "LocalTaskPreview",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L101",
+      "_callable": true,
+      "_callable_class": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_localtasksession",
+      "label": "localTaskSession()",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L103",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "src_lib_cognitive_capsule_local_task_verifylocaltasksession",
+      "label": "verifyLocalTaskSession()",
+      "file_type": "code",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L109",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_unit_cli_local_task_test",
+      "label": "cli/local-task.test.ts",
+      "file_type": "code",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_unit_cli_local_task_test_taskargs",
+      "label": "taskArgs",
+      "file_type": "code",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L10",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "label": "cognitive-capsule/local-task.test.ts",
+      "file_type": "code",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L1",
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_unit_lib_cognitive_capsule_local_task_test_fixture",
+      "label": "fixture()",
+      "file_type": "code",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L6",
+      "_callable": true,
+      "_origin": "ast"
+    },
+    {
+      "id": "tests_unit_lib_cognitive_capsule_local_task_test_input",
+      "label": "input",
+      "file_type": "code",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L7",
+      "_origin": "ast"
     }
   ],
   "links": [
@@ -250803,10 +250923,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L61",
+      "source_location": "L65",
       "weight": 1.0
     },
     {
@@ -250815,10 +250934,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L66",
+      "source_location": "L70",
       "weight": 1.0
     },
     {
@@ -250827,10 +250945,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L67",
+      "source_location": "L71",
       "weight": 1.0
     },
     {
@@ -250839,10 +250956,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L76",
+      "source_location": "L80",
       "weight": 1.0
     },
     {
@@ -250851,10 +250967,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L126",
+      "source_location": "L130",
       "weight": 1.0
     },
     {
@@ -250863,10 +250978,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L128",
+      "source_location": "L132",
       "weight": 1.0
     },
     {
@@ -250875,10 +250989,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L132",
+      "source_location": "L136",
       "weight": 1.0
     },
     {
@@ -250887,10 +251000,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L115",
+      "source_location": "L119",
       "weight": 1.0
     },
     {
@@ -250899,10 +251011,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L121",
+      "source_location": "L125",
       "weight": 1.0
     },
     {
@@ -250914,7 +251025,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L155",
+      "source_location": "L159",
       "weight": 1.0
     },
     {
@@ -250923,10 +251034,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L159",
+      "source_location": "L176",
       "weight": 1.0
     },
     {
@@ -250935,10 +251045,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L159",
+      "source_location": "L187",
       "weight": 1.0
     },
     {
@@ -250947,10 +251056,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L162",
+      "source_location": "L169",
       "weight": 1.0
     },
     {
@@ -250959,10 +251067,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L163",
+      "source_location": "L190",
       "weight": 1.0
     },
     {
@@ -250971,10 +251078,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L180",
+      "source_location": "L171",
       "weight": 1.0
     },
     {
@@ -250983,10 +251089,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L181",
+      "source_location": "L188",
       "weight": 1.0
     },
     {
@@ -250998,7 +251103,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L188",
+      "source_location": "L226",
       "weight": 1.0
     },
     {
@@ -251010,7 +251115,7 @@
       "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L192",
+      "source_location": "L230",
       "weight": 1.0
     },
     {
@@ -251019,10 +251124,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L193",
+      "source_location": "L231",
       "weight": 1.0
     },
     {
@@ -251031,10 +251135,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L194",
+      "source_location": "L185",
       "weight": 1.0
     },
     {
@@ -251043,10 +251146,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L203",
+      "source_location": "L241",
       "weight": 1.0
     },
     {
@@ -251055,10 +251157,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L212",
+      "source_location": "L250",
       "weight": 1.0
     },
     {
@@ -251067,10 +251168,9 @@
       "relation": "calls",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L72",
+      "source_location": "L76",
       "weight": 1.0
     },
     {
@@ -400931,7 +401031,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L10",
@@ -400943,7 +401042,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L11",
@@ -400955,10 +401053,9 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
-      "source_location": "L12",
+      "source_location": "L13",
       "weight": 1.0
     },
     {
@@ -400967,7 +401064,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L6",
@@ -400979,7 +401075,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L7",
@@ -400991,7 +401086,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L8",
@@ -401003,7 +401097,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L8",
@@ -401015,7 +401108,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L9",
@@ -401027,7 +401119,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L9",
@@ -401039,7 +401130,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L9",
@@ -401051,7 +401141,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L9",
@@ -401063,7 +401152,6 @@
       "relation": "imports",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L9",
@@ -490860,7 +490948,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L10",
@@ -490872,7 +490959,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L11",
@@ -490884,10 +490970,9 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
-      "source_location": "L12",
+      "source_location": "L13",
       "type_only": true,
       "weight": 1.0
     },
@@ -490897,7 +490982,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L2",
@@ -490909,7 +490993,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L3",
@@ -490921,7 +491004,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L4",
@@ -490933,7 +491015,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L5",
@@ -490945,7 +491026,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L6",
@@ -490957,7 +491037,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L7",
@@ -490969,7 +491048,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L8",
@@ -490981,7 +491059,6 @@
       "relation": "imports_from",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "context": "import",
       "source_file": "cli/praxis.ts",
       "source_location": "L9",
@@ -584215,9 +584292,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L114",
+      "source_location": "L118",
       "weight": 1.0
     },
     {
@@ -584226,9 +584302,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L125",
+      "source_location": "L129",
       "weight": 1.0
     },
     {
@@ -584237,9 +584312,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L136",
+      "source_location": "L140",
       "weight": 1.0
     },
     {
@@ -584248,9 +584322,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L14",
+      "source_location": "L15",
       "weight": 1.0
     },
     {
@@ -584259,9 +584332,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L15",
+      "source_location": "L16",
       "weight": 1.0
     },
     {
@@ -584270,9 +584342,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L51",
+      "source_location": "L55",
       "weight": 1.0
     },
     {
@@ -584281,9 +584352,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L60",
+      "source_location": "L64",
       "weight": 1.0
     },
     {
@@ -584292,9 +584362,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L65",
+      "source_location": "L69",
       "weight": 1.0
     },
     {
@@ -584303,9 +584372,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L70",
+      "source_location": "L74",
       "weight": 1.0
     },
     {
@@ -584314,9 +584382,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L74",
+      "source_location": "L78",
       "weight": 1.0
     },
     {
@@ -584325,9 +584392,8 @@
       "relation": "contains",
       "_origin": "ast",
       "confidence": "EXTRACTED",
-      "confidence_score": 1.0,
       "source_file": "cli/praxis.ts",
-      "source_location": "L82",
+      "source_location": "L86",
       "weight": 1.0
     },
     {
@@ -778384,7 +778450,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L190",
+      "source_location": "L228",
       "weight": 1.0
     },
     {
@@ -778396,7 +778462,7 @@
       "confidence_score": 0.85,
       "context": "call",
       "source_file": "cli/praxis.ts",
-      "source_location": "L191",
+      "source_location": "L229",
       "weight": 1.0
     },
     {
@@ -787983,6 +788049,797 @@
       "source_file": "backend/tests/test_vertex_rag_client.py",
       "source_location": "L6",
       "weight": 0.8
+    },
+    {
+      "source": "cli_praxis",
+      "target": "src_lib_cognitive_capsule_local_task",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis",
+      "target": "src_lib_cognitive_capsule_local_task_localtasksession",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis",
+      "target": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis",
+      "target": "src_lib_cognitive_capsule_local_task_verifylocaltasksession",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis",
+      "target": "src_lib_cognitive_capsule_local_task_localtaskpreview",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L12",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "ref_zod",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_compiler",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_compiler_compiler_version",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_compiler_worker_roles",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_compiler_compilecontext",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_compiler_rendercontext",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_compiler_cognitivecontextview",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_graph",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_graph_cognitivegraph",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_integrity",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_integrity_capsuledigest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_integrity_contentdigest",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_schema",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_schema_cognitivecapsuleschema",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_types",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "type_only": true,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_types_cognitivecapsule",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_localtaskinputschema",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L9",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_localtaskinput",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_digest",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_localtasksessionschema",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_utf8size",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_quoted",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L29",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_referencednodes",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_renderprompt",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L38",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_localtaskpreview",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L101",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_localtasksession",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L103",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task",
+      "target": "src_lib_cognitive_capsule_local_task_verifylocaltasksession",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L109",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_renderprompt",
+      "target": "src_lib_cognitive_capsule_local_task_referencednodes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L40",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_renderprompt",
+      "target": "src_lib_cognitive_capsule_local_task_quoted",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L43",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_local_task_renderprompt",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L66",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_local_task_utf8size",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L67",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_local_task_referencednodes",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_verifylocaltasksession",
+      "target": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L113",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "ref_node_fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "ref_node_os",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "ref_node_path",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "ref_vitest",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "cli_praxis",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "cli_praxis_runcli",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L5",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "src_lib_cognitive_capsule_package",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "src_lib_cognitive_capsule_package_packcapsule",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "src_lib_cognitive_capsule_schema",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "src_lib_cognitive_capsule_schema_cognitivecapsuleschema",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "tests_unit_cli_local_task_test_taskargs",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L10",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "ref_node_fs",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "ref_vitest",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L2",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "src_lib_cognitive_capsule_local_task",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "src_lib_cognitive_capsule_local_task_localtasksession",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "src_lib_cognitive_capsule_local_task_verifylocaltasksession",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L3",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "src_lib_cognitive_capsule_schema",
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "src_lib_cognitive_capsule_schema_cognitivecapsuleschema",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L4",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "tests_unit_lib_cognitive_capsule_local_task_test_fixture",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L6",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "tests_unit_lib_cognitive_capsule_local_task_test_input",
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L7",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_lib_cognitive_capsule_local_task_test",
+      "target": "tests_unit_lib_cognitive_capsule_local_task_test_fixture",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/unit/lib/cognitive-capsule/local-task.test.ts",
+      "source_location": "L11",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis_runcli",
+      "target": "src_lib_cognitive_capsule_local_task_verifylocaltasksession",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L173",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis_runcli",
+      "target": "src_lib_cognitive_capsule_package_bytesdigest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L173",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis_runcli",
+      "target": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L176",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "cli_praxis_runcli",
+      "target": "src_lib_cognitive_capsule_local_task_localtasksession",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "cli/praxis.ts",
+      "source_location": "L192",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_renderprompt",
+      "target": "src_lib_cognitive_capsule_compiler_rendercontext",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L39",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_compiler_compilecontext",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_integrity_capsuledigest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L81",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_compiler_rendercontext",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L85",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_integrity_contentdigest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L91",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_verifylocaltasksession",
+      "target": "src_lib_cognitive_capsule_integrity_capsuledigest",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L111",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "src_lib_cognitive_capsule_local_task_preparelocaltask",
+      "target": "src_lib_cognitive_capsule_graph_cognitivegraph",
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "src/lib/cognitive-capsule/local-task.ts",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_origin": "ast"
+    },
+    {
+      "source": "tests_unit_cli_local_task_test",
+      "target": "tests_unit_lib_cognitive_capsule_local_task_test_fixture",
+      "relation": "indirect_call",
+      "context": "argument",
+      "confidence": "INFERRED",
+      "confidence_score": 0.85,
+      "source_file": "tests/unit/cli/local-task.test.ts",
+      "source_location": "L16",
+      "weight": 1.0,
+      "_origin": "ast"
     }
   ],
   "hyperedges": [],

@@ -9,6 +9,7 @@ import { capsuleDigest, semanticDiff } from '../src/lib/cognitive-capsule/integr
 import { CAPSULE_MIMETYPE, PACKAGE_LIMITS, bytesDigest, packCapsule, readCapsulePackage } from '../src/lib/cognitive-capsule/package';
 import { HostedRegistryRequestSchema } from '../src/lib/cognitive-capsule/hosted-registry-contract';
 import { LocalCapsuleRegistry } from '../src/lib/cognitive-capsule/registry';
+import { localTaskSession, prepareLocalTask, verifyLocalTaskSession, type LocalTaskPreview } from '../src/lib/cognitive-capsule/local-task';
 import type { CognitiveCapsule } from '../src/lib/cognitive-capsule/types';
 
 export type RemoteOptions = { baseUrl?: string; session?: string; authOrigin?: string; fetch?: typeof fetch };
@@ -16,6 +17,8 @@ type CliOptions = RemoteOptions & { cwd?: string; registry?: string; write?: (ou
 const HELP = `PRAXIS local capsule CLI\n
 capsule list [--directory DIR | --registry DIR]
 capsule inspect|validate|graph|eval FILE
+capsule task FILE --objective TEXT --scope SCOPE --as-of YYYY-MM-DD [--role writer] [--max-bytes 16000] [--format json|prompt] [--output NEW_DIRECTORY --allow-write]
+capsule reopen DIRECTORY [--format json|prompt]
 capsule diff BEFORE AFTER
 capsule pack JSON --output FILE --allow-write
 capsule unpack FILE --output NEW_DIRECTORY --allow-write
@@ -46,6 +49,7 @@ registry deprecate NAME VERSION --reason TEXT --allow-write
 registry impact NAME VERSION
 Remote commands require PRAXIS_BASE_URL, PRAXIS_AUTH_ORIGIN and PRAXIS_SESSION.
 Local eval reports deterministic structural checks; it is not a model ablation.
+Task and reopen are entirely local. Task prepares a prompt; it does not call a model.
 `;
 
 async function safeLocalPath(path: string) {
@@ -137,7 +141,7 @@ export async function runCli(args: string[], options: CliOptions = {}): Promise<
   const out = options.write ?? ((v: string) => process.stdout.write(`${v}\n`));
   if (!args.length || ['help', '--help', '-h'].includes(args[0])) { out(HELP); return; }
   const positional: string[] = []; const flags: Record<string, string | boolean> = {};
-  const valued = new Set(['output', 'directory', 'registry', 'reason', 'capsule', 'base-url', 'auth-origin', 'input', 'format', 'cursor', 'from', 'to', 'name', 'envelope-version', 'expected-digest']);
+  const valued = new Set(['output', 'directory', 'registry', 'reason', 'capsule', 'base-url', 'auth-origin', 'input', 'format', 'cursor', 'from', 'to', 'name', 'envelope-version', 'expected-digest', 'objective', 'scope', 'as-of', 'role', 'max-bytes']);
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
     if (!arg.startsWith('--')) { positional.push(arg); continue; }
@@ -155,6 +159,40 @@ export async function runCli(args: string[], options: CliOptions = {}): Promise<
   const registry = () => new LocalCapsuleRegistry(localPath(flag('registry') ?? options.registry ?? join(homedir(), '.praxis', 'registry')));
   const [command, action, file, other] = positional;
   if (command === 'capsule') {
+    if (action === 'task' || action === 'reopen') {
+      const format = flag('format') ?? 'json';
+      if (!['json', 'prompt'].includes(format)) throw new Error('Local task format must be json or prompt.');
+      const show = (preview: LocalTaskPreview) => format === 'prompt' ? out(preview.prompt) : emit(preview);
+      const input = localPath(required(file, action === 'task' ? 'capsule file' : 'task directory'));
+      if (action === 'reopen') {
+        if (flag('output')) throw new Error('Reopen is read-only. Use capsule task to prepare a revised task directory.');
+        const session = JSON.parse((await boundedFile(join(input, 'task.json'))).toString('utf8'));
+        const bytes = await boundedFile(join(input, 'source.capsule'));
+        const { capsule } = await readCapsulePackage(bytes);
+        const savedPrompt = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(await boundedFile(join(input, 'prompt.txt')));
+        show(verifyLocalTaskSession(session, capsule, bytesDigest(bytes), savedPrompt));
+        return;
+      }
+      const preview = prepareLocalTask(await load(input), {
+        objective: required(flag('objective'), '--objective'), scope: required(flag('scope'), '--scope'),
+        asOf: required(flag('as-of'), '--as-of'), role: flag('role') ?? 'writer',
+        maxBytes: flag('max-bytes') === undefined ? 16_000 : Number(flag('max-bytes')),
+      });
+      if (flag('output')) {
+        if (!allowWrite) throw new Error('Local task export requires --allow-write.');
+        // Preserve exact native input bytes. JSON is packaged through the existing
+        // canonical writer; neither path changes review decisions or source data.
+        const bytes = input.endsWith('.capsule') ? await boundedFile(input) : await packCapsule(await load(input));
+        const { capsule } = await readCapsulePackage(bytes);
+        if (capsuleDigest(capsule) !== preview.capsule.digest) throw new Error('Capsule changed during task preparation. Retry with a stable input.');
+        const destination = await safeLocalPath(localPath(flag('output')!));
+        await mkdir(destination, { mode: 0o700 });
+        await save(join(destination, 'source.capsule'), bytes, true);
+        await save(join(destination, 'prompt.txt'), preview.prompt, true);
+        await save(join(destination, 'task.json'), JSON.stringify(localTaskSession(preview, bytesDigest(bytes)), null, 2), true);
+      }
+      show(preview); return;
+    }
     if (action === 'list') {
       if (flag('directory')) { const dir = localPath(flag('directory')!); const names = (await readdir(dir)).filter((n) => n.endsWith('.capsule')); const rows = []; for (const n of names) { const c = await load(join(dir, n)); rows.push({ file: n, capsuleId: c.capsuleId, version: c.version, profile: c.profile, digest: capsuleDigest(c) }); } emit(rows); }
       else emit(await registry().list()); return;

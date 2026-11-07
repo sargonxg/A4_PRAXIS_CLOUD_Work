@@ -1,0 +1,48 @@
+name: Local capsule workflow
+
+on:
+  push:
+    branches: [main, 'codex/**']
+    paths:
+      - '.github/workflows/local-capsule.yml'
+      - 'cli/**'
+      - 'src/lib/cognitive-capsule/**'
+      - 'tests/unit/cli/**'
+      - 'tests/unit/lib/cognitive-capsule/**'
+      - 'tests/fixtures/cognitive-capsule/**'
+      - 'package.json'
+      - 'package-lock.json'
+  pull_request:
+    paths:
+      - '.github/workflows/local-capsule.yml'
+      - 'cli/**'
+      - 'src/lib/cognitive-capsule/**'
+      - 'tests/unit/cli/**'
+      - 'tests/unit/lib/cognitive-capsule/**'
+      - 'tests/fixtures/cognitive-capsule/**'
+      - 'package.json'
+      - 'package-lock.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: local-capsule-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  local-capsule:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - name: Check CLI, native packages and cognitive context without hosted services
+        run: npx vitest run tests/unit/cli tests/unit/lib/cognitive-capsule
