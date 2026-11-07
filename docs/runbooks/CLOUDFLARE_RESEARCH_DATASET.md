@@ -7,6 +7,7 @@ PRAXIS remains a Google Cloud application. The optional server-side adapter read
 - Cloudflare account API authentication and read-only D1 queries succeeded.
 - `tacitus-research-v16` contains 120,576 events, 15,272 annual indicators, 55 source profiles and five semantic lenses. Actual table counts matched the stored snapshot metadata.
 - `gc-personal-private` binds that database as `RESEARCH_DB`. Its versioned read-only API is `/api/research/*`, behind whole-host Cloudflare Access.
+- The matching Access application's existing policy permits human email sign-in. No Service Auth policy is configured for PRAXIS; that is a verified missing part of the server-to-server connection.
 - Snapshot: `9d1f965e9abbeb9eb86e7eb36cdafca20cf453309ec0b2d879a41b48963a8369`; historical coverage 2000–2025. This is not a current news feed.
 - R2 returned Cloudflare error 10042 (not enabled). This reader needs no R2 bucket.
 
