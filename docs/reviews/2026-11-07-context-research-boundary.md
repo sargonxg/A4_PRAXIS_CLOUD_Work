@@ -48,6 +48,14 @@ distribution and public access remain unchanged.
   are absent. No skip flag was used to report runtime readiness.
 - `graphify update .` was attempted; the CLI is unavailable. The existing graph
   report remains dated and must not be treated as an updated extraction.
+- On the pushed PR, remote verify and credential checks passed. The authenticated
+  persona run passed onboarding, protected routes, core routes and memo/boardroom,
+  then failed at the existing context-readiness test's conversation-create
+  `route.fetch()` (line 39), with a separate `OWNED_DESCENDANTS_UNVERIFIED`
+  cleanup error. Bounded receipts omit the underlying browser message, so that
+  failure's cause remains unresolved and must not be attributed to the local
+  zombie reproduction alone. The failed lane was selected for one rerun; its
+  final status is in the PR checks.
 
 No production rollout or Access policy change was performed. A live PRAXIS
 connection still requires scoped service credentials and an authorized GCP
