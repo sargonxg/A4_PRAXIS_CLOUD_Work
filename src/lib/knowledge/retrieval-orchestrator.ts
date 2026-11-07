@@ -73,7 +73,7 @@ export class RetrievalOrchestrator {
 
     // Trim to token budget
     const trimmedNodes = this.trimNodes(nodes, budget.graph);
-    const trimmedEdges = this.trimEdges(edges, nodes, budget.graph);
+    const trimmedEdges = this.trimEdges(edges, trimmedNodes, budget.graph);
     const trimmedVector = this.trimVectorResults(vectorResults, budget.vector);
     const trimmedFeeds = this.trimFeedData(feedData, budget.feeds);
     const trimmedTools = this.trimToolData(relatedToolData, budget.tools);
@@ -97,7 +97,7 @@ export class RetrievalOrchestrator {
 
   private trimNodes(nodes: ACONode[], tokenBudget: number): ACONode[] {
     const budget = Math.floor(tokenBudget * 0.6);
-    let tokens = 0;
+    let tokens = 1; // Reserve the serialized array/object delimiters.
     const result: ACONode[] = [];
     // Prioritize: EXTRACTED > INFERRED > actors > others
     const sorted = [...nodes].sort((a, b) => {
@@ -107,8 +107,8 @@ export class RetrievalOrchestrator {
              (confScore[a.confidence] + typeBonus);
     });
     for (const node of sorted) {
-      const t = estimateTokens(JSON.stringify(node));
-      if (tokens + t > budget) break;
+      const t = estimateTokens(JSON.stringify(node)) + 1;
+      if (tokens + t > budget) continue;
       result.push(node);
       tokens += t;
     }
@@ -118,14 +118,14 @@ export class RetrievalOrchestrator {
   private trimEdges(edges: ACOEdge[], nodes: ACONode[], tokenBudget: number): ACOEdge[] {
     const includedIds = new Set(nodes.map(n => n.id));
     const budget = Math.floor(tokenBudget * 0.4);
-    let tokens = 0;
+    let tokens = 1;
     const result: ACOEdge[] = [];
     const sorted = [...edges]
       .filter(e => includedIds.has(e.source) && includedIds.has(e.target))
       .sort((a, b) => b.weight - a.weight);
     for (const edge of sorted) {
-      const t = estimateTokens(JSON.stringify(edge));
-      if (tokens + t > budget) break;
+      const t = estimateTokens(JSON.stringify(edge)) + 1;
+      if (tokens + t > budget) continue;
       result.push(edge);
       tokens += t;
     }
@@ -133,12 +133,17 @@ export class RetrievalOrchestrator {
   }
 
   private trimVectorResults(results: VectorResult[], tokenBudget: number): VectorResult[] {
-    let tokens = 0;
+    let tokens = 1;
     const trimmed: VectorResult[] = [];
-    for (const r of results) {
-      const t = estimateTokens(r.text);
-      if (tokens + t > tokenBudget) break;
+    const includedIds = new Set<string>();
+    const sorted = [...results].sort((a, b) => b.score - a.score || a.chunkId.localeCompare(b.chunkId));
+    for (const r of sorted) {
+      if (includedIds.has(r.chunkId)) continue;
+      // Budget the complete context row, including provenance and metadata.
+      const t = estimateTokens(JSON.stringify(r)) + 1;
+      if (tokens + t > tokenBudget) continue;
       trimmed.push(r);
+      includedIds.add(r.chunkId);
       tokens += t;
     }
     return trimmed;
@@ -146,10 +151,10 @@ export class RetrievalOrchestrator {
 
   private trimFeedData(feeds: Record<string, FeedCacheEntry>, tokenBudget: number): Record<string, FeedCacheEntry> {
     const result: Record<string, FeedCacheEntry> = {};
-    let tokens = 0;
+    let tokens = 1;
     for (const [key, entry] of Object.entries(feeds)) {
-      const t = estimateTokens(JSON.stringify(entry.data));
-      if (tokens + t > tokenBudget) break;
+      const t = estimateTokens(JSON.stringify({ [key]: entry }));
+      if (tokens + t > tokenBudget) continue;
       result[key] = entry;
       tokens += t;
     }
@@ -158,12 +163,12 @@ export class RetrievalOrchestrator {
 
   private trimToolData(tools: Record<string, RelatedToolData>, tokenBudget: number): Record<string, RelatedToolData> {
     const result: Record<string, RelatedToolData> = {};
-    let tokens = 0;
+    let tokens = 1;
     for (const [key, entry] of Object.entries(tools)) {
       const clipped = this.clipStructuredData(entry.data);
-      const preview = JSON.stringify(clipped);
+      const preview = JSON.stringify({ [key]: { ...entry, data: clipped } });
       const t = estimateTokens(preview);
-      if (tokens + t > tokenBudget) break;
+      if (tokens + t > tokenBudget) continue;
       result[key] = { ...entry, data: clipped };
       tokens += t;
     }
