@@ -49,7 +49,7 @@ ENV NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH=$NEXT_PUBLIC_PRAXIS_SOURCE_BRANCH
 ENV NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT=$NEXT_PUBLIC_PRAXIS_SOURCE_COMMIT
 ENV NEXT_PUBLIC_PRAXIS_BUILD_ID=$NEXT_PUBLIC_PRAXIS_BUILD_ID
 
-RUN npm run build
+RUN node scripts/audit-public-credentials.mjs && npm run build && node scripts/audit-public-credentials.mjs
 
 FROM node:22-alpine AS runner
 WORKDIR /app
