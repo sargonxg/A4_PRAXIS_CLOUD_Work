@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Firestore } from 'firebase-admin/firestore';
 import {
   polarPlanForProductId,
@@ -139,6 +139,11 @@ function fixtureDb(initial: Record<string, unknown> | null) {
 }
 
 describe('Polar subscription application', () => {
+  // Keep the active-period fixtures active regardless of the day CI runs.
+  beforeEach(() => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-10-02T00:00:00Z'));
+  });
+  afterEach(() => vi.restoreAllMocks());
   const patch = () => polarSubscriptionPatchFromEvent({ type: 'subscription.active', data: { ...baseSubscription, modifiedAt: '2026-09-30T12:00:00Z', currentPeriodEnd: '2026-10-30T12:00:00Z' } }, { analyst: 'prod_analyst' })!;
   it('does not refill spent credits on distinct deliveries from the same period', async () => {
     const fixture = fixtureDb({ credits: 8, subscriptionProvider: 'polar', billingAllowancePeriodEnd: '2026-10-30T12:00:00.000Z' });
