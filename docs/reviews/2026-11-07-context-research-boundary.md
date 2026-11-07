@@ -30,7 +30,7 @@ distribution and public access remain unchanged.
   62 existing warnings and no errors.
 - All 32 focused context/adapter/admin-boundary tests passed. They now run in
   `verify-main` CI.
-- The full suite: 3,252 passed, one skipped, one failed across 517 files.
+- The final full suite: 3,264 passed, one skipped, one failed across 517 files.
   The sole failure is the existing emulator-process cleanup test. An isolated
   rerun reproduces four passes/one failure: `Owned process group remained after
   cleanup`. The container retains orphan zombie descendants under PID 1;
@@ -56,6 +56,15 @@ distribution and public access remain unchanged.
   failure's cause remains unresolved and must not be attributed to the local
   zombie reproduction alone. The failed lane was selected for one rerun; its
   final status is in the PR checks.
+- The safe emulator reporter now emits a bounded category such as connection
+  reset, disposed request context, isolated-egress rejection or timeout, using
+  only fixed codes. It never emits raw messages, URLs, stacks or credentials;
+  successful tests have no stale failure codes. Its three focused suites pass
+  34 tests. No test assertion, timeout, retry or application behavior changed.
+  A future exact-source persona run must establish the intermittent fetch
+  failure's category before a runtime fix or release is claimed.
+- The final aggregate gate compiled the production build and passed static
+  leaves, then stopped at runtime/GCP proof because no GCP identity is present.
 
 No production rollout or Access policy change was performed. A live PRAXIS
 connection still requires scoped service credentials and an authorized GCP

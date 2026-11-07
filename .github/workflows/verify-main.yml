@@ -38,6 +38,9 @@ jobs:
       - name: Context selection and private research boundary
         run: npx vitest run tests/unit/lib/knowledge/retrieval-orchestrator.test.ts tests/unit/lib/context/agent-context-packet.test.ts tests/unit/lib/data-feeds/cloudflare-research.test.ts tests/unit/app/admin-research-dataset-route.test.ts
 
+      - name: Bounded emulator diagnostics and receipts
+        run: npx vitest run tests/unit/lib/firebase/emulator-safe-reporter.test.ts tests/unit/lib/firebase/emulator-bootstrap-receipt.test.ts tests/unit/lib/firebase/emulator-runner.test.ts
+
       - name: Lint
         run: npm run lint
 
