@@ -274,10 +274,14 @@ export function selectAgentContextSubgraph(input: SelectAgentContextSubgraphInpu
   const selectedClaims = selectWithCoverage(scoredClaims, budget.maxClaims, 'Claim', omitted, 'claim');
   const selectedNodes = selectWithCoverage(scoredNodes, budget.maxNodes, 'node', omitted, 'node');
   const selectedNodeIds = new Set(selectedNodes.map((node) => node.id));
-  const selectedEdges = scoredEdges
-    .filter((edge) => selectedNodeIds.has(edge.source) || selectedNodeIds.has(edge.target) || NEGATIVE_RELATIONSHIPS.has(edge.relationshipType))
-    .slice(0, budget.maxEdges);
-  for (const edge of scoredEdges.slice(budget.maxEdges)) {
+  const eligibleEdges = scoredEdges
+    .filter((edge) => selectedNodeIds.has(edge.source) || selectedNodeIds.has(edge.target) || NEGATIVE_RELATIONSHIPS.has(edge.relationshipType));
+  const selectedEdges = eligibleEdges.slice(0, budget.maxEdges);
+  const eligibleEdgeIds = new Set(eligibleEdges.map((edge) => edge.id));
+  for (const edge of scoredEdges.filter((edge) => !eligibleEdgeIds.has(edge.id))) {
+    omitted.push({ id: edge.id, kind: 'edge', reason: 'low_relevance', detail: 'Outside the selected incident neighborhoods.' });
+  }
+  for (const edge of eligibleEdges.slice(budget.maxEdges)) {
     omitted.push({ id: edge.id, kind: 'edge', reason: 'budget', detail: `Exceeded ${budget.tier} edge limit ${budget.maxEdges}.` });
   }
 
@@ -315,12 +319,12 @@ export function selectAgentContextSubgraph(input: SelectAgentContextSubgraphInpu
     ...causalLinks.flatMap((link) => link.evidenceRefs),
     ...timeline.flatMap((item) => item.sourceReceiptIds),
   ]);
-  const selectedSources = sourceIds
+  const rankedSources = sourceIds
     .map((id) => sourceById.get(id) ?? sourceFromId(id))
-    .sort((a, b) => compareNumber(b.salienceScore, a.salienceScore) || a.id.localeCompare(b.id))
-    .slice(0, budget.maxSources);
-  for (const sourceId of sourceIds.slice(budget.maxSources)) {
-    omitted.push({ id: sourceId, kind: 'source', reason: 'budget', detail: `Exceeded ${budget.tier} source limit ${budget.maxSources}.` });
+    .sort((a, b) => compareNumber(b.salienceScore, a.salienceScore) || a.id.localeCompare(b.id));
+  const selectedSources = rankedSources.slice(0, budget.maxSources);
+  for (const source of rankedSources.slice(budget.maxSources)) {
+    omitted.push({ id: source.id, kind: 'source', reason: 'budget', detail: `Exceeded ${budget.tier} source limit ${budget.maxSources}.` });
   }
 
   return {
@@ -668,21 +672,32 @@ function selectWithCoverage<T extends { id: string; primitive?: TacitusCorePrimi
   kind: OmittedContextItem['kind'],
 ): T[] {
   const selected: T[] = [];
+  const deferred: T[] = [];
   const primitiveCounts = new Map<string, number>();
   for (const row of rows) {
     if (selected.length >= limit) {
-      omitted.push({ id: row.id, kind, reason: 'budget', detail: `Exceeded selected ${kind} limit ${limit}.` });
+      deferred.push(row);
       continue;
     }
     const primitive = row.primitive ?? fallbackPrimitive;
     const coveragePenalty = primitiveCounts.get(primitive) ?? 0;
     if (coveragePenalty >= 4 && rows.some((candidate) => !selected.includes(candidate) && (primitiveCounts.get(candidate.primitive ?? fallbackPrimitive) ?? 0) === 0)) {
+      deferred.push(row);
       continue;
     }
     selected.push(row);
     primitiveCounts.set(primitive, coveragePenalty + 1);
   }
-  return selected;
+  // Coverage reserves space for other primitives; refill any unused capacity
+  // with the highest-ranked deferred evidence rather than silently dropping it.
+  selected.push(...deferred.slice(0, Math.max(0, limit - selected.length)));
+  const selectedIds = new Set(selected.map((row) => row.id));
+  for (const row of rows) {
+    if (!selectedIds.has(row.id)) {
+      omitted.push({ id: row.id, kind, reason: 'budget', detail: `Exceeded selected ${kind} limit ${limit}.` });
+    }
+  }
+  return selected.sort(compareSalience);
 }
 
 function buildReasoningPaths(

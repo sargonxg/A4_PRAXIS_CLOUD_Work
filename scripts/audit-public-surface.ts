@@ -45,7 +45,7 @@ const dockerfile = read('Dockerfile');
 requireAll('public route', publicPage, [
   'PraxisMarketingHome',
   'SoftwareApplication',
-  'Turn a hard policy question into sourced work your team can review.',
+  'Invitation-only PRAXIS preview for sourced policy work. AI generation is currently paused.',
 ]);
 forbidAll('public route', publicPage, [
   'TaskletPraxisWorkbench',

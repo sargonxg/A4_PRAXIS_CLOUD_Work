@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Keep retrieved graph edges within retained node context, rank and deduplicate vector chunks, and select later fitting evidence after oversized records. Include row metadata in the existing token estimate and correct capsule coverage/omission receipts.
+- Add an admin-only, read-only adapter for the existing private Cloudflare D1 research Worker. Configuration and Access credentials remain required; this does not enable public distribution or automatic AI grounding. See the [connection runbook](docs/runbooks/CLOUDFLARE_RESEARCH_DATASET.md).
+- Align the public-surface audit with the current invitation-only, generation-paused metadata.
+
 - Add reviewed Cognitive Capsule expertise in the existing inspector: guided interviews, explicit human decisions, correction lessons, provenance and native downloads. Conditional rules remain unapplied until their prerequisites and guards are established.
 - Compile worker-specific cognitive context within rendered prompt budgets, freeze source/model/tool dependencies, and use typed working objects in the existing specialist, writer and red-team memo workflow.
 - Add the local PRAXIS capsule CLI, defensive portable package import/export, private local registry and detached attestations. Hosted distribution and empirical performance claims remain pending; see the [implementation ledger](docs/build/COGNITIVE_CAPSULE_IMPLEMENTATION_LEDGER.md).

@@ -197,6 +197,59 @@ describe('agent context graph packet', () => {
     expect(selection.edges[0]?.id).toBe('edge-contradiction');
   });
 
+  it('fills the node budget after reserving coverage for another primitive', () => {
+    const nodes = [
+      ...Array.from({ length: 10 }, (_, index) => ({ ...baseNodes()[0], id: `actor-${index}`, label: `Access actor ${index}` })),
+      { ...baseNodes()[1], id: 'event-distinct', label: 'Unrelated event', confidence: 0.2 },
+    ];
+    const selection = selectAgentContextSubgraph({
+      capsule: makeCapsule({ embeddedGraph: { nodes, edges: [] }, claimLedger: [], causality: {}, temporality: {} }),
+      userQuery: 'Access actor', budgetTier: 'tiny', requestTime,
+    });
+
+    expect(selection.nodes).toHaveLength(8);
+    expect(selection.nodes.some((node) => node.id === 'event-distinct')).toBe(true);
+    const selectedIds = new Set(selection.nodes.map((node) => node.id));
+    expect(selection.omitted.filter((row) => row.kind === 'node').map((row) => row.id).sort())
+      .toEqual(nodes.filter((node) => !selectedIds.has(node.id)).map((node) => node.id).sort());
+  });
+
+  it('reports only the source receipts actually omitted after quality ranking', () => {
+    const sourceRefs = Array.from({ length: 10 }, (_, index) => ({
+      sourceId: `source-${index}`, label: `Source ${index}`,
+      reliabilityTier: index === 0 ? 3 : 1, stale: index === 0,
+    }));
+    const selection = selectAgentContextSubgraph({
+      capsule: makeCapsule({
+        sourceRefs,
+        embeddedGraph: { nodes: [{ ...baseNodes()[0], sourceReceiptIds: sourceRefs.map((source) => source.sourceId) }], edges: [] },
+        claimLedger: [], causality: {}, temporality: {},
+      }),
+      userQuery: 'Review the sources.', budgetTier: 'tiny', requestTime,
+    });
+
+    const selectedIds = new Set(selection.sources.map((source) => source.id));
+    expect(selection.sources).toHaveLength(8);
+    expect(selectedIds.has('source-0')).toBe(false);
+    expect(selection.omitted.filter((row) => row.kind === 'source').map((row) => row.id).sort())
+      .toEqual(sourceRefs.filter((source) => !selectedIds.has(source.sourceId)).map((source) => source.sourceId).sort());
+  });
+
+  it('records neighborhood-filtered edges as low relevance rather than falsely labeling selected edges', () => {
+    const edges = Array.from({ length: 10 }, (_, index) => ({
+      id: `remote-${index}`, source: `remote-source-${index}`, target: `remote-target-${index}`,
+      relationshipType: 'supports_claim', reviewState: 'reviewed', sourceReceiptIds: ['src-ocha'],
+    }));
+    const selection = selectAgentContextSubgraph({
+      capsule: makeCapsule({ embeddedGraph: { nodes: [], edges }, claimLedger: [], causality: {}, temporality: {} }),
+      userQuery: 'Review access.', budgetTier: 'tiny', requestTime,
+    });
+
+    expect(selection.edges).toEqual([]);
+    expect(selection.omitted.filter((row) => row.kind === 'edge')).toHaveLength(10);
+    expect(selection.omitted.filter((row) => row.kind === 'edge').every((row) => row.reason === 'low_relevance')).toBe(true);
+  });
+
   it('falls back gracefully when the capsule has no embedded graph', () => {
     const result = buildAgentContextPacket({
       capsule: makeCapsule({ embeddedGraph: { nodes: [], edges: [] }, claimLedger: [] }),
