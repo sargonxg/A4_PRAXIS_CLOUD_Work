@@ -1299,7 +1299,11 @@ export function TaskletPraxisWorkbench({
     : activeCapsuleSummaryForStrip?.health?.score
       ? `${activeCapsuleSummaryForStrip.health.score}/100`
       : activeCapsuleSummaryForStrip?.trust?.label ?? contextHealth.label;
-  const hasSavedAskContext = Boolean(activeCapsuleSummaryForStrip && activeCapsuleStack.length);
+  // The owner-scoped stack is authoritative. The library summary may still be
+  // loading (or outside its current page) when an explicitly linked capsule is ready.
+  // Never silently turn that attached context into an Instant Context request.
+  const hasSavedAskContext = Boolean(activeContextStackState.capsuleRefs.some(ref => ref.capsuleId === currentCapsuleId)
+    || activeContextStackState.capsuleId === currentCapsuleId);
   const askContextMode: 'instant' | 'capsule' = hasSavedAskContext ? 'capsule' : 'instant';
   const activeCapabilityReviewQueueCount = (activeCapsuleSummaryForStrip?.readinessSummary?.reviewCardCount ?? 0)
     + factoryReviewDiffs.filter((diff) => diff.reviewState === 'draft' || diff.reviewState === 'reviewed').length
