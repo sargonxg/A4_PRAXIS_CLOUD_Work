@@ -70,3 +70,7 @@ Audited default-branch baseline: `1b5d5f195a2aac3e29801b6dd01e188bd39b4c73`. Cha
 | `npm run audit:gate` | Failed (exit 1) |
 
 A failure is a remaining release blocker for the affected workflow. A passing local test is not a new hosted release. Provider/model quality, current external-service setup and production deployment were not certified.
+
+### Standalone demonstration lint boundary
+
+The first branch CI run exposed React-only lint migration rules being applied to the standalone game. The game is now excluded from Next/React ESLint and checked by `verify:demo` through `prelint`: syntax checks plus its three contract assertions run before ordinary application lint. The repaired `npm run lint` passes locally. Existing application/cloud/process-cleanup limits above remain unchanged.

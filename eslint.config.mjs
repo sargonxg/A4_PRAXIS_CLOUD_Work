@@ -62,6 +62,9 @@ const eslintConfig = defineConfig([
     "**/__pycache__/**",
     "docs/_archive/**",
     "scripts/_archive/**",
+    // This standalone, non-React exercise has its own syntax/contract checks
+    // in verify:demo, run by prelint; Next's React migration rules do not apply.
+    "tacitus-demo/**",
     "next-env.d.ts",
   ]),
 ]);
