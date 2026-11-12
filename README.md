@@ -1,5 +1,20 @@
 # PRAXIS by TACITUS
 
+<!-- tacitus-practical-entry -->
+## Purpose, code and a playable introduction
+
+Retain sources, review context capsules and inspect agent-produced policy drafts inside the existing PRAXIS cockpit.
+
+**Paused workspace / active source.** Hosted AI generation and paid upgrades remain paused according to the current README. Historical live receipts retain their dates; this portfolio pass does not resume services.
+
+[Setup, code walkthrough, research & verification](TACITUS_GUIDE.md) · [Play the original 8-bit teaching adventure](tacitus-demo/index.html) · [Demo credits](tacitus-demo/CREDITS.md)
+
+![The original House of Evidence teaching adventure; synthetic case, separate from this project’s runtime](tacitus-demo/mansion.png)
+
+Research: [RAG](https://arxiv.org/abs/2005.11401), [long-context evidence use](https://arxiv.org/abs/2307.03172), [GraphRAG](https://arxiv.org/abs/2404.16130). [What TACITUS borrows, adds and still needs to measure](https://github.com/sargonxg/sargonxg/blob/main/docs/RESEARCH_AND_DESIGN.md).
+<!-- /tacitus-practical-entry -->
+
+
 PRAXIS helps policymakers and analysts ask questions, examine narratives and
 write reviewable briefs using their sources and saved ContextCapsules.
 Start in Home to ask or draft; use Capsules to create, inspect and review
