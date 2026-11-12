@@ -1,5 +1,6 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { PassThrough } from 'node:stream';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { runBoundedChild } from '../../../../scripts/emulators/bounded-process.mjs';
 
@@ -30,7 +31,13 @@ describe('bounded owned emulator processes', () => {
       expect(result.timedOut).toBe(true);
       const descendant = Number(log.read().trim());
       expect(descendant).toBeGreaterThan(0);
-      expect(() => process.kill(descendant, 0)).toThrow();
+      if (process.platform === 'linux') {
+        // A non-reaping container init may retain a dead PID; it cannot run work.
+        let state: string | null = null;
+        try { const stat = readFileSync(`/proc/${descendant}/stat`, 'utf8'); state = stat.slice(stat.lastIndexOf(')') + 2).split(' ')[0]!; }
+        catch (error) { if (!['ENOENT', 'ESRCH'].includes((error as NodeJS.ErrnoException).code!)) throw error; }
+        expect([null, 'Z', 'X']).toContain(state);
+      } else expect(() => process.kill(descendant, 0)).toThrow();
       expect(() => process.kill(sentinel.pid!, 0)).not.toThrow();
     } finally { sentinel.kill(); }
   }, 30_000);

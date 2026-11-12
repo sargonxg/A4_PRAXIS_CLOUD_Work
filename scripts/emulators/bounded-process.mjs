@@ -1,4 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
+import { readdir, readFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -7,6 +8,22 @@ function unverifiedDescendants(rootExit = null) {
   error.code = 'OWNED_DESCENDANTS_UNVERIFIED';
   error.rootExit = rootExit;
   return error;
+}
+
+/** Linux containers may retain already-dead descendants as zombies until PID 1
+ * reaps them. A zero-signal probe alone cannot distinguish those from live work.
+ * Unknown procfs errors still fail closed; never infer cleanup from unreadability. */
+async function linuxGroupHasLiveMembers(groupId) {
+  for (const entry of await readdir('/proc')) {
+    if (!/^\d+$/.test(entry)) continue;
+    let stat;
+    try { stat = await readFile(`/proc/${entry}/stat`, 'utf8'); }
+    catch (error) { if (error.code === 'ENOENT' || error.code === 'ESRCH') continue; throw error; }
+    const fields = stat.slice(stat.lastIndexOf(')') + 2).trim().split(/\s+/);
+    if (fields.length < 3 || !Number.isInteger(Number(fields[2]))) throw new Error('Invalid process-group identity');
+    if (Number(fields[2]) === groupId && fields[0] !== 'Z' && fields[0] !== 'X') return true;
+  }
+  return false;
 }
 
 /** Stop only the child we spawned and its verified descendants. Never use ports. */
@@ -61,6 +78,7 @@ export async function terminateOwnedProcessTree(child) {
     for (let attempt = 0; attempt < 10; attempt++) {
       try { process.kill(-child.pid, 0); }
       catch (error) { if (error.code === 'ESRCH') return; throw error; }
+      if (process.platform === 'linux' && !await linuxGroupHasLiveMembers(child.pid)) return;
       await delay(500);
     }
     throw new Error('Owned process group remained after cleanup');

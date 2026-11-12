@@ -74,3 +74,9 @@ A failure is a remaining release blocker for the affected workflow. A passing lo
 ### Standalone demonstration lint boundary
 
 The first branch CI run exposed React-only lint migration rules being applied to the standalone game. The game is now excluded from Next/React ESLint and checked by `verify:demo` through `prelint`: syntax checks plus its three contract assertions run before ordinary application lint. The repaired `npm run lint` passes locally. Existing application/cloud/process-cleanup limits above remain unchanged.
+
+## Reconciliation checkpoint · 11 November 2026
+
+The saved owner-scoped context stack now determines whether a turn carries its capsule; a delayed/missing library summary cannot silently switch that request to Instant Context. The unchanged authenticated emulator context-readiness scenario passes, including create-before-turn, exact requested scope and delayed-history preservation. Linux owned-process cleanup now distinguishes dead zombies from running descendants while still refusing unknown process state and preserving unrelated processes.
+
+Build, TypeScript, lint, repository shape, architecture reference, calibrated-route checks and all 3,265 unit tests pass (one explicit skip). The runtime cloud audit cannot acquire its required Google audit identity in this workspace; this is not a hosted acceptance result. The first complete local emulator attempt passed onboarding, both golden paths and context readiness, but the protected-routes scenario hit a request timeout while concurrent builds were running; the unchanged suite is being rechecked in CI before merge.
