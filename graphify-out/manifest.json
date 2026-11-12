@@ -7500,9 +7500,9 @@
     "semantic_hash": ""
   },
   "tests/e2e/golden-path.spec.ts": {
-    "mtime": 1794446197.0425084,
-    "seen": 1794451520.8082294,
-    "ast_hash": "74d87974245b5634acde2fce5e90e1b1",
+    "mtime": 1794452595.3242888,
+    "seen": 1794452810.739603,
+    "ast_hash": "5d948deb5db57e851e63522acdbe9d2a",
     "semantic_hash": ""
   },
   "tests/e2e/landing-smoke.spec.ts": {
@@ -10170,15 +10170,15 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-DEEP_PRESHIP_CHECKLIST.md": {
-    "mtime": 1794450966.5226324,
-    "seen": 1794451520.80896,
-    "ast_hash": "0713d29ff2a9f8a5218c6b2423813c83",
+    "mtime": 1794451714.379201,
+    "seen": 1794452810.7588713,
+    "ast_hash": "94b844e7c87807c9cea78582e098b000",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-tool-contracts.md": {
-    "mtime": 1794450961.5307322,
-    "seen": 1794451520.8089707,
-    "ast_hash": "0654adc7968f3797bb15eb31f0a6b247",
+    "mtime": 1794451714.383201,
+    "seen": 1794452810.759166,
+    "ast_hash": "c6775b84df314e0d607c091972f44553",
     "semantic_hash": ""
   },
   "docs/audits/README.md": {
@@ -11484,9 +11484,9 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-DEEP_PRESHIP_CHECKLIST.json": {
-    "mtime": 1794450966.5226324,
-    "seen": 1794451520.8067107,
-    "ast_hash": "86889b472f83b3552fbd09e7efd53210",
+    "mtime": 1794451714.379201,
+    "seen": 1794452810.7022388,
+    "ast_hash": "018f4fd5e777879d9dbde577134e8c92",
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-backfill-readiness-audit.json": {
@@ -11886,9 +11886,9 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-database-audit.json": {
-    "mtime": 1794450936.8512247,
-    "seen": 1794451520.806716,
-    "ast_hash": "ad0771802381065c78e46c9f6cc3382c",
+    "mtime": 1794451714.379201,
+    "seen": 1794452810.7022913,
+    "ast_hash": "805048fbd8ece79d5432168b9e5bc088",
     "semantic_hash": ""
   },
   "scripts/audit-capsule-database.ts": {
@@ -11898,9 +11898,9 @@
     "semantic_hash": ""
   },
   "docs/audits/LATEST-capsule-database-audit.md": {
-    "mtime": 1794450936.8512247,
-    "seen": 1794451520.808964,
-    "ast_hash": "60b51d9e93145c1b5447e1b635510850",
+    "mtime": 1794451714.383201,
+    "seen": 1794452810.7589467,
+    "ast_hash": "5e357bfb5f9f6c10929f0f7cee7e1616",
     "semantic_hash": ""
   },
   "backend/agents/praxis_data_controller/__init__.py": {

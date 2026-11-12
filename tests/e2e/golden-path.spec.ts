@@ -160,12 +160,14 @@ test.describe('golden path — app usability smoke', () => {
     await page.goto(`${BASE}/app/conversations/${conversationId}?capsuleId=${capsuleId}`);
     const composer = page.getByLabel(/Describe a task or responsibility/i);
     await composer.fill('Build a treaty analysis memo on monitoring obligations with sources.');
+    const sendButton = page.locator('button[aria-label="Send to PRAXIS"]');
+    await expect(sendButton).toBeEnabled({ timeout: 30_000 });
+    // Start the response deadline at the action boundary, after owner/context
+    // readiness. Otherwise initialization consumes the unrelated turn deadline.
     const turnResponse = page.waitForResponse((response) => (
       response.url().includes(`/api/conversations/${conversationId}/turns`)
       && response.request().method() === 'POST'
     ), { timeout: 30_000 });
-    const sendButton = page.locator('button[aria-label="Send to PRAXIS"]');
-    await expect(sendButton).toBeEnabled({ timeout: 30_000 });
     await sendButton.click();
     await turnResponse;
     await expect(page.getByTestId('praxis-answer-markdown').getByText(/source receipt \[treaty-source-1\]/i)).toBeVisible({ timeout: 30_000 });
